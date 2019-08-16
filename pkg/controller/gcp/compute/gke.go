@@ -145,7 +145,7 @@ func (r *Reconciler) _connect(instance *gcpcomputev1alpha2.GKECluster) (gke.Clie
 		return nil, err
 	}
 
-	creds, err := gcp.ProviderCredentials(r.kubeclient, p, gke.DefaultScope)
+	creds, err := gcp.ProviderCredentials(r.Client, p, gke.DefaultScope)
 	if err != nil {
 		return nil, err
 	}

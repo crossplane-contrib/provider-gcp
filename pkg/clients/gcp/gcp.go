@@ -21,19 +21,20 @@ import (
 	"fmt"
 	"net/http"
 
-	"google.golang.org/api/option"
-
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/cloudresourcemanager/v1"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
-	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
+	v1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 )
 
 var log = logging.Logger.WithName("clients.gcp")
@@ -103,11 +104,18 @@ func IsErrorBadRequest(err error) bool {
 }
 
 // ProviderCredentials return google credentials based on the provider's credentials secret data
-func ProviderCredentials(client kubernetes.Interface, p *gcpv1alpha2.Provider, scopes ...string) (*google.Credentials, error) {
-	// retrieve provider secret data
-	data, err := util.SecretData(client, p.Namespace, p.Spec.Secret)
-	if err != nil {
+func ProviderCredentials(client client.Client, p *v1alpha2.Provider, scopes ...string) (*google.Credentials, error) {
+	secret := &v1.Secret{}
+	name := meta.NamespacedNameOf(&v1.ObjectReference{
+		Name:      p.Spec.Secret.Name,
+		Namespace: p.Namespace,
+	})
+	if err := client.Get(context.TODO(), name, secret); err != nil {
 		return nil, err
+	}
+	data, ok := secret.Data[p.Spec.Secret.Key]
+	if !ok {
+		return nil, fmt.Errorf("secret data is not found for key [%s]", p.Spec.Secret.Key)
 	}
 
 	return google.CredentialsFromJSON(context.Background(), data, scopes...)
