@@ -23,7 +23,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	. "github.com/crossplaneio/crossplane/pkg/clients/gcp"
+	. "github.com/crossplaneio/stack-gcp/pkg/clients/gcp"
 )
 
 func TestProject(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/cloudsql"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudsql"
 )
 
 // MockInstanceClient for testing purposes

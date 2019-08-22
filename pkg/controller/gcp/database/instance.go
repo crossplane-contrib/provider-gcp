@@ -29,13 +29,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
+	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudsql"
+	"github.com/crossplaneio/stack-gcp/pkg/util/googleapi"
+
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane/gcp/apis/database/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/cloudsql"
-	"github.com/crossplaneio/crossplane/pkg/util/googleapi"
 )
 
 const (

@@ -23,7 +23,7 @@ import (
 	gax "github.com/googleapis/gax-go"
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
 
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/cloudmemorystore"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore"
 )
 
 var _ cloudmemorystore.Client = &MockClient{}

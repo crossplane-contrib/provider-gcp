@@ -29,7 +29,8 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	storagev1alpha1 "github.com/crossplaneio/crossplane/apis/storage/v1alpha1"
-	"github.com/crossplaneio/crossplane/gcp/apis/storage/v1alpha1"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
 )
 
 // BucketClaimController is responsible for adding the Bucket claim controller and its

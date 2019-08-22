@@ -29,7 +29,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	storagev1alpha1 "github.com/crossplaneio/crossplane/apis/storage/v1alpha1"
-	"github.com/crossplaneio/crossplane/gcp/apis/storage/v1alpha1"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
 )
 
 var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureBucket)

@@ -35,9 +35,10 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
-	"github.com/crossplaneio/crossplane/gcp/apis/storage/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
-	gcpstorage "github.com/crossplaneio/crossplane/pkg/clients/gcp/storage"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
+	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/storage"
 )
 
 const (

@@ -19,10 +19,10 @@ package gcp
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/crossplaneio/crossplane/pkg/controller/gcp/cache"
-	"github.com/crossplaneio/crossplane/pkg/controller/gcp/compute"
-	"github.com/crossplaneio/crossplane/pkg/controller/gcp/database"
-	"github.com/crossplaneio/crossplane/pkg/controller/gcp/storage"
+	"github.com/crossplaneio/stack-gcp/pkg/controller/gcp/cache"
+	"github.com/crossplaneio/stack-gcp/pkg/controller/gcp/compute"
+	"github.com/crossplaneio/stack-gcp/pkg/controller/gcp/database"
+	"github.com/crossplaneio/stack-gcp/pkg/controller/gcp/storage"
 )
 
 // Controllers passes down config and adds individual controllers to the manager.

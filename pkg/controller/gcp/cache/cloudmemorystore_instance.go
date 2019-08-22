@@ -32,9 +32,10 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane/gcp/apis/cache/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/cloudmemorystore"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
+	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore"
 )
 
 const (

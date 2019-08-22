@@ -29,7 +29,8 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	cachev1alpha1 "github.com/crossplaneio/crossplane/apis/cache/v1alpha1"
-	"github.com/crossplaneio/crossplane/gcp/apis/cache/v1alpha1"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
 )
 
 // CloudMemorystoreInstanceClaimController is responsible for adding the Cloud Memorystore

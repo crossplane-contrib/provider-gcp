@@ -31,9 +31,10 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
-	"github.com/crossplaneio/crossplane/gcp/apis/storage/v1alpha1"
-	gcpstorage "github.com/crossplaneio/crossplane/pkg/clients/gcp/storage"
-	storagefake "github.com/crossplaneio/crossplane/pkg/clients/gcp/storage/fake"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
+	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/storage"
+	storagefake "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/storage/fake"
 )
 
 type mockOperations struct {

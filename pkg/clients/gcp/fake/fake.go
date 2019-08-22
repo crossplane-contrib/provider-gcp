@@ -19,7 +19,7 @@ package fake
 import (
 	"google.golang.org/api/container/v1"
 
-	computev1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
+	computev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
 )
 
 // GKEClient for mocking.

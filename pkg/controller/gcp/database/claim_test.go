@@ -29,7 +29,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	databasev1alpha1 "github.com/crossplaneio/crossplane/apis/database/v1alpha1"
-	"github.com/crossplaneio/crossplane/gcp/apis/database/v1alpha1"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
 )
 
 var (

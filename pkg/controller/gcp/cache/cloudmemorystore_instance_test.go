@@ -39,10 +39,11 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
-	"github.com/crossplaneio/crossplane/gcp/apis/cache/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/cloudmemorystore"
-	fakecloudmemorystore "github.com/crossplaneio/crossplane/pkg/clients/gcp/cloudmemorystore/fake"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
+	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore"
+	fakecloudmemorystore "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore/fake"
 )
 
 const (

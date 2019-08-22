@@ -19,7 +19,7 @@ package fake
 import (
 	"context"
 
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/cloudsql"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudsql"
 
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )

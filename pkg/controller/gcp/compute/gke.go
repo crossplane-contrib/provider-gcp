@@ -38,10 +38,11 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
-	gcpcomputev1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/gke"
+
+	gcpcomputev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
+	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/gke"
 )
 
 const (

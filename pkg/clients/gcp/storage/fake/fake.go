@@ -21,7 +21,7 @@ import (
 
 	"cloud.google.com/go/storage"
 
-	gcpstorage "github.com/crossplaneio/crossplane/pkg/clients/gcp/storage"
+	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/storage"
 )
 
 // MockBucketClient Client interface implementation

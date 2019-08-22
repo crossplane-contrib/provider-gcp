@@ -25,7 +25,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/crossplaneio/crossplane/gcp/apis/cache/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
 )
 
 const (

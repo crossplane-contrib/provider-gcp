@@ -20,10 +20,6 @@ import (
 	"os"
 	"path/filepath"
 
-	awsapis "github.com/crossplaneio/crossplane/aws/apis"
-	azureapis "github.com/crossplaneio/crossplane/azure/apis"
-	gcpapis "github.com/crossplaneio/crossplane/gcp/apis"
-
 	"gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -33,13 +29,9 @@ import (
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane/apis"
-	"github.com/crossplaneio/crossplane/pkg/controller/aws"
-	"github.com/crossplaneio/crossplane/pkg/controller/azure"
-	"github.com/crossplaneio/crossplane/pkg/controller/defaultclass"
-	"github.com/crossplaneio/crossplane/pkg/controller/gcp"
-	stacksController "github.com/crossplaneio/crossplane/pkg/controller/stacks"
-	"github.com/crossplaneio/crossplane/pkg/controller/workload"
-	"github.com/crossplaneio/crossplane/pkg/stacks"
+
+	gcpapis "github.com/crossplaneio/stack-gcp/gcp/apis"
+	"github.com/crossplaneio/stack-gcp/pkg/controller/gcp"
 )
 
 func main() {
@@ -55,25 +47,6 @@ func main() {
 		// default crossplane command and args, this is the default main entry point for Crossplane's
 		// multi-cloud control plane functionality
 		crossplaneCmd = app.Command(filepath.Base(os.Args[0]), "An open source multicloud control plane.").Default()
-
-		// stacks  commands and args, these are the main entry points for Crossplane's stack manager (SM).
-		// The SM runs as a separate pod from the main Crossplane pod because in order to install stacks that
-		// have arbitrary permissions, the SM itself must have cluster-admin permissions.  We isolate these elevated
-		// permissions as much as possible by running the Crossplane stack manager in its own isolate deployment.
-		extCmd = app.Command("stack", "Perform operations on stacks")
-
-		// stack manage - adds the stack manager controllers and starts their reconcile loops
-		extManageCmd = extCmd.Command("manage", "Manage stacks (run stack manager controllers)")
-
-		// stack unpack - performs the unpacking operation for the given stack package content
-		// directory. This command is expected to parse the content and generate manifests for stack
-		// related artifacts to stdout so that the SM can read the output and use the Kubernetes API to
-		// create the artifacts.
-		//
-		// Users are not expected to run this command themselves, the stack manager itself should
-		// execute this command.
-		extUnpackCmd = extCmd.Command("unpack", "Unpack a stack")
-		extUnpackDir = extUnpackCmd.Flag("content-dir", "The directory that contains the stack contents").Required().String()
 	)
 	cmd := kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -93,14 +66,6 @@ func main() {
 	case crossplaneCmd.FullCommand():
 		// the default Crossplane command is being run, add all the regular controllers to the manager
 		setupWithManagerFunc = controllerSetupWithManager
-	case extManageCmd.FullCommand():
-		// the "stacks manage" command is being run, the only controllers we should add to the
-		// manager are the stacks controllers
-		setupWithManagerFunc = stacksControllerSetupWithManager
-	case extUnpackCmd.FullCommand():
-		// stack unpack command was called, run the stack unpacking logic
-		kingpin.FatalIfError(stacks.Unpack(*extUnpackDir), "failed to unpack stacks")
-		return
 	default:
 		kingpin.FatalUsage("unknown command %s", cmd)
 	}
@@ -140,33 +105,10 @@ func main() {
 }
 
 func controllerSetupWithManager(mgr manager.Manager) error {
-	if err := (&defaultclass.Controllers{}).SetupWithManager(mgr); err != nil {
-		return err
-	}
-
-	if err := (&aws.Controllers{}).SetupWithManager(mgr); err != nil {
-		return err
-	}
-
-	if err := (&azure.Controllers{}).SetupWithManager(mgr); err != nil {
-		return err
-	}
-
 	if err := (&gcp.Controllers{}).SetupWithManager(mgr); err != nil {
 		return err
 	}
 
-	if err := (&workload.Controllers{}).SetupWithManager(mgr); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func stacksControllerSetupWithManager(mgr manager.Manager) error {
-	if err := (&stacksController.Controllers{}).SetupWithManager(mgr); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -176,15 +118,7 @@ func addToScheme(scheme *runtime.Scheme) error {
 		return err
 	}
 
-	if err := awsapis.AddToScheme(scheme); err != nil {
-		return err
-	}
-
 	if err := gcpapis.AddToScheme(scheme); err != nil {
-		return err
-	}
-
-	if err := azureapis.AddToScheme(scheme); err != nil {
 		return err
 	}
 

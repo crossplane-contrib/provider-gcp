@@ -24,8 +24,8 @@ import (
 	"google.golang.org/api/container/v1"
 	"google.golang.org/api/option"
 
-	computev1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp"
+	computev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp"
 )
 
 const (

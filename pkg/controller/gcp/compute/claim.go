@@ -29,7 +29,8 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	computev1alpha1 "github.com/crossplaneio/crossplane/apis/compute/v1alpha1"
-	"github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
 )
 
 // GKEClusterClaimController is responsible for adding the GKECluster

@@ -20,11 +20,11 @@ package apis
 import (
 	"testing"
 
-	cachev1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/cache/v1alpha1"
-	computev1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
-	databasev1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/database/v1alpha1"
-	storagev1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/storage/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
+	cachev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
+	computev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
+	databasev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
+	storagev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
+	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

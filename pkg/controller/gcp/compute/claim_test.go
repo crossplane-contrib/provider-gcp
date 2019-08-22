@@ -29,7 +29,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	computev1alpha1 "github.com/crossplaneio/crossplane/apis/compute/v1alpha1"
-	"github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
 )
 
 var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureGKECluster)

@@ -21,7 +21,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/crossplaneio/crossplane/gcp/apis"
+	"github.com/crossplaneio/stack-gcp/gcp/apis"
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/gomega"
@@ -38,9 +38,10 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
-	. "github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/fake"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/gke"
+
+	. "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/fake"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/gke"
 )
 
 const (

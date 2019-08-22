@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/crossplaneio/crossplane/gcp/apis"
+	"github.com/crossplaneio/stack-gcp/gcp/apis"
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"
@@ -40,8 +40,9 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
-	"github.com/crossplaneio/crossplane/gcp/apis/storage/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
+
+	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
+	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
 )
 
 func init() {
