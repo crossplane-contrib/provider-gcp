@@ -24,7 +24,7 @@ import (
 	"google.golang.org/api/container/v1"
 	"google.golang.org/api/option"
 
-	computev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
+	computev1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp"
 )
 
@@ -39,7 +39,7 @@ const (
 
 // Client interface to perform cluster operations
 type Client interface {
-	CreateCluster(string, computev1alpha1.GKEClusterSpec) (*container.Cluster, error)
+	CreateCluster(string, computev1alpha2.GKEClusterSpec) (*container.Cluster, error)
 	GetCluster(zone, name string) (*container.Cluster, error)
 	DeleteCluster(zone, name string) error
 }
@@ -64,7 +64,7 @@ func NewClusterClient(ctx context.Context, creds *google.Credentials) (*ClusterC
 }
 
 // CreateCluster creates a new GKE cluster.
-func (c *ClusterClient) CreateCluster(name string, spec computev1alpha1.GKEClusterSpec) (*container.Cluster, error) {
+func (c *ClusterClient) CreateCluster(name string, spec computev1alpha2.GKEClusterSpec) (*container.Cluster, error) {
 	cr := &container.CreateClusterRequest{
 		Cluster: &container.Cluster{
 			Name:                  name,

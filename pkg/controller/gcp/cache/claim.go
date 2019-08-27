@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	cachev1alpha1 "github.com/crossplaneio/crossplane/apis/cache/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha2"
 )
 
 // CloudMemorystoreInstanceClaimController is responsible for adding the Cloud Memorystore
@@ -41,8 +41,8 @@ type CloudMemorystoreInstanceClaimController struct{}
 func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(cachev1alpha1.RedisClusterGroupVersionKind),
-		resource.ClassKind(v1alpha1.CloudMemorystoreInstanceClassGroupVersionKind),
-		resource.ManagedKind(v1alpha1.CloudMemorystoreInstanceGroupVersionKind),
+		resource.ClassKind(v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind),
+		resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
@@ -52,9 +52,9 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1alpha1.CloudMemorystoreInstance{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1alpha2.CloudMemorystoreInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&cachev1alpha1.RedisCluster{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha1.CloudMemorystoreInstanceClassGroupVersionKind)))).
+		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind)))).
 		Complete(r)
 }
 
@@ -67,17 +67,17 @@ func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs 
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), cachev1alpha1.RedisClusterGroupVersionKind)
 	}
 
-	rl, csok := cs.(*v1alpha1.CloudMemorystoreInstanceClass)
+	rl, csok := cs.(*v1alpha2.CloudMemorystoreInstanceClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha1.CloudMemorystoreInstanceClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1alpha1.CloudMemorystoreInstance)
+	i, mgok := mg.(*v1alpha2.CloudMemorystoreInstance)
 	if !mgok {
-		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha1.CloudMemorystoreInstanceGroupVersionKind)
+		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha2.CloudMemorystoreInstanceGroupVersionKind)
 	}
 
-	spec := &v1alpha1.CloudMemorystoreInstanceSpec{
+	spec := &v1alpha2.CloudMemorystoreInstanceSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},

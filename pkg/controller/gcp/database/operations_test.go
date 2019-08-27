@@ -23,7 +23,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudsql"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudsql/fake"
 )
@@ -53,8 +53,8 @@ var (
 				Namespace: testNs,
 				OwnerReferences: []meta1.OwnerReference{
 					{
-						APIVersion: v1alpha1.SchemeGroupVersion.String(),
-						Kind:       v1alpha1.CloudsqlInstanceKind,
+						APIVersion: v1alpha2.SchemeGroupVersion.String(),
+						Kind:       v1alpha2.CloudsqlInstanceKind,
 						Name:       testName,
 						UID:        testUID,
 						Controller: &t,
@@ -64,7 +64,7 @@ var (
 			Data: map[string][]byte{
 				runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(ep),
 				runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(pw),
-				runtimev1alpha1.ResourceCredentialsSecretUserKey:     []byte(v1alpha1.MysqlDefaultUser),
+				runtimev1alpha1.ResourceCredentialsSecretUserKey:     []byte(v1alpha2.MysqlDefaultUser),
 			},
 		}
 	}
@@ -147,17 +147,17 @@ func (m *mockManagedOperations) updateUserCreds(ctx context.Context) error {
 }
 
 type mockFactory struct {
-	mockMakeLocalOperations   func(*v1alpha1.CloudsqlInstance, client.Client) localOperations
-	mockMakeManagedOperations func(context.Context, *v1alpha1.CloudsqlInstance, localOperations) (managedOperations, error)
+	mockMakeLocalOperations   func(*v1alpha2.CloudsqlInstance, client.Client) localOperations
+	mockMakeManagedOperations func(context.Context, *v1alpha2.CloudsqlInstance, localOperations) (managedOperations, error)
 	mockMakeSyncDeleter       func(managedOperations) syncdeleter
 }
 
 var _ factory = &mockFactory{}
 
-func (m *mockFactory) makeLocalOperations(inst *v1alpha1.CloudsqlInstance, kube client.Client) localOperations {
+func (m *mockFactory) makeLocalOperations(inst *v1alpha2.CloudsqlInstance, kube client.Client) localOperations {
 	return m.mockMakeLocalOperations(inst, kube)
 }
-func (m *mockFactory) makeManagedOperations(ctx context.Context, inst *v1alpha1.CloudsqlInstance, ops localOperations) (managedOperations, error) {
+func (m *mockFactory) makeManagedOperations(ctx context.Context, inst *v1alpha2.CloudsqlInstance, ops localOperations) (managedOperations, error) {
 	return m.mockMakeManagedOperations(ctx, inst, ops)
 }
 func (m *mockFactory) makeSyncDeleter(ops managedOperations) syncdeleter {
@@ -221,15 +221,15 @@ func (i *instanceStatus) withConditions(c ...runtimev1alpha1.Condition) *instanc
 }
 
 type instance struct {
-	*v1alpha1.CloudsqlInstance
+	*v1alpha2.CloudsqlInstance
 }
 
 func newInstance() *instance {
 	return &instance{
-		CloudsqlInstance: &v1alpha1.CloudsqlInstance{},
+		CloudsqlInstance: &v1alpha2.CloudsqlInstance{},
 	}
 }
-func (i *instance) build() *v1alpha1.CloudsqlInstance {
+func (i *instance) build() *v1alpha2.CloudsqlInstance {
 	return i.CloudsqlInstance
 }
 func (i *instance) withFinalizers(f []string) *instance {
@@ -245,8 +245,8 @@ func (i *instance) withResourceSpec(rs *runtimev1alpha1.ResourceSpec) *instance 
 	return i
 }
 
-func assertObjectInstance(obj runtime.Object) (*v1alpha1.CloudsqlInstance, error) {
-	inst, ok := obj.(*v1alpha1.CloudsqlInstance)
+func assertObjectInstance(obj runtime.Object) (*v1alpha2.CloudsqlInstance, error) {
+	inst, ok := obj.(*v1alpha2.CloudsqlInstance)
 	if !ok {
 		return nil, errors.Errorf("unexpected object type: %T", obj)
 	}
@@ -257,12 +257,12 @@ func assertObjectInstance(obj runtime.Object) (*v1alpha1.CloudsqlInstance, error
 // putting the test logic to calculate the expected instance name inside
 // this method allows us to maintain it in a single place.
 func getExpectedInstanceName(testUID string) string {
-	return strings.ToLower(v1alpha1.CloudsqlInstanceKind + "-" + testUID)
+	return strings.ToLower(v1alpha2.CloudsqlInstanceKind + "-" + testUID)
 }
 
 func Test_localHandler_addFinalizer(t *testing.T) {
 	type fields struct {
-		instance *v1alpha1.CloudsqlInstance
+		instance *v1alpha2.CloudsqlInstance
 		kube     client.Client
 	}
 	type args struct {
@@ -279,7 +279,7 @@ func Test_localHandler_addFinalizer(t *testing.T) {
 	}{
 		"NoFinalizer": {
 			fields: fields{
-				instance: &v1alpha1.CloudsqlInstance{},
+				instance: &v1alpha2.CloudsqlInstance{},
 				kube: &test.MockClient{
 					MockUpdate: func(ctx context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
 						if _, err := assertObjectInstance(obj); err != nil {
@@ -327,7 +327,7 @@ func Test_localHandler_addFinalizer(t *testing.T) {
 
 func Test_localHandler_removeFinalizer(t *testing.T) {
 	type fields struct {
-		instance *v1alpha1.CloudsqlInstance
+		instance *v1alpha2.CloudsqlInstance
 		kube     client.Client
 	}
 	type args struct {
@@ -344,7 +344,7 @@ func Test_localHandler_removeFinalizer(t *testing.T) {
 	}{
 		"NoFinalizer": {
 			fields: fields{
-				instance: &v1alpha1.CloudsqlInstance{},
+				instance: &v1alpha2.CloudsqlInstance{},
 				kube: &test.MockClient{
 					MockUpdate: func(ctx context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
 						if _, err := assertObjectInstance(obj); err != nil {
@@ -392,21 +392,21 @@ func Test_localHandler_removeFinalizer(t *testing.T) {
 
 func Test_localHandler_isInstanceReady(t *testing.T) {
 	tests := map[string]struct {
-		status v1alpha1.CloudsqlInstanceStatus
+		status v1alpha2.CloudsqlInstanceStatus
 		want   bool
 	}{
 		"Default": {
-			status: v1alpha1.CloudsqlInstanceStatus{},
+			status: v1alpha2.CloudsqlInstanceStatus{},
 			want:   false,
 		},
 		"Ready": {
-			status: v1alpha1.CloudsqlInstanceStatus{
-				State: v1alpha1.StateRunnable,
+			status: v1alpha2.CloudsqlInstanceStatus{
+				State: v1alpha2.StateRunnable,
 			},
 			want: true,
 		},
 		"NotReady": {
-			status: v1alpha1.CloudsqlInstanceStatus{
+			status: v1alpha2.CloudsqlInstanceStatus{
 				State: "foo-bar",
 			},
 			want: false,
@@ -415,7 +415,7 @@ func Test_localHandler_isInstanceReady(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			ih := &localHandler{
-				CloudsqlInstance: &v1alpha1.CloudsqlInstance{
+				CloudsqlInstance: &v1alpha2.CloudsqlInstance{
 					Status: tt.status,
 				},
 			}
@@ -428,11 +428,11 @@ func Test_localHandler_isInstanceReady(t *testing.T) {
 
 func Test_localHandler_isReclaimDelete(t *testing.T) {
 	tests := map[string]struct {
-		inst *v1alpha1.CloudsqlInstance
+		inst *v1alpha2.CloudsqlInstance
 		want bool
 	}{
 		"Default": {
-			inst: &v1alpha1.CloudsqlInstance{},
+			inst: &v1alpha2.CloudsqlInstance{},
 			want: false,
 		},
 		"Delete": {
@@ -467,13 +467,13 @@ func Test_localHandler_needUpdate(t *testing.T) {
 
 func Test_localHandler_updateObject(t *testing.T) {
 	type fields struct {
-		obj  *v1alpha1.CloudsqlInstance
+		obj  *v1alpha2.CloudsqlInstance
 		kube client.Client
 	}
 	type args struct {
 		ctx context.Context
 	}
-	inst := &v1alpha1.CloudsqlInstance{}
+	inst := &v1alpha2.CloudsqlInstance{}
 	assert := func(obj runtime.Object) {
 		i, err := assertObjectInstance(obj)
 		if err != nil {
@@ -528,7 +528,7 @@ func Test_localHandler_updateObject(t *testing.T) {
 
 func Test_localHandler_updateInstanceStatus(t *testing.T) {
 	testError := errors.New("test-error")
-	inst := &v1alpha1.CloudsqlInstance{}
+	inst := &v1alpha2.CloudsqlInstance{}
 	assert := func(obj runtime.Object) {
 		i, err := assertObjectInstance(obj)
 		if err != nil {
@@ -540,7 +540,7 @@ func Test_localHandler_updateInstanceStatus(t *testing.T) {
 	}
 
 	type fields struct {
-		inst *v1alpha1.CloudsqlInstance
+		inst *v1alpha2.CloudsqlInstance
 		kube client.Client
 	}
 	type args struct {
@@ -549,7 +549,7 @@ func Test_localHandler_updateInstanceStatus(t *testing.T) {
 	}
 	type want struct {
 		err    error
-		status *v1alpha1.CloudsqlInstanceStatus
+		status *v1alpha2.CloudsqlInstanceStatus
 	}
 	tests := map[string]struct {
 		fields fields
@@ -572,7 +572,7 @@ func Test_localHandler_updateInstanceStatus(t *testing.T) {
 				},
 			},
 			want: want{
-				status: &v1alpha1.CloudsqlInstanceStatus{
+				status: &v1alpha2.CloudsqlInstanceStatus{
 					State: "Fooing",
 				},
 			},
@@ -607,7 +607,7 @@ func Test_localHandler_updateInstanceStatus(t *testing.T) {
 
 func Test_localHandler_updateReconcileStatus(t *testing.T) {
 	testError := errors.New("test-error")
-	inst := &v1alpha1.CloudsqlInstance{}
+	inst := &v1alpha2.CloudsqlInstance{}
 	assert := func(obj runtime.Object) {
 		i, err := assertObjectInstance(obj)
 		if err != nil {
@@ -619,7 +619,7 @@ func Test_localHandler_updateReconcileStatus(t *testing.T) {
 	}
 
 	type fields struct {
-		inst *v1alpha1.CloudsqlInstance
+		inst *v1alpha2.CloudsqlInstance
 		kube client.Client
 	}
 	type args struct {
@@ -628,7 +628,7 @@ func Test_localHandler_updateReconcileStatus(t *testing.T) {
 	}
 	type want struct {
 		err    error
-		status v1alpha1.CloudsqlInstanceStatus
+		status v1alpha2.CloudsqlInstanceStatus
 	}
 	tests := map[string]struct {
 		fields fields
@@ -647,7 +647,7 @@ func Test_localHandler_updateReconcileStatus(t *testing.T) {
 			},
 			want: want{
 				err: testError,
-				status: v1alpha1.CloudsqlInstanceStatus{
+				status: v1alpha2.CloudsqlInstanceStatus{
 					ResourceStatus: *newInstanceStatus().withConditions(runtimev1alpha1.ReconcileSuccess()).build(),
 				},
 			},
@@ -663,7 +663,7 @@ func Test_localHandler_updateReconcileStatus(t *testing.T) {
 				},
 			},
 			want: want{
-				status: v1alpha1.CloudsqlInstanceStatus{
+				status: v1alpha2.CloudsqlInstanceStatus{
 					ResourceStatus: *newInstanceStatus().withConditions(runtimev1alpha1.ReconcileSuccess()).build(),
 				},
 			},
@@ -682,7 +682,7 @@ func Test_localHandler_updateReconcileStatus(t *testing.T) {
 				err: testError,
 			},
 			want: want{
-				status: v1alpha1.CloudsqlInstanceStatus{
+				status: v1alpha2.CloudsqlInstanceStatus{
 					ResourceStatus: *newInstanceStatus().withConditions(runtimev1alpha1.ReconcileError(testError)).build(),
 				},
 			},
@@ -706,7 +706,7 @@ func Test_localHandler_updateReconcileStatus(t *testing.T) {
 
 func Test_localHandler_getConnectionSecret(t *testing.T) {
 	type fields struct {
-		inst *v1alpha1.CloudsqlInstance
+		inst *v1alpha2.CloudsqlInstance
 		kube client.Client
 	}
 	type args struct {
@@ -780,7 +780,7 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 	}
 
 	type fields struct {
-		inst *v1alpha1.CloudsqlInstance
+		inst *v1alpha2.CloudsqlInstance
 		kube client.Client
 	}
 	type args struct {
@@ -821,13 +821,13 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 		},
 		"ExistsButBelongsToAnother": {
 			fields: fields{
-				inst: &v1alpha1.CloudsqlInstance{
+				inst: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
-					Spec: v1alpha1.CloudsqlInstanceSpec{
+					Spec: v1alpha2.CloudsqlInstanceSpec{
 						ResourceSpec: *newInstanceSpec().
 							withWriteConnectionSecretRef(core.LocalObjectReference{Name: testName}).build(),
 					},
-					Status: v1alpha1.CloudsqlInstanceStatus{
+					Status: v1alpha2.CloudsqlInstanceStatus{
 						Endpoint: "new-ep",
 					},
 				},
@@ -850,13 +850,13 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 		},
 		"ExistsUpdateEndpoint": {
 			fields: fields{
-				inst: &v1alpha1.CloudsqlInstance{
+				inst: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
-					Spec: v1alpha1.CloudsqlInstanceSpec{
+					Spec: v1alpha2.CloudsqlInstanceSpec{
 						ResourceSpec: *newInstanceSpec().
 							withWriteConnectionSecretRef(core.LocalObjectReference{Name: testName}).build(),
 					},
-					Status: v1alpha1.CloudsqlInstanceStatus{
+					Status: v1alpha2.CloudsqlInstanceStatus{
 						Endpoint: "new-ep",
 					},
 				},
@@ -912,14 +912,14 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 
 func Test_managedHandler_getInstance(t *testing.T) {
 	type fields struct {
-		obj      *v1alpha1.CloudsqlInstance
+		obj      *v1alpha2.CloudsqlInstance
 		instance cloudsql.InstanceService
 	}
 	type args struct {
 		ctx context.Context
 	}
 	type want struct {
-		status v1alpha1.CloudsqlInstanceStatus
+		status v1alpha2.CloudsqlInstanceStatus
 		err    error
 	}
 	tests := map[string]struct {
@@ -929,7 +929,7 @@ func Test_managedHandler_getInstance(t *testing.T) {
 	}{
 		"Default": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{
+				obj: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
 				},
 				instance: &fake.MockInstanceClient{
@@ -948,7 +948,7 @@ func Test_managedHandler_getInstance(t *testing.T) {
 				},
 			},
 			want: want{
-				status: v1alpha1.CloudsqlInstanceStatus{
+				status: v1alpha2.CloudsqlInstanceStatus{
 					State:          "thinking-about",
 					Endpoint:       "test.ip.address",
 					ResourceStatus: *newInstanceStatus().withConditions(runtimev1alpha1.Unavailable()).build(),
@@ -975,14 +975,14 @@ func Test_managedHandler_getInstance(t *testing.T) {
 
 func Test_managedHandler_createInstance(t *testing.T) {
 	type fields struct {
-		obj      *v1alpha1.CloudsqlInstance
+		obj      *v1alpha2.CloudsqlInstance
 		instance cloudsql.InstanceService
 	}
 	type args struct {
 		ctx context.Context
 	}
 	type want struct {
-		status v1alpha1.CloudsqlInstanceStatus
+		status v1alpha2.CloudsqlInstanceStatus
 		err    error
 	}
 	tests := map[string]struct {
@@ -992,7 +992,7 @@ func Test_managedHandler_createInstance(t *testing.T) {
 	}{
 		"Default": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{
+				obj: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
 				},
 				instance: &fake.MockInstanceClient{
@@ -1010,7 +1010,7 @@ func Test_managedHandler_createInstance(t *testing.T) {
 				},
 			},
 			want: want{
-				status: v1alpha1.CloudsqlInstanceStatus{
+				status: v1alpha2.CloudsqlInstanceStatus{
 					ResourceStatus: *newInstanceStatus().withConditions(runtimev1alpha1.Creating()).build(),
 				},
 			},
@@ -1034,7 +1034,7 @@ func Test_managedHandler_createInstance(t *testing.T) {
 
 func Test_managedHandler_updateInstance(t *testing.T) {
 	type fields struct {
-		obj      *v1alpha1.CloudsqlInstance
+		obj      *v1alpha2.CloudsqlInstance
 		instance cloudsql.InstanceService
 	}
 	type args struct {
@@ -1050,7 +1050,7 @@ func Test_managedHandler_updateInstance(t *testing.T) {
 	}{
 		"Default": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{
+				obj: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
 				},
 				instance: &fake.MockInstanceClient{
@@ -1087,7 +1087,7 @@ func Test_managedHandler_updateInstance(t *testing.T) {
 
 func Test_managedHandler_deleteInstance(t *testing.T) {
 	type fields struct {
-		obj      *v1alpha1.CloudsqlInstance
+		obj      *v1alpha2.CloudsqlInstance
 		instance cloudsql.InstanceService
 	}
 	type args struct {
@@ -1103,7 +1103,7 @@ func Test_managedHandler_deleteInstance(t *testing.T) {
 	}{
 		"Default": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{
+				obj: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
 				},
 				instance: &fake.MockInstanceClient{
@@ -1133,7 +1133,7 @@ func Test_managedHandler_deleteInstance(t *testing.T) {
 
 func Test_managedHandler_getUser(t *testing.T) {
 	type fields struct {
-		obj  *v1alpha1.CloudsqlInstance
+		obj  *v1alpha2.CloudsqlInstance
 		user cloudsql.UserService
 	}
 	type args struct {
@@ -1150,7 +1150,7 @@ func Test_managedHandler_getUser(t *testing.T) {
 	}{
 		"UserFound": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{
+				obj: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
 				},
 				user: &fake.MockUserClient{
@@ -1160,18 +1160,18 @@ func Test_managedHandler_getUser(t *testing.T) {
 							t.Errorf("getUser() list - unexpected instance name %s", s)
 						}
 						return []*sqladmin.User{
-							{Name: "foo"}, {Name: "bar"}, {Name: v1alpha1.MysqlDefaultUser},
+							{Name: "foo"}, {Name: "bar"}, {Name: v1alpha2.MysqlDefaultUser},
 						}, nil
 					},
 				},
 			},
 			want: want{
-				user: &sqladmin.User{Name: v1alpha1.MysqlDefaultUser},
+				user: &sqladmin.User{Name: v1alpha2.MysqlDefaultUser},
 			},
 		},
 		"UserNotFound": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{
+				obj: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
 				},
 				user: &fake.MockUserClient{
@@ -1195,7 +1195,7 @@ func Test_managedHandler_getUser(t *testing.T) {
 		},
 		"ListError": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{
+				obj: &v1alpha2.CloudsqlInstance{
 					ObjectMeta: testMeta,
 				},
 				user: &fake.MockUserClient{
@@ -1228,7 +1228,7 @@ func Test_managedHandler_getUser(t *testing.T) {
 
 func Test_managedHandler_updateUserCreds(t *testing.T) {
 	type fields struct {
-		obj  *v1alpha1.CloudsqlInstance
+		obj  *v1alpha2.CloudsqlInstance
 		ops  localOperations
 		user cloudsql.UserService
 	}
@@ -1242,7 +1242,7 @@ func Test_managedHandler_updateUserCreds(t *testing.T) {
 	}{
 		"FailedToUpdateConnectionSecret": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{},
+				obj: &v1alpha2.CloudsqlInstance{},
 				ops: &mockLocalOperations{
 					mockUpdateConnectionSecret: func(ctx context.Context) (*core.Secret, error) {
 						return nil, errTest
@@ -1253,7 +1253,7 @@ func Test_managedHandler_updateUserCreds(t *testing.T) {
 		},
 		"FailedToGetUser": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{},
+				obj: &v1alpha2.CloudsqlInstance{},
 				ops: &mockLocalOperations{
 					mockUpdateConnectionSecret: func(ctx context.Context) (*core.Secret, error) {
 						return testSecret("foo", "bar"), nil
@@ -1269,7 +1269,7 @@ func Test_managedHandler_updateUserCreds(t *testing.T) {
 		},
 		"SuccessfulUpdate": {
 			fields: fields{
-				obj: &v1alpha1.CloudsqlInstance{},
+				obj: &v1alpha2.CloudsqlInstance{},
 				ops: &mockLocalOperations{
 					mockUpdateConnectionSecret: func(ctx context.Context) (*core.Secret, error) {
 						return testSecret("new-endpoint", "new-password"), nil
@@ -1278,7 +1278,7 @@ func Test_managedHandler_updateUserCreds(t *testing.T) {
 				user: &fake.MockUserClient{
 					MockList: func(ctx context.Context, s string) ([]*sqladmin.User, error) {
 						return []*sqladmin.User{
-							{Name: v1alpha1.MysqlDefaultUser, Password: "old-password"},
+							{Name: v1alpha2.MysqlDefaultUser, Password: "old-password"},
 						}, nil
 					},
 					MockUpdate: func(ctx context.Context, s string, s2 string, user *sqladmin.User) error {
@@ -1308,7 +1308,7 @@ func Test_managedHandler_updateUserCreds(t *testing.T) {
 func Test_newManagedHandler(t *testing.T) {
 	type args struct {
 		ctx      context.Context
-		instance *v1alpha1.CloudsqlInstance
+		instance *v1alpha2.CloudsqlInstance
 		ops      localOperations
 		creds    *google.Credentials
 	}

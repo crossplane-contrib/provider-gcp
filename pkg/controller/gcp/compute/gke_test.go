@@ -39,7 +39,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	. "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
+	. "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/fake"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/gke"
 )

@@ -29,8 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudsql"
 	"github.com/crossplaneio/stack-gcp/pkg/util/googleapi"
 
@@ -78,12 +78,12 @@ type Reconciler struct {
 // Reconcile reads that state of the cloudsql instance object and makes changes based on the state read
 // and what is in the instance Spec
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.V(logging.Debug).Info("reconciling", "kind", v1alpha1.CloudsqlInstanceGroupVersionKind, "request", request)
+	log.V(logging.Debug).Info("reconciling", "kind", v1alpha2.CloudsqlInstanceGroupVersionKind, "request", request)
 
 	ctx, cancel := context.WithTimeout(context.Background(), reconcileTimeout)
 	defer cancel()
 
-	i := &v1alpha1.CloudsqlInstance{}
+	i := &v1alpha2.CloudsqlInstance{}
 	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
 		return requeueNever, handleNotFound(err)
 	}
@@ -108,8 +108,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 type factory interface {
-	makeLocalOperations(*v1alpha1.CloudsqlInstance, client.Client) localOperations
-	makeManagedOperations(context.Context, *v1alpha1.CloudsqlInstance, localOperations) (managedOperations, error)
+	makeLocalOperations(*v1alpha2.CloudsqlInstance, client.Client) localOperations
+	makeManagedOperations(context.Context, *v1alpha2.CloudsqlInstance, localOperations) (managedOperations, error)
 	makeSyncDeleter(managedOperations) syncdeleter
 }
 
@@ -119,12 +119,12 @@ type operationsFactory struct {
 
 var _ factory = &operationsFactory{}
 
-func (f *operationsFactory) makeLocalOperations(inst *v1alpha1.CloudsqlInstance, kube client.Client) localOperations {
+func (f *operationsFactory) makeLocalOperations(inst *v1alpha2.CloudsqlInstance, kube client.Client) localOperations {
 	return newLocalHandler(inst, kube)
 }
 
-func (f *operationsFactory) makeManagedOperations(ctx context.Context, inst *v1alpha1.CloudsqlInstance, ops localOperations) (managedOperations, error) {
-	p := &gcpv1alpha1.Provider{}
+func (f *operationsFactory) makeManagedOperations(ctx context.Context, inst *v1alpha2.CloudsqlInstance, ops localOperations) (managedOperations, error) {
+	p := &gcpv1alpha2.Provider{}
 	n := meta.NamespacedNameOf(inst.GetProviderReference())
 	if err := f.Get(ctx, n, p); err != nil {
 		return nil, err

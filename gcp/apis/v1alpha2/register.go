@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 // +kubebuilder:object:generate=true
-// +groupName=database.gcp.crossplane.io
-// +versionName=v1alpha1
+// +groupName=gcp.crossplane.io
+// +versionName=v1alpha2
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"reflect"
@@ -28,8 +28,8 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "database.gcp.crossplane.io"
-	Version = "v1alpha1"
+	Group   = "gcp.crossplane.io"
+	Version = "v1alpha2"
 )
 
 var (
@@ -40,21 +40,13 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// CloudsqlInstance type metadata.
+// Provider type metadata.
 var (
-	CloudsqlInstanceKind             = reflect.TypeOf(CloudsqlInstance{}).Name()
-	CloudsqlInstanceKindAPIVersion   = CloudsqlInstanceKind + "." + SchemeGroupVersion.String()
-	CloudsqlInstanceGroupVersionKind = SchemeGroupVersion.WithKind(CloudsqlInstanceKind)
-)
-
-// CloudsqlInstanceClass type metadata.
-var (
-	CloudsqlInstanceClassKind             = reflect.TypeOf(CloudsqlInstanceClass{}).Name()
-	CloudsqlInstanceClassKindAPIVersion   = CloudsqlInstanceClassKind + "." + SchemeGroupVersion.String()
-	CloudsqlInstanceClassGroupVersionKind = SchemeGroupVersion.WithKind(CloudsqlInstanceClassKind)
+	ProviderKind             = reflect.TypeOf(Provider{}).Name()
+	ProviderKindAPIVersion   = ProviderKind + "." + SchemeGroupVersion.String()
+	ProviderGroupVersionKind = SchemeGroupVersion.WithKind(ProviderKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&CloudsqlInstance{}, &CloudsqlInstanceList{})
-	SchemeBuilder.Register(&CloudsqlInstanceClass{}, &CloudsqlInstanceClassList{})
+	SchemeBuilder.Register(&Provider{}, &ProviderList{})
 }

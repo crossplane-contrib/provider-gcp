@@ -36,8 +36,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/storage"
 )
 
@@ -76,7 +76,7 @@ func (c *BucketController) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(controllerName).
-		For(&v1alpha1.Bucket{}).
+		For(&v1alpha2.Bucket{}).
 		Owns(&corev1.Secret{}).
 		Complete(r)
 }
@@ -84,12 +84,12 @@ func (c *BucketController) SetupWithManager(mgr ctrl.Manager) error {
 // Reconcile reads that state of the cluster for a Provider bucket and makes changes based on the state read
 // and what is in the Provider.Spec
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.V(logging.Debug).Info("reconciling", "kind", v1alpha1.BucketKindAPIVersion, "request", request)
+	log.V(logging.Debug).Info("reconciling", "kind", v1alpha2.BucketKindAPIVersion, "request", request)
 
 	ctx, cancel := context.WithTimeout(context.Background(), reconcileTimeout)
 	defer cancel()
 
-	b := &v1alpha1.Bucket{}
+	b := &v1alpha2.Bucket{}
 	if err := r.Get(ctx, request.NamespacedName, b); err != nil {
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -112,15 +112,15 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 type factory interface {
-	newSyncDeleter(context.Context, *v1alpha1.Bucket) (syncdeleter, error)
+	newSyncDeleter(context.Context, *v1alpha2.Bucket) (syncdeleter, error)
 }
 
 type bucketFactory struct {
 	client.Client
 }
 
-func (m *bucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha1.Bucket) (syncdeleter, error) {
-	p := &gcpv1alpha1.Provider{}
+func (m *bucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha2.Bucket) (syncdeleter, error) {
+	p := &gcpv1alpha2.Provider{}
 	if err := m.Get(ctx, meta.NamespacedNameOf(b.Spec.ProviderReference), p); err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func (bh *bucketCreateUpdater) create(ctx context.Context) (reconcile.Result, er
 
 // update bucket resource if needed
 func (bh *bucketCreateUpdater) update(ctx context.Context, attrs *storage.BucketAttrs) (reconcile.Result, error) {
-	current := v1alpha1.NewBucketUpdatableAttrs(attrs)
+	current := v1alpha2.NewBucketUpdatableAttrs(attrs)
 	if reflect.DeepEqual(*current, bh.getSpecAttrs()) {
 		return requeueOnSuccess, nil
 	}

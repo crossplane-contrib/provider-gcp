@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	databasev1alpha1 "github.com/crossplaneio/crossplane/apis/database/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
 )
 
 var (
@@ -64,29 +64,29 @@ func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec:       databasev1alpha1.PostgreSQLInstanceSpec{EngineVersion: "9.6"},
 				},
-				cs: &v1alpha1.CloudsqlInstanceClass{
-					SpecTemplate: v1alpha1.CloudsqlInstanceClassSpecTemplate{
+				cs: &v1alpha2.CloudsqlInstanceClass{
+					SpecTemplate: v1alpha2.CloudsqlInstanceClassSpecTemplate{
 						ResourceClassSpecTemplate: runtimev1alpha1.ResourceClassSpecTemplate{
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},
 					},
 				},
-				mg: &v1alpha1.CloudsqlInstance{},
+				mg: &v1alpha2.CloudsqlInstance{},
 			},
 			want: want{
-				mg: &v1alpha1.CloudsqlInstance{
-					Spec: v1alpha1.CloudsqlInstanceSpec{
+				mg: &v1alpha2.CloudsqlInstance{
+					Spec: v1alpha2.CloudsqlInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
 							ProviderReference:                &corev1.ObjectReference{Name: providerName},
 						},
-						CloudsqlInstanceParameters: v1alpha1.CloudsqlInstanceParameters{
+						CloudsqlInstanceParameters: v1alpha2.CloudsqlInstanceParameters{
 							AuthorizedNetworks: []string{},
 							DatabaseVersion:    "POSTGRES_9_6",
 							Labels:             map[string]string{},
-							StorageGB:          v1alpha1.DefaultStorageGB,
+							StorageGB:          v1alpha2.DefaultStorageGB,
 						},
 					},
 				},
@@ -134,29 +134,29 @@ func TestConfigureMyCloudsqlInstance(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec:       databasev1alpha1.MySQLInstanceSpec{EngineVersion: "5.6"},
 				},
-				cs: &v1alpha1.CloudsqlInstanceClass{
-					SpecTemplate: v1alpha1.CloudsqlInstanceClassSpecTemplate{
+				cs: &v1alpha2.CloudsqlInstanceClass{
+					SpecTemplate: v1alpha2.CloudsqlInstanceClassSpecTemplate{
 						ResourceClassSpecTemplate: runtimev1alpha1.ResourceClassSpecTemplate{
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},
 					},
 				},
-				mg: &v1alpha1.CloudsqlInstance{},
+				mg: &v1alpha2.CloudsqlInstance{},
 			},
 			want: want{
-				mg: &v1alpha1.CloudsqlInstance{
-					Spec: v1alpha1.CloudsqlInstanceSpec{
+				mg: &v1alpha2.CloudsqlInstance{
+					Spec: v1alpha2.CloudsqlInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
 							ProviderReference:                &corev1.ObjectReference{Name: providerName},
 						},
-						CloudsqlInstanceParameters: v1alpha1.CloudsqlInstanceParameters{
+						CloudsqlInstanceParameters: v1alpha2.CloudsqlInstanceParameters{
 							AuthorizedNetworks: []string{},
 							DatabaseVersion:    "MYSQL_5_6",
 							Labels:             map[string]string{},
-							StorageGB:          v1alpha1.DefaultStorageGB,
+							StorageGB:          v1alpha2.DefaultStorageGB,
 						},
 					},
 				},

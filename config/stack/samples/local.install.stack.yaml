@@ -2,7 +2,8 @@
 apiVersion: stacks.crossplane.io/v1alpha1
 kind: StackRequest
 metadata:
-  name: "crossplane/stack-gcp"
+  name: stack-gcp
+  namespace: gcp
 spec:
   source: localhost:5000
   package: "crossplane/stack-gcp"

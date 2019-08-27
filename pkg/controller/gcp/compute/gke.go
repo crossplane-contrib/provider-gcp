@@ -39,8 +39,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
-	gcpcomputev1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	gcpcomputev1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/gke"
 )
@@ -70,10 +70,10 @@ type Reconciler struct {
 	kubeclient kubernetes.Interface
 	recorder   record.EventRecorder
 
-	connect func(*gcpcomputev1alpha1.GKECluster) (gke.Client, error)
-	create  func(*gcpcomputev1alpha1.GKECluster, gke.Client) (reconcile.Result, error)
-	sync    func(*gcpcomputev1alpha1.GKECluster, gke.Client) (reconcile.Result, error)
-	delete  func(*gcpcomputev1alpha1.GKECluster, gke.Client) (reconcile.Result, error)
+	connect func(*gcpcomputev1alpha2.GKECluster) (gke.Client, error)
+	create  func(*gcpcomputev1alpha2.GKECluster, gke.Client) (reconcile.Result, error)
+	sync    func(*gcpcomputev1alpha2.GKECluster, gke.Client) (reconcile.Result, error)
+	delete  func(*gcpcomputev1alpha2.GKECluster, gke.Client) (reconcile.Result, error)
 }
 
 // GKEClusterController is responsible for adding the GKECluster
@@ -96,19 +96,19 @@ func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(controllerName).
-		For(&gcpcomputev1alpha1.GKECluster{}).
+		For(&gcpcomputev1alpha2.GKECluster{}).
 		Complete(r)
 }
 
 // fail - helper function to set fail condition with reason and message
-func (r *Reconciler) fail(instance *gcpcomputev1alpha1.GKECluster, err error) (reconcile.Result, error) {
+func (r *Reconciler) fail(instance *gcpcomputev1alpha2.GKECluster, err error) (reconcile.Result, error) {
 	instance.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
 	return resultRequeue, r.Update(context.TODO(), instance)
 }
 
 // connectionSecret return secret object for cluster instance
-func (r *Reconciler) connectionSecret(instance *gcpcomputev1alpha1.GKECluster, cluster *container.Cluster) (*corev1.Secret, error) {
-	secret := resource.ConnectionSecretFor(instance, gcpcomputev1alpha1.GKEClusterGroupVersionKind)
+func (r *Reconciler) connectionSecret(instance *gcpcomputev1alpha2.GKECluster, cluster *container.Cluster) (*corev1.Secret, error) {
+	secret := resource.ConnectionSecretFor(instance, gcpcomputev1alpha2.GKEClusterGroupVersionKind)
 
 	secret.Data = map[string][]byte{
 		runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(cluster.Endpoint),
@@ -137,9 +137,9 @@ func (r *Reconciler) connectionSecret(instance *gcpcomputev1alpha1.GKECluster, c
 	return secret, nil
 }
 
-func (r *Reconciler) _connect(instance *gcpcomputev1alpha1.GKECluster) (gke.Client, error) {
+func (r *Reconciler) _connect(instance *gcpcomputev1alpha2.GKECluster) (gke.Client, error) {
 	// Fetch Provider
-	p := &gcpv1alpha1.Provider{}
+	p := &gcpv1alpha2.Provider{}
 	err := r.Get(ctx, meta.NamespacedNameOf(instance.Spec.ProviderReference), p)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (r *Reconciler) _connect(instance *gcpcomputev1alpha1.GKECluster) (gke.Clie
 	return gke.NewClusterClient(ctx, creds)
 }
 
-func (r *Reconciler) _create(instance *gcpcomputev1alpha1.GKECluster, client gke.Client) (reconcile.Result, error) {
+func (r *Reconciler) _create(instance *gcpcomputev1alpha2.GKECluster, client gke.Client) (reconcile.Result, error) {
 	instance.Status.SetConditions(runtimev1alpha1.Creating())
 	clusterName := fmt.Sprintf("%s%s", clusterNamePrefix, instance.UID)
 
@@ -169,20 +169,20 @@ func (r *Reconciler) _create(instance *gcpcomputev1alpha1.GKECluster, client gke
 		return r.fail(instance, err)
 	}
 
-	instance.Status.State = gcpcomputev1alpha1.ClusterStateProvisioning
+	instance.Status.State = gcpcomputev1alpha2.ClusterStateProvisioning
 	instance.Status.ClusterName = clusterName
 	instance.Status.SetConditions(runtimev1alpha1.ReconcileSuccess())
 
 	return reconcile.Result{}, errors.Wrapf(r.Update(ctx, instance), updateErrorMessageFormat, instance.GetName())
 }
 
-func (r *Reconciler) _sync(instance *gcpcomputev1alpha1.GKECluster, client gke.Client) (reconcile.Result, error) {
+func (r *Reconciler) _sync(instance *gcpcomputev1alpha2.GKECluster, client gke.Client) (reconcile.Result, error) {
 	cluster, err := client.GetCluster(instance.Spec.Zone, instance.Status.ClusterName)
 	if err != nil {
 		return r.fail(instance, err)
 	}
 
-	if cluster.Status != gcpcomputev1alpha1.ClusterStateRunning {
+	if cluster.Status != gcpcomputev1alpha2.ClusterStateRunning {
 		return reconcile.Result{RequeueAfter: requeueOnWait}, nil
 	}
 
@@ -199,7 +199,7 @@ func (r *Reconciler) _sync(instance *gcpcomputev1alpha1.GKECluster, client gke.C
 
 	// update resource status
 	instance.Status.Endpoint = cluster.Endpoint
-	instance.Status.State = gcpcomputev1alpha1.ClusterStateRunning
+	instance.Status.State = gcpcomputev1alpha2.ClusterStateRunning
 	instance.Status.SetConditions(runtimev1alpha1.Available(), runtimev1alpha1.ReconcileSuccess())
 	resource.SetBindable(instance)
 
@@ -208,7 +208,7 @@ func (r *Reconciler) _sync(instance *gcpcomputev1alpha1.GKECluster, client gke.C
 }
 
 // _delete check reclaim policy and if needed delete the gke cluster resource
-func (r *Reconciler) _delete(instance *gcpcomputev1alpha1.GKECluster, client gke.Client) (reconcile.Result, error) {
+func (r *Reconciler) _delete(instance *gcpcomputev1alpha2.GKECluster, client gke.Client) (reconcile.Result, error) {
 	instance.Status.SetConditions(runtimev1alpha1.Deleting())
 	if instance.Spec.ReclaimPolicy == runtimev1alpha1.ReclaimDelete {
 		if err := client.DeleteCluster(instance.Spec.Zone, instance.Status.ClusterName); err != nil {
@@ -223,9 +223,9 @@ func (r *Reconciler) _delete(instance *gcpcomputev1alpha1.GKECluster, client gke
 // Reconcile reads that state of the cluster for a Provider object and makes changes based on the state read
 // and what is in the Provider.Spec
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.V(logging.Debug).Info("reconciling", "kind", gcpcomputev1alpha1.GKEClusterKindAPIVersion, "request", request)
+	log.V(logging.Debug).Info("reconciling", "kind", gcpcomputev1alpha2.GKEClusterKindAPIVersion, "request", request)
 	// Fetch the Provider instance
-	instance := &gcpcomputev1alpha1.GKECluster{}
+	instance := &gcpcomputev1alpha2.GKECluster{}
 	err := r.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if kerrors.IsNotFound(err) {

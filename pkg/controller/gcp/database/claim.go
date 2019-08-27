@@ -28,7 +28,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	databasev1alpha1 "github.com/crossplaneio/crossplane/apis/database/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
 )
 
 // ConfigurePostgreSQLCloudsqlInstance configures the supplied instance (presumed
@@ -40,23 +40,23 @@ func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, c
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), databasev1alpha1.PostgreSQLInstanceGroupVersionKind)
 	}
 
-	rs, csok := cs.(*v1alpha1.CloudsqlInstanceClass)
+	rs, csok := cs.(*v1alpha2.CloudsqlInstanceClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha1.CloudsqlInstanceClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha2.CloudsqlInstanceClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1alpha1.CloudsqlInstance)
+	i, mgok := mg.(*v1alpha2.CloudsqlInstance)
 	if !mgok {
-		return errors.Errorf("expected managed instance %s to be %s", mg.GetName(), v1alpha1.CloudsqlInstanceGroupVersionKind)
+		return errors.Errorf("expected managed instance %s to be %s", mg.GetName(), v1alpha2.CloudsqlInstanceGroupVersionKind)
 	}
 
-	spec := &v1alpha1.CloudsqlInstanceSpec{
+	spec := &v1alpha2.CloudsqlInstanceSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
 		CloudsqlInstanceParameters: rs.SpecTemplate.CloudsqlInstanceParameters,
 	}
-	translated := translateVersion(pg.Spec.EngineVersion, v1alpha1.PostgresqlDBVersionPrefix)
+	translated := translateVersion(pg.Spec.EngineVersion, v1alpha2.PostgresqlDBVersionPrefix)
 	v, err := resource.ResolveClassClaimValues(spec.DatabaseVersion, translated)
 	if err != nil {
 		return err
@@ -84,24 +84,24 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 		return errors.Errorf("expected instance claim %s to be %s", cm.GetName(), databasev1alpha1.MySQLInstanceGroupVersionKind)
 	}
 
-	rs, csok := cs.(*v1alpha1.CloudsqlInstanceClass)
+	rs, csok := cs.(*v1alpha2.CloudsqlInstanceClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha1.CloudsqlInstanceClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha2.CloudsqlInstanceClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1alpha1.CloudsqlInstance)
+	i, mgok := mg.(*v1alpha2.CloudsqlInstance)
 	if !mgok {
-		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha1.CloudsqlInstanceGroupVersionKind)
+		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha2.CloudsqlInstanceGroupVersionKind)
 	}
 
-	spec := &v1alpha1.CloudsqlInstanceSpec{
+	spec := &v1alpha2.CloudsqlInstanceSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
 		CloudsqlInstanceParameters: rs.SpecTemplate.CloudsqlInstanceParameters,
 	}
 
-	translated := translateVersion(my.Spec.EngineVersion, v1alpha1.MysqlDBVersionPrefix)
+	translated := translateVersion(my.Spec.EngineVersion, v1alpha2.MysqlDBVersionPrefix)
 	v, err := resource.ResolveClassClaimValues(spec.DatabaseVersion, translated)
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func translateVersion(version, versionPrefix string) string {
 	return fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
 }
 
-func checkEmptySpec(spec *v1alpha1.CloudsqlInstanceSpec) {
+func checkEmptySpec(spec *v1alpha2.CloudsqlInstanceSpec) {
 	if spec.Labels == nil {
 		spec.Labels = map[string]string{}
 	}
@@ -135,6 +135,6 @@ func checkEmptySpec(spec *v1alpha1.CloudsqlInstanceSpec) {
 		spec.AuthorizedNetworks = []string{}
 	}
 	if spec.StorageGB == 0 {
-		spec.StorageGB = v1alpha1.DefaultStorageGB
+		spec.StorageGB = v1alpha2.DefaultStorageGB
 	}
 }

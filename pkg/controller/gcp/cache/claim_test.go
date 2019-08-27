@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	cachev1alpha1 "github.com/crossplaneio/crossplane/apis/cache/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha2"
 )
 
 var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance)
@@ -63,29 +63,29 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec:       cachev1alpha1.RedisClusterSpec{EngineVersion: "3.2"},
 				},
-				cs: &v1alpha1.CloudMemorystoreInstanceClass{
-					SpecTemplate: v1alpha1.CloudMemorystoreInstanceClassSpecTemplate{
+				cs: &v1alpha2.CloudMemorystoreInstanceClass{
+					SpecTemplate: v1alpha2.CloudMemorystoreInstanceClassSpecTemplate{
 						ResourceClassSpecTemplate: runtimev1alpha1.ResourceClassSpecTemplate{
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},
-						CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+						CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 							Region: region,
 							Tier:   tier,
 						},
 					},
 				},
-				mg: &v1alpha1.CloudMemorystoreInstance{},
+				mg: &v1alpha2.CloudMemorystoreInstance{},
 			},
 			want: want{
-				mg: &v1alpha1.CloudMemorystoreInstance{
-					Spec: v1alpha1.CloudMemorystoreInstanceSpec{
+				mg: &v1alpha2.CloudMemorystoreInstance{
+					Spec: v1alpha2.CloudMemorystoreInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
 							ProviderReference:                &corev1.ObjectReference{Name: providerName},
 						},
-						CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+						CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 							RedisVersion: "REDIS_3_2",
 							Region:       region,
 							Tier:         tier,

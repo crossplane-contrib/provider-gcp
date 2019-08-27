@@ -14,27 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"context"
 	"testing"
 
-	"github.com/onsi/gomega"
-	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	localtest "github.com/crossplaneio/crossplane/pkg/test"
 )
 
 const (
-	namespace = "default"
-	name      = "test-instance"
+	namespace     = "default"
+	name          = "test-provider"
+	secretDataKey = "credentials.json"
 )
 
 var (
@@ -42,25 +42,26 @@ var (
 	ctx = context.TODO()
 )
 
-var _ resource.Managed = &CloudMemorystoreInstance{}
-
 func TestMain(m *testing.M) {
 	t := test.NewEnv(namespace, SchemeBuilder.SchemeBuilder, localtest.CRDs())
 	c = t.StartClient()
 	t.StopAndExit(m.Run())
 }
 
-func TestStorageCloudMemorystoreInstance(t *testing.T) {
+func TestProvider(t *testing.T) {
 	key := types.NamespacedName{Name: name, Namespace: namespace}
-	created := &CloudMemorystoreInstance{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
-		Spec: CloudMemorystoreInstanceSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &core.ObjectReference{},
+	created := &Provider{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: ProviderSpec{
+			Secret: v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: "u-235"},
+				Key:                  secretDataKey,
 			},
-			CloudMemorystoreInstanceParameters: CloudMemorystoreInstanceParameters{
-				Tier: TierBasic,
-			},
+			ProjectID:           "manhattan",
+			RequiredPermissions: []string{"crate", "update", "delete"},
 		},
 	}
 	g := gomega.NewGomegaWithT(t)
@@ -68,7 +69,7 @@ func TestStorageCloudMemorystoreInstance(t *testing.T) {
 	// Test Create
 	g.Expect(c.Create(ctx, created)).NotTo(gomega.HaveOccurred())
 
-	fetched := &CloudMemorystoreInstance{}
+	fetched := &Provider{}
 	g.Expect(c.Get(ctx, key, fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(fetched).To(gomega.Equal(created))
 

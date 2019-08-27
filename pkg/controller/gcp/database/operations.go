@@ -33,7 +33,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudsql"
 )
 
@@ -53,13 +53,13 @@ type localOperations interface {
 }
 
 type localHandler struct {
-	*v1alpha1.CloudsqlInstance
+	*v1alpha2.CloudsqlInstance
 	client client.Client
 }
 
 var _ localOperations = &localHandler{}
 
-func newLocalHandler(instance *v1alpha1.CloudsqlInstance, kube client.Client) *localHandler {
+func newLocalHandler(instance *v1alpha2.CloudsqlInstance, kube client.Client) *localHandler {
 	return &localHandler{
 		CloudsqlInstance: instance,
 		client:           kube,
@@ -126,7 +126,7 @@ func (h *localHandler) getConnectionSecret(ctx context.Context) (*corev1.Secret,
 func (h *localHandler) updateConnectionSecret(ctx context.Context) (*corev1.Secret, error) {
 	secret := h.ConnectionSecret()
 
-	password, err := util.GeneratePassword(v1alpha1.PasswordLength)
+	password, err := util.GeneratePassword(v1alpha2.PasswordLength)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate password")
 	}
@@ -163,7 +163,7 @@ type managedOperations interface {
 }
 
 type managedHandler struct {
-	*v1alpha1.CloudsqlInstance
+	*v1alpha2.CloudsqlInstance
 	localOperations
 	instance cloudsql.InstanceService
 	user     cloudsql.UserService
@@ -171,7 +171,7 @@ type managedHandler struct {
 
 var _ managedOperations = &managedHandler{}
 
-func newManagedHandler(ctx context.Context, inst *v1alpha1.CloudsqlInstance, tops localOperations, creds *google.Credentials) (*managedHandler, error) {
+func newManagedHandler(ctx context.Context, inst *v1alpha2.CloudsqlInstance, tops localOperations, creds *google.Credentials) (*managedHandler, error) {
 	instClient, err := cloudsql.NewInstanceClient(ctx, creds)
 	if err != nil {
 		return nil, err
