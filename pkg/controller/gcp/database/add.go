@@ -27,7 +27,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	databasev1alpha1 "github.com/crossplaneio/crossplane/apis/database/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
 )
 
 // CloudsqlController is responsible for adding the Cloudsql
@@ -43,7 +43,7 @@ func (c *CloudsqlController) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(controllerName).
-		For(&v1alpha1.CloudsqlInstance{}).
+		For(&v1alpha2.CloudsqlInstance{}).
 		Owns(&core.Secret{}).
 		Complete(r)
 }
@@ -56,8 +56,8 @@ type PostgreSQLInstanceClaimController struct{}
 func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
-		resource.ClassKind(v1alpha1.CloudsqlInstanceClassGroupVersionKind),
-		resource.ManagedKind(v1alpha1.CloudsqlInstanceGroupVersionKind),
+		resource.ClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind),
+		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
@@ -69,9 +69,9 @@ func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) e
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1alpha1.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.PostgreSQLInstance{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha1.CloudsqlInstanceClassGroupVersionKind)))).
+		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind)))).
 		Complete(r)
 }
 
@@ -83,8 +83,8 @@ type MySQLInstanceClaimController struct{}
 func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
-		resource.ClassKind(v1alpha1.CloudsqlInstanceClassGroupVersionKind),
-		resource.ManagedKind(v1alpha1.CloudsqlInstanceGroupVersionKind),
+		resource.ClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind),
+		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
@@ -96,8 +96,8 @@ func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error 
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1alpha1.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.MySQLInstance{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha1.CloudsqlInstanceClassGroupVersionKind)))).
+		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind)))).
 		Complete(r)
 }

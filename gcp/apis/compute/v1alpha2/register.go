@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 // +kubebuilder:object:generate=true
-// +groupName=gcp.crossplane.io
-// +versionName=v1alpha1
+// +groupName=compute.gcp.crossplane.io
+// +versionName=v1alpha2
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"reflect"
@@ -26,10 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
 )
 
-// Package type metadata.
+// Packaage type metadata.
 const (
-	Group   = "gcp.crossplane.io"
-	Version = "v1alpha1"
+	Group   = "compute.gcp.crossplane.io"
+	Version = "v1alpha2"
 )
 
 var (
@@ -40,13 +40,21 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// Provider type metadata.
+// GKECluster type metadata.
 var (
-	ProviderKind             = reflect.TypeOf(Provider{}).Name()
-	ProviderKindAPIVersion   = ProviderKind + "." + SchemeGroupVersion.String()
-	ProviderGroupVersionKind = SchemeGroupVersion.WithKind(ProviderKind)
+	GKEClusterKind             = reflect.TypeOf(GKECluster{}).Name()
+	GKEClusterKindAPIVersion   = GKEClusterKind + "." + SchemeGroupVersion.String()
+	GKEClusterGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterKind)
+)
+
+// GKEClusterClass type metadata.
+var (
+	GKEClusterClassKind             = reflect.TypeOf(GKEClusterClass{}).Name()
+	GKEClusterClassKindAPIVersion   = GKEClusterClassKind + "." + SchemeGroupVersion.String()
+	GKEClusterClassGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterClassKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&Provider{}, &ProviderList{})
+	SchemeBuilder.Register(&GKECluster{}, &GKEClusterList{})
+	SchemeBuilder.Register(&GKEClusterClass{}, &GKEClusterClassList{})
 }

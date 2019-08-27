@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "crossplane/stack-gcp"
+  name: stack-gcp
   labels:
-    core.crossplane.io/name: "crossplane/stack-gcp"
+    core.crossplane.io/name: "stack-gcp"
 spec:
   selector:
     matchLabels:
-      core.crossplane.io/name: "crossplane/stack-gcp"
+      core.crossplane.io/name: "stack-gcp"
   replicas: 1
   template:
     metadata:
-      name: "crossplane/stack-gcp-controller"
+      name: "stack-gcp-controller"
       labels:
-        core.crossplane.io/name: "crossplane/stack-gcp"
+        core.crossplane.io/name: "stack-gcp"
     spec:
       containers:
-      - name: "crossplane/stack-gcp-controller"
-        image: "crossplane/stack-gcp"
+      - name: "stack-gcp-controller"
+        image: "crossplane/stack-gcp:master"
         env:
         - name: POD_NAME
           valueFrom:

@@ -33,7 +33,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
-	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 )
 
 var log = logging.Logger.WithName("clients.gcp")
@@ -103,7 +103,7 @@ func IsErrorBadRequest(err error) bool {
 }
 
 // ProviderCredentials return google credentials based on the provider's credentials secret data
-func ProviderCredentials(client kubernetes.Interface, p *gcpv1alpha1.Provider, scopes ...string) (*google.Credentials, error) {
+func ProviderCredentials(client kubernetes.Interface, p *gcpv1alpha2.Provider, scopes ...string) (*google.Credentials, error) {
 	// retrieve provider secret data
 	data, err := util.SecretData(client, p.Namespace, p.Spec.Secret)
 	if err != nil {

@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 // +kubebuilder:object:generate=true
-// +groupName=compute.gcp.crossplane.io
-// +versionName=v1alpha1
+// +groupName=database.gcp.crossplane.io
+// +versionName=v1alpha2
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"reflect"
@@ -26,10 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
 )
 
-// Packaage type metadata.
+// Package type metadata.
 const (
-	Group   = "compute.gcp.crossplane.io"
-	Version = "v1alpha1"
+	Group   = "database.gcp.crossplane.io"
+	Version = "v1alpha2"
 )
 
 var (
@@ -40,21 +40,21 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// GKECluster type metadata.
+// CloudsqlInstance type metadata.
 var (
-	GKEClusterKind             = reflect.TypeOf(GKECluster{}).Name()
-	GKEClusterKindAPIVersion   = GKEClusterKind + "." + SchemeGroupVersion.String()
-	GKEClusterGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterKind)
+	CloudsqlInstanceKind             = reflect.TypeOf(CloudsqlInstance{}).Name()
+	CloudsqlInstanceKindAPIVersion   = CloudsqlInstanceKind + "." + SchemeGroupVersion.String()
+	CloudsqlInstanceGroupVersionKind = SchemeGroupVersion.WithKind(CloudsqlInstanceKind)
 )
 
-// GKEClusterClass type metadata.
+// CloudsqlInstanceClass type metadata.
 var (
-	GKEClusterClassKind             = reflect.TypeOf(GKEClusterClass{}).Name()
-	GKEClusterClassKindAPIVersion   = GKEClusterClassKind + "." + SchemeGroupVersion.String()
-	GKEClusterClassGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterClassKind)
+	CloudsqlInstanceClassKind             = reflect.TypeOf(CloudsqlInstanceClass{}).Name()
+	CloudsqlInstanceClassKindAPIVersion   = CloudsqlInstanceClassKind + "." + SchemeGroupVersion.String()
+	CloudsqlInstanceClassGroupVersionKind = SchemeGroupVersion.WithKind(CloudsqlInstanceClassKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&GKECluster{}, &GKEClusterList{})
-	SchemeBuilder.Register(&GKEClusterClass{}, &GKEClusterClassList{})
+	SchemeBuilder.Register(&CloudsqlInstance{}, &CloudsqlInstanceList{})
+	SchemeBuilder.Register(&CloudsqlInstanceClass{}, &CloudsqlInstanceClassList{})
 }

@@ -41,8 +41,8 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 )
 
 func init() {
@@ -91,27 +91,27 @@ func (m *MockBucketSyncDeleter) sync(ctx context.Context) (reconcile.Result, err
 var _ syncdeleter = &MockBucketSyncDeleter{}
 
 type MockBucketFactory struct {
-	MockNew func(context.Context, *v1alpha1.Bucket) (syncdeleter, error)
+	MockNew func(context.Context, *v1alpha2.Bucket) (syncdeleter, error)
 }
 
 func newMockBucketFactory(rh syncdeleter, err error) *MockBucketFactory {
 	return &MockBucketFactory{
-		MockNew: func(i context.Context, bucket *v1alpha1.Bucket) (handler syncdeleter, e error) {
+		MockNew: func(i context.Context, bucket *v1alpha2.Bucket) (handler syncdeleter, e error) {
 			return rh, err
 		},
 	}
 }
 
-func (m *MockBucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha1.Bucket) (syncdeleter, error) {
+func (m *MockBucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha2.Bucket) (syncdeleter, error) {
 	return m.MockNew(ctx, b)
 }
 
 type bucket struct {
-	*v1alpha1.Bucket
+	*v1alpha2.Bucket
 }
 
 func newBucket(ns, name string) *bucket {
-	return &bucket{Bucket: &v1alpha1.Bucket{
+	return &bucket{Bucket: &v1alpha2.Bucket{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  ns,
 			Name:       name,
@@ -156,11 +156,11 @@ func (b *bucket) withConditions(c ...runtimev1alpha1.Condition) *bucket {
 }
 
 type provider struct {
-	*gcpv1alpha1.Provider
+	*gcpv1alpha2.Provider
 }
 
 func newProvider(ns, name string) *provider {
-	return &provider{Provider: &gcpv1alpha1.Provider{
+	return &provider{Provider: &gcpv1alpha2.Provider{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -223,7 +223,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		fields  fields
 		wantRs  reconcile.Result
 		wantErr error
-		wantObj *v1alpha1.Bucket
+		wantObj *v1alpha2.Bucket
 	}{
 		{
 			name:    "GetErrNotFound",
@@ -290,7 +290,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				t.Errorf("Reconciler.Reconcile() -want result, +got result:\n%s", diff)
 			}
 			if tt.wantObj != nil {
-				b := &v1alpha1.Bucket{}
+				b := &v1alpha2.Bucket{}
 				if err := r.Get(ctx, key, b); err != nil {
 					t.Errorf("Reconciler.Reconcile() bucket error: %s", err)
 				}
@@ -327,7 +327,7 @@ func Test_bucketFactory_newHandler(t *testing.T) {
 	tests := []struct {
 		name   string
 		Client client.Client
-		bucket *v1alpha1.Bucket
+		bucket *v1alpha2.Bucket
 		want   want
 	}{
 		{
@@ -336,7 +336,7 @@ func Test_bucketFactory_newHandler(t *testing.T) {
 			bucket: newBucket(ns, bucketName).withProvider(ns, providerName).Bucket,
 			want: want{
 				err: kerrors.NewNotFound(schema.GroupResource{
-					Group:    gcpv1alpha1.Group,
+					Group:    gcpv1alpha2.Group,
 					Resource: "providers"}, "test-provider"),
 			},
 		},
@@ -706,8 +706,8 @@ func Test_bucketCreateUpdater_update(t *testing.T) {
 			name: "NoChanges",
 			fields: fields{
 				ops: &mockOperations{
-					mockGetSpecAttrs: func() v1alpha1.BucketUpdatableAttrs {
-						return v1alpha1.BucketUpdatableAttrs{}
+					mockGetSpecAttrs: func() v1alpha2.BucketUpdatableAttrs {
+						return v1alpha2.BucketUpdatableAttrs{}
 					},
 				},
 				projectID: "",
@@ -719,8 +719,8 @@ func Test_bucketCreateUpdater_update(t *testing.T) {
 			name: "FailureToUpdateBucket",
 			fields: fields{
 				ops: &mockOperations{
-					mockGetSpecAttrs: func() v1alpha1.BucketUpdatableAttrs {
-						return v1alpha1.BucketUpdatableAttrs{RequesterPays: true}
+					mockGetSpecAttrs: func() v1alpha2.BucketUpdatableAttrs {
+						return v1alpha2.BucketUpdatableAttrs{RequesterPays: true}
 					},
 					mockUpdateBucket: func(ctx context.Context, labels map[string]string) (*storage.BucketAttrs, error) {
 						return nil, testError
@@ -737,8 +737,8 @@ func Test_bucketCreateUpdater_update(t *testing.T) {
 			name: "FailureToUpdateObject",
 			fields: fields{
 				ops: &mockOperations{
-					mockGetSpecAttrs: func() v1alpha1.BucketUpdatableAttrs {
-						return v1alpha1.BucketUpdatableAttrs{RequesterPays: true}
+					mockGetSpecAttrs: func() v1alpha2.BucketUpdatableAttrs {
+						return v1alpha2.BucketUpdatableAttrs{RequesterPays: true}
 					},
 					mockUpdateBucket: func(ctx context.Context, labels map[string]string) (*storage.BucketAttrs, error) {
 						return nil, nil
@@ -760,8 +760,8 @@ func Test_bucketCreateUpdater_update(t *testing.T) {
 			name: "Successful",
 			fields: fields{
 				ops: &mockOperations{
-					mockGetSpecAttrs: func() v1alpha1.BucketUpdatableAttrs {
-						return v1alpha1.BucketUpdatableAttrs{RequesterPays: true}
+					mockGetSpecAttrs: func() v1alpha2.BucketUpdatableAttrs {
+						return v1alpha2.BucketUpdatableAttrs{RequesterPays: true}
 					},
 					mockUpdateBucket: func(ctx context.Context, labels map[string]string) (*storage.BucketAttrs, error) {
 						return nil, nil

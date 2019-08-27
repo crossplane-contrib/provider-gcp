@@ -20,8 +20,8 @@ import (
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 )
 
 type mockCreateUpdater struct {
@@ -454,25 +454,25 @@ func Test_operationsFactory_makeSyncDeleter(t *testing.T) {
 func Test_operationsFactory_makeManagedOperations(t *testing.T) {
 	type args struct {
 		ctx  context.Context
-		inst *v1alpha1.CloudsqlInstance
+		inst *v1alpha2.CloudsqlInstance
 		ops  localOperations
 	}
 	type want struct {
 		err error
 		ops managedOperations
 	}
-	mockInstance := &v1alpha1.CloudsqlInstance{
-		Spec: v1alpha1.CloudsqlInstanceSpec{
+	mockInstance := &v1alpha2.CloudsqlInstance{
+		Spec: v1alpha2.CloudsqlInstanceSpec{
 			ResourceSpec: *newInstanceSpec().
 				withProviderRef(&core.ObjectReference{}).build(),
 		},
 	}
-	mockProvider := func(p *gcpv1alpha1.Provider) {
-		pp := &gcpv1alpha1.Provider{
+	mockProvider := func(p *gcpv1alpha2.Provider) {
+		pp := &gcpv1alpha2.Provider{
 			ObjectMeta: meta.ObjectMeta{
 				Namespace: "default",
 			},
-			Spec: gcpv1alpha1.ProviderSpec{
+			Spec: gcpv1alpha2.ProviderSpec{
 				Secret: core.SecretKeySelector{
 					LocalObjectReference: core.LocalObjectReference{
 						Name: "test-provider-secret",
@@ -503,7 +503,7 @@ func Test_operationsFactory_makeManagedOperations(t *testing.T) {
 		"FailedToGetProvider": {
 			kube: &test.MockClient{
 				MockGet: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
-					if _, ok := obj.(*gcpv1alpha1.Provider); ok {
+					if _, ok := obj.(*gcpv1alpha2.Provider); ok {
 						return errTest
 					}
 					t.Errorf("makeManagedOperations() unexpected type %T", obj)
@@ -521,7 +521,7 @@ func Test_operationsFactory_makeManagedOperations(t *testing.T) {
 		"FailedToGetProviderSecret": {
 			kube: &test.MockClient{
 				MockGet: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
-					if p, ok := obj.(*gcpv1alpha1.Provider); ok {
+					if p, ok := obj.(*gcpv1alpha2.Provider); ok {
 						mockProvider(p)
 						return nil
 					}
@@ -548,7 +548,7 @@ func Test_operationsFactory_makeManagedOperations(t *testing.T) {
 		"FailedToGetCredentials": {
 			kube: &test.MockClient{
 				MockGet: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
-					if p, ok := obj.(*gcpv1alpha1.Provider); ok {
+					if p, ok := obj.(*gcpv1alpha2.Provider); ok {
 						mockProvider(p)
 						return nil
 					}
@@ -586,7 +586,7 @@ func Test_operationsFactory_makeManagedOperations(t *testing.T) {
 }
 
 func TestReconciler_Reconcile(t *testing.T) {
-	assert := func(t *testing.T, obj runtime.Object) *v1alpha1.CloudsqlInstance {
+	assert := func(t *testing.T, obj runtime.Object) *v1alpha2.CloudsqlInstance {
 		c, err := assertObjectInstance(obj)
 		if err != nil {
 			t.Errorf("Reconcile() %s", err.Error())
@@ -636,7 +636,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					},
 				},
 				factory: &mockFactory{
-					mockMakeLocalOperations: func(instance *v1alpha1.CloudsqlInstance, i client.Client) localOperations {
+					mockMakeLocalOperations: func(instance *v1alpha2.CloudsqlInstance, i client.Client) localOperations {
 						return &mockLocalOperations{
 							mockUpdateReconcileStatus: func(ctx context.Context, e error) error {
 								if diff := cmp.Diff(errTest, e, test.EquateErrors()); diff != "" {
@@ -646,7 +646,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 							},
 						}
 					},
-					mockMakeManagedOperations: func(ctx context.Context, instance *v1alpha1.CloudsqlInstance, ops localOperations) (managedOperations, error) {
+					mockMakeManagedOperations: func(ctx context.Context, instance *v1alpha2.CloudsqlInstance, ops localOperations) (managedOperations, error) {
 						return nil, errTest
 					},
 				},
@@ -668,10 +668,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 					},
 				},
 				factory: &mockFactory{
-					mockMakeLocalOperations: func(instance *v1alpha1.CloudsqlInstance, i client.Client) localOperations {
+					mockMakeLocalOperations: func(instance *v1alpha2.CloudsqlInstance, i client.Client) localOperations {
 						return nil
 					},
-					mockMakeManagedOperations: func(ctx context.Context, instance *v1alpha1.CloudsqlInstance, ops localOperations) (managedOperations, error) {
+					mockMakeManagedOperations: func(ctx context.Context, instance *v1alpha2.CloudsqlInstance, ops localOperations) (managedOperations, error) {
 						return nil, nil
 					},
 					mockMakeSyncDeleter: func(ops managedOperations) syncdeleter {
@@ -699,10 +699,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 					},
 				},
 				factory: &mockFactory{
-					mockMakeLocalOperations: func(instance *v1alpha1.CloudsqlInstance, i client.Client) localOperations {
+					mockMakeLocalOperations: func(instance *v1alpha2.CloudsqlInstance, i client.Client) localOperations {
 						return nil
 					},
-					mockMakeManagedOperations: func(ctx context.Context, instance *v1alpha1.CloudsqlInstance, ops localOperations) (managedOperations, error) {
+					mockMakeManagedOperations: func(ctx context.Context, instance *v1alpha2.CloudsqlInstance, ops localOperations) (managedOperations, error) {
 						return nil, nil
 					},
 					mockMakeSyncDeleter: func(ops managedOperations) syncdeleter {

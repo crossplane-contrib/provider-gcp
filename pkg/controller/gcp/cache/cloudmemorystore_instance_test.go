@@ -40,8 +40,8 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore"
 	fakecloudmemorystore "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore/fake"
 )
@@ -71,9 +71,9 @@ var (
 	errorBoom    = errors.New("boom")
 	redisConfigs = map[string]string{"cool": "socool"}
 
-	provider = gcpv1alpha1.Provider{
+	provider = gcpv1alpha2.Provider{
 		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerName},
-		Spec: gcpv1alpha1.ProviderSpec{
+		Spec: gcpv1alpha2.ProviderSpec{
 			ProjectID: project,
 			Secret: corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: providerSecretName},
@@ -88,68 +88,68 @@ var (
 	}
 )
 
-type instanceModifier func(*v1alpha1.CloudMemorystoreInstance)
+type instanceModifier func(*v1alpha2.CloudMemorystoreInstance)
 
 func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.Status.SetConditions(c...) }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.SetConditions(c...) }
 }
 
 func withBindingPhase(p runtimev1alpha1.BindingPhase) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.Status.SetBindingPhase(p) }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.SetBindingPhase(p) }
 }
 
 func withState(s string) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.Status.State = s }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.State = s }
 }
 
 func withFinalizers(f ...string) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.ObjectMeta.Finalizers = f }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.ObjectMeta.Finalizers = f }
 }
 
 func withReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.Spec.ReclaimPolicy = p }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Spec.ReclaimPolicy = p }
 }
 
 func withInstanceName(n string) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.Status.InstanceName = n }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.InstanceName = n }
 }
 
 func withProviderID(id string) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.Status.ProviderID = id }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.ProviderID = id }
 }
 
 func withEndpoint(e string) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.Status.Endpoint = e }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.Endpoint = e }
 }
 
 func withPort(p int) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.Status.Port = p }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.Port = p }
 }
 
 func withDeletionTimestamp(t time.Time) instanceModifier {
-	return func(i *v1alpha1.CloudMemorystoreInstance) { i.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: t} }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: t} }
 }
 
-func instance(im ...instanceModifier) *v1alpha1.CloudMemorystoreInstance {
-	i := &v1alpha1.CloudMemorystoreInstance{
+func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
+	i := &v1alpha2.CloudMemorystoreInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  namespace,
 			Name:       instanceName,
 			UID:        uid,
 			Finalizers: []string{},
 		},
-		Spec: v1alpha1.CloudMemorystoreInstanceSpec{
+		Spec: v1alpha2.CloudMemorystoreInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
 				ProviderReference:                &corev1.ObjectReference{Namespace: namespace, Name: providerName},
 				WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: connectionSecretName},
 			},
-			CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+			CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 				MemorySizeGB:      memorySizeGB,
 				RedisConfigs:      redisConfigs,
 				AuthorizedNetwork: authorizedNetwork,
 			},
 		},
-		Status: v1alpha1.CloudMemorystoreInstanceStatus{
+		Status: v1alpha2.CloudMemorystoreInstanceStatus{
 			Endpoint:   host,
 			Port:       port,
 			ProviderID: qualifiedName,
@@ -170,8 +170,8 @@ func TestCreate(t *testing.T) {
 	cases := []struct {
 		name        string
 		csd         createsyncdeleter
-		i           *v1alpha1.CloudMemorystoreInstance
-		want        *v1alpha1.CloudMemorystoreInstance
+		i           *v1alpha2.CloudMemorystoreInstance
+		want        *v1alpha2.CloudMemorystoreInstance
 		wantRequeue bool
 	}{
 		{
@@ -226,8 +226,8 @@ func TestSync(t *testing.T) {
 	cases := []struct {
 		name        string
 		csd         createsyncdeleter
-		i           *v1alpha1.CloudMemorystoreInstance
-		want        *v1alpha1.CloudMemorystoreInstance
+		i           *v1alpha2.CloudMemorystoreInstance
+		want        *v1alpha2.CloudMemorystoreInstance
 		wantRequeue bool
 	}{
 		{
@@ -241,7 +241,7 @@ func TestSync(t *testing.T) {
 				withInstanceName(instanceName),
 			),
 			want: instance(
-				withState(v1alpha1.StateCreating),
+				withState(v1alpha2.StateCreating),
 				withInstanceName(instanceName),
 				withConditions(runtimev1alpha1.Creating(), runtimev1alpha1.ReconcileSuccess()),
 			),
@@ -259,7 +259,7 @@ func TestSync(t *testing.T) {
 			),
 			want: instance(
 				withInstanceName(instanceName),
-				withState(v1alpha1.StateDeleting),
+				withState(v1alpha2.StateDeleting),
 				withConditions(runtimev1alpha1.Deleting(), runtimev1alpha1.ReconcileSuccess()),
 			),
 			wantRequeue: false,
@@ -276,7 +276,7 @@ func TestSync(t *testing.T) {
 			),
 			want: instance(
 				withInstanceName(instanceName),
-				withState(v1alpha1.StateUpdating),
+				withState(v1alpha2.StateUpdating),
 				withConditions(runtimev1alpha1.ReconcileSuccess()),
 			),
 			wantRequeue: true,
@@ -304,7 +304,7 @@ func TestSync(t *testing.T) {
 			),
 			want: instance(
 				withInstanceName(instanceName),
-				withState(v1alpha1.StateReady),
+				withState(v1alpha2.StateReady),
 				withProviderID(qualifiedName),
 				withEndpoint(host),
 				withPort(port),
@@ -341,7 +341,7 @@ func TestSync(t *testing.T) {
 			),
 			want: instance(
 				withInstanceName(instanceName),
-				withState(v1alpha1.StateReady),
+				withState(v1alpha2.StateReady),
 				withProviderID(qualifiedName),
 				withEndpoint(host),
 				withPort(port),
@@ -386,7 +386,7 @@ func TestSync(t *testing.T) {
 			i: instance(withInstanceName(instanceName)),
 			want: instance(
 				withInstanceName(instanceName),
-				withState(v1alpha1.StateReady),
+				withState(v1alpha2.StateReady),
 				withProviderID(qualifiedName),
 				withEndpoint(host),
 				withPort(port),
@@ -416,8 +416,8 @@ func TestDelete(t *testing.T) {
 	cases := []struct {
 		name        string
 		csd         createsyncdeleter
-		i           *v1alpha1.CloudMemorystoreInstance
-		want        *v1alpha1.CloudMemorystoreInstance
+		i           *v1alpha2.CloudMemorystoreInstance
+		want        *v1alpha2.CloudMemorystoreInstance
 		wantRequeue bool
 	}{
 		{
@@ -484,7 +484,7 @@ func TestConnect(t *testing.T) {
 	cases := []struct {
 		name    string
 		conn    connecter
-		i       *v1alpha1.CloudMemorystoreInstance
+		i       *v1alpha2.CloudMemorystoreInstance
 		want    createsyncdeleter
 		wantErr error
 	}{
@@ -494,7 +494,7 @@ func TestConnect(t *testing.T) {
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Namespace: namespace, Name: providerName}:
-						*obj.(*gcpv1alpha1.Provider) = provider
+						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						*obj.(*corev1.Secret) = providerSecret
 					}
@@ -526,7 +526,7 @@ func TestConnect(t *testing.T) {
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Namespace: namespace, Name: providerName}:
-						*obj.(*gcpv1alpha1.Provider) = provider
+						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						return kerrors.NewNotFound(schema.GroupResource{}, providerSecretName)
 					}
@@ -545,7 +545,7 @@ func TestConnect(t *testing.T) {
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Namespace: namespace, Name: providerName}:
-						*obj.(*gcpv1alpha1.Provider) = provider
+						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						*obj.(*corev1.Secret) = providerSecret
 					}
@@ -575,28 +575,28 @@ func TestConnect(t *testing.T) {
 }
 
 type mockConnector struct {
-	MockConnect func(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error)
+	MockConnect func(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error)
 }
 
-func (c *mockConnector) Connect(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
+func (c *mockConnector) Connect(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
 	return c.MockConnect(ctx, i)
 }
 
 type mockCSD struct {
-	MockCreate func(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool
-	MockSync   func(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool
-	MockDelete func(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool
+	MockCreate func(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool
+	MockSync   func(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool
+	MockDelete func(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool
 }
 
-func (csd *mockCSD) Create(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool {
+func (csd *mockCSD) Create(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
 	return csd.MockCreate(ctx, i)
 }
 
-func (csd *mockCSD) Sync(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool {
+func (csd *mockCSD) Sync(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
 	return csd.MockSync(ctx, i)
 }
 
-func (csd *mockCSD) Delete(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool {
+func (csd *mockCSD) Delete(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
 	return csd.MockDelete(ctx, i)
 }
 
@@ -611,12 +611,12 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "SuccessfulDelete",
 			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return &mockCSD{MockDelete: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) bool { return false }}, nil
+				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
+					return &mockCSD{MockDelete: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) bool { return false }}, nil
 				}},
 				kube: &test.MockClient{
 					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						*obj.(*v1alpha1.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName), withDeletionTimestamp(time.Now())))
+						*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName), withDeletionTimestamp(time.Now())))
 						return nil
 					},
 					MockUpdate: func(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error { return nil },
@@ -629,12 +629,12 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "SuccessfulCreate",
 			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return &mockCSD{MockCreate: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) bool { return true }}, nil
+				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
+					return &mockCSD{MockCreate: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) bool { return true }}, nil
 				}},
 				kube: &test.MockClient{
 					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						*obj.(*v1alpha1.CloudMemorystoreInstance) = *(instance())
+						*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance())
 						return nil
 					},
 					MockUpdate: func(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error { return nil },
@@ -647,14 +647,14 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "SuccessfulSync",
 			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return &mockCSD{MockSync: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) bool { return false }}, nil
+				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
+					return &mockCSD{MockSync: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) bool { return false }}, nil
 				}},
 				kube: &test.MockClient{
 					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 						switch key {
 						case client.ObjectKey{Namespace: namespace, Name: instanceName}:
-							*obj.(*v1alpha1.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName), withEndpoint(host)))
+							*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName), withEndpoint(host)))
 						case client.ObjectKey{Namespace: namespace, Name: connectionSecretName}:
 							return kerrors.NewNotFound(schema.GroupResource{}, connectionSecretName)
 						}
@@ -699,17 +699,17 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "FailedToConnect",
 			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
+				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
 					return nil, errorBoom
 				}},
 				kube: &test.MockClient{
 					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						*obj.(*v1alpha1.CloudMemorystoreInstance) = *(instance())
+						*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance())
 						return nil
 					},
 					MockUpdate: func(_ context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
 						want := instance(withConditions(runtimev1alpha1.ReconcileError(errorBoom)))
-						got := obj.(*v1alpha1.CloudMemorystoreInstance)
+						got := obj.(*v1alpha2.CloudMemorystoreInstance)
 						if diff := cmp.Diff(want, got, test.EquateConditions()); diff != "" {
 							t.Errorf("kube.Update(...): -want, +got:\n%s", diff)
 						}
@@ -724,7 +724,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "FailedToGetConnectionSecret",
 			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
+				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
 					return nil, nil
 				}},
 				kube: &test.MockClient{
@@ -733,7 +733,7 @@ func TestReconcile(t *testing.T) {
 						case types.NamespacedName{Namespace: namespace, Name: connectionSecretName}:
 							return errorBoom
 						case types.NamespacedName{Namespace: namespace, Name: instanceName}:
-							*obj.(*v1alpha1.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
+							*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
 						}
 						return nil
 					},
@@ -744,7 +744,7 @@ func TestReconcile(t *testing.T) {
 								runtimev1alpha1.ReconcileError(errors.Wrapf(errorBoom, "cannot get secret %s/%s", namespace, connectionSecretName)),
 							),
 						)
-						got := obj.(*v1alpha1.CloudMemorystoreInstance)
+						got := obj.(*v1alpha2.CloudMemorystoreInstance)
 						if diff := cmp.Diff(want, got, test.EquateConditions()); diff != "" {
 							t.Errorf("kube.Update(...): -want, +got:\n%s", diff)
 						}
@@ -759,7 +759,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "FailedToCreateConnectionSecret",
 			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
+				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
 					return nil, nil
 				}},
 				kube: &test.MockClient{
@@ -768,7 +768,7 @@ func TestReconcile(t *testing.T) {
 						case types.NamespacedName{Namespace: namespace, Name: connectionSecretName}:
 							return kerrors.NewNotFound(schema.GroupResource{}, connectionSecretName)
 						case types.NamespacedName{Namespace: namespace, Name: instanceName}:
-							*obj.(*v1alpha1.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
+							*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
 						}
 						return nil
 					},
@@ -777,7 +777,7 @@ func TestReconcile(t *testing.T) {
 							withInstanceName(instanceName),
 							withConditions(runtimev1alpha1.ReconcileError(errors.Wrapf(errorBoom, "cannot create secret %s/%s", namespace, connectionSecretName))),
 						)
-						got := obj.(*v1alpha1.CloudMemorystoreInstance)
+						got := obj.(*v1alpha2.CloudMemorystoreInstance)
 						if diff := cmp.Diff(want, got, test.EquateConditions()); diff != "" {
 							t.Errorf("kube.Update(...): -want, +got:\n%s", diff)
 						}
@@ -793,7 +793,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "FailedToUpdateConnectionSecret",
 			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
+				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
 					return nil, nil
 				}},
 				kube: &test.MockClient{
@@ -802,7 +802,7 @@ func TestReconcile(t *testing.T) {
 						case types.NamespacedName{Namespace: namespace, Name: connectionSecretName}:
 							return nil
 						case types.NamespacedName{Namespace: namespace, Name: instanceName}:
-							*obj.(*v1alpha1.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
+							*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
 						}
 						return nil
 					},
@@ -810,7 +810,7 @@ func TestReconcile(t *testing.T) {
 						switch got := obj.(type) {
 						case *corev1.Secret:
 							return errorBoom
-						case *v1alpha1.CloudMemorystoreInstance:
+						case *v1alpha2.CloudMemorystoreInstance:
 							want := instance(
 								withInstanceName(instanceName),
 								withConditions(runtimev1alpha1.ReconcileError(errors.Wrapf(errorBoom, "cannot update secret %s/%s", namespace, connectionSecretName))),
@@ -847,7 +847,7 @@ func TestReconcile(t *testing.T) {
 func TestConnectionSecret(t *testing.T) {
 	cases := []struct {
 		name string
-		i    *v1alpha1.CloudMemorystoreInstance
+		i    *v1alpha2.CloudMemorystoreInstance
 		want *corev1.Secret
 	}{
 		{
@@ -857,7 +857,7 @@ func TestConnectionSecret(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            connectionSecretName,
 					Namespace:       namespace,
-					OwnerReferences: []metav1.OwnerReference{meta.AsController(meta.ReferenceTo(instance(), v1alpha1.CloudMemorystoreInstanceGroupVersionKind))},
+					OwnerReferences: []metav1.OwnerReference{meta.AsController(meta.ReferenceTo(instance(), v1alpha2.CloudMemorystoreInstanceGroupVersionKind))},
 				},
 				Data: map[string][]byte{runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(host)},
 			},

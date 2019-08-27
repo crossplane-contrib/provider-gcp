@@ -33,8 +33,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore"
 )
 
@@ -50,21 +50,21 @@ var log = logging.Logger.WithName("controller." + controllerName)
 type creator interface {
 	// Create the supplied instance in the external store. Returns true if the
 	// instance requires further reconciliation.
-	Create(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) (requeue bool)
+	Create(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (requeue bool)
 }
 
 // A syncer can sync instances with an external store - e.g. the GCP API.
 type syncer interface {
 	// Sync the supplied instance with the external store. Returns true if the
 	// instance requires further reconciliation.
-	Sync(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) (requeue bool)
+	Sync(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (requeue bool)
 }
 
 // A deleter can delete instances from an external store - e.g. the GCP API.
 type deleter interface {
 	// Delete the supplied instance from the external store. Returns true if the
 	// instance requires further reconciliation.
-	Delete(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) (requeue bool)
+	Delete(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (requeue bool)
 }
 
 // A createsyncdeleter an create, sync, and delete instances in an external
@@ -81,7 +81,7 @@ type cloudMemorystore struct {
 	project string
 }
 
-func (c *cloudMemorystore) Create(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool {
+func (c *cloudMemorystore) Create(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
 	i.Status.SetConditions(runtimev1alpha1.Creating())
 
 	id := cloudmemorystore.NewInstanceID(c.project, i)
@@ -96,7 +96,7 @@ func (c *cloudMemorystore) Create(ctx context.Context, i *v1alpha1.CloudMemoryst
 	return true
 }
 
-func (c *cloudMemorystore) Sync(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool {
+func (c *cloudMemorystore) Sync(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
 	id := cloudmemorystore.NewInstanceID(c.project, i)
 	gcpInstance, err := c.client.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
 	if err != nil {
@@ -107,13 +107,13 @@ func (c *cloudMemorystore) Sync(ctx context.Context, i *v1alpha1.CloudMemorystor
 	i.Status.State = gcpInstance.GetState().String()
 
 	switch i.Status.State {
-	case v1alpha1.StateReady:
+	case v1alpha2.StateReady:
 		i.Status.SetConditions(runtimev1alpha1.Available())
 		resource.SetBindable(i)
-	case v1alpha1.StateCreating:
+	case v1alpha2.StateCreating:
 		i.Status.SetConditions(runtimev1alpha1.Creating(), runtimev1alpha1.ReconcileSuccess())
 		return true
-	case v1alpha1.StateDeleting:
+	case v1alpha2.StateDeleting:
 		i.Status.SetConditions(runtimev1alpha1.Deleting(), runtimev1alpha1.ReconcileSuccess())
 		return false
 	default:
@@ -141,7 +141,7 @@ func (c *cloudMemorystore) Sync(ctx context.Context, i *v1alpha1.CloudMemorystor
 	return false
 }
 
-func (c *cloudMemorystore) Delete(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) bool {
+func (c *cloudMemorystore) Delete(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
 	i.Status.SetConditions(runtimev1alpha1.Deleting())
 
 	if i.Spec.ReclaimPolicy == runtimev1alpha1.ReclaimDelete {
@@ -160,7 +160,7 @@ func (c *cloudMemorystore) Delete(ctx context.Context, i *v1alpha1.CloudMemoryst
 // A connecter returns a createsyncdeleter that can create, sync, and delete
 // CloudMemorystore instances with an external store - for example the GCP API.
 type connecter interface {
-	Connect(context.Context, *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error)
+	Connect(context.Context, *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error)
 }
 
 // providerConnecter is a connecter that returns a createsyncdeleter
@@ -173,8 +173,8 @@ type providerConnecter struct {
 // Connect returns a createsyncdeleter backed by the GCP API. GCP credentials
 // are read from the Crossplane Provider referenced by the supplied
 // CloudMemorystoreInstance.
-func (c *providerConnecter) Connect(ctx context.Context, i *v1alpha1.CloudMemorystoreInstance) (createsyncdeleter, error) {
-	p := &gcpv1alpha1.Provider{}
+func (c *providerConnecter) Connect(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
+	p := &gcpv1alpha2.Provider{}
 	n := meta.NamespacedNameOf(i.Spec.ProviderReference)
 	if err := c.kube.Get(ctx, n, p); err != nil {
 		return nil, errors.Wrapf(err, "cannot get provider %s", n)
@@ -212,18 +212,18 @@ func (c *CloudMemorystoreInstanceController) SetupWithManager(mgr ctrl.Manager) 
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(controllerName).
-		For(&v1alpha1.CloudMemorystoreInstance{}).
+		For(&v1alpha2.CloudMemorystoreInstance{}).
 		Complete(r)
 }
 
 // Reconcile Google CloudMemorystore resources with the GCP API.
 func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	log.V(logging.Debug).Info("reconciling", "kind", v1alpha1.CloudMemorystoreInstanceKindAPIVersion, "request", req)
+	log.V(logging.Debug).Info("reconciling", "kind", v1alpha2.CloudMemorystoreInstanceKindAPIVersion, "request", req)
 
 	ctx, cancel := context.WithTimeout(context.Background(), reconcileTimeout)
 	defer cancel()
 
-	i := &v1alpha1.CloudMemorystoreInstance{}
+	i := &v1alpha2.CloudMemorystoreInstance{}
 	if err := r.kube.Get(ctx, req.NamespacedName, i); err != nil {
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{Requeue: false}, nil
@@ -267,9 +267,9 @@ func (r *Reconciler) upsertSecret(ctx context.Context, s *corev1.Secret) error {
 	return errors.Wrapf(r.kube.Update(ctx, s), "cannot update secret %s", n)
 }
 
-func connectionSecret(i *v1alpha1.CloudMemorystoreInstance) *corev1.Secret {
+func connectionSecret(i *v1alpha2.CloudMemorystoreInstance) *corev1.Secret {
 	// TODO(negz): Include the port here too?
-	s := resource.ConnectionSecretFor(i, v1alpha1.CloudMemorystoreInstanceGroupVersionKind)
+	s := resource.ConnectionSecretFor(i, v1alpha2.CloudMemorystoreInstanceGroupVersionKind)
 	s.Data = map[string][]byte{runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(i.Status.Endpoint)}
 	return s
 }

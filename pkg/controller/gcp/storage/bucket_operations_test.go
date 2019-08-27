@@ -32,7 +32,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/storage/v1alpha2"
 	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/storage"
 	storagefake "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/storage/fake"
 )
@@ -41,7 +41,7 @@ type mockOperations struct {
 	mockIsReclaimDelete     func() bool
 	mockAddFinalizer        func()
 	mockRemoveFinalizer     func()
-	mockGetSpecAttrs        func() v1alpha1.BucketUpdatableAttrs
+	mockGetSpecAttrs        func() v1alpha2.BucketUpdatableAttrs
 	mockSetSpecAttrs        func(*storage.BucketAttrs)
 	mockSetStatusAttrs      func(*storage.BucketAttrs)
 	mockSetStatusConditions func(...runtimev1alpha1.Condition)
@@ -71,7 +71,7 @@ func (o *mockOperations) removeFinalizer() {
 	o.mockRemoveFinalizer()
 }
 
-func (o *mockOperations) getSpecAttrs() v1alpha1.BucketUpdatableAttrs {
+func (o *mockOperations) getSpecAttrs() v1alpha2.BucketUpdatableAttrs {
 	return o.mockGetSpecAttrs()
 }
 
@@ -127,7 +127,7 @@ func (o *mockOperations) getAttributes(ctx context.Context) (*storage.BucketAttr
 //
 func Test_bucketHandler_addFinalizer(t *testing.T) {
 	type fields struct {
-		bucket *v1alpha1.Bucket
+		bucket *v1alpha2.Bucket
 	}
 	tests := []struct {
 		name   string
@@ -136,7 +136,7 @@ func Test_bucketHandler_addFinalizer(t *testing.T) {
 	}{
 		{
 			name:   "Test",
-			fields: fields{bucket: &v1alpha1.Bucket{}},
+			fields: fields{bucket: &v1alpha2.Bucket{}},
 			want:   []string{finalizer},
 		},
 	}
@@ -156,7 +156,7 @@ func Test_bucketHandler_addFinalizer(t *testing.T) {
 
 func Test_bucketHandler_removeFinalizer(t *testing.T) {
 	type fields struct {
-		bucket *v1alpha1.Bucket
+		bucket *v1alpha2.Bucket
 	}
 	tests := []struct {
 		name   string
@@ -165,7 +165,7 @@ func Test_bucketHandler_removeFinalizer(t *testing.T) {
 	}{
 		{
 			name: "Test",
-			fields: fields{bucket: &v1alpha1.Bucket{
+			fields: fields{bucket: &v1alpha2.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{finalizer}},
 			}},
 			want: []string{},
@@ -187,7 +187,7 @@ func Test_bucketHandler_removeFinalizer(t *testing.T) {
 
 func Test_bucketHandler_isReclaimDelete(t *testing.T) {
 	type fields struct {
-		bucket *v1alpha1.Bucket
+		bucket *v1alpha2.Bucket
 		kube   client.Client
 		gcp    gcpstorage.Client
 	}
@@ -198,13 +198,13 @@ func Test_bucketHandler_isReclaimDelete(t *testing.T) {
 	}{
 		{
 			name:   "Default",
-			fields: fields{bucket: &v1alpha1.Bucket{}},
+			fields: fields{bucket: &v1alpha2.Bucket{}},
 			want:   false,
 		},
 		{
 			name: "Delete",
-			fields: fields{bucket: &v1alpha1.Bucket{
-				Spec: v1alpha1.BucketSpec{
+			fields: fields{bucket: &v1alpha2.Bucket{
+				Spec: v1alpha2.BucketSpec{
 					ResourceSpec: runtimev1alpha1.ResourceSpec{
 						ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
 					},
@@ -229,21 +229,21 @@ func Test_bucketHandler_isReclaimDelete(t *testing.T) {
 }
 
 func Test_bucketHandler_getSpecAttrs(t *testing.T) {
-	testBucketSpecAttrs := v1alpha1.BucketUpdatableAttrs{RequesterPays: true}
+	testBucketSpecAttrs := v1alpha2.BucketUpdatableAttrs{RequesterPays: true}
 	type fields struct {
-		bucket *v1alpha1.Bucket
+		bucket *v1alpha2.Bucket
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   v1alpha1.BucketUpdatableAttrs
+		want   v1alpha2.BucketUpdatableAttrs
 	}{
 		{
 			name: "Test",
-			fields: fields{bucket: &v1alpha1.Bucket{
-				Spec: v1alpha1.BucketSpec{
-					BucketParameters: v1alpha1.BucketParameters{
-						BucketSpecAttrs: v1alpha1.BucketSpecAttrs{BucketUpdatableAttrs: testBucketSpecAttrs},
+			fields: fields{bucket: &v1alpha2.Bucket{
+				Spec: v1alpha2.BucketSpec{
+					BucketParameters: v1alpha2.BucketParameters{
+						BucketSpecAttrs: v1alpha2.BucketSpecAttrs{BucketUpdatableAttrs: testBucketSpecAttrs},
 					},
 				},
 			}},
@@ -264,19 +264,19 @@ func Test_bucketHandler_getSpecAttrs(t *testing.T) {
 }
 
 func Test_bucketHandler_setSpecAttrs(t *testing.T) {
-	testSpecAttrs := v1alpha1.BucketSpecAttrs{Location: "foo"}
+	testSpecAttrs := v1alpha2.BucketSpecAttrs{Location: "foo"}
 	type fields struct {
-		bucket *v1alpha1.Bucket
+		bucket *v1alpha2.Bucket
 	}
 	tests := []struct {
 		name   string
 		fields fields
 		args   *storage.BucketAttrs
-		want   v1alpha1.BucketSpecAttrs
+		want   v1alpha2.BucketSpecAttrs
 	}{
 		{
 			name:   "Test",
-			fields: fields{bucket: &v1alpha1.Bucket{}},
+			fields: fields{bucket: &v1alpha2.Bucket{}},
 			args:   &storage.BucketAttrs{Location: "foo"},
 			want:   testSpecAttrs,
 		},
@@ -297,19 +297,19 @@ func Test_bucketHandler_setSpecAttrs(t *testing.T) {
 
 func Test_bucketHandler_setStatusAttrs(t *testing.T) {
 	type fields struct {
-		bucket *v1alpha1.Bucket
+		bucket *v1alpha2.Bucket
 	}
 	tests := []struct {
 		name   string
 		fields fields
 		args   *storage.BucketAttrs
-		want   v1alpha1.BucketOutputAttrs
+		want   v1alpha2.BucketOutputAttrs
 	}{
 		{
 			name:   "Test",
-			fields: fields{bucket: &v1alpha1.Bucket{}},
+			fields: fields{bucket: &v1alpha2.Bucket{}},
 			args:   &storage.BucketAttrs{Name: "foo"},
-			want:   v1alpha1.BucketOutputAttrs{Name: "foo"},
+			want:   v1alpha2.BucketOutputAttrs{Name: "foo"},
 		},
 	}
 	for _, tt := range tests {
@@ -328,12 +328,12 @@ func Test_bucketHandler_setStatusAttrs(t *testing.T) {
 
 func Test_bucketHandler_updateObject(t *testing.T) {
 	ctx := context.TODO()
-	bucket := &v1alpha1.Bucket{}
+	bucket := &v1alpha2.Bucket{}
 	bc := &bucketHandler{
 		Bucket: bucket,
 		kube: &test.MockClient{
 			MockUpdate: func(ctx context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
-				if _, ok := obj.(*v1alpha1.Bucket); !ok {
+				if _, ok := obj.(*v1alpha2.Bucket); !ok {
 					t.Errorf("bucketHandler.updateObject() unexpected type %T, want %T", obj, bucket)
 				}
 				return nil
@@ -347,12 +347,12 @@ func Test_bucketHandler_updateObject(t *testing.T) {
 
 func Test_bucketHandler_updateStatus(t *testing.T) {
 	ctx := context.TODO()
-	bucket := &v1alpha1.Bucket{}
+	bucket := &v1alpha2.Bucket{}
 	bc := &bucketHandler{
 		Bucket: bucket,
 		kube: &test.MockClient{
 			MockStatusUpdate: func(ctx context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
-				if _, ok := obj.(*v1alpha1.Bucket); !ok {
+				if _, ok := obj.(*v1alpha2.Bucket); !ok {
 					t.Errorf("bucketHandler.updateStatus() unexpected type %T, want %T", obj, bucket)
 				}
 				return nil
@@ -402,7 +402,7 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 	}
 
 	type fields struct {
-		Bucket *v1alpha1.Bucket
+		Bucket *v1alpha2.Bucket
 		kube   client.Client
 	}
 	tests := []struct {
@@ -492,7 +492,7 @@ func Test_bucketHandler_createBucket(t *testing.T) {
 	testProjectID := "foo"
 	actualProjectID := "bar"
 	bc := &bucketHandler{
-		Bucket: &v1alpha1.Bucket{},
+		Bucket: &v1alpha2.Bucket{},
 		gcp: &storagefake.MockBucketClient{
 			MockCreate: func(ctx context.Context, s string, attrs *storage.BucketAttrs) error {
 				actualProjectID = s
@@ -511,7 +511,7 @@ func Test_bucketHandler_createBucket(t *testing.T) {
 func Test_bucketHandler_deleteBucket(t *testing.T) {
 	ctx := context.TODO()
 	bc := &bucketHandler{
-		Bucket: &v1alpha1.Bucket{},
+		Bucket: &v1alpha2.Bucket{},
 		gcp: &storagefake.MockBucketClient{
 			MockDelete: func(ctx context.Context) error { return nil },
 		},
@@ -524,7 +524,7 @@ func Test_bucketHandler_deleteBucket(t *testing.T) {
 func Test_bucketHandler_updateBucket(t *testing.T) {
 	ctx := context.TODO()
 	bc := &bucketHandler{
-		Bucket: &v1alpha1.Bucket{},
+		Bucket: &v1alpha2.Bucket{},
 		gcp: &storagefake.MockBucketClient{
 			MockUpdate: func(ctx context.Context, update storage.BucketAttrsToUpdate) (attrs *storage.BucketAttrs, e error) {
 				return &storage.BucketAttrs{}, nil

@@ -25,7 +25,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha2"
 )
 
 const (
@@ -52,7 +52,7 @@ func TestInstanceID(t *testing.T) {
 	cases := []struct {
 		name       string
 		project    string
-		i          *v1alpha1.CloudMemorystoreInstance
+		i          *v1alpha2.CloudMemorystoreInstance
 		want       InstanceID
 		wantName   string
 		wantParent string
@@ -60,10 +60,10 @@ func TestInstanceID(t *testing.T) {
 		{
 			name:    "InstanceNameUnset",
 			project: project,
-			i: &v1alpha1.CloudMemorystoreInstance{
+			i: &v1alpha2.CloudMemorystoreInstance{
 				ObjectMeta: metav1.ObjectMeta{UID: uid},
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region: region,
 					},
 				},
@@ -79,14 +79,14 @@ func TestInstanceID(t *testing.T) {
 		{
 			name:    "InstanceNameSet",
 			project: project,
-			i: &v1alpha1.CloudMemorystoreInstance{
+			i: &v1alpha2.CloudMemorystoreInstance{
 				ObjectMeta: metav1.ObjectMeta{UID: types.UID("i-am-different")},
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region: region,
 					},
 				},
-				Status: v1alpha1.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
+				Status: v1alpha2.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
 			},
 			want: InstanceID{
 				Project:  project,
@@ -121,15 +121,15 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 	cases := []struct {
 		name    string
 		project string
-		i       *v1alpha1.CloudMemorystoreInstance
+		i       *v1alpha2.CloudMemorystoreInstance
 		want    *redisv1pb.CreateInstanceRequest
 	}{
 		{
 			name:    "BasicInstance",
 			project: project,
-			i: &v1alpha1.CloudMemorystoreInstance{
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+			i: &v1alpha2.CloudMemorystoreInstance{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:                region,
 						Tier:                  redisv1pb.Instance_BASIC.String(),
 						LocationID:            locationID,
@@ -141,7 +141,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 						MemorySizeGB:          memorySizeGB,
 					},
 				},
-				Status: v1alpha1.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
+				Status: v1alpha2.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
 			},
 			want: &redisv1pb.CreateInstanceRequest{
 				Parent:     parent,
@@ -161,10 +161,10 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 		{
 			name:    "StandardHAInstance",
 			project: project,
-			i: &v1alpha1.CloudMemorystoreInstance{
+			i: &v1alpha2.CloudMemorystoreInstance{
 				ObjectMeta: metav1.ObjectMeta{UID: uid},
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:       region,
 						Tier:         redisv1pb.Instance_STANDARD_HA.String(),
 						MemorySizeGB: memorySizeGB,
@@ -196,21 +196,21 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 	cases := []struct {
 		name    string
 		project string
-		i       *v1alpha1.CloudMemorystoreInstance
+		i       *v1alpha2.CloudMemorystoreInstance
 		want    *redisv1pb.UpdateInstanceRequest
 	}{
 		{
 			name:    "UpdatableFieldsOnly",
 			project: project,
-			i: &v1alpha1.CloudMemorystoreInstance{
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+			i: &v1alpha2.CloudMemorystoreInstance{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:       region,
 						RedisConfigs: redisConfigs,
 						MemorySizeGB: memorySizeGB,
 					},
 				},
-				Status: v1alpha1.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
+				Status: v1alpha2.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
 			},
 			want: &redisv1pb.UpdateInstanceRequest{
 				UpdateMask: updateMask,
@@ -224,9 +224,9 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 		{
 			name:    "SuperfluousFields",
 			project: project,
-			i: &v1alpha1.CloudMemorystoreInstance{
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+			i: &v1alpha2.CloudMemorystoreInstance{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:       region,
 						MemorySizeGB: memorySizeGB,
 
@@ -234,7 +234,7 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 						AuthorizedNetwork: authorizedNetwork,
 					},
 				},
-				Status: v1alpha1.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
+				Status: v1alpha2.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
 			},
 			want: &redisv1pb.UpdateInstanceRequest{
 				UpdateMask: updateMask,
@@ -260,15 +260,15 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 func TestNeedsUpdate(t *testing.T) {
 	cases := []struct {
 		name string
-		kube *v1alpha1.CloudMemorystoreInstance
+		kube *v1alpha2.CloudMemorystoreInstance
 		gcp  *redisv1pb.Instance
 		want bool
 	}{
 		{
 			name: "NeedsLessMemory",
-			kube: &v1alpha1.CloudMemorystoreInstance{
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+			kube: &v1alpha2.CloudMemorystoreInstance{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						RedisConfigs: redisConfigs,
 						MemorySizeGB: memorySizeGB,
 					},
@@ -279,9 +279,9 @@ func TestNeedsUpdate(t *testing.T) {
 		},
 		{
 			name: "NeedsNewRedisConfigs",
-			kube: &v1alpha1.CloudMemorystoreInstance{
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+			kube: &v1alpha2.CloudMemorystoreInstance{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						RedisConfigs: redisConfigs,
 					},
 				},
@@ -291,9 +291,9 @@ func TestNeedsUpdate(t *testing.T) {
 		},
 		{
 			name: "NeedsNoUpdate",
-			kube: &v1alpha1.CloudMemorystoreInstance{
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+			kube: &v1alpha2.CloudMemorystoreInstance{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						RedisConfigs: redisConfigs,
 						MemorySizeGB: memorySizeGB,
 					},
@@ -307,9 +307,9 @@ func TestNeedsUpdate(t *testing.T) {
 		},
 		{
 			name: "CannotUpdateField",
-			kube: &v1alpha1.CloudMemorystoreInstance{
-				Spec: v1alpha1.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha1.CloudMemorystoreInstanceParameters{
+			kube: &v1alpha2.CloudMemorystoreInstance{
+				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						MemorySizeGB: memorySizeGB,
 
 						// We can't change this field without destroying and recreating

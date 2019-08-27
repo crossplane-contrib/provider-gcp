@@ -27,7 +27,7 @@ import (
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha2"
 )
 
 // NamePrefix is the prefix for all created CloudMemorystore instances.
@@ -68,7 +68,7 @@ type InstanceID struct {
 // instances in the GCP API. Instances may have names of up to 40 characters. We
 // use a four character prefix and a 36 character UUID.
 // https://godoc.org/google.golang.org/genproto/googleapis/cloud/redis/v1#CreateInstanceRequest
-func NewInstanceID(project string, i *v1alpha1.CloudMemorystoreInstance) InstanceID {
+func NewInstanceID(project string, i *v1alpha2.CloudMemorystoreInstance) InstanceID {
 	id := InstanceID{Project: project, Region: i.Spec.Region, Instance: i.Status.InstanceName}
 	if id.Instance == "" {
 		id.Instance = fmt.Sprintf("%s-%s", NamePrefix, i.GetUID())
@@ -94,7 +94,7 @@ func NewInstanceTier(t string) redisv1pb.Instance_Tier {
 
 // NewCreateInstanceRequest creates a request to create an instance suitable for
 // use with the GCP API.
-func NewCreateInstanceRequest(id InstanceID, i *v1alpha1.CloudMemorystoreInstance) *redisv1pb.CreateInstanceRequest {
+func NewCreateInstanceRequest(id InstanceID, i *v1alpha2.CloudMemorystoreInstance) *redisv1pb.CreateInstanceRequest {
 	return &redisv1pb.CreateInstanceRequest{
 		Parent:     id.Parent(),
 		InstanceId: id.Instance,
@@ -113,7 +113,7 @@ func NewCreateInstanceRequest(id InstanceID, i *v1alpha1.CloudMemorystoreInstanc
 
 // NewUpdateInstanceRequest creates a request to update an instance suitable for
 // use with the GCP API.
-func NewUpdateInstanceRequest(id InstanceID, i *v1alpha1.CloudMemorystoreInstance) *redisv1pb.UpdateInstanceRequest {
+func NewUpdateInstanceRequest(id InstanceID, i *v1alpha2.CloudMemorystoreInstance) *redisv1pb.UpdateInstanceRequest {
 	return &redisv1pb.UpdateInstanceRequest{
 		// These are the only fields we're concerned with that can be updated.
 		// The documentation is incorrect regarding field masks - they must be
@@ -131,7 +131,7 @@ func NewUpdateInstanceRequest(id InstanceID, i *v1alpha1.CloudMemorystoreInstanc
 // NeedsUpdate returns true if the supplied Kubernetes resource differs from the
 // supplied GCP resource. It considers only fields that can be modified in
 // place without deleting and recreating the instance.
-func NeedsUpdate(kube *v1alpha1.CloudMemorystoreInstance, gcp *redisv1pb.Instance) bool {
+func NeedsUpdate(kube *v1alpha2.CloudMemorystoreInstance, gcp *redisv1pb.Instance) bool {
 	if kube.Spec.MemorySizeGB != int(gcp.GetMemorySizeGb()) {
 		return true
 	}
