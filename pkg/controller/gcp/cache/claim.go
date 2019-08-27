@@ -43,12 +43,17 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 		resource.ClaimKind(cachev1alpha1.RedisClusterGroupVersionKind),
 		resource.ClassKinds{Portable: cachev1alpha1.RedisClusterClassGroupVersionKind, NonPortable: v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind},
 		resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind),
+		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
+		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
 		))
 
-	name := strings.ToLower(fmt.Sprintf("%s.%s", cachev1alpha1.RedisClusterKind, controllerName))
+	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
+		cachev1alpha1.RedisClusterKind,
+		v1alpha2.CloudMemorystoreInstanceKind,
+		v1alpha2.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

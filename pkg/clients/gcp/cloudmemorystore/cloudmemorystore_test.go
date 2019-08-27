@@ -58,7 +58,7 @@ func TestInstanceID(t *testing.T) {
 		wantParent string
 	}{
 		{
-			name:    "InstanceNameUnset",
+			name:    "Success",
 			project: project,
 			i: &v1alpha2.CloudMemorystoreInstance{
 				ObjectMeta: metav1.ObjectMeta{UID: uid},
@@ -67,26 +67,6 @@ func TestInstanceID(t *testing.T) {
 						Region: region,
 					},
 				},
-			},
-			want: InstanceID{
-				Project:  project,
-				Region:   region,
-				Instance: instanceName,
-			},
-			wantName:   qualifiedName,
-			wantParent: parent,
-		},
-		{
-			name:    "InstanceNameSet",
-			project: project,
-			i: &v1alpha2.CloudMemorystoreInstance{
-				ObjectMeta: metav1.ObjectMeta{UID: types.UID("i-am-different")},
-				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
-						Region: region,
-					},
-				},
-				Status: v1alpha2.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
 			},
 			want: InstanceID{
 				Project:  project,
@@ -128,6 +108,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 			name:    "BasicInstance",
 			project: project,
 			i: &v1alpha2.CloudMemorystoreInstance{
+				ObjectMeta: metav1.ObjectMeta{UID: uid},
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
 					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:                region,
@@ -141,7 +122,6 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 						MemorySizeGB:          memorySizeGB,
 					},
 				},
-				Status: v1alpha2.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
 			},
 			want: &redisv1pb.CreateInstanceRequest{
 				Parent:     parent,
@@ -203,6 +183,7 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 			name:    "UpdatableFieldsOnly",
 			project: project,
 			i: &v1alpha2.CloudMemorystoreInstance{
+				ObjectMeta: metav1.ObjectMeta{UID: uid},
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
 					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:       region,
@@ -210,7 +191,6 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 						MemorySizeGB: memorySizeGB,
 					},
 				},
-				Status: v1alpha2.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
 			},
 			want: &redisv1pb.UpdateInstanceRequest{
 				UpdateMask: updateMask,
@@ -225,6 +205,7 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 			name:    "SuperfluousFields",
 			project: project,
 			i: &v1alpha2.CloudMemorystoreInstance{
+				ObjectMeta: metav1.ObjectMeta{UID: uid},
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
 					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:       region,
@@ -234,7 +215,6 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 						AuthorizedNetwork: authorizedNetwork,
 					},
 				},
-				Status: v1alpha2.CloudMemorystoreInstanceStatus{InstanceName: instanceName},
 			},
 			want: &redisv1pb.UpdateInstanceRequest{
 				UpdateMask: updateMask,

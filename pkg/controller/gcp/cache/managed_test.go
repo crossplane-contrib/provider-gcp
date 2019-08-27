@@ -19,31 +19,28 @@ package cache
 import (
 	"context"
 	"testing"
-	"time"
-
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 
 	redisv1 "cloud.google.com/go/redis/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
 	"github.com/pkg/errors"
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
 	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha2"
 	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore"
-	fakecloudmemorystore "github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore/fake"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore/fake"
 )
 
 const (
@@ -67,26 +64,13 @@ const (
 )
 
 var (
-	ctx          = context.Background()
 	errorBoom    = errors.New("boom")
 	redisConfigs = map[string]string{"cool": "socool"}
-
-	provider = gcpv1alpha2.Provider{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerName},
-		Spec: gcpv1alpha2.ProviderSpec{
-			ProjectID: project,
-			Secret: corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: providerSecretName},
-				Key:                  providerSecretKey,
-			},
-		},
-	}
-
-	providerSecret = corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
-		Data:       map[string][]byte{providerSecretKey: []byte(providerSecretData)},
-	}
 )
+
+type strange struct {
+	resource.Managed
+}
 
 type instanceModifier func(*v1alpha2.CloudMemorystoreInstance)
 
@@ -102,18 +86,6 @@ func withState(s string) instanceModifier {
 	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.State = s }
 }
 
-func withFinalizers(f ...string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.ObjectMeta.Finalizers = f }
-}
-
-func withReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Spec.ReclaimPolicy = p }
-}
-
-func withInstanceName(n string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.InstanceName = n }
-}
-
 func withProviderID(id string) instanceModifier {
 	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.ProviderID = id }
 }
@@ -124,10 +96,6 @@ func withEndpoint(e string) instanceModifier {
 
 func withPort(p int) instanceModifier {
 	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.Port = p }
-}
-
-func withDeletionTimestamp(t time.Time) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: t} }
 }
 
 func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
@@ -149,11 +117,6 @@ func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
 				AuthorizedNetwork: authorizedNetwork,
 			},
 		},
-		Status: v1alpha2.CloudMemorystoreInstanceStatus{
-			Endpoint:   host,
-			Port:       port,
-			ProviderID: qualifiedName,
-		},
 	}
 
 	for _, m := range im {
@@ -163,712 +126,540 @@ func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
 	return i
 }
 
-// Test that our Reconciler implementation satisfies the Reconciler interface.
-var _ reconcile.Reconciler = &Reconciler{}
-
-func TestCreate(t *testing.T) {
-	cases := []struct {
-		name        string
-		csd         createsyncdeleter
-		i           *v1alpha2.CloudMemorystoreInstance
-		want        *v1alpha2.CloudMemorystoreInstance
-		wantRequeue bool
-	}{
-		{
-			name: "SuccessfulCreate",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockCreateInstance: func(_ context.Context, _ *redisv1pb.CreateInstanceRequest, _ ...gax.CallOption) (*redisv1.CreateInstanceOperation, error) {
-					return nil, nil
-				}},
-			},
-			i: instance(),
-			want: instance(
-				withConditions(runtimev1alpha1.Creating(), runtimev1alpha1.ReconcileSuccess()),
-				withFinalizers(finalizerName),
-				withInstanceName(instanceName),
-			),
-			wantRequeue: true,
-		},
-		{
-			name: "FailedCreate",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockCreateInstance: func(_ context.Context, _ *redisv1pb.CreateInstanceRequest, _ ...gax.CallOption) (*redisv1.CreateInstanceOperation, error) {
-					return nil, errorBoom
-				},
-			}},
-			i: instance(),
-			want: instance(
-				withConditions(
-					runtimev1alpha1.Creating(),
-					runtimev1alpha1.ReconcileError(errorBoom),
-				),
-			),
-			wantRequeue: true,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			gotRequeue := tc.csd.Create(ctx, tc.i)
-
-			if gotRequeue != tc.wantRequeue {
-				t.Errorf("tc.csd.Create(...): want: %t got: %t", tc.wantRequeue, gotRequeue)
-			}
-
-			if diff := cmp.Diff(tc.want, tc.i, test.EquateConditions()); diff != "" {
-				t.Errorf("i: -want, +got:\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestSync(t *testing.T) {
-	cases := []struct {
-		name        string
-		csd         createsyncdeleter
-		i           *v1alpha2.CloudMemorystoreInstance
-		want        *v1alpha2.CloudMemorystoreInstance
-		wantRequeue bool
-	}{
-		{
-			name: "SuccessfulSyncWhileInstanceCreating",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{State: redisv1pb.Instance_CREATING}, nil
-				},
-			}},
-			i: instance(
-				withInstanceName(instanceName),
-			),
-			want: instance(
-				withState(v1alpha2.StateCreating),
-				withInstanceName(instanceName),
-				withConditions(runtimev1alpha1.Creating(), runtimev1alpha1.ReconcileSuccess()),
-			),
-			wantRequeue: true,
-		},
-		{
-			name: "SuccessfulSyncWhileInstanceDeleting",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{State: redisv1pb.Instance_DELETING}, nil
-				},
-			}},
-			i: instance(
-				withInstanceName(instanceName),
-			),
-			want: instance(
-				withInstanceName(instanceName),
-				withState(v1alpha2.StateDeleting),
-				withConditions(runtimev1alpha1.Deleting(), runtimev1alpha1.ReconcileSuccess()),
-			),
-			wantRequeue: false,
-		},
-		{
-			name: "SuccessfulSyncWhileInstanceUpdating",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{State: redisv1pb.Instance_UPDATING}, nil
-				},
-			}},
-			i: instance(
-				withInstanceName(instanceName),
-			),
-			want: instance(
-				withInstanceName(instanceName),
-				withState(v1alpha2.StateUpdating),
-				withConditions(runtimev1alpha1.ReconcileSuccess()),
-			),
-			wantRequeue: true,
-		},
-		{
-			name: "SuccessfulSyncWhileInstanceReadyAndDoesNotNeedUpdate",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{
-						Name:         qualifiedName,
-						State:        redisv1pb.Instance_READY,
-						MemorySizeGb: memorySizeGB,
-						RedisConfigs: redisConfigs,
-						Host:         host,
-						Port:         port,
-						// This field is not in sync between Kubernetes and GCP,
-						// but we cannot update it in place, so the instance
-						// does not count as needing an update.
-						AuthorizedNetwork: "imdifferent",
-					}, nil
-				},
-			}},
-			i: instance(
-				withInstanceName(instanceName),
-			),
-			want: instance(
-				withInstanceName(instanceName),
-				withState(v1alpha2.StateReady),
-				withProviderID(qualifiedName),
-				withEndpoint(host),
-				withPort(port),
-				withConditions(runtimev1alpha1.Available(), runtimev1alpha1.ReconcileSuccess()),
-				withBindingPhase(runtimev1alpha1.BindingPhaseUnbound),
-			),
-			wantRequeue: false,
-		},
-		{
-			name: "SuccessfulSyncWhileInstanceReadyAndNeedsUpdate",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{
-						Name:         qualifiedName,
-						State:        redisv1pb.Instance_READY,
-						MemorySizeGb: memorySizeGB + 1,
-						RedisConfigs: redisConfigs,
-						Host:         host,
-						Port:         port,
-					}, nil
-				},
-				MockUpdateInstance: func(_ context.Context, u *redisv1pb.UpdateInstanceRequest, _ ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error) {
-					// The GCP API is reporting more memory than we specified in
-					// the Kubernetes API. Ensure we're resetting it to our
-					// specified value.
-					if u.Instance.MemorySizeGb != memorySizeGB {
-						t.Errorf("u.Instance.MemorySizeGB: want %d, got %d", memorySizeGB, u.Instance.MemorySizeGb)
-					}
-					return nil, nil
-				},
-			}},
-			i: instance(
-				withInstanceName(instanceName),
-			),
-			want: instance(
-				withInstanceName(instanceName),
-				withState(v1alpha2.StateReady),
-				withProviderID(qualifiedName),
-				withEndpoint(host),
-				withPort(port),
-				withConditions(runtimev1alpha1.Available(), runtimev1alpha1.ReconcileSuccess()),
-				withBindingPhase(runtimev1alpha1.BindingPhaseUnbound),
-			),
-			wantRequeue: false,
-		},
-		{
-			name: "FailedGet",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return nil, errorBoom
-				},
-			}},
-			i: instance(
-				withInstanceName(instanceName),
-			),
-			want: instance(
-				withInstanceName(instanceName),
-				withConditions(runtimev1alpha1.ReconcileError(errorBoom)),
-			),
-			wantRequeue: true,
-		},
-		{
-			name: "FailedUpdate",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{
-						Name:         qualifiedName,
-						State:        redisv1pb.Instance_READY,
-						MemorySizeGb: memorySizeGB + 1,
-						RedisConfigs: redisConfigs,
-						Host:         host,
-						Port:         port,
-					}, nil
-				},
-				MockUpdateInstance: func(_ context.Context, u *redisv1pb.UpdateInstanceRequest, _ ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error) {
-					return nil, errorBoom
-				},
-			}},
-			i: instance(withInstanceName(instanceName)),
-			want: instance(
-				withInstanceName(instanceName),
-				withState(v1alpha2.StateReady),
-				withProviderID(qualifiedName),
-				withEndpoint(host),
-				withPort(port),
-				withConditions(runtimev1alpha1.Available(), runtimev1alpha1.ReconcileError(errorBoom)),
-				withBindingPhase(runtimev1alpha1.BindingPhaseUnbound),
-			),
-			wantRequeue: true,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			gotRequeue := tc.csd.Sync(ctx, tc.i)
-
-			if gotRequeue != tc.wantRequeue {
-				t.Errorf("tc.csd.Sync(...): want: %t got: %t", tc.wantRequeue, gotRequeue)
-			}
-
-			if diff := cmp.Diff(tc.want, tc.i, test.EquateConditions()); diff != "" {
-				t.Errorf("i: -want, +got:\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestDelete(t *testing.T) {
-	cases := []struct {
-		name        string
-		csd         createsyncdeleter
-		i           *v1alpha2.CloudMemorystoreInstance
-		want        *v1alpha2.CloudMemorystoreInstance
-		wantRequeue bool
-	}{
-		{
-			name: "ReclaimRetainSuccessfulDelete",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockDeleteInstance: func(_ context.Context, _ *redisv1pb.DeleteInstanceRequest, _ ...gax.CallOption) (*redisv1.DeleteInstanceOperation, error) {
-					return nil, nil
-				}},
-			},
-			i: instance(withFinalizers(finalizerName), withReclaimPolicy(runtimev1alpha1.ReclaimRetain)),
-			want: instance(
-				withReclaimPolicy(runtimev1alpha1.ReclaimRetain),
-				withConditions(runtimev1alpha1.Deleting(), runtimev1alpha1.ReconcileSuccess()),
-			),
-			wantRequeue: false,
-		},
-		{
-			name: "ReclaimDeleteSuccessfulDelete",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockDeleteInstance: func(_ context.Context, _ *redisv1pb.DeleteInstanceRequest, _ ...gax.CallOption) (*redisv1.DeleteInstanceOperation, error) {
-					return nil, nil
-				}},
-			},
-			i: instance(withFinalizers(finalizerName), withReclaimPolicy(runtimev1alpha1.ReclaimDelete)),
-			want: instance(
-				withReclaimPolicy(runtimev1alpha1.ReclaimDelete),
-				withConditions(runtimev1alpha1.Deleting(), runtimev1alpha1.ReconcileSuccess()),
-			),
-			wantRequeue: false,
-		},
-		{
-			name: "ReclaimDeleteFailedDelete",
-			csd: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{
-				MockDeleteInstance: func(_ context.Context, _ *redisv1pb.DeleteInstanceRequest, _ ...gax.CallOption) (*redisv1.DeleteInstanceOperation, error) {
-					return nil, errorBoom
-				}},
-			},
-			i: instance(withFinalizers(finalizerName), withReclaimPolicy(runtimev1alpha1.ReclaimDelete)),
-			want: instance(
-				withFinalizers(finalizerName),
-				withReclaimPolicy(runtimev1alpha1.ReclaimDelete),
-				withConditions(runtimev1alpha1.Deleting(), runtimev1alpha1.ReconcileError(errorBoom)),
-			),
-			wantRequeue: true,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			gotRequeue := tc.csd.Delete(ctx, tc.i)
-
-			if gotRequeue != tc.wantRequeue {
-				t.Errorf("tc.csd.Delete(...): want: %t got: %t", tc.wantRequeue, gotRequeue)
-			}
-
-			if diff := cmp.Diff(tc.want, tc.i, test.EquateConditions()); diff != "" {
-				t.Errorf("i: -want, +got:\n%s", diff)
-			}
-		})
-	}
-}
+var _ resource.ExternalClient = &external{}
+var _ resource.ExternalConnecter = &connecter{}
 
 func TestConnect(t *testing.T) {
-	cases := []struct {
-		name    string
-		conn    connecter
-		i       *v1alpha2.CloudMemorystoreInstance
-		want    createsyncdeleter
-		wantErr error
-	}{
-		{
-			name: "SuccessfulConnect",
-			conn: &providerConnecter{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
-						*obj.(*gcpv1alpha2.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = providerSecret
-					}
-					return nil
-				}},
-				newClient: func(_ context.Context, _ []byte) (cloudmemorystore.Client, error) {
-					return &fakecloudmemorystore.MockClient{}, nil
-				},
+	provider := gcpv1alpha2.Provider{
+		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerName},
+		Spec: gcpv1alpha2.ProviderSpec{
+			ProjectID: project,
+			Secret: corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: providerSecretName},
+				Key:                  providerSecretKey,
 			},
-			i:    instance(),
-			want: &cloudMemorystore{client: &fakecloudmemorystore.MockClient{}, project: project},
-		},
-		{
-			name: "FailedToGetProvider",
-			conn: &providerConnecter{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					return kerrors.NewNotFound(schema.GroupResource{}, providerName)
-				}},
-				newClient: func(_ context.Context, _ []byte) (cloudmemorystore.Client, error) {
-					return &fakecloudmemorystore.MockClient{}, nil
-				},
-			},
-			i:       instance(),
-			wantErr: errors.WithStack(errors.Errorf("cannot get provider %s/%s:  \"%s\" not found", namespace, providerName, providerName)),
-		},
-		{
-			name: "FailedToGetProviderSecret",
-			conn: &providerConnecter{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
-						*obj.(*gcpv1alpha2.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return kerrors.NewNotFound(schema.GroupResource{}, providerSecretName)
-					}
-					return nil
-				}},
-				newClient: func(_ context.Context, _ []byte) (cloudmemorystore.Client, error) {
-					return &fakecloudmemorystore.MockClient{}, nil
-				},
-			},
-			i:       instance(),
-			wantErr: errors.WithStack(errors.Errorf("cannot get provider secret %s/%s:  \"%s\" not found", namespace, providerSecretName, providerSecretName)),
-		},
-		{
-			name: "FailedToCreateCloudMemorystoreClient",
-			conn: &providerConnecter{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
-						*obj.(*gcpv1alpha2.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = providerSecret
-					}
-					return nil
-				}},
-				newClient: func(_ context.Context, _ []byte) (cloudmemorystore.Client, error) { return nil, errorBoom },
-			},
-			i:       instance(),
-			want:    &cloudMemorystore{project: project},
-			wantErr: errors.Wrap(errorBoom, "cannot create new CloudMemorystore client"),
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, gotErr := tc.conn.Connect(ctx, tc.i)
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
+		Data:       map[string][]byte{providerSecretKey: []byte(providerSecretData)},
+	}
 
-			if diff := cmp.Diff(tc.wantErr, gotErr, test.EquateErrors()); diff != "" {
+	type strange struct {
+		resource.Managed
+	}
+
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+	type want struct {
+		err error
+	}
+
+	cases := map[string]struct {
+		conn resource.ExternalConnecter
+		args args
+		want want
+	}{
+		"Connected": {
+			conn: &connecter{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+						*obj.(*gcpv1alpha2.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						*obj.(*corev1.Secret) = secret
+					}
+					return nil
+				}},
+				newCMS: func(_ context.Context, _ []byte) (cloudmemorystore.Client, error) { return nil, nil },
+			},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				err: nil,
+			},
+		},
+		"NotCloudMemorystoreInstance": {
+			conn: &connecter{},
+			args: args{ctx: context.Background(), mg: &strange{}},
+			want: want{err: errors.New(errNotInstance)},
+		},
+		"FailedToGetProvider": {
+			conn: &connecter{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					return errorBoom
+				}},
+			},
+			args: args{ctx: context.Background(), mg: instance()},
+			want: want{err: errors.Wrap(errorBoom, errGetProvider)},
+		},
+		"FailedToGetProviderSecret": {
+			conn: &connecter{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+						*obj.(*gcpv1alpha2.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						return errorBoom
+					}
+					return nil
+				}},
+			},
+			args: args{ctx: context.Background(), mg: instance()},
+			want: want{err: errors.Wrap(errorBoom, errGetProviderSecret)},
+		},
+		"FailedToCreateCloudMemorystoreClient": {
+			conn: &connecter{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+						*obj.(*gcpv1alpha2.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						*obj.(*corev1.Secret) = secret
+					}
+					return nil
+				}},
+				newCMS: func(_ context.Context, _ []byte) (cloudmemorystore.Client, error) { return nil, errorBoom },
+			},
+			args: args{ctx: context.Background(), mg: instance()},
+			want: want{err: errors.Wrap(errorBoom, errNewClient)},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			_, err := tc.conn.Connect(tc.args.ctx, tc.args.mg)
+
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("tc.conn.Connect(...): want error != got error:\n%s", diff)
 			}
-
-			if diff := cmp.Diff(tc.want, got, cmp.AllowUnexported(cloudMemorystore{})); diff != "" {
-				t.Errorf("tc.conn.Connect(...): -want, +got:\n%s", diff)
-			}
 		})
 	}
 }
 
-type mockConnector struct {
-	MockConnect func(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error)
-}
+func TestObserve(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+	type want struct {
+		mg          resource.Managed
+		observation resource.ExternalObservation
+		err         error
+	}
 
-func (c *mockConnector) Connect(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
-	return c.MockConnect(ctx, i)
-}
-
-type mockCSD struct {
-	MockCreate func(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool
-	MockSync   func(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool
-	MockDelete func(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool
-}
-
-func (csd *mockCSD) Create(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
-	return csd.MockCreate(ctx, i)
-}
-
-func (csd *mockCSD) Sync(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
-	return csd.MockSync(ctx, i)
-}
-
-func (csd *mockCSD) Delete(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
-	return csd.MockDelete(ctx, i)
-}
-
-func TestReconcile(t *testing.T) {
-	cases := []struct {
-		name    string
-		rec     *Reconciler
-		req     reconcile.Request
-		want    reconcile.Result
-		wantErr error
+	cases := map[string]struct {
+		client resource.ExternalClient
+		args   args
+		want   want
 	}{
-		{
-			name: "SuccessfulDelete",
-			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return &mockCSD{MockDelete: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) bool { return false }}, nil
+		"ObservedInstanceAvailable": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
+					return &redisv1pb.Instance{
+						State: redisv1pb.Instance_READY,
+						Host:  host,
+						Port:  port,
+						Name:  qualifiedName,
+					}, nil
 				}},
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName), withDeletionTimestamp(time.Now())))
-						return nil
+			},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg: instance(
+					withConditions(runtimev1alpha1.Available()),
+					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound),
+					withState(v1alpha2.StateReady),
+					withEndpoint(host),
+					withPort(port),
+					withProviderID(qualifiedName)),
+				observation: resource.ExternalObservation{
+					ResourceExists: true,
+					ConnectionDetails: resource.ConnectionDetails{
+						runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(host),
 					},
-					MockUpdate: func(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error { return nil },
 				},
 			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: false},
-			wantErr: nil,
 		},
-		{
-			name: "SuccessfulCreate",
-			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return &mockCSD{MockCreate: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) bool { return true }}, nil
+		"ObservedInstanceCreating": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
+					return &redisv1pb.Instance{
+						State: redisv1pb.Instance_CREATING,
+						Name:  qualifiedName,
+					}, nil
 				}},
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance())
-						return nil
-					},
-					MockUpdate: func(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error { return nil },
+			},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg: instance(
+					withConditions(runtimev1alpha1.Creating()),
+					withState(v1alpha2.StateCreating),
+					withProviderID(qualifiedName)),
+				observation: resource.ExternalObservation{
+					ResourceExists:    true,
+					ConnectionDetails: resource.ConnectionDetails{},
 				},
 			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: true},
-			wantErr: nil,
 		},
-		{
-			name: "SuccessfulSync",
-			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return &mockCSD{MockSync: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) bool { return false }}, nil
+		"ObservedInstanceDeleting": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
+					return &redisv1pb.Instance{
+						State: redisv1pb.Instance_DELETING,
+						Name:  qualifiedName,
+					}, nil
 				}},
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						switch key {
-						case client.ObjectKey{Namespace: namespace, Name: instanceName}:
-							*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName), withEndpoint(host)))
-						case client.ObjectKey{Namespace: namespace, Name: connectionSecretName}:
-							return kerrors.NewNotFound(schema.GroupResource{}, connectionSecretName)
-						}
-						return nil
-					},
-					MockUpdate: func(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error { return nil },
-					MockCreate: func(_ context.Context, _ runtime.Object, _ ...client.CreateOption) error { return nil },
+			},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg: instance(
+					withConditions(runtimev1alpha1.Deleting()),
+					withState(v1alpha2.StateDeleting),
+					withProviderID(qualifiedName)),
+				observation: resource.ExternalObservation{
+					ResourceExists:    true,
+					ConnectionDetails: resource.ConnectionDetails{},
 				},
 			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: false},
-			wantErr: nil,
 		},
-		{
-			name: "FailedToGetNonexistentInstance",
-			rec: &Reconciler{
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						return kerrors.NewNotFound(schema.GroupResource{}, instanceName)
-					},
-					MockUpdate: func(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error { return nil },
-				},
+		"ObservedInstanceDoesNotExist": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
+					return nil, status.Error(codes.NotFound, "wat")
+				}},
 			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: false},
-			wantErr: nil,
-		},
-		{
-			name: "FailedToGetExtantInstance",
-			rec: &Reconciler{
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						return errorBoom
-					},
-					MockUpdate: func(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error { return nil },
-				},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
 			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: false},
-			wantErr: errors.Wrapf(errorBoom, "cannot get instance %s/%s", namespace, instanceName),
+			want: want{
+				mg:          instance(),
+				observation: resource.ExternalObservation{ResourceExists: false},
+			},
 		},
-		{
-			name: "FailedToConnect",
-			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
+		"NotCloudMemorystoreInstance": {
+			client: &external{},
+			args: args{
+				ctx: context.Background(),
+				mg:  &strange{},
+			},
+			want: want{
+				mg:  &strange{},
+				err: errors.New(errNotInstance),
+			},
+		},
+		"FailedToGetInstance": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
 					return nil, errorBoom
 				}},
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance())
-						return nil
-					},
-					MockUpdate: func(_ context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
-						want := instance(withConditions(runtimev1alpha1.ReconcileError(errorBoom)))
-						got := obj.(*v1alpha2.CloudMemorystoreInstance)
-						if diff := cmp.Diff(want, got, test.EquateConditions()); diff != "" {
-							t.Errorf("kube.Update(...): -want, +got:\n%s", diff)
-						}
-						return nil
-					},
-				},
 			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: true},
-			wantErr: nil,
-		},
-		{
-			name: "FailedToGetConnectionSecret",
-			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return nil, nil
-				}},
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						switch key {
-						case types.NamespacedName{Namespace: namespace, Name: connectionSecretName}:
-							return errorBoom
-						case types.NamespacedName{Namespace: namespace, Name: instanceName}:
-							*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
-						}
-						return nil
-					},
-					MockUpdate: func(_ context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
-						want := instance(
-							withInstanceName(instanceName),
-							withConditions(
-								runtimev1alpha1.ReconcileError(errors.Wrapf(errorBoom, "cannot get secret %s/%s", namespace, connectionSecretName)),
-							),
-						)
-						got := obj.(*v1alpha2.CloudMemorystoreInstance)
-						if diff := cmp.Diff(want, got, test.EquateConditions()); diff != "" {
-							t.Errorf("kube.Update(...): -want, +got:\n%s", diff)
-						}
-						return nil
-					},
-				},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
 			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: true},
-			wantErr: nil,
-		},
-		{
-			name: "FailedToCreateConnectionSecret",
-			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return nil, nil
-				}},
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						switch key {
-						case types.NamespacedName{Namespace: namespace, Name: connectionSecretName}:
-							return kerrors.NewNotFound(schema.GroupResource{}, connectionSecretName)
-						case types.NamespacedName{Namespace: namespace, Name: instanceName}:
-							*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
-						}
-						return nil
-					},
-					MockUpdate: func(_ context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
-						want := instance(
-							withInstanceName(instanceName),
-							withConditions(runtimev1alpha1.ReconcileError(errors.Wrapf(errorBoom, "cannot create secret %s/%s", namespace, connectionSecretName))),
-						)
-						got := obj.(*v1alpha2.CloudMemorystoreInstance)
-						if diff := cmp.Diff(want, got, test.EquateConditions()); diff != "" {
-							t.Errorf("kube.Update(...): -want, +got:\n%s", diff)
-						}
-						return nil
-					},
-					MockCreate: func(_ context.Context, obj runtime.Object, _ ...client.CreateOption) error { return errorBoom },
-				},
+			want: want{
+				mg:  instance(),
+				err: errors.Wrap(errorBoom, errGetInstance),
 			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: true},
-			wantErr: nil,
-		},
-		{
-			name: "FailedToUpdateConnectionSecret",
-			rec: &Reconciler{
-				connecter: &mockConnector{MockConnect: func(_ context.Context, _ *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
-					return nil, nil
-				}},
-				kube: &test.MockClient{
-					MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-						switch key {
-						case types.NamespacedName{Namespace: namespace, Name: connectionSecretName}:
-							return nil
-						case types.NamespacedName{Namespace: namespace, Name: instanceName}:
-							*obj.(*v1alpha2.CloudMemorystoreInstance) = *(instance(withInstanceName(instanceName)))
-						}
-						return nil
-					},
-					MockUpdate: func(_ context.Context, obj runtime.Object, _ ...client.UpdateOption) error {
-						switch got := obj.(type) {
-						case *corev1.Secret:
-							return errorBoom
-						case *v1alpha2.CloudMemorystoreInstance:
-							want := instance(
-								withInstanceName(instanceName),
-								withConditions(runtimev1alpha1.ReconcileError(errors.Wrapf(errorBoom, "cannot update secret %s/%s", namespace, connectionSecretName))),
-							)
-							if diff := cmp.Diff(want, got, test.EquateConditions()); diff != "" {
-								t.Errorf("kube.Update(...): -want, +got:\n%s", diff)
-							}
-						}
-						return nil
-					},
-				},
-			},
-			req:     reconcile.Request{NamespacedName: types.NamespacedName{Namespace: namespace, Name: instanceName}},
-			want:    reconcile.Result{Requeue: true},
-			wantErr: nil,
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			gotResult, gotErr := tc.rec.Reconcile(tc.req)
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, err := tc.client.Observe(tc.args.ctx, tc.args.mg)
 
-			if diff := cmp.Diff(tc.wantErr, gotErr, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.rec.Reconcile(...): want error != got error:\n%s", diff)
+			if diff := cmp.Diff(tc.want.observation, got, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.client.Observe(): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want, gotResult); diff != "" {
-				t.Errorf("tc.rec.Reconcile(...): -want, +got:\n%s", diff)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.client.Observe(): -want error, +got error:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
+				t.Errorf("resource.Managed: -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestConnectionSecret(t *testing.T) {
-	cases := []struct {
-		name string
-		i    *v1alpha2.CloudMemorystoreInstance
-		want *corev1.Secret
+func TestCreate(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+	type want struct {
+		mg       resource.Managed
+		creation resource.ExternalCreation
+		err      error
+	}
+
+	cases := map[string]struct {
+		client resource.ExternalClient
+		args   args
+		want   want
 	}{
-		{
-			name: "Successful",
-			i:    instance(withEndpoint(host)),
-			want: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            connectionSecretName,
-					Namespace:       namespace,
-					OwnerReferences: []metav1.OwnerReference{meta.AsController(meta.ReferenceTo(instance(), v1alpha2.CloudMemorystoreInstanceGroupVersionKind))},
+		"CreatedInstance": {
+			client: &external{cms: &fake.MockClient{
+				MockCreateInstance: func(_ context.Context, _ *redisv1pb.CreateInstanceRequest, _ ...gax.CallOption) (*redisv1.CreateInstanceOperation, error) {
+					return nil, nil
+				}},
+			},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg: instance(withConditions(runtimev1alpha1.Creating())),
+			},
+		},
+		"NotCloudMemorystoreInstance": {
+			client: &external{},
+			args: args{
+				ctx: context.Background(),
+				mg:  &strange{},
+			},
+			want: want{
+				mg:  &strange{},
+				err: errors.New(errNotInstance),
+			},
+		},
+		"FailedToCreateInstance": {
+			client: &external{cms: &fake.MockClient{
+				MockCreateInstance: func(_ context.Context, _ *redisv1pb.CreateInstanceRequest, _ ...gax.CallOption) (*redisv1.CreateInstanceOperation, error) {
+					return nil, errorBoom
 				},
-				Data: map[string][]byte{runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(host)},
+			}},
+
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg:  instance(withConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(errorBoom, errCreateInstance),
 			},
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := connectionSecret(tc.i)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Errorf("connectionSecret(...): -want, +got:\n%s", diff)
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, err := tc.client.Create(tc.args.ctx, tc.args.mg)
+
+			if diff := cmp.Diff(tc.want.creation, got, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.client.Create(): -want, +got:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.client.Create(): -want error, +got error:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
+				t.Errorf("resource.Managed: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+	type want struct {
+		mg     resource.Managed
+		update resource.ExternalUpdate
+		err    error
+	}
+
+	cases := map[string]struct {
+		client resource.ExternalClient
+		args   args
+		want   want
+	}{
+		"UpdatedInstance": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
+					return &redisv1pb.Instance{}, nil
+				},
+				MockUpdateInstance: func(_ context.Context, _ *redisv1pb.UpdateInstanceRequest, _ ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error) {
+					return nil, nil
+				},
+			}},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg: instance(withConditions()),
+			},
+		},
+		"UpdateNotRequired": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
+					return &redisv1pb.Instance{
+						MemorySizeGb: memorySizeGB,
+						RedisConfigs: redisConfigs,
+					}, nil
+				},
+			}},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg: instance(withConditions()),
+			},
+		},
+		"NotCloudMemorystoreInstance": {
+			client: &external{},
+			args: args{
+				ctx: context.Background(),
+				mg:  &strange{},
+			},
+			want: want{
+				mg:  &strange{},
+				err: errors.New(errNotInstance),
+			},
+		},
+		"FailedToGetInstance": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
+					return nil, errorBoom
+				}},
+			},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg:  instance(),
+				err: errors.Wrap(errorBoom, errGetInstance),
+			},
+		},
+		"FailedToUpdateInstance": {
+			client: &external{cms: &fake.MockClient{
+				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
+					return &redisv1pb.Instance{}, nil
+				},
+				MockUpdateInstance: func(_ context.Context, _ *redisv1pb.UpdateInstanceRequest, _ ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error) {
+					return nil, errorBoom
+				},
+			}},
+
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg:  instance(),
+				err: errors.Wrap(errorBoom, errUpdateInstance),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, err := tc.client.Update(tc.args.ctx, tc.args.mg)
+
+			if diff := cmp.Diff(tc.want.update, got, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.client.Update(): -want, +got:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.client.Update(): -want error, +got error:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
+				t.Errorf("resource.Managed: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+func TestDelete(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		err error
+	}
+
+	cases := map[string]struct {
+		client resource.ExternalClient
+		args   args
+		want   want
+	}{
+		"DeletedInstance": {
+			client: &external{cms: &fake.MockClient{
+				MockDeleteInstance: func(_ context.Context, _ *redisv1pb.DeleteInstanceRequest, _ ...gax.CallOption) (*redisv1.DeleteInstanceOperation, error) {
+					return nil, nil
+				}},
+			},
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg: instance(withConditions(runtimev1alpha1.Deleting())),
+			},
+		},
+		"NotCloudMemorystoreInstance": {
+			client: &external{},
+			args: args{
+				ctx: context.Background(),
+				mg:  &strange{},
+			},
+			want: want{
+				mg:  &strange{},
+				err: errors.New(errNotInstance),
+			},
+		},
+		"FailedToDeleteInstance": {
+			client: &external{cms: &fake.MockClient{
+				MockDeleteInstance: func(_ context.Context, _ *redisv1pb.DeleteInstanceRequest, _ ...gax.CallOption) (*redisv1.DeleteInstanceOperation, error) {
+					return nil, errorBoom
+				},
+			}},
+
+			args: args{
+				ctx: context.Background(),
+				mg:  instance(),
+			},
+			want: want{
+				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
+				err: errors.Wrap(errorBoom, errDeleteInstance),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := tc.client.Delete(tc.args.ctx, tc.args.mg)
+
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.client.Delete(): -want error, +got error:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
+				t.Errorf("resource.Managed: -want, +got:\n%s", diff)
 			}
 		})
 	}

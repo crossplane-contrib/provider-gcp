@@ -26,6 +26,8 @@ import (
 	"google.golang.org/api/option"
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/crossplaneio/stack-gcp/gcp/apis/cache/v1alpha2"
 )
@@ -69,11 +71,11 @@ type InstanceID struct {
 // use a four character prefix and a 36 character UUID.
 // https://godoc.org/google.golang.org/genproto/googleapis/cloud/redis/v1#CreateInstanceRequest
 func NewInstanceID(project string, i *v1alpha2.CloudMemorystoreInstance) InstanceID {
-	id := InstanceID{Project: project, Region: i.Spec.Region, Instance: i.Status.InstanceName}
-	if id.Instance == "" {
-		id.Instance = fmt.Sprintf("%s-%s", NamePrefix, i.GetUID())
+	return InstanceID{
+		Project:  project,
+		Region:   i.Spec.Region,
+		Instance: fmt.Sprintf("%s-%s", NamePrefix, i.GetUID()),
 	}
-	return id
 }
 
 // Parent returns the instance's parent, suitable for the create API call.
@@ -150,4 +152,11 @@ func NewDeleteInstanceRequest(id InstanceID) *redisv1pb.DeleteInstanceRequest {
 // NewGetInstanceRequest creates a request to get an instance from the GCP API.
 func NewGetInstanceRequest(id InstanceID) *redisv1pb.GetInstanceRequest {
 	return &redisv1pb.GetInstanceRequest{Name: id.Name()}
+}
+
+// IsNotFound returns true if the supplied error indicates a CloudMemorystore
+// instance was not found.
+func IsNotFound(err error) bool {
+	// TODO(negz): Confirm this is how this API indicates a non-existent resource.
+	return status.Code(err) == codes.NotFound
 }

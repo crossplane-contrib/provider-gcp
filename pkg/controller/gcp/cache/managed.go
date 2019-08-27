@@ -18,18 +18,16 @@ package cache
 
 import (
 	"context"
-	"time"
+	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
@@ -38,164 +36,17 @@ import (
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudmemorystore"
 )
 
+// Error strings.
 const (
-	controllerName   = "cloudmemorystoreinstances.cache.gcp.crossplane.io"
-	finalizerName    = "finalizer." + controllerName
-	reconcileTimeout = 1 * time.Minute
+	errGetProvider       = "cannot get Provider"
+	errGetProviderSecret = "cannot get Provider Secret"
+	errNewClient         = "cannot create new CloudMemorystore client"
+	errNotInstance       = "managed resource is not an CloudMemorystore instance"
+	errGetInstance       = "cannot get CloudMemorystore instance"
+	errCreateInstance    = "cannot create CloudMemorystore instance"
+	errUpdateInstance    = "cannot update CloudMemorystore instance"
+	errDeleteInstance    = "cannot delete CloudMemorystore instance"
 )
-
-var log = logging.Logger.WithName("controller." + controllerName)
-
-// A creator can create instances in an external store - e.g. the GCP API.
-type creator interface {
-	// Create the supplied instance in the external store. Returns true if the
-	// instance requires further reconciliation.
-	Create(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (requeue bool)
-}
-
-// A syncer can sync instances with an external store - e.g. the GCP API.
-type syncer interface {
-	// Sync the supplied instance with the external store. Returns true if the
-	// instance requires further reconciliation.
-	Sync(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (requeue bool)
-}
-
-// A deleter can delete instances from an external store - e.g. the GCP API.
-type deleter interface {
-	// Delete the supplied instance from the external store. Returns true if the
-	// instance requires further reconciliation.
-	Delete(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (requeue bool)
-}
-
-// A createsyncdeleter an create, sync, and delete instances in an external
-// store - e.g. the GCP API.
-type createsyncdeleter interface {
-	creator
-	syncer
-	deleter
-}
-
-// cloudMemorystore is a createsyncdeleter using the GCP CloudMemorystore API.
-type cloudMemorystore struct {
-	client  cloudmemorystore.Client
-	project string
-}
-
-func (c *cloudMemorystore) Create(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
-	i.Status.SetConditions(runtimev1alpha1.Creating())
-
-	id := cloudmemorystore.NewInstanceID(c.project, i)
-	if _, err := c.client.CreateInstance(ctx, cloudmemorystore.NewCreateInstanceRequest(id, i)); err != nil {
-		i.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
-		return true
-	}
-
-	i.Status.InstanceName = id.Instance
-	meta.AddFinalizer(i, finalizerName)
-	i.Status.SetConditions(runtimev1alpha1.ReconcileSuccess())
-	return true
-}
-
-func (c *cloudMemorystore) Sync(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
-	id := cloudmemorystore.NewInstanceID(c.project, i)
-	gcpInstance, err := c.client.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
-	if err != nil {
-		i.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
-		return true
-	}
-
-	i.Status.State = gcpInstance.GetState().String()
-
-	switch i.Status.State {
-	case v1alpha2.StateReady:
-		i.Status.SetConditions(runtimev1alpha1.Available())
-		resource.SetBindable(i)
-	case v1alpha2.StateCreating:
-		i.Status.SetConditions(runtimev1alpha1.Creating(), runtimev1alpha1.ReconcileSuccess())
-		return true
-	case v1alpha2.StateDeleting:
-		i.Status.SetConditions(runtimev1alpha1.Deleting(), runtimev1alpha1.ReconcileSuccess())
-		return false
-	default:
-		// TODO(negz): Don't requeue in this scenario? The instance is probably
-		// in maintenance, updating, or repairing, which can take minutes.
-		i.Status.SetConditions(runtimev1alpha1.ReconcileSuccess())
-		return true
-	}
-
-	i.Status.Endpoint = gcpInstance.GetHost()
-	i.Status.Port = int(gcpInstance.GetPort())
-	i.Status.ProviderID = gcpInstance.GetName()
-
-	if !cloudmemorystore.NeedsUpdate(i, gcpInstance) {
-		i.Status.SetConditions(runtimev1alpha1.ReconcileSuccess())
-		return false
-	}
-
-	if _, err := c.client.UpdateInstance(ctx, cloudmemorystore.NewUpdateInstanceRequest(id, i)); err != nil {
-		i.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
-		return true
-	}
-
-	i.Status.SetConditions(runtimev1alpha1.ReconcileSuccess())
-	return false
-}
-
-func (c *cloudMemorystore) Delete(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) bool {
-	i.Status.SetConditions(runtimev1alpha1.Deleting())
-
-	if i.Spec.ReclaimPolicy == runtimev1alpha1.ReclaimDelete {
-		id := cloudmemorystore.NewInstanceID(c.project, i)
-		if _, err := c.client.DeleteInstance(ctx, cloudmemorystore.NewDeleteInstanceRequest(id)); err != nil {
-			i.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
-			return true
-		}
-	}
-
-	meta.RemoveFinalizer(i, finalizerName)
-	i.Status.SetConditions(runtimev1alpha1.ReconcileSuccess())
-	return false
-}
-
-// A connecter returns a createsyncdeleter that can create, sync, and delete
-// CloudMemorystore instances with an external store - for example the GCP API.
-type connecter interface {
-	Connect(context.Context, *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error)
-}
-
-// providerConnecter is a connecter that returns a createsyncdeleter
-// authenticated using credentials read from a Crossplane Provider resource.
-type providerConnecter struct {
-	kube      client.Client
-	newClient func(ctx context.Context, creds []byte) (cloudmemorystore.Client, error)
-}
-
-// Connect returns a createsyncdeleter backed by the GCP API. GCP credentials
-// are read from the Crossplane Provider referenced by the supplied
-// CloudMemorystoreInstance.
-func (c *providerConnecter) Connect(ctx context.Context, i *v1alpha2.CloudMemorystoreInstance) (createsyncdeleter, error) {
-	p := &gcpv1alpha2.Provider{}
-	n := meta.NamespacedNameOf(i.Spec.ProviderReference)
-	if err := c.kube.Get(ctx, n, p); err != nil {
-		return nil, errors.Wrapf(err, "cannot get provider %s", n)
-	}
-
-	s := &corev1.Secret{}
-	n = types.NamespacedName{Namespace: p.Namespace, Name: p.Spec.Secret.Name}
-	if err := c.kube.Get(ctx, n, s); err != nil {
-		return nil, errors.Wrapf(err, "cannot get provider secret %s", n)
-	}
-
-	client, err := c.newClient(ctx, s.Data[p.Spec.Secret.Key])
-	return &cloudMemorystore{client: client, project: p.Spec.ProjectID}, errors.Wrap(err, "cannot create new CloudMemorystore client")
-}
-
-// Reconciler reconciles CloudMemorystoreInstances read from the Kubernetes API
-// with an external store, typically the GCP API.
-type Reconciler struct {
-	connecter
-	kube client.Client
-}
 
 // CloudMemorystoreInstanceController is responsible for adding the Cloud Memorystore
 // controller and its corresponding reconciler to the manager with any runtime configuration.
@@ -205,71 +56,130 @@ type CloudMemorystoreInstanceController struct{}
 // Manager with default RBAC. The Manager will set fields on the Controller and
 // start it when the Manager is Started.
 func (c *CloudMemorystoreInstanceController) SetupWithManager(mgr ctrl.Manager) error {
-	r := &Reconciler{
-		connecter: &providerConnecter{kube: mgr.GetClient(), newClient: cloudmemorystore.NewClient},
-		kube:      mgr.GetClient(),
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(controllerName).
+		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha2.CloudMemorystoreInstanceKind, v1alpha2.Group))).
 		For(&v1alpha2.CloudMemorystoreInstance{}).
-		Complete(r)
+		Complete(resource.NewManagedReconciler(mgr,
+			resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind),
+			resource.WithExternalConnecter(&connecter{client: mgr.GetClient(), newCMS: cloudmemorystore.NewClient})))
 }
 
-// Reconcile Google CloudMemorystore resources with the GCP API.
-func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	log.V(logging.Debug).Info("reconciling", "kind", v1alpha2.CloudMemorystoreInstanceKindAPIVersion, "request", req)
+type connecter struct {
+	client client.Client
+	newCMS func(ctx context.Context, creds []byte) (cloudmemorystore.Client, error)
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), reconcileTimeout)
-	defer cancel()
-
-	i := &v1alpha2.CloudMemorystoreInstance{}
-	if err := r.kube.Get(ctx, req.NamespacedName, i); err != nil {
-		if kerrors.IsNotFound(err) {
-			return reconcile.Result{Requeue: false}, nil
-		}
-		return reconcile.Result{Requeue: false}, errors.Wrapf(err, "cannot get instance %s", req.NamespacedName)
+func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	if !ok {
+		return nil, errors.New(errNotInstance)
 	}
 
-	client, err := r.Connect(ctx, i)
+	p := &gcpv1alpha2.Provider{}
+	n := meta.NamespacedNameOf(i.Spec.ProviderReference)
+	if err := c.client.Get(ctx, n, p); err != nil {
+		return nil, errors.Wrap(err, errGetProvider)
+	}
+
+	s := &corev1.Secret{}
+	n = types.NamespacedName{Namespace: p.Namespace, Name: p.Spec.Secret.Name}
+	if err := c.client.Get(ctx, n, s); err != nil {
+		return nil, errors.Wrap(err, errGetProviderSecret)
+	}
+
+	cms, err := c.newCMS(ctx, s.Data[p.Spec.Secret.Key])
+	return &external{cms: cms, projectID: p.Spec.ProjectID}, errors.Wrap(err, errNewClient)
+}
+
+type external struct {
+	cms       cloudmemorystore.Client
+	projectID string
+}
+
+func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	if !ok {
+		return resource.ExternalObservation{}, errors.New(errNotInstance)
+	}
+
+	id := cloudmemorystore.NewInstanceID(e.projectID, i)
+	existing, err := e.cms.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
+	if cloudmemorystore.IsNotFound(err) {
+		return resource.ExternalObservation{ResourceExists: false}, nil
+	}
 	if err != nil {
-		i.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
-		return reconcile.Result{Requeue: true}, errors.Wrapf(r.kube.Update(ctx, i), "cannot update instance %s", req.NamespacedName)
+		return resource.ExternalObservation{}, errors.Wrap(err, errGetInstance)
 	}
 
-	// The instance has been deleted from the API server. Delete from GCP.
-	if i.DeletionTimestamp != nil {
-		return reconcile.Result{Requeue: client.Delete(ctx, i)}, errors.Wrapf(r.kube.Update(ctx, i), "cannot update instance %s", req.NamespacedName)
+	i.Status.State = existing.GetState().String()
+	i.Status.Endpoint = existing.GetHost()
+	i.Status.Port = int(existing.GetPort())
+	i.Status.ProviderID = existing.GetName()
+
+	switch i.Status.State {
+	case v1alpha2.StateReady:
+		i.Status.SetConditions(runtimev1alpha1.Available())
+		resource.SetBindable(i)
+	case v1alpha2.StateCreating:
+		i.Status.SetConditions(runtimev1alpha1.Creating())
+	case v1alpha2.StateDeleting:
+		i.Status.SetConditions(runtimev1alpha1.Deleting())
 	}
 
-	// The instance is unnamed. Assume it has not been created in GCP.
-	if i.Status.InstanceName == "" {
-		return reconcile.Result{Requeue: client.Create(ctx, i)}, errors.Wrapf(r.kube.Update(ctx, i), "cannot update instance %s", req.NamespacedName)
+	o := resource.ExternalObservation{
+		ResourceExists:    true,
+		ConnectionDetails: resource.ConnectionDetails{},
 	}
 
-	if err := r.upsertSecret(ctx, connectionSecret(i)); err != nil {
-		i.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
-		return reconcile.Result{Requeue: true}, errors.Wrapf(r.kube.Update(ctx, i), "cannot update instance %s", req.NamespacedName)
+	if i.Status.Endpoint != "" {
+		o.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(i.Status.Endpoint)
 	}
 
-	// The instance exists in the API server and GCP. Sync it.
-	return reconcile.Result{Requeue: client.Sync(ctx, i)}, errors.Wrapf(r.kube.Update(ctx, i), "cannot update instance %s", req.NamespacedName)
+	return o, nil
+
 }
 
-func (r *Reconciler) upsertSecret(ctx context.Context, s *corev1.Secret) error {
-	n := types.NamespacedName{Namespace: s.GetNamespace(), Name: s.GetName()}
-	if err := r.kube.Get(ctx, n, &corev1.Secret{}); err != nil {
-		if kerrors.IsNotFound(err) {
-			return errors.Wrapf(r.kube.Create(ctx, s), "cannot create secret %s", n)
-		}
-		return errors.Wrapf(err, "cannot get secret %s", n)
+func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	if !ok {
+		return resource.ExternalCreation{}, errors.New(errNotInstance)
 	}
-	return errors.Wrapf(r.kube.Update(ctx, s), "cannot update secret %s", n)
+
+	id := cloudmemorystore.NewInstanceID(e.projectID, i)
+	i.Status.SetConditions(runtimev1alpha1.Creating())
+
+	_, err := e.cms.CreateInstance(ctx, cloudmemorystore.NewCreateInstanceRequest(id, i))
+	return resource.ExternalCreation{}, errors.Wrap(err, errCreateInstance)
 }
 
-func connectionSecret(i *v1alpha2.CloudMemorystoreInstance) *corev1.Secret {
-	// TODO(negz): Include the port here too?
-	s := resource.ConnectionSecretFor(i, v1alpha2.CloudMemorystoreInstanceGroupVersionKind)
-	s.Data = map[string][]byte{runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(i.Status.Endpoint)}
-	return s
+func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	if !ok {
+		return resource.ExternalUpdate{}, errors.New(errNotInstance)
+	}
+
+	id := cloudmemorystore.NewInstanceID(e.projectID, i)
+	existing, err := e.cms.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
+	if err != nil {
+		return resource.ExternalUpdate{}, errors.Wrap(err, errGetInstance)
+	}
+
+	if !cloudmemorystore.NeedsUpdate(i, existing) {
+		return resource.ExternalUpdate{}, nil
+	}
+
+	_, err = e.cms.UpdateInstance(ctx, cloudmemorystore.NewUpdateInstanceRequest(id, i))
+	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
+}
+
+func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
+	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	if !ok {
+		return errors.New(errNotInstance)
+	}
+	i.SetConditions(runtimev1alpha1.Deleting())
+
+	id := cloudmemorystore.NewInstanceID(e.projectID, i)
+	_, err := e.cms.DeleteInstance(ctx, cloudmemorystore.NewDeleteInstanceRequest(id))
+	return errors.Wrap(resource.Ignore(cloudmemorystore.IsNotFound, err), errDeleteInstance)
 }
