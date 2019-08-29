@@ -25,8 +25,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 	v1 "k8s.io/api/core/v1"
@@ -40,50 +38,28 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
 	"github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha2"
-	apisv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
+	gcpapis "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 )
 
 const (
-	testNetworkName        = "test-network"
-	testNetworkDescription = "this is my test network!"
-	testGoogleProjectID    = "test-project-id"
-	testProviderName       = "test-provider"
-	testNamespace          = "test-namespace"
+	testSubnetworkName        = "test-subnetwork"
+	testSubnetworkDescription = "test-subnetwork"
+	testSubnetworkRegion      = "test-region"
 )
 
-const testGCPCredentialsJSON = `
-{
-  "type": "service_account",
-  "project_id": "fake-project",
-  "private_key_id": "fake-id",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nIAMAFAKEPRIVATEKEY-----END PRIVATE KEY-----\n",
-  "client_email": "crossplane-test@crossplane-playground.iam.gserviceaccount.com",
-  "client_id": "123456789",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/crossplane-test%40crossplane-test.iam.gserviceaccount.com"
-}
-
-`
-
-var fakeGoogleCredentials = google.Credentials{
-	TokenSource: oauth2.StaticTokenSource(&oauth2.Token{}),
-}
-
-func TestNetworkConnector_Connect(t *testing.T) {
+func TestSubnetworkConnector_Connect(t *testing.T) {
 	type args struct {
 		cr resource.Managed
-		c  *networkConnector
+		c  *subnetworkConnector
 		ns func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error)
 	}
 
 	fakeErr := errors.New("i reject to work")
-	testProvider := &apisv1alpha2.Provider{
+	testProvider := &gcpapis.Provider{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		},
-		Spec: apisv1alpha2.ProviderSpec{
+		Spec: gcpapis.ProviderSpec{
 			Secret: v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{
 					Name: "test-secret-name",
@@ -104,24 +80,25 @@ func TestNetworkConnector_Connect(t *testing.T) {
 	}{
 		"Successful": {
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name:      testProviderName,
 								Namespace: testNamespace,
 							},
 						},
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name: testNetworkName,
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name:   testSubnetworkName,
+							Region: testSubnetworkRegion,
 						},
 					},
 				},
-				c: &networkConnector{
+				c: &subnetworkConnector{
 					kube: &test.MockClient{
 						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 							switch o := obj.(type) {
-							case *apisv1alpha2.Provider:
+							case *gcpapis.Provider:
 								if diff := cmp.Diff(
 									meta.NamespacedNameOf(&v1.ObjectReference{Name: testProviderName, Namespace: testNamespace}),
 									key); diff != "" {
@@ -142,29 +119,49 @@ func TestNetworkConnector_Connect(t *testing.T) {
 				},
 			},
 		},
-		"UnnamedNetworkResource": {
+		"SubnetworkResourceWithNoName": {
 			args: args{
-				cr: &v1alpha2.Network{},
-				c:  &networkConnector{},
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Region: testSubnetworkRegion,
+						},
+					},
+				},
+				c: &subnetworkConnector{},
 			},
-			err: errors.New(errInsufficientNetworkSpec),
+			err: errors.New(errInsufficientSubnetworkSpec),
+		},
+		"SubnetworkResourceWithNoRegion": {
+			args: args{
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name: testSubnetworkName,
+						},
+					},
+				},
+				c: &subnetworkConnector{},
+			},
+			err: errors.New(errInsufficientSubnetworkSpec),
 		},
 		"ProviderRetrievalFailed": {
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name: testNetworkName,
-						},
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name:      testProviderName,
 								Namespace: testNamespace,
 							},
 						},
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name:   testSubnetworkName,
+							Region: testSubnetworkRegion,
+						},
 					},
 				},
-				c: &networkConnector{
+				c: &subnetworkConnector{
 					kube: &test.MockClient{
 						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 							return fakeErr
@@ -176,24 +173,25 @@ func TestNetworkConnector_Connect(t *testing.T) {
 		},
 		"CredFromSecretRetrievalFailed": {
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name:      testProviderName,
 								Namespace: testNamespace,
 							},
 						},
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name: testNetworkName,
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name:   testSubnetworkName,
+							Region: testSubnetworkRegion,
 						},
 					},
 				},
-				c: &networkConnector{
+				c: &subnetworkConnector{
 					kube: &test.MockClient{
 						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 							switch o := obj.(type) {
-							case *apisv1alpha2.Provider:
+							case *gcpapis.Provider:
 								if diff := cmp.Diff(
 									meta.NamespacedNameOf(&v1.ObjectReference{Name: testProviderName, Namespace: testNamespace}),
 									key); diff != "" {
@@ -213,24 +211,25 @@ func TestNetworkConnector_Connect(t *testing.T) {
 		},
 		"NewServiceFailed": {
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name:      testProviderName,
 								Namespace: testNamespace,
 							},
 						},
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name: testNetworkName,
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name:   testSubnetworkName,
+							Region: testSubnetworkRegion,
 						},
 					},
 				},
-				c: &networkConnector{
+				c: &subnetworkConnector{
 					kube: &test.MockClient{
 						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 							switch o := obj.(type) {
-							case *apisv1alpha2.Provider:
+							case *gcpapis.Provider:
 								if diff := cmp.Diff(
 									meta.NamespacedNameOf(&v1.ObjectReference{Name: testProviderName, Namespace: testNamespace}),
 									key); diff != "" {
@@ -254,10 +253,10 @@ func TestNetworkConnector_Connect(t *testing.T) {
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
-				c:  &networkConnector{},
+				cr: &v1alpha2.Network{},
+				c:  &subnetworkConnector{},
 			},
-			err: errors.New(errNotNetwork),
+			err: errors.New(errNotSubnetwork),
 		},
 	}
 
@@ -272,7 +271,7 @@ func TestNetworkConnector_Connect(t *testing.T) {
 	}
 }
 
-func TestNetworkExternal_Observe(t *testing.T) {
+func TestSubsubnetworkExternal_Observe(t *testing.T) {
 	type args struct {
 		cr resource.Managed
 	}
@@ -293,10 +292,10 @@ func TestNetworkExternal_Observe(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name: testNetworkName,
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name: testSubnetworkName,
 						},
 					},
 				},
@@ -313,10 +312,10 @@ func TestNetworkExternal_Observe(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name: testNetworkName,
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name: testSubnetworkName,
 						},
 					},
 				},
@@ -332,13 +331,13 @@ func TestNetworkExternal_Observe(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha2.Subnetwork{},
 			},
 			error: true,
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha2.Network{},
 			},
 			error: true,
 		},
@@ -349,7 +348,7 @@ func TestNetworkExternal_Observe(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithCredentials(&fakeGoogleCredentials))
-			e := networkExternal{
+			e := subnetworkExternal{
 				projectID: testGoogleProjectID,
 				Service:   s,
 			}
@@ -364,12 +363,11 @@ func TestNetworkExternal_Observe(t *testing.T) {
 	}
 }
 
-func TestNetworkExternal_Create(t *testing.T) {
+func TestSubsubnetworkExternal_Create(t *testing.T) {
 	type args struct {
 		cr resource.Managed
 	}
 
-	trueVal := true
 	cases := map[string]struct {
 		handler http.Handler
 		args    args
@@ -385,15 +383,11 @@ func TestNetworkExternal_Create(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name:                  testNetworkName,
-							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
-							},
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name:        testSubnetworkName,
+							Description: testSubnetworkDescription,
 						},
 					},
 				},
@@ -409,7 +403,7 @@ func TestNetworkExternal_Create(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha2.Subnetwork{},
 			},
 			error: true,
 		},
@@ -423,12 +417,12 @@ func TestNetworkExternal_Create(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha2.Subnetwork{},
 			},
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha2.Network{},
 			},
 			error: true,
 		},
@@ -439,7 +433,7 @@ func TestNetworkExternal_Create(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithCredentials(&fakeGoogleCredentials))
-			e := networkExternal{
+			e := subnetworkExternal{
 				projectID: testGoogleProjectID,
 				Service:   s,
 			}
@@ -451,12 +445,11 @@ func TestNetworkExternal_Create(t *testing.T) {
 	}
 }
 
-func TestNetworkExternal_Update(t *testing.T) {
+func TestSubsubnetworkExternal_Update(t *testing.T) {
 	type args struct {
 		cr resource.Managed
 	}
 
-	trueVal := true
 	cases := map[string]struct {
 		handler http.Handler
 		args    args
@@ -472,24 +465,11 @@ func TestNetworkExternal_Update(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name:                  testNetworkName,
-							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
-							},
-						},
-					},
-					Status: v1alpha2.NetworkStatus{
-						GCPNetworkStatus: v1alpha2.GCPNetworkStatus{
-							AutoCreateSubnetworks: trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "GLOBAL",
-							},
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name:        testSubnetworkName,
+							Description: testSubnetworkDescription,
 						},
 					},
 				},
@@ -505,62 +485,26 @@ func TestNetworkExternal_Update(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name:                  testNetworkName,
-							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
-							},
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name:        testSubnetworkName,
+							Description: testSubnetworkDescription,
 						},
 					},
-					Status: v1alpha2.NetworkStatus{
-						GCPNetworkStatus: v1alpha2.GCPNetworkStatus{
-							AutoCreateSubnetworks: trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "GLOBAL",
-							},
+					Status: v1alpha2.SubnetworkStatus{
+						GCPSubnetworkStatus: v1alpha2.GCPSubnetworkStatus{
+							Name:        testSubnetworkName,
+							Description: "changed description!",
 						},
 					},
 				},
 			},
 			error: true,
 		},
-		"Unnecessary": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				t.Errorf("patch request should have been skipped")
-			}),
-			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name:                  testNetworkName,
-							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
-							},
-						},
-					},
-					Status: v1alpha2.NetworkStatus{
-						GCPNetworkStatus: v1alpha2.GCPNetworkStatus{
-							AutoCreateSubnetworks: trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
-							},
-						},
-					},
-				},
-			},
-		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha2.Network{},
 			},
 			error: true,
 		},
@@ -571,7 +515,7 @@ func TestNetworkExternal_Update(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithCredentials(&fakeGoogleCredentials))
-			e := networkExternal{
+			e := subnetworkExternal{
 				projectID: testGoogleProjectID,
 				Service:   s,
 			}
@@ -581,14 +525,19 @@ func TestNetworkExternal_Update(t *testing.T) {
 			}
 		})
 	}
+	// Type test
+	e := subnetworkExternal{}
+	_, err := e.Update(context.Background(), &v1alpha2.Network{})
+	if diff := cmp.Diff(errors.New(errNotSubnetwork).Error(), err.Error()); diff != "" {
+		t.Errorf("r: -want, +got:\n%s", diff)
+	}
 }
 
-func TestNetworkExternal_Delete(t *testing.T) {
+func TestSubsubnetworkExternal_Delete(t *testing.T) {
 	type args struct {
 		cr resource.Managed
 	}
 
-	trueVal := true
 	cases := map[string]struct {
 		handler http.Handler
 		args    args
@@ -604,15 +553,11 @@ func TestNetworkExternal_Delete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
-							Name:                  testNetworkName,
-							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
-							},
+				cr: &v1alpha2.Subnetwork{
+					Spec: v1alpha2.SubnetworkSpec{
+						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+							Name:        testSubnetworkName,
+							Description: testSubnetworkDescription,
 						},
 					},
 				},
@@ -628,7 +573,7 @@ func TestNetworkExternal_Delete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha2.Subnetwork{},
 			},
 			error: true,
 		},
@@ -642,12 +587,12 @@ func TestNetworkExternal_Delete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha2.Subnetwork{},
 			},
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha2.Network{},
 			},
 			error: true,
 		},
@@ -658,7 +603,7 @@ func TestNetworkExternal_Delete(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithCredentials(&fakeGoogleCredentials))
-			e := networkExternal{
+			e := subnetworkExternal{
 				projectID: testGoogleProjectID,
 				Service:   s,
 			}
