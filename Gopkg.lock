@@ -57,7 +57,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:583e0fa981344e825692590e0a7e52d98dc826a17bcc48537be7c0e95593b46d"
+  digest = "1:d88c52c89616a7efaa4dcf75f23ab20c7966f07a51e5ef83a049aefb058a731d"
   name = "github.com/crossplaneio/crossplane"
   packages = [
     "apis",
@@ -75,7 +75,6 @@
     "apis/storage/v1alpha1",
     "apis/workload",
     "apis/workload/v1alpha1",
-    "pkg/test",
   ]
   pruneopts = "UT"
   revision = "3cdf7144bfbe3f370b0de0b96330c67c589c6e82"
@@ -1248,7 +1247,6 @@
     "github.com/crossplaneio/crossplane/apis/compute/v1alpha1",
     "github.com/crossplaneio/crossplane/apis/database/v1alpha1",
     "github.com/crossplaneio/crossplane/apis/storage/v1alpha1",
-    "github.com/crossplaneio/crossplane/pkg/test",
     "github.com/google/go-cmp/cmp",
     "github.com/google/go-cmp/cmp/cmpopts",
     "github.com/googleapis/gax-go",
