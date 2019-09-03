@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  name: cloudmemorystoreinstances.cache.gcp.crossplane.io
+  name: replicationgroups.cache.aws.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.state
@@ -13,23 +13,24 @@ spec:
   - JSONPath: .spec.classRef.name
     name: CLASS
     type: string
-  - JSONPath: .spec.redisVersion
+  - JSONPath: .spec.engineVersion
     name: VERSION
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: cache.gcp.crossplane.io
+  group: cache.aws.crossplane.io
   names:
-    kind: CloudMemorystoreInstance
-    listKind: CloudMemorystoreInstanceList
-    plural: cloudmemorystoreinstances
-    singular: cloudmemorystoreinstance
+    kind: ReplicationGroup
+    listKind: ReplicationGroupList
+    plural: replicationgroups
+    singular: replicationgroup
   scope: ""
-  subresources: {}
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
-      description: CloudMemorystoreInstance is the Schema for the instances API
+      description: ReplicationGroup is the Schema for the instances API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -44,18 +45,52 @@ spec:
         metadata:
           type: object
         spec:
-          description: CloudMemorystoreInstanceSpec defines the desired state of CloudMemorystoreInstance
+          description: ReplicationGroupSpec defines the desired state of ReplicationGroup
           properties:
-            alternativeLocationId:
-              description: AlternativeLocationID is only applicable to STANDARD_HA
-                tier, which protects the instance against zonal failures by provisioning
-                it across two zones. If provided, it must be a different zone from
-                the one provided in locationId.
+            atRestEncryptionEnabled:
+              description: "AtRestEncryptionEnabled enables encryption at rest when
+                set to true. \n You cannot modify the value of AtRestEncryptionEnabled
+                after the replication group is created. To enable encryption at rest
+                on a replication group you must set AtRestEncryptionEnabled to true
+                when you create the replication group."
+              type: boolean
+            authEnabled:
+              description: "AuthEnabled enables mandatory authentication when connecting
+                to the managed replication group. AuthEnabled requires TransitEncryptionEnabled
+                to be true. \n While ReplicationGroupSpec mirrors the fields of the
+                upstream replication group object as closely as possible, we expose
+                a boolean here rather than requiring the operator pass in a string
+                authentication token. Crossplane will generate a token automatically
+                and expose it via a Secret."
+              type: boolean
+            automaticFailoverEnabled:
+              description: "AutomaticFailoverEnabled specifies whether a read-only
+                replica is automatically promoted to read/write primary if the existing
+                primary fails. If true, Multi-AZ is enabled for this replication group.
+                If false, Multi-AZ is disabled for this replication group. \n AutomaticFailoverEnabled
+                must be enabled for Redis (cluster mode enabled) replication groups."
+              type: boolean
+            cacheNodeType:
+              description: CacheNodeType specifies the compute and memory capacity
+                of the nodes in the node group (shard).
               type: string
-            authorizedNetwork:
-              description: AuthorizedNetwork specifies the full name of the Google
-                Compute Engine network to which the instance is connected. If left
-                unspecified, the default network will be used.
+            cacheParameterGroupName:
+              description: CacheParameterGroupName specifies the name of the parameter
+                group to associate with this replication group. If this argument is
+                omitted, the default cache parameter group for the specified engine
+                is used.
+              type: string
+            cacheSecurityGroupNames:
+              description: CacheSecurityGroupNames specifies a list of cache security
+                group names to associate with this replication group.
+              items:
+                type: string
+              type: array
+            cacheSubnetGroupName:
+              description: CacheSubnetGroupName specifies the name of the cache subnet
+                group to be used for the replication group. If you're going to launch
+                your cluster in an Amazon VPC, you need to create a subnet group before
+                you start creating a cluster.
               type: string
             claimRef:
               description: ObjectReference contains enough information to let you
@@ -131,15 +166,84 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            locationId:
-              description: LocationID specifies the zone where the instance will be
-                provisioned. If not provided, the service will choose a zone for the
-                instance. For STANDARD_HA tier, instances will be created across two
-                zones for protection against zonal failures.
+            engineVersion:
+              description: EngineVersion specifies the version number of the cache
+                engine to be used for the clusters in this replication group. To view
+                the supported cache engine versions, use the DescribeCacheEngineVersions
+                operation.
               type: string
-            memorySizeGb:
-              description: MemorySizeGB specifies the Redis memory size in GiB.
+            nodeGroupConfiguration:
+              description: NodeGroupConfiguration specifies a list of node group (shard)
+                configuration options.
+              items:
+                description: NodeGroupConfigurationSpec specifies the configuration
+                  of a node group within a replication group.
+                properties:
+                  primaryAvailabilityZone:
+                    description: PrimaryAvailabilityZone specifies the Availability
+                      Zone where the primary node of this node group (shard) is launched.
+                    type: string
+                  replicaAvailabilityZones:
+                    description: ReplicaAvailabilityZones specifies a list of Availability
+                      Zones to be used for the read replicas. The number of Availability
+                      Zones in this list must match the value of ReplicaCount or ReplicasPerNodeGroup
+                      if not specified.
+                    items:
+                      type: string
+                    type: array
+                  replicaCount:
+                    description: ReplicaCount specifies the number of read replica
+                      nodes in this node group (shard).
+                    type: integer
+                  slots:
+                    description: "Slots specifies the keyspace for a particular node
+                      group. Keyspaces range from 0 to 16,383. The string is in the
+                      format startkey-endkey. \n Example: \"0-3999\""
+                    type: string
+                type: object
+              type: array
+            notificationTopicArn:
+              description: NotificationTopicARN specifies the Amazon Resource Name
+                (ARN) of the Amazon Simple Notification Service (SNS) topic to which
+                notifications are sent. The Amazon SNS topic owner must be the same
+                as the cluster owner.
+              type: string
+            numCacheClusters:
+              description: "NumCacheClusters specifies the number of clusters this
+                replication group initially has. This parameter is not used if there
+                is more than one node group (shard). You should use ReplicasPerNodeGroup
+                instead. \n If AutomaticFailoverEnabled is true, the value of this
+                parameter must be at least 2. If AutomaticFailoverEnabled is false
+                you can omit this parameter (it will default to 1), or you can explicitly
+                set it to a value between 2 and 6."
               type: integer
+            numNodeGroups:
+              description: NumNodeGroups specifies the number of node groups (shards)
+                for this Redis (cluster mode enabled) replication group. For Redis
+                (cluster mode disabled) either omit this parameter or set it to 1.
+              type: integer
+            port:
+              description: Port number on which each member of the replication group
+                accepts connections.
+              type: integer
+            preferredCacheClusterAzs:
+              description: "PreferredCacheClusterAZs specifies a list of EC2 Availability
+                Zones in which the replication group's clusters are created. The order
+                of the Availability Zones in the list is the order in which clusters
+                are allocated. The primary cluster is created in the first AZ in the
+                list. \n This parameter is not used if there is more than one node
+                group (shard). You should use NodeGroupConfiguration instead. \n The
+                number of Availability Zones listed must equal the value of NumCacheClusters."
+              items:
+                type: string
+              type: array
+            preferredMaintenanceWindow:
+              description: "PreferredMaintenanceWindow specifies the weekly time range
+                during which maintenance on the cluster is performed. It is specified
+                as a range in the format ddd:hh24:mi-ddd:hh24:mi (24H Clock UTC).
+                The minimum maintenance window is a 60 minute period. \n Example:
+                sun:23:00-mon:01:30"
+              type: string
             providerRef:
               description: ObjectReference contains enough information to let you
                 inspect or modify the referred object.
@@ -181,40 +285,53 @@ spec:
               description: A ReclaimPolicy determines what should happen to managed
                 resources when their bound resource claims are deleted.
               type: string
-            redisConfigs:
-              additionalProperties:
+            replicasPerNodeGroup:
+              description: ReplicasPerNodeGroup specifies the number of replica nodes
+                in each node group (shard). Valid values are 0 to 5.
+              type: integer
+            securityGroupIds:
+              description: SecurityGroupIDs specifies one or more Amazon VPC security
+                groups associated with this replication group. Use this parameter
+                only when you are creating a replication group in an Amazon VPC.
+              items:
                 type: string
-              description: 'RedisConfigs specifies Redis configuration parameters,
-                according to http://redis.io/topics/config. Currently, the only supported
-                parameters are: * maxmemory-policy * notify-keyspace-events'
-              type: object
-            redisVersion:
-              description: RedisVersion specifies the version of Redis software. If
-                not provided, latest supported version will be used. Updating the
-                version will perform an upgrade/downgrade to the new version. Currently,
-                the supported values are REDIS_3_2 for Redis 3.2.
-              enum:
-              - REDIS_3_2
+              type: array
+            snapshotArns:
+              description: 'SnapshotARNs specifies a list of Amazon Resource Names
+                (ARN) that uniquely identify the Redis RDB snapshot files stored in
+                Amazon S3. The snapshot files are used to populate the new replication
+                group. The Amazon S3 object name in the ARN cannot contain any commas.
+                The new replication group will have the number of node groups (console:
+                shards) specified by the parameter NumNodeGroups or the number of
+                node groups configured by NodeGroupConfiguration regardless of the
+                number of ARNs specified here.'
+              items:
+                type: string
+              type: array
+            snapshotName:
+              description: SnapshotName specifies the name of a snapshot from which
+                to restore data into the new replication group. The snapshot status
+                changes to restoring while the new replication group is being created.
               type: string
-            region:
-              description: Region in which to create this CloudMemorystore cluster.
+            snapshotRetentionLimit:
+              description: SnapshotRetentionLimit specifies the number of days for
+                which ElastiCache retains automatic snapshots before deleting them.
+                For example, if you set SnapshotRetentionLimit to 5, a snapshot that
+                was taken today is retained for 5 days before being deleted.
+              type: integer
+            snapshotWindow:
+              description: "SnapshotWindow specifies the daily time range (in UTC)
+                during which ElastiCache begins taking a daily snapshot of your node
+                group (shard). \n Example: 05:00-09:00 \n If you do not specify this
+                parameter, ElastiCache automatically chooses an appropriate time range."
               type: string
-            reservedIpRange:
-              description: ReservedIPRange specifies the CIDR range of internal addresses
-                that are reserved for this instance. If not provided, the service
-                will choose an unused /29 block, for example, 10.0.0.0/29 or 192.168.0.0/29.
-                Ranges must be unique and non-overlapping with existing subnets in
-                an authorized network.
-              type: string
-            tier:
-              description: Tier specifies the replication level of the Redis cluster.
-                BASIC provides a single Redis instance with no high availability.
-                STANDARD_HA provides a cluster of two Redis instances in distinct
-                availability zones. https://cloud.google.com/memorystore/docs/redis/redis-tiers
-              enum:
-              - BASIC
-              - STANDARD_HA
-              type: string
+            transitEncryptionEnabled:
+              description: "TransitEncryptionEnabled enables in-transit encryption
+                when set to true. \n You cannot modify the value of TransitEncryptionEnabled
+                after the cluster is created. To enable in-transit encryption on a
+                cluster you must TransitEncryptionEnabled to true when you create
+                a cluster."
+              type: boolean
             writeConnectionSecretToRef:
               description: LocalObjectReference contains enough information to let
                 you locate the referenced object inside the same namespace.
@@ -225,14 +342,11 @@ spec:
                   type: string
               type: object
           required:
-          - memorySizeGb
+          - cacheNodeType
           - providerRef
-          - region
-          - tier
           type: object
         status:
-          description: CloudMemorystoreInstanceStatus defines the observed state of
-            CloudMemorystoreInstance
+          description: ReplicationGroupStatus defines the observed state of ReplicationGroup
           properties:
             bindingPhase:
               description: Phase represents the binding phase of the resource.
@@ -241,6 +355,11 @@ spec:
               - Unbound
               - Bound
               type: string
+            clusterEnabled:
+              description: ClusterEnabled indicates whether cluster mode is enabled,
+                i.e. whether this replication group's data can be partitioned across
+                multiple shards.
+              type: boolean
             conditions:
               description: Conditions of the managed resource.
               items:
@@ -274,26 +393,21 @@ spec:
                 - type
                 type: object
               type: array
-            currentLocationId:
-              description: CurrentLocationID is the current zone where the Redis endpoint
-                is placed. For Basic Tier instances, this will always be the same
-                as the locationId provided by the user at creation time. For Standard
-                Tier instances, this can be either locationId or alternativeLocationId
-                and can change after a failover event.
-              type: string
             endpoint:
-              description: Endpoint of the Cloud Memorystore instance used in connection
-                strings.
+              description: Endpoint of the Replication Group used in connection strings.
               type: string
-            instanceName:
-              description: InstanceName of the Cloud Memorystore instance. Does not
-                include the project and location (region) IDs. e.g. 'foo', not 'projects/fooproj/locations/us-foo1/instances/foo'
+            groupName:
+              description: Groupname of the Replication Group.
               type: string
+            memberClusters:
+              description: MemberClusters that are part of this replication group.
+              items:
+                type: string
+              type: array
             message:
               type: string
             port:
-              description: Port at which the Cloud Memorystore instance endpoint is
-                listening.
+              description: Port at which the Replication Group endpoint is listening.
               type: integer
             providerID:
               description: ProviderID is the external ID to identify this resource
@@ -303,9 +417,9 @@ spec:
               type: string
           type: object
       type: object
-  version: v1alpha2
+  version: v1alpha1
   versions:
-  - name: v1alpha2
+  - name: v1alpha1
     served: true
     storage: true
 status:

@@ -4,36 +4,36 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  name: cloudsqlinstances.database.gcp.crossplane.io
+  name: containers.storage.azure.crossplane.io
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.bindingPhase
-    name: STATUS
+  - JSONPath: .spec.accountRef.name
+    name: STORAGE_ACCOUNT
     type: string
-  - JSONPath: .status.state
-    name: STATE
+  - JSONPath: .spec.publicAccessType
+    name: PUBLIC_ACCESS_TYPE
     type: string
   - JSONPath: .spec.classRef.name
     name: CLASS
     type: string
-  - JSONPath: .spec.databaseVersion
-    name: VERSION
+  - JSONPath: .spec.reclaimPolicy
+    name: RECLAIM_POLICY
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: database.gcp.crossplane.io
+  group: storage.azure.crossplane.io
   names:
-    kind: CloudsqlInstance
-    listKind: CloudsqlInstanceList
-    plural: cloudsqlinstances
-    singular: cloudsqlinstance
+    kind: Container
+    listKind: ContainerList
+    plural: containers
+    singular: container
   scope: ""
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: CloudsqlInstance is the Schema for the instances API
+      description: Container is the Schema for the Container
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -48,12 +48,16 @@ spec:
         metadata:
           type: object
         spec:
-          description: CloudsqlInstanceSpec defines the desired state of CloudsqlInstance
+          description: ContainerSpec is the schema for ContainerSpec object
           properties:
-            authorizedNetworks:
-              items:
-                type: string
-              type: array
+            accountReference:
+              description: AccountReference to azure storage account object
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
             claimRef:
               description: ObjectReference contains enough information to let you
                 inspect or modify the referred object.
@@ -128,74 +132,21 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            databaseVersion:
-              description: The database engine (MySQL or PostgreSQL) and its specific
-                version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
-              type: string
-            labels:
+            metadata:
               additionalProperties:
                 type: string
+              description: Container metadata
               type: object
             nameFormat:
-              description: NameFormat to format resource name passing it a object
+              description: NameFormat to format container name passing it a object
                 UID If not provided, defaults to "%s", i.e. UID value
               type: string
-            providerRef:
-              description: ObjectReference contains enough information to let you
-                inspect or modify the referred object.
-              properties:
-                apiVersion:
-                  description: API version of the referent.
-                  type: string
-                fieldPath:
-                  description: 'If referring to a piece of an object instead of an
-                    entire object, this string should contain a valid JSON/Go field
-                    access statement, such as desiredState.manifest.containers[2].
-                    For example, if the object reference is to a container within
-                    a pod, this would take on a value like: "spec.containers{name}"
-                    (where "name" refers to the name of the container that triggered
-                    the event) or if no container name is specified "spec.containers[2]"
-                    (container with index 2 in this pod). This syntax is chosen only
-                    to have some well-defined way of referencing a part of an object.
-                    TODO: this design is not final and this field is subject to change
-                    in the future.'
-                  type: string
-                kind:
-                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
-                  type: string
-                name:
-                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                  type: string
-                namespace:
-                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                  type: string
-                resourceVersion:
-                  description: 'Specific resourceVersion to which this reference is
-                    made, if any. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
-                  type: string
-                uid:
-                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                  type: string
-              type: object
+            publicAccessType:
+              description: PublicAccessType
+              type: string
             reclaimPolicy:
               description: A ReclaimPolicy determines what should happen to managed
                 resources when their bound resource claims are deleted.
-              type: string
-            region:
-              type: string
-            storageGB:
-              format: int64
-              type: integer
-            storageType:
-              type: string
-            tier:
-              description: MySQL and PostgreSQL use different machine types.  MySQL
-                only allows a predefined set of machine types, while PostgreSQL can
-                only use custom machine instance types and shared-core instance types.
-                For the full set of MySQL machine types, see https://cloud.google.com/sql/pricing#2nd-gen-instance-pricing.
-                For more information on custom machine types that can be used with
-                PostgreSQL, see the examples on https://cloud.google.com/sql/docs/postgres/create-instance?authuser=1#machine-types
-                and the naming rules on https://cloud.google.com/sql/docs/postgres/create-instance#create-2ndgen-curl.
               type: string
             writeConnectionSecretToRef:
               description: LocalObjectReference contains enough information to let
@@ -207,15 +158,10 @@ spec:
                   type: string
               type: object
           required:
-          - databaseVersion
-          - providerRef
-          - region
-          - storageGB
-          - storageType
-          - tier
+          - accountReference
           type: object
         status:
-          description: CloudsqlInstanceStatus defines the observed state of CloudsqlInstance
+          description: ContainerStatus sub-resource for Container object
           properties:
             bindingPhase:
               description: Phase represents the binding phase of the resource.
@@ -257,15 +203,13 @@ spec:
                 - type
                 type: object
               type: array
-            endpoint:
-              type: string
-            state:
+            name:
               type: string
           type: object
       type: object
-  version: v1alpha2
+  version: v1alpha1
   versions:
-  - name: v1alpha2
+  - name: v1alpha1
     served: true
     storage: true
 status:

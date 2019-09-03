@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  name: cloudmemorystoreinstanceclasses.cache.gcp.crossplane.io
+  name: rdsinstanceclasses.database.aws.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .specTemplate.providerRef.name
@@ -16,17 +16,17 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: cache.gcp.crossplane.io
+  group: database.aws.crossplane.io
   names:
-    kind: CloudMemorystoreInstanceClass
-    listKind: CloudMemorystoreInstanceClassList
-    plural: cloudmemorystoreinstanceclasses
-    singular: cloudmemorystoreinstanceclass
+    kind: RDSInstanceClass
+    listKind: RDSInstanceClassList
+    plural: rdsinstanceclasses
+    singular: rdsinstanceclass
   scope: ""
   subresources: {}
   validation:
     openAPIV3Schema:
-      description: CloudMemorystoreInstanceClass is the Schema for the resource class
+      description: RDSInstanceClass is the Schema for the resource class
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -41,29 +41,17 @@ spec:
         metadata:
           type: object
         specTemplate:
-          description: CloudMemorystoreInstanceClassSpecTemplate is the Schema for
-            the resource class
+          description: RDSInstanceClassSpecTemplate is the Schema for the resource
+            class
           properties:
-            alternativeLocationId:
-              description: AlternativeLocationID is only applicable to STANDARD_HA
-                tier, which protects the instance against zonal failures by provisioning
-                it across two zones. If provided, it must be a different zone from
-                the one provided in locationId.
+            class:
               type: string
-            authorizedNetwork:
-              description: AuthorizedNetwork specifies the full name of the Google
-                Compute Engine network to which the instance is connected. If left
-                unspecified, the default network will be used.
+            engine:
               type: string
-            locationId:
-              description: LocationID specifies the zone where the instance will be
-                provisioned. If not provided, the service will choose a zone for the
-                instance. For STANDARD_HA tier, instances will be created across two
-                zones for protection against zonal failures.
+            engineVersion:
               type: string
-            memorySizeGb:
-              description: MemorySizeGB specifies the Redis memory size in GiB.
-              type: integer
+            masterUsername:
+              type: string
             providerRef:
               description: ObjectReference contains enough information to let you
                 inspect or modify the referred object.
@@ -105,50 +93,36 @@ spec:
               description: A ReclaimPolicy determines what should happen to managed
                 resources when their bound resource claims are deleted.
               type: string
-            redisConfigs:
-              additionalProperties:
+            securityGroups:
+              description: "VPC Security groups that will allow the RDS instance to
+                be accessed over the network. You can consider the following groups:
+                1) A default group that allows all communication amongst instances
+                in that group 2) A RDS specific group that allows port 3306 from allowed
+                sources (clients and instances \t  that are expected to connect to
+                the database."
+              items:
                 type: string
-              description: 'RedisConfigs specifies Redis configuration parameters,
-                according to http://redis.io/topics/config. Currently, the only supported
-                parameters are: * maxmemory-policy * notify-keyspace-events'
-              type: object
-            redisVersion:
-              description: RedisVersion specifies the version of Redis software. If
-                not provided, latest supported version will be used. Updating the
-                version will perform an upgrade/downgrade to the new version. Currently,
-                the supported values are REDIS_3_2 for Redis 3.2.
-              enum:
-              - REDIS_3_2
-              type: string
-            region:
-              description: Region in which to create this CloudMemorystore cluster.
-              type: string
-            reservedIpRange:
-              description: ReservedIPRange specifies the CIDR range of internal addresses
-                that are reserved for this instance. If not provided, the service
-                will choose an unused /29 block, for example, 10.0.0.0/29 or 192.168.0.0/29.
-                Ranges must be unique and non-overlapping with existing subnets in
-                an authorized network.
-              type: string
-            tier:
-              description: Tier specifies the replication level of the Redis cluster.
-                BASIC provides a single Redis instance with no high availability.
-                STANDARD_HA provides a cluster of two Redis instances in distinct
-                availability zones. https://cloud.google.com/memorystore/docs/redis/redis-tiers
-              enum:
-              - BASIC
-              - STANDARD_HA
+              type: array
+            size:
+              format: int64
+              type: integer
+            subnetGroupName:
+              description: Specifies a DB subnet group for the DB instance. The new
+                DB instance is created in the VPC associated with the DB subnet group.
+                If no DB subnet group is specified, then the new DB instance is not
+                created in a VPC.
               type: string
           required:
-          - memorySizeGb
+          - class
+          - engine
+          - masterUsername
           - providerRef
-          - region
-          - tier
+          - size
           type: object
       type: object
-  version: v1alpha2
+  version: v1alpha1
   versions:
-  - name: v1alpha2
+  - name: v1alpha1
     served: true
     storage: true
 status:

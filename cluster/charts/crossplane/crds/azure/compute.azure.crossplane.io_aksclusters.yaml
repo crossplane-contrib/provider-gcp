@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  name: cloudsqlinstances.database.gcp.crossplane.io
+  name: aksclusters.compute.azure.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.bindingPhase
@@ -13,27 +13,35 @@ spec:
   - JSONPath: .status.state
     name: STATE
     type: string
-  - JSONPath: .spec.classRef.name
-    name: CLASS
+  - JSONPath: .status.clusterName
+    name: CLUSTER-NAME
     type: string
-  - JSONPath: .spec.databaseVersion
-    name: VERSION
+  - JSONPath: .status.endpoint
+    name: ENDPOINT
+    type: string
+  - JSONPath: .spec.classRef.name
+    name: CLUSTER-CLASS
+    type: string
+  - JSONPath: .spec.location
+    name: LOCATION
+    type: string
+  - JSONPath: .spec.reclaimPolicy
+    name: RECLAIM-POLICY
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: database.gcp.crossplane.io
+  group: compute.azure.crossplane.io
   names:
-    kind: CloudsqlInstance
-    listKind: CloudsqlInstanceList
-    plural: cloudsqlinstances
-    singular: cloudsqlinstance
+    kind: AKSCluster
+    listKind: AKSClusterList
+    plural: aksclusters
+    singular: akscluster
   scope: ""
-  subresources:
-    status: {}
+  subresources: {}
   validation:
     openAPIV3Schema:
-      description: CloudsqlInstance is the Schema for the instances API
+      description: AKSCluster is the Schema for the instances API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -48,12 +56,8 @@ spec:
         metadata:
           type: object
         spec:
-          description: CloudsqlInstanceSpec defines the desired state of CloudsqlInstance
+          description: AKSClusterSpec is the spec for AKS cluster resources
           properties:
-            authorizedNetworks:
-              items:
-                type: string
-              type: array
             claimRef:
               description: ObjectReference contains enough information to let you
                 inspect or modify the referred object.
@@ -128,17 +132,30 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            databaseVersion:
-              description: The database engine (MySQL or PostgreSQL) and its specific
-                version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
+            disableRBAC:
+              description: DisableRBAC determines whether RBAC will be disabled or
+                enabled in the cluster.
+              type: boolean
+            dnsNamePrefix:
+              description: DNSNamePrefix is the DNS name prefix to use with the hosted
+                Kubernetes API server FQDN. You will use this to connect to the Kubernetes
+                API when managing containers after creating the cluster.
               type: string
-            labels:
-              additionalProperties:
-                type: string
-              type: object
-            nameFormat:
-              description: NameFormat to format resource name passing it a object
-                UID If not provided, defaults to "%s", i.e. UID value
+            location:
+              description: Location is the Azure location that the cluster will be
+                created in
+              type: string
+            nodeCount:
+              description: NodeCount is the number of nodes that the cluster will
+                initially be created with.  This can be scaled over time and defaults
+                to 1.
+              maximum: 100
+              minimum: 0
+              type: integer
+            nodeVMSize:
+              description: NodeVMSize is the name of the worker node VM size, e.g.,
+                Standard_B2s, Standard_F2s_v2, etc. This value cannot be changed after
+                cluster creation.
               type: string
             providerRef:
               description: ObjectReference contains enough information to let you
@@ -181,21 +198,13 @@ spec:
               description: A ReclaimPolicy determines what should happen to managed
                 resources when their bound resource claims are deleted.
               type: string
-            region:
+            resourceGroupName:
+              description: ResourceGroupName is the name of the resource group that
+                the cluster will be created in
               type: string
-            storageGB:
-              format: int64
-              type: integer
-            storageType:
-              type: string
-            tier:
-              description: MySQL and PostgreSQL use different machine types.  MySQL
-                only allows a predefined set of machine types, while PostgreSQL can
-                only use custom machine instance types and shared-core instance types.
-                For the full set of MySQL machine types, see https://cloud.google.com/sql/pricing#2nd-gen-instance-pricing.
-                For more information on custom machine types that can be used with
-                PostgreSQL, see the examples on https://cloud.google.com/sql/docs/postgres/create-instance?authuser=1#machine-types
-                and the naming rules on https://cloud.google.com/sql/docs/postgres/create-instance#create-2ndgen-curl.
+            version:
+              description: Version is the Kubernetes version that will be deployed
+                to the cluster
               type: string
             writeConnectionSecretToRef:
               description: LocalObjectReference contains enough information to let
@@ -206,23 +215,42 @@ spec:
                     TODO: Add other useful fields. apiVersion, kind, uid?'
                   type: string
               type: object
+            writeServicePrincipalTo:
+              description: WriteServicePrincipalSecretTo the specified Secret. The
+                service principal is automatically generated and used by the AKS cluster
+                to interact with other Azure resources.
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
           required:
-          - databaseVersion
+          - dnsNamePrefix
+          - location
+          - nodeVMSize
           - providerRef
-          - region
-          - storageGB
-          - storageType
-          - tier
+          - resourceGroupName
+          - version
+          - writeServicePrincipalTo
           type: object
         status:
-          description: CloudsqlInstanceStatus defines the observed state of CloudsqlInstance
+          description: AKSClusterStatus is the status for AKS cluster resources
           properties:
+            appObjectID:
+              description: ApplicationObjectID is the object ID of the AD application
+                the cluster uses for Azure APIs
+              type: string
             bindingPhase:
               description: Phase represents the binding phase of the resource.
               enum:
               - Unbindable
               - Unbound
               - Bound
+              type: string
+            clusterName:
+              description: ClusterName is the name of the cluster as registered with
+                the cloud provider
               type: string
             conditions:
               description: Conditions of the managed resource.
@@ -258,14 +286,33 @@ spec:
                 type: object
               type: array
             endpoint:
+              description: Endpoint is the endpoint where the cluster can be reached
+              type: string
+            providerID:
+              description: ProviderID is the external ID to identify this resource
+                in the cloud provider
+              type: string
+            runningOperation:
+              description: RunningOperation stores any current long running operation
+                for this instance across reconciliation attempts.  This will be a
+                serialized Azure AKS cluster API object that will be used to check
+                the status and completion of the operation during each reconciliation.
+                Once the operation has completed, this field will be cleared out.
+              type: string
+            servicePrincipalID:
+              description: ServicePrincipalID is the ID of the service principal the
+                AD application uses
               type: string
             state:
+              description: State is the current state of the cluster
               type: string
+          required:
+          - endpoint
           type: object
       type: object
-  version: v1alpha2
+  version: v1alpha1
   versions:
-  - name: v1alpha2
+  - name: v1alpha1
     served: true
     storage: true
 status:

@@ -4,36 +4,32 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  name: cloudsqlinstances.database.gcp.crossplane.io
+  name: s3buckets.storage.aws.crossplane.io
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.bindingPhase
-    name: STATUS
-    type: string
-  - JSONPath: .status.state
-    name: STATE
-    type: string
   - JSONPath: .spec.classRef.name
     name: CLASS
     type: string
-  - JSONPath: .spec.databaseVersion
-    name: VERSION
+  - JSONPath: .spec.cannedACL
+    name: PREDEFINED-ACL
+    type: string
+  - JSONPath: .spec.localPermission
+    name: LOCAL-PERMISSION
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: database.gcp.crossplane.io
+  group: storage.aws.crossplane.io
   names:
-    kind: CloudsqlInstance
-    listKind: CloudsqlInstanceList
-    plural: cloudsqlinstances
-    singular: cloudsqlinstance
+    kind: S3Bucket
+    listKind: S3BucketList
+    plural: s3buckets
+    singular: s3bucket
   scope: ""
-  subresources:
-    status: {}
+  subresources: {}
   validation:
     openAPIV3Schema:
-      description: CloudsqlInstance is the Schema for the instances API
+      description: S3Bucket is the Schema for the S3Bucket API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -48,12 +44,19 @@ spec:
         metadata:
           type: object
         spec:
-          description: CloudsqlInstanceSpec defines the desired state of CloudsqlInstance
+          description: S3BucketSpec defines the desired state of S3Bucket
           properties:
-            authorizedNetworks:
-              items:
-                type: string
-              type: array
+            cannedACL:
+              description: CannedACL applies a standard aws built-in ACL for common
+                bucket use cases.
+              enum:
+              - private
+              - public-read
+              - public-read-write
+              - authenticated-read
+              - log-delivery-write
+              - aws-exec-read
+              type: string
             claimRef:
               description: ObjectReference contains enough information to let you
                 inspect or modify the referred object.
@@ -128,17 +131,18 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            databaseVersion:
-              description: The database engine (MySQL or PostgreSQL) and its specific
-                version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
+            localPermission:
+              description: LocalPermission is the permissions granted on the bucket
+                for the provider specific bucket service account that is available
+                in a secret after provisioning.
+              enum:
+              - Read
+              - Write
+              - ReadWrite
               type: string
-            labels:
-              additionalProperties:
-                type: string
-              type: object
             nameFormat:
-              description: NameFormat to format resource name passing it a object
-                UID If not provided, defaults to "%s", i.e. UID value
+              description: NameFormat to format bucket name passing it a object UID
+                If not provided, defaults to "%s", i.e. UID value
               type: string
             providerRef:
               description: ObjectReference contains enough information to let you
@@ -182,21 +186,10 @@ spec:
                 resources when their bound resource claims are deleted.
               type: string
             region:
+              description: Region is the aws region for the bucket
               type: string
-            storageGB:
-              format: int64
-              type: integer
-            storageType:
-              type: string
-            tier:
-              description: MySQL and PostgreSQL use different machine types.  MySQL
-                only allows a predefined set of machine types, while PostgreSQL can
-                only use custom machine instance types and shared-core instance types.
-                For the full set of MySQL machine types, see https://cloud.google.com/sql/pricing#2nd-gen-instance-pricing.
-                For more information on custom machine types that can be used with
-                PostgreSQL, see the examples on https://cloud.google.com/sql/docs/postgres/create-instance?authuser=1#machine-types
-                and the naming rules on https://cloud.google.com/sql/docs/postgres/create-instance#create-2ndgen-curl.
-              type: string
+            versioning:
+              type: boolean
             writeConnectionSecretToRef:
               description: LocalObjectReference contains enough information to let
                 you locate the referenced object inside the same namespace.
@@ -207,15 +200,12 @@ spec:
                   type: string
               type: object
           required:
-          - databaseVersion
+          - localPermission
           - providerRef
           - region
-          - storageGB
-          - storageType
-          - tier
           type: object
         status:
-          description: CloudsqlInstanceStatus defines the observed state of CloudsqlInstance
+          description: S3BucketStatus defines the observed state of S3Bucket
           properties:
             bindingPhase:
               description: Phase represents the binding phase of the resource.
@@ -257,15 +247,22 @@ spec:
                 - type
                 type: object
               type: array
-            endpoint:
+            iamUsername:
               type: string
-            state:
+            lastLocalPermission:
+              description: LocalPermissionType - Base type for LocalPermissions
+              type: string
+            lastUserPolicyVersion:
+              type: integer
+            message:
+              type: string
+            providerID:
               type: string
           type: object
       type: object
-  version: v1alpha2
+  version: v1alpha1
   versions:
-  - name: v1alpha2
+  - name: v1alpha1
     served: true
     storage: true
 status:
