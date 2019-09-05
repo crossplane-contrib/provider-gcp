@@ -53,6 +53,12 @@ const (
 type CloudsqlInstanceParameters struct {
 	AuthorizedNetworks []string `json:"authorizedNetworks,omitempty"`
 
+	// PrivateNetwork: The resource link for the VPC network from which the
+	// Cloud SQL instance is accessible for private IP. For example,
+	// /projects/myProject/global/networks/default. This setting can be
+	// updated, but it cannot be removed after it is set.
+	PrivateNetwork string `json:"privateNetwork,omitempty"`
+
 	// The database engine (MySQL or PostgreSQL) and its specific version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
 	DatabaseVersion string `json:"databaseVersion"`
 
@@ -201,6 +207,7 @@ func (i *CloudsqlInstance) DatabaseInstance(name string) *sqladmin.DatabaseInsta
 			DataDiskSizeGb: i.Spec.StorageGB,
 			IpConfiguration: &sqladmin.IpConfiguration{
 				AuthorizedNetworks: authnets,
+				PrivateNetwork:     i.Spec.PrivateNetwork,
 			},
 			UserLabels: i.Spec.Labels,
 		},

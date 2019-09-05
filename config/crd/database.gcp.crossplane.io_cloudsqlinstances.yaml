@@ -140,6 +140,12 @@ spec:
               description: NameFormat to format resource name passing it a object
                 UID If not provided, defaults to "%s", i.e. UID value
               type: string
+            privateNetwork:
+              description: 'PrivateNetwork: The resource link for the VPC network
+                from which the Cloud SQL instance is accessible for private IP. For
+                example, /projects/myProject/global/networks/default. This setting
+                can be updated, but it cannot be removed after it is set.'
+              type: string
             providerRef:
               description: ObjectReference contains enough information to let you
                 inspect or modify the referred object.

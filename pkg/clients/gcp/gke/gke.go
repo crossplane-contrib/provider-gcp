@@ -71,11 +71,13 @@ func (c *ClusterClient) CreateCluster(name string, spec computev1alpha2.GKEClust
 			InitialClusterVersion: spec.ClusterVersion,
 			InitialNodeCount:      spec.NumNodes,
 			IpAllocationPolicy: &container.IPAllocationPolicy{
-				UseIpAliases:          spec.EnableIPAlias,
-				CreateSubnetwork:      spec.CreateSubnetwork,
-				NodeIpv4CidrBlock:     spec.NodeIPV4CIDR,
-				ClusterIpv4CidrBlock:  spec.ClusterIPV4CIDR,
-				ServicesIpv4CidrBlock: spec.ServiceIPV4CIDR,
+				UseIpAliases:               spec.EnableIPAlias,
+				CreateSubnetwork:           spec.CreateSubnetwork,
+				NodeIpv4CidrBlock:          spec.NodeIPV4CIDR,
+				ClusterIpv4CidrBlock:       spec.ClusterIPV4CIDR,
+				ServicesIpv4CidrBlock:      spec.ServiceIPV4CIDR,
+				ServicesSecondaryRangeName: spec.ServicesSecondaryRangeName,
+				ClusterSecondaryRangeName:  spec.ClusterSecondaryRangeName,
 			},
 			NodeConfig: &container.NodeConfig{
 				MachineType: spec.MachineType,
@@ -83,6 +85,8 @@ func (c *ClusterClient) CreateCluster(name string, spec computev1alpha2.GKEClust
 			},
 			ResourceLabels: spec.Labels,
 			Zone:           spec.Zone,
+			Network:        spec.Network,
+			Subnetwork:     spec.Subnetwork,
 
 			// As of Kubernetes 1.12 GKE must be asked to generate a client cert
 			// that will be available via the GKE MasterAuth API. The certificate is

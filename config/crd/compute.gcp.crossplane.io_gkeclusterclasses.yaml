@@ -184,7 +184,7 @@ spec:
               type: string
             serviceIPV4CIDR:
               type: string
-            serviceSecondaryRangeName:
+            servicesSecondaryRangeName:
               type: string
             subnetwork:
               type: string
