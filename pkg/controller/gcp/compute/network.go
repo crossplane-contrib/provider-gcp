@@ -181,7 +181,7 @@ func (c *networkExternal) Delete(ctx context.Context, mg resource.Managed) error
 	_, err := c.Networks.Delete(c.projectID, cr.Spec.Name).
 		Context(ctx).
 		Do()
-	if !clients.IsErrorNotFound(err) {
+	if clients.IsErrorNotFound(err) {
 		return nil
 	}
 	cr.Status.SetConditions(runtimev1alpha1.Deleting())
