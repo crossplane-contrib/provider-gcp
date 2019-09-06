@@ -57,7 +57,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d88c52c89616a7efaa4dcf75f23ab20c7966f07a51e5ef83a049aefb058a731d"
+  digest = "1:5b7ca3de3f2b90239d89c8ef1419abd0760bd6c945f13d4edb4b47d9e5132c1b"
   name = "github.com/crossplaneio/crossplane"
   packages = [
     "apis",
@@ -75,9 +75,12 @@
     "apis/storage/v1alpha1",
     "apis/workload",
     "apis/workload/v1alpha1",
+    "gcp/apis/compute/v1alpha1",
+    "gcp/apis/servicenetworking/v1alpha1",
+    "pkg/clients/gcp",
   ]
   pruneopts = "UT"
-  revision = "3cdf7144bfbe3f370b0de0b96330c67c589c6e82"
+  revision = "7de0e648929564c73560a767bd31dd4a0516e405"
 
 [[projects]]
   branch = "master"
@@ -664,7 +667,7 @@
   version = "v2.0.0"
 
 [[projects]]
-  digest = "1:bbe0ffebe62a58a949a26a614ce12a2f0c6691c3f9457ad511035b37b81dbc1c"
+  digest = "1:949f3f852654428305e7ad2bebfcbe448f314a221231b2bff89eccb1d9a229cf"
   name = "google.golang.org/api"
   packages = [
     "cloudresourcemanager/v1",
@@ -677,6 +680,7 @@
     "internal",
     "iterator",
     "option",
+    "servicenetworking/v1",
     "sqladmin/v1beta4",
     "storage/v1",
     "transport",
@@ -1257,6 +1261,9 @@
     "github.com/crossplaneio/crossplane/apis/compute/v1alpha1",
     "github.com/crossplaneio/crossplane/apis/database/v1alpha1",
     "github.com/crossplaneio/crossplane/apis/storage/v1alpha1",
+    "github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1",
+    "github.com/crossplaneio/crossplane/gcp/apis/servicenetworking/v1alpha1",
+    "github.com/crossplaneio/crossplane/pkg/clients/gcp",
     "github.com/google/go-cmp/cmp",
     "github.com/google/go-cmp/cmp/cmpopts",
     "github.com/googleapis/gax-go",
@@ -1271,6 +1278,7 @@
     "google.golang.org/api/container/v1",
     "google.golang.org/api/googleapi",
     "google.golang.org/api/option",
+    "google.golang.org/api/servicenetworking/v1",
     "google.golang.org/api/sqladmin/v1beta4",
     "google.golang.org/genproto/googleapis/cloud/redis/v1",
     "google.golang.org/genproto/protobuf/field_mask",
