@@ -4,36 +4,20 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  name: cloudsqlinstances.database.gcp.crossplane.io
+  name: networks.compute.gcp.crossplane.io
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .status.bindingPhase
-    name: STATUS
-    type: string
-  - JSONPath: .status.state
-    name: STATE
-    type: string
-  - JSONPath: .spec.classRef.name
-    name: CLASS
-    type: string
-  - JSONPath: .spec.databaseVersion
-    name: VERSION
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    name: AGE
-    type: date
-  group: database.gcp.crossplane.io
+  group: compute.gcp.crossplane.io
   names:
-    kind: CloudsqlInstance
-    listKind: CloudsqlInstanceList
-    plural: cloudsqlinstances
-    singular: cloudsqlinstance
+    kind: Network
+    listKind: NetworkList
+    plural: networks
+    singular: network
   scope: ""
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: CloudsqlInstance is the Schema for the instances API
+      description: Network is the Schema for the GCP Network API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -48,12 +32,22 @@ spec:
         metadata:
           type: object
         spec:
-          description: CloudsqlInstanceSpec defines the desired state of CloudsqlInstance
+          description: NetworkSpec defines the desired state of Network
           properties:
-            authorizedNetworks:
-              items:
-                type: string
-              type: array
+            IPv4Range:
+              description: 'IPv4Range: Deprecated in favor of subnet mode networks.
+                The range of internal addresses that are legal on this network. This
+                range is a CIDR specification, for example: 192.168.0.0/16. Provided
+                by the client when the network is created.'
+              type: string
+            autoCreateSubnetworks:
+              description: "AutoCreateSubnetworks: When set to true, the VPC network
+                is created in \"auto\" mode. When set to false, the VPC network is
+                created in \"custom\" mode. When set to nil, the VPC network is created
+                in \"legacy\" mode which will be deprecated by GCP soon. \n An auto
+                mode VPC network starts with one subnet per region. Each subnet has
+                a predetermined range as described in Auto mode VPC network IP ranges."
+              type: boolean
             claimRef:
               description: ObjectReference contains enough information to let you
                 inspect or modify the referred object.
@@ -128,17 +122,19 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            databaseVersion:
-              description: The database engine (MySQL or PostgreSQL) and its specific
-                version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
+            description:
+              description: 'Description: An optional description of this resource.
+                Provide this field when you create the resource.'
               type: string
-            labels:
-              additionalProperties:
-                type: string
-              type: object
-            nameFormat:
-              description: NameFormat to format resource name passing it a object
-                UID If not provided, defaults to "%s", i.e. UID value
+            name:
+              description: 'Name: Name of the resource. Provided by the client when
+                the resource is created. The name must be 1-63 characters long, and
+                comply with RFC1035. Specifically, the name must be 1-63 characters
+                long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?.
+                The first character must be a lowercase letter, and all following
+                characters (except for the last character) must be a dash, lowercase
+                letter, or digit. The last character must be a lowercase letter or
+                digit.'
               type: string
             providerRef:
               description: ObjectReference contains enough information to let you
@@ -181,22 +177,20 @@ spec:
               description: A ReclaimPolicy determines what should happen to managed
                 resources when their bound resource claims are deleted.
               type: string
-            region:
-              type: string
-            storageGB:
-              format: int64
-              type: integer
-            storageType:
-              type: string
-            tier:
-              description: MySQL and PostgreSQL use different machine types.  MySQL
-                only allows a predefined set of machine types, while PostgreSQL can
-                only use custom machine instance types and shared-core instance types.
-                For the full set of MySQL machine types, see https://cloud.google.com/sql/pricing#2nd-gen-instance-pricing.
-                For more information on custom machine types that can be used with
-                PostgreSQL, see the examples on https://cloud.google.com/sql/docs/postgres/create-instance?authuser=1#machine-types
-                and the naming rules on https://cloud.google.com/sql/docs/postgres/create-instance#create-2ndgen-curl.
-              type: string
+            routingConfig:
+              description: 'RoutingConfig: The network-level routing configuration
+                for this network. Used by Cloud Router to determine what type of network-wide
+                routing behavior to enforce.'
+              properties:
+                routingMode:
+                  description: "RoutingMode: The network-wide routing mode to use.
+                    If set to REGIONAL, this network's Cloud Routers will only advertise
+                    routes with subnets of this network in the same region as the
+                    router. If set to GLOBAL, this network's Cloud Routers will advertise
+                    routes with all subnets of this network, across regions. \n Possible
+                    values:   \"GLOBAL\"   \"REGIONAL\""
+                  type: string
+              type: object
             writeConnectionSecretToRef:
               description: LocalObjectReference contains enough information to let
                 you locate the referenced object inside the same namespace.
@@ -207,16 +201,24 @@ spec:
                   type: string
               type: object
           required:
-          - databaseVersion
           - providerRef
-          - region
-          - storageGB
-          - storageType
-          - tier
           type: object
         status:
-          description: CloudsqlInstanceStatus defines the observed state of CloudsqlInstance
+          description: NetworkStatus defines the observed state of Network
           properties:
+            IPv4Range:
+              description: 'IPv4Range: Deprecated in favor of subnet mode networks.
+                The range of internal addresses that are legal on this network. This
+                range is a CIDR specification, for example: 192.168.0.0/16. Provided
+                by the client when the network is created.'
+              type: string
+            autoCreateSubnetworks:
+              description: "AutoCreateSubnetworks: When set to true, the VPC network
+                is created in \"auto\" mode. When set to false, the VPC network is
+                created in \"custom\" mode. \n An auto mode VPC network starts with
+                one subnet per region. Each subnet has a predetermined range as described
+                in Auto mode VPC network IP ranges."
+              type: boolean
             bindingPhase:
               description: Phase represents the binding phase of the resource.
               enum:
@@ -257,10 +259,96 @@ spec:
                 - type
                 type: object
               type: array
-            endpoint:
+            creationTimestamp:
+              description: 'CreationTimestamp: Creation timestamp in RFC3339 text
+                format.'
               type: string
-            state:
+            description:
+              description: 'Description: An optional description of this resource.
+                Provide this field when you create the resource.'
               type: string
+            gatewayIPv4:
+              description: 'GatewayIPv4: The gateway address for default routing out
+                of the network, selected by GCP.'
+              type: string
+            id:
+              description: 'Id: The unique identifier for the resource. This identifier
+                is defined by the server.'
+              format: int64
+              type: integer
+            peerings:
+              description: 'Peerings: A list of network peerings for the resource.'
+              items:
+                description: GCPNetworkPeering is the mirror of googlecompute.NetworkPeering
+                  but with deepcopy functions.
+                properties:
+                  autoCreateRoutes:
+                    description: 'AutoCreateRoutes: This field will be deprecated
+                      soon. Use the exchange_subnet_routes field instead. Indicates
+                      whether full mesh connectivity is created and managed automatically
+                      between peered networks. Currently this field should always
+                      be true since Google Compute Engine will automatically create
+                      and manage subnetwork routes between two networks when peering
+                      state is ACTIVE.'
+                    type: boolean
+                  exchangeSubnetRoutes:
+                    description: 'ExchangeSubnetRoutes: Indicates whether full mesh
+                      connectivity is created and managed automatically between peered
+                      networks. Currently this field should always be true since Google
+                      Compute Engine will automatically create and manage subnetwork
+                      routes between two networks when peering state is ACTIVE.'
+                    type: boolean
+                  name:
+                    description: 'Name: Name of this peering. Provided by the client
+                      when the peering is created. The name must comply with RFC1035.
+                      Specifically, the name must be 1-63 characters long and match
+                      regular expression `[a-z]([-a-z0-9]*[a-z0-9])?`. The first character
+                      must be a lowercase letter, and all the following characters
+                      must be a dash, lowercase letter, or digit, except the last
+                      character, which cannot be a dash.'
+                    type: string
+                  network:
+                    description: 'Network: The URL of the peer network. It can be
+                      either full URL or partial URL. The peer network may belong
+                      to a different project. If the partial URL does not contain
+                      project, it is assumed that the peer network is in the same
+                      project as the current network.'
+                    type: string
+                  state:
+                    description: "State: State for the peering, either `ACTIVE` or
+                      `INACTIVE`. The peering is `ACTIVE` when there's a matching
+                      configuration in the peer network. \n Possible values:   \"ACTIVE\"
+                      \  \"INACTIVE\""
+                    type: string
+                  stateDetails:
+                    description: 'StateDetails: Details about the current state of
+                      the peering.'
+                    type: string
+                type: object
+              type: array
+            routingConfig:
+              description: 'RoutingConfig: The network-level routing configuration
+                for this network. Used by Cloud Router to determine what type of network-wide
+                routing behavior to enforce.'
+              properties:
+                routingMode:
+                  description: "RoutingMode: The network-wide routing mode to use.
+                    If set to REGIONAL, this network's Cloud Routers will only advertise
+                    routes with subnets of this network in the same region as the
+                    router. If set to GLOBAL, this network's Cloud Routers will advertise
+                    routes with all subnets of this network, across regions. \n Possible
+                    values:   \"GLOBAL\"   \"REGIONAL\""
+                  type: string
+              type: object
+            selfLink:
+              description: 'SelfLink: Server-defined URL for the resource.'
+              type: string
+            subnetworks:
+              description: 'Subnetworks: Server-defined fully-qualified URLs for all
+                subnetworks in this VPC network.'
+              items:
+                type: string
+              type: array
           type: object
       type: object
   version: v1alpha2

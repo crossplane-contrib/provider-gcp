@@ -664,10 +664,11 @@
   version = "v2.0.0"
 
 [[projects]]
-  digest = "1:57e5470bbac9c6d6985335d82b61234ad45d7390f92a9d4359a1d371d66c3fb8"
+  digest = "1:bbe0ffebe62a58a949a26a614ce12a2f0c6691c3f9457ad511035b37b81dbc1c"
   name = "google.golang.org/api"
   packages = [
     "cloudresourcemanager/v1",
+    "compute/v1",
     "container/v1",
     "gensupport",
     "googleapi",
@@ -684,8 +685,8 @@
     "transport/http/internal/propagation",
   ]
   pruneopts = "UT"
-  revision = "02490b97dff7cfde1995bd77de808fd27053bc87"
-  version = "v0.7.0"
+  revision = "dec2ee309f5b09fc59bc40676447c15736284d78"
+  version = "v0.8.0"
 
 [[projects]]
   digest = "1:2c26b1c47556c0e5e73cdb05d8361c463737eee4baac35d38b40c728c3074a94"
@@ -818,6 +819,14 @@
   pruneopts = "UT"
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
   version = "v2.2.2"
+
+[[projects]]
+  branch = "v3"
+  digest = "1:46754188622566b86271d7526cb643b88c2b9589ee224c2d55e282f0f35a0df8"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "674ba3eaed223079f9377fbb0c98c0951bf6ec10"
 
 [[projects]]
   digest = "1:9e593df1695ea6942188dd19c1d0f21c635fcf9f5f03611fc623c696cd2847a9"
@@ -1191,7 +1200,7 @@
   version = "v0.2.0"
 
 [[projects]]
-  digest = "1:1edc986a412b40d477a5c0077e7749d280fffa4446f7ec2e24c3e0cf4b128070"
+  digest = "1:6852be48889f976ee43ef7ca2e1a25ee9cfd3d0d46dbcdfcf32f8b7186c019e0"
   name = "sigs.k8s.io/controller-tools"
   packages = [
     "cmd/controller-gen",
@@ -1204,11 +1213,12 @@
     "pkg/loader",
     "pkg/markers",
     "pkg/rbac",
+    "pkg/schemapatcher",
+    "pkg/schemapatcher/internal/yaml",
     "pkg/webhook",
   ]
   pruneopts = "UT"
-  revision = "8e509cc6044facab5022c3af8f713f8b736d9108"
-  source = "https://github.com/muvaf/controller-tools.git"
+  revision = "ba11932048e4538f6e435f5ca0cdea19bf458338"
 
 [[projects]]
   digest = "1:9070222ca967d09b3966552a161dd4420d62315964bf5e1efd8cc4c7c30ebca8"
@@ -1257,6 +1267,7 @@
     "golang.org/x/oauth2/google",
     "golang.org/x/tools/cmd/stringer",
     "google.golang.org/api/cloudresourcemanager/v1",
+    "google.golang.org/api/compute/v1",
     "google.golang.org/api/container/v1",
     "google.golang.org/api/googleapi",
     "google.golang.org/api/option",
