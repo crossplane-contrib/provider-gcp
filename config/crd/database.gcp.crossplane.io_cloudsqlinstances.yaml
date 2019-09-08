@@ -263,7 +263,13 @@ spec:
                 - type
                 type: object
               type: array
-            endpoint:
+            privateIp:
+              description: PrivateIP is used to connect to this instance from the
+                same Network.
+              type: string
+            publicIp:
+              description: PublicIP is used to connect to this resource from other
+                authorized networks.
               type: string
             state:
               type: string
