@@ -161,7 +161,6 @@ type GCPSubnetworkSpec struct {
 // IsSameAs compares the fields of GCPSubnetworkSpec and
 // GCPSubnetworkStatus to report whether there is a difference. Its cyclomatic
 // complexity is related to how many fields exist, so, not much of an indicator.
-// nolint:gocyclo
 func (s GCPSubnetworkSpec) IsSameAs(o GCPSubnetworkStatus) bool {
 	if s.Name != o.Name ||
 		s.Description != o.Description ||
@@ -190,8 +189,6 @@ func (s GCPSubnetworkSpec) IsSameAs(o GCPSubnetworkStatus) bool {
 	return true
 }
 
-// GCPSubnetworkStatus is the complete mirror of googlecompute.Subnetwork but
-// with deepcopy functions. In the future, this can be generated automatically.
 type GCPSubnetworkStatus struct {
 	// CreationTimestamp: Creation timestamp in RFC3339 text
 	// format.
