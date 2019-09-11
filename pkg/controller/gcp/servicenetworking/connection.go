@@ -35,10 +35,10 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/crossplane/gcp/apis/servicenetworking/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp/connection"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/servicenetworking/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/connection"
 )
 
 // Error strings.
@@ -87,10 +87,10 @@ func (c *ConnectionController) SetupWithManager(mgr ctrl.Manager) error {
 		newServiceNetworking: servicenetworking.NewService,
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha1.ConnectionKindAPIVersion, v1alpha1.Group))).
-		For(&v1alpha1.Connection{}).
+		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha2.ConnectionKindAPIVersion, v1alpha2.Group))).
+		For(&v1alpha2.Connection{}).
 		Complete(resource.NewManagedReconciler(mgr,
-			resource.ManagedKind(v1alpha1.ConnectionGroupVersionKind),
+			resource.ManagedKind(v1alpha2.ConnectionGroupVersionKind),
 			resource.WithExternalConnecter(conn),
 			resource.WithManagedConnectionPublishers()))
 }
@@ -102,12 +102,12 @@ type connector struct {
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
-	ga, ok := mg.(*v1alpha1.Connection)
+	ga, ok := mg.(*v1alpha2.Connection)
 	if !ok {
 		return nil, errors.New(errNotConnection)
 	}
 
-	p := &gcpv1alpha1.Provider{}
+	p := &gcpv1alpha2.Provider{}
 	if err := c.client.Get(ctx, meta.NamespacedNameOf(ga.Spec.ProviderReference), p); err != nil {
 		return nil, errors.Wrap(err, errGetProvider)
 	}
@@ -136,7 +136,7 @@ type external struct {
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
-	cn, ok := mg.(*v1alpha1.Connection)
+	cn, ok := mg.(*v1alpha2.Connection)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotConnection)
 	}
@@ -174,7 +174,7 @@ func findConnection(conns []*servicenetworking.Connection) *servicenetworking.Co
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
-	cn, ok := mg.(*v1alpha1.Connection)
+	cn, ok := mg.(*v1alpha2.Connection)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotConnection)
 	}
@@ -186,7 +186,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.Ex
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
-	cn, ok := mg.(*v1alpha1.Connection)
+	cn, ok := mg.(*v1alpha2.Connection)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotConnection)
 	}
@@ -198,7 +198,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.Ex
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cn, ok := mg.(*v1alpha1.Connection)
+	cn, ok := mg.(*v1alpha2.Connection)
 	if !ok {
 		return errors.New(errNotConnection)
 	}

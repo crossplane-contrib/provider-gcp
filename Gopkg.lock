@@ -57,7 +57,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:21d6d2f6cfd3699a9b1cf4fb9ef7bd0e35b5dac4993f8cfcfe292763ddafac33"
+  digest = "1:e891dabca719a29f484ab3becd8ebdf009856ade6cc5baa46c5d97ad8703788a"
   name = "github.com/crossplaneio/crossplane"
   packages = [
     "apis",
@@ -75,12 +75,6 @@
     "apis/storage/v1alpha1",
     "apis/workload",
     "apis/workload/v1alpha1",
-    "gcp/apis/compute/v1alpha1",
-    "gcp/apis/servicenetworking/v1alpha1",
-    "gcp/apis/v1alpha1",
-    "pkg/clients/gcp",
-    "pkg/clients/gcp/connection",
-    "pkg/clients/gcp/globaladdress",
   ]
   pruneopts = "UT"
   revision = "7de0e648929564c73560a767bd31dd4a0516e405"
@@ -1264,12 +1258,6 @@
     "github.com/crossplaneio/crossplane/apis/compute/v1alpha1",
     "github.com/crossplaneio/crossplane/apis/database/v1alpha1",
     "github.com/crossplaneio/crossplane/apis/storage/v1alpha1",
-    "github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1",
-    "github.com/crossplaneio/crossplane/gcp/apis/servicenetworking/v1alpha1",
-    "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1",
-    "github.com/crossplaneio/crossplane/pkg/clients/gcp",
-    "github.com/crossplaneio/crossplane/pkg/clients/gcp/connection",
-    "github.com/crossplaneio/crossplane/pkg/clients/gcp/globaladdress",
     "github.com/google/go-cmp/cmp",
     "github.com/google/go-cmp/cmp/cmpopts",
     "github.com/googleapis/gax-go",

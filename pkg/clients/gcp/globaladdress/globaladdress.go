@@ -21,8 +21,8 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 
-	"github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
-	"github.com/crossplaneio/crossplane/pkg/clients/gcp"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp"
 )
 
 // Known Address statuses.
@@ -34,7 +34,7 @@ const (
 
 // FromParameters converts the supplied GlobalAddressParameters into an
 // Address suitable for use with the Google Compute API.
-func FromParameters(p v1alpha1.GlobalAddressParameters) *compute.Address {
+func FromParameters(p v1alpha2.GlobalAddressParameters) *compute.Address {
 	// Kubernetes API conventions dictate that optional, unspecified fields must
 	// be nil. GCP API clients omit any field set to its zero value, using
 	// NullFields and ForceSendFields to handle edge cases around unsetting
@@ -55,7 +55,7 @@ func FromParameters(p v1alpha1.GlobalAddressParameters) *compute.Address {
 
 // UpdateParameters updates any unset (i.e. nil) optional fields of the supplied
 // GlobalAddressParameters that are set (i.e. non-zero) on the supplied Address.
-func UpdateParameters(p *v1alpha1.GlobalAddressParameters, observed *compute.Address) {
+func UpdateParameters(p *v1alpha2.GlobalAddressParameters, observed *compute.Address) {
 	p.Address = gcp.LateInitializeString(p.Address, observed.Address)
 	p.AddressType = gcp.LateInitializeString(p.AddressType, observed.AddressType)
 	p.IPVersion = gcp.LateInitializeString(p.IPVersion, observed.IpVersion)
@@ -67,7 +67,7 @@ func UpdateParameters(p *v1alpha1.GlobalAddressParameters, observed *compute.Add
 
 // UpdateStatus updates any fields of the supplied GlobalAddressStatus to
 // reflect the state of the supplied Address.
-func UpdateStatus(s *v1alpha1.GlobalAddressStatus, observed *compute.Address) {
+func UpdateStatus(s *v1alpha2.GlobalAddressStatus, observed *compute.Address) {
 	switch observed.Status {
 	case StatusReserving:
 		s.SetConditions(runtimev1alpha1.Creating())

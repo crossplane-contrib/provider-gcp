@@ -26,7 +26,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/crossplane/gcp/apis/servicenetworking/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/servicenetworking/v1alpha2"
 )
 
 func TestFromParameters(t *testing.T) {
@@ -34,11 +34,11 @@ func TestFromParameters(t *testing.T) {
 	ranges := []string{"coolRange", "coolerRange"}
 
 	cases := map[string]struct {
-		p    v1alpha1.ConnectionParameters
+		p    v1alpha2.ConnectionParameters
 		want *servicenetworking.Connection
 	}{
 		"Simple": {
-			p: v1alpha1.ConnectionParameters{
+			p: v1alpha2.ConnectionParameters{
 				Network:               network,
 				ReservedPeeringRanges: ranges,
 			},
@@ -61,17 +61,17 @@ func TestFromParameters(t *testing.T) {
 }
 func TestUpToDate(t *testing.T) {
 	cases := map[string]struct {
-		p        v1alpha1.ConnectionParameters
+		p        v1alpha2.ConnectionParameters
 		observed *servicenetworking.Connection
 		want     bool
 	}{
 		"UpToDate": {
-			p:        v1alpha1.ConnectionParameters{ReservedPeeringRanges: []string{"a", "b"}},
+			p:        v1alpha2.ConnectionParameters{ReservedPeeringRanges: []string{"a", "b"}},
 			observed: &servicenetworking.Connection{ReservedPeeringRanges: []string{"b", "a"}},
 			want:     true,
 		},
 		"NotUpToDate": {
-			p:        v1alpha1.ConnectionParameters{ReservedPeeringRanges: []string{"a", "c"}},
+			p:        v1alpha2.ConnectionParameters{ReservedPeeringRanges: []string{"a", "c"}},
 			observed: &servicenetworking.Connection{ReservedPeeringRanges: []string{"b", "a"}},
 			want:     false,
 		},
@@ -92,12 +92,12 @@ func TestUpdateStatus(t *testing.T) {
 	service := "coolService"
 
 	cases := map[string]struct {
-		s    *v1alpha1.ConnectionStatus
+		s    *v1alpha2.ConnectionStatus
 		o    Observation
-		want *v1alpha1.ConnectionStatus
+		want *v1alpha2.ConnectionStatus
 	}{
 		"PeeringActive": {
-			s: &v1alpha1.ConnectionStatus{},
+			s: &v1alpha2.ConnectionStatus{},
 			o: Observation{
 				Connection: &servicenetworking.Connection{
 					Peering: peering,
@@ -110,7 +110,7 @@ func TestUpdateStatus(t *testing.T) {
 					}},
 				},
 			},
-			want: &v1alpha1.ConnectionStatus{
+			want: &v1alpha2.ConnectionStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Available()},
@@ -121,7 +121,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		},
 		"PeeringInactive": {
-			s: &v1alpha1.ConnectionStatus{},
+			s: &v1alpha2.ConnectionStatus{},
 			o: Observation{
 				Connection: &servicenetworking.Connection{
 					Peering: peering,
@@ -134,7 +134,7 @@ func TestUpdateStatus(t *testing.T) {
 					}},
 				},
 			},
-			want: &v1alpha1.ConnectionStatus{
+			want: &v1alpha2.ConnectionStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Unavailable()},
@@ -145,7 +145,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		},
 		"PeeringDoesNotExist": {
-			s: &v1alpha1.ConnectionStatus{},
+			s: &v1alpha2.ConnectionStatus{},
 			o: Observation{
 				Connection: &servicenetworking.Connection{
 					Peering: peering,
@@ -153,7 +153,7 @@ func TestUpdateStatus(t *testing.T) {
 				},
 				Network: &compute.Network{},
 			},
-			want: &v1alpha1.ConnectionStatus{
+			want: &v1alpha2.ConnectionStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Unavailable()},

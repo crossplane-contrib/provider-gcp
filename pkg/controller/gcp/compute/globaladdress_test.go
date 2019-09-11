@@ -36,8 +36,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/crossplane/gcp/apis/compute/v1alpha1"
-	gcpv1alpha1 "github.com/crossplaneio/crossplane/gcp/apis/v1alpha1"
+	"github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha2"
+	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/gcp/apis/v1alpha2"
 )
 
 var (
@@ -51,9 +51,9 @@ var (
 	errGoogleOther    = &googleapi.Error{Code: http.StatusInternalServerError, Message: "boom"}
 )
 
-func globalAddress() *v1alpha1.GlobalAddress {
-	return &v1alpha1.GlobalAddress{
-		Spec: v1alpha1.GlobalAddressSpec{
+func globalAddress() *v1alpha2.GlobalAddress {
+	return &v1alpha2.GlobalAddress{
+		Spec: v1alpha2.GlobalAddressSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{}},
 		},
 	}
@@ -84,7 +84,7 @@ func TestGlobalAddressConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha1.Provider:
+						case *gcpv1alpha2.Provider:
 							return errBoom
 						case *corev1.Secret:
 						default:
@@ -105,7 +105,7 @@ func TestGlobalAddressConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha1.Provider:
+						case *gcpv1alpha2.Provider:
 						case *corev1.Secret:
 							return errBoom
 						default:
@@ -126,7 +126,7 @@ func TestGlobalAddressConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha1.Provider:
+						case *gcpv1alpha2.Provider:
 						case *corev1.Secret:
 						default:
 							return errors.New("unexpected resource kind")
@@ -147,7 +147,7 @@ func TestGlobalAddressConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha1.Provider:
+						case *gcpv1alpha2.Provider:
 						case *corev1.Secret:
 						default:
 							return errors.Errorf("unexpected resource kind %T", obj)
@@ -248,7 +248,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 			e: &gaExternal{
 				client: &test.MockClient{
 					MockUpdate: test.NewMockUpdateFn(nil, func(obj runtime.Object) error {
-						if _, ok := obj.(*v1alpha1.GlobalAddress); !ok {
+						if _, ok := obj.(*v1alpha2.GlobalAddress); !ok {
 							return errors.Errorf("unexpected resource kind %T", obj)
 						}
 						return nil
