@@ -200,6 +200,8 @@ func (i *CloudsqlInstance) ConnectionSecret() *corev1.Secret {
 	s.Data[PublicIPKey] = []byte(i.Status.PublicIP)
 	s.Data[PrivateIPKey] = []byte(i.Status.PrivateIP)
 	s.Data[runtimev1alpha1.ResourceCredentialsSecretUserKey] = []byte(i.DatabaseUserName())
+	// NOTE: this is for backward compatibility. Please use PublicIPKey going forward.
+	s.Data[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(i.Status.PublicIP)
 	return s
 }
 

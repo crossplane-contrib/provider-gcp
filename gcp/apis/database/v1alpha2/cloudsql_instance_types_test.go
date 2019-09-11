@@ -101,7 +101,8 @@ func TestCloudsqlInstance_ConnectionSecret(t *testing.T) {
 			want: map[string][]byte{
 				PublicIPKey:  []byte(""),
 				PrivateIPKey: []byte(""),
-				runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(PostgresqlDefaultUser),
+				runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(""),
+				runtimev1alpha1.ResourceCredentialsSecretUserKey:     []byte(PostgresqlDefaultUser),
 			},
 		},
 	}

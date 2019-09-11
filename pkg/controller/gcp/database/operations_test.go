@@ -45,7 +45,7 @@ var (
 
 	testKey = types.NamespacedName{Namespace: testNs, Name: testName}
 
-	testSecret = func(privateIP, publicIP, pw string) *core.Secret {
+	testSecret = func(endpoint, privateIP, publicIP, pw string) *core.Secret {
 		t := true
 		return &core.Secret{
 			ObjectMeta: meta1.ObjectMeta{
@@ -66,6 +66,7 @@ var (
 				v1alpha2.PublicIPKey:  []byte(publicIP),
 				runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(pw),
 				runtimev1alpha1.ResourceCredentialsSecretUserKey:     []byte(v1alpha2.MysqlDefaultUser),
+				runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(endpoint),
 			},
 		}
 	}
@@ -817,7 +818,7 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 				},
 			},
 			want: want{
-				sec: testSecret("", "", ""),
+				sec: testSecret("", "", "", ""),
 			},
 		},
 		"ExistsButBelongsToAnother": {
@@ -836,7 +837,7 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 					MockGet: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 						assertKey(key)
 						s := assertObj(obj)
-						ts := testSecret("test-priv", "test-pub", "test-pass")
+						ts := testSecret("test-pub", "test-priv", "test-pub", "test-pass")
 						ts.OwnerReferences[0].UID = "foo"
 						ts.DeepCopyInto(s)
 						return nil
@@ -866,7 +867,7 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 					MockGet: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 						assertKey(key)
 						s := assertObj(obj)
-						ts := testSecret("test-priv", "test-pub", "test-pass")
+						ts := testSecret("test-pub", "test-priv", "test-pub", "test-pass")
 						ts.DeepCopyInto(s)
 						return nil
 					},
@@ -877,7 +878,7 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 				},
 			},
 			want: want{
-				sec: testSecret("new-test-priv", "new-test-pub", "test-pass"),
+				sec: testSecret("new-test-pub", "new-test-priv", "new-test-pub", "test-pass"),
 			},
 		},
 	}
@@ -1261,7 +1262,7 @@ func Test_managedHandler_updateUserCreds(t *testing.T) {
 				obj: &v1alpha2.CloudsqlInstance{},
 				ops: &mockLocalOperations{
 					mockUpdateConnectionSecret: func(ctx context.Context) (*core.Secret, error) {
-						return testSecret("foo", "foobar", "bar"), nil
+						return testSecret("bar", "foo", "foobar", "bar"), nil
 					},
 				},
 				user: &fake.MockUserClient{
@@ -1277,7 +1278,7 @@ func Test_managedHandler_updateUserCreds(t *testing.T) {
 				obj: &v1alpha2.CloudsqlInstance{},
 				ops: &mockLocalOperations{
 					mockUpdateConnectionSecret: func(ctx context.Context) (*core.Secret, error) {
-						return testSecret("new-private", "new-public", "new-password"), nil
+						return testSecret("new-public", "new-private", "new-public", "new-password"), nil
 					},
 				},
 				user: &fake.MockUserClient{
