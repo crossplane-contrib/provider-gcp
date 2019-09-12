@@ -65,6 +65,10 @@ type CloudsqlInstanceParameters struct {
 	// updated, but it cannot be removed after it is set.
 	PrivateNetwork string `json:"privateNetwork,omitempty"`
 
+	// Ipv4Enabled: Whether the instance should be assigned an IP address or
+	// not.
+	Ipv4Enabled bool `json:"ipv4Enabled,omitempty"`
+
 	// The database engine (MySQL or PostgreSQL) and its specific version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
 	DatabaseVersion string `json:"databaseVersion"`
 
@@ -200,8 +204,13 @@ func (i *CloudsqlInstance) ConnectionSecret() *corev1.Secret {
 	s.Data[PublicIPKey] = []byte(i.Status.PublicIP)
 	s.Data[PrivateIPKey] = []byte(i.Status.PrivateIP)
 	s.Data[runtimev1alpha1.ResourceCredentialsSecretUserKey] = []byte(i.DatabaseUserName())
-	// NOTE: this is for backward compatibility. Please use PublicIPKey going forward.
+	// NOTE: this is for backward compatibility. Please use PublicIPKey and PrivateIPKey going forward.
 	s.Data[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(i.Status.PublicIP)
+	// TODO(muvaf): we explicitly enforce use of private IP if it's available. But this should be configured
+	// by resource class or claim.
+	if i.Status.PrivateIP != "" {
+		s.Data[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(i.Status.PrivateIP)
+	}
 	return s
 }
 
@@ -223,6 +232,10 @@ func (i *CloudsqlInstance) DatabaseInstance(name string) *sqladmin.DatabaseInsta
 			IpConfiguration: &sqladmin.IpConfiguration{
 				AuthorizedNetworks: authnets,
 				PrivateNetwork:     i.Spec.PrivateNetwork,
+				Ipv4Enabled:        i.Spec.Ipv4Enabled,
+				// NOTE: if we don't send false value explicitly, the default on GCP is true as opposed to
+				// golang zero value of this type.
+				ForceSendFields: []string{"Ipv4Enabled"},
 			},
 			UserLabels: i.Spec.Labels,
 		},

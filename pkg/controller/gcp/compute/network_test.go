@@ -62,7 +62,6 @@ const testGCPCredentialsJSON = `
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/crossplane-test%40crossplane-test.iam.gserviceaccount.com"
 }
-
 `
 
 func TestNetworkConnector_Connect(t *testing.T) {

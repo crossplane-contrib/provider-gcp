@@ -144,7 +144,6 @@ func (h *localHandler) updateConnectionSecret(ctx context.Context) (*corev1.Secr
 		s.Data[v1alpha2.PrivateIPKey] = secret.Data[v1alpha2.PrivateIPKey]
 		s.Data[v1alpha2.PublicIPKey] = secret.Data[v1alpha2.PublicIPKey]
 		s.Data[runtimev1alpha1.ResourceCredentialsSecretUserKey] = secret.Data[runtimev1alpha1.ResourceCredentialsSecretUserKey]
-		// NOTE: this is for backward compatibility. Please use PublicIPKey going forward.
 		s.Data[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = secret.Data[runtimev1alpha1.ResourceCredentialsSecretEndpointKey]
 		return nil
 	}); err != nil {

@@ -135,6 +135,7 @@ func TestCloudsqlInstance_DatabaseInstance(t *testing.T) {
 				Settings: &sqladmin.Settings{
 					IpConfiguration: &sqladmin.IpConfiguration{
 						AuthorizedNetworks: []*sqladmin.AclEntry{},
+						ForceSendFields:    []string{"Ipv4Enabled"},
 					},
 				},
 			},
@@ -166,6 +167,7 @@ func TestCloudsqlInstance_DatabaseInstance(t *testing.T) {
 							{Value: "foo"},
 							{Value: "bar"},
 						},
+						ForceSendFields: []string{"Ipv4Enabled"},
 					},
 					Tier:       "test-tier",
 					UserLabels: map[string]string{"fooz": "booz"},

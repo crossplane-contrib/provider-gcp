@@ -867,7 +867,7 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 					MockGet: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 						assertKey(key)
 						s := assertObj(obj)
-						ts := testSecret("test-pub", "test-priv", "test-pub", "test-pass")
+						ts := testSecret("test-priv", "test-priv", "test-pub", "test-pass")
 						ts.DeepCopyInto(s)
 						return nil
 					},
@@ -878,7 +878,7 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 				},
 			},
 			want: want{
-				sec: testSecret("new-test-pub", "new-test-priv", "new-test-pub", "test-pass"),
+				sec: testSecret("new-test-priv", "new-test-priv", "new-test-pub", "test-pass"),
 			},
 		},
 	}

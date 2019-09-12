@@ -52,6 +52,10 @@ spec:
               description: The database engine (MySQL or PostgreSQL) and its specific
                 version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
               type: string
+            ipv4Enabled:
+              description: 'Ipv4Enabled: Whether the instance should be assigned an
+                IP address or not.'
+              type: boolean
             labels:
               additionalProperties:
                 type: string
