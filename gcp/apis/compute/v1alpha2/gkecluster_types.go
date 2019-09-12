@@ -147,14 +147,14 @@ func (c *GKECluster) GetClaimReference() *corev1.ObjectReference {
 	return c.Spec.ClaimReference
 }
 
-// SetClassReference of this GKECluster.
-func (c *GKECluster) SetClassReference(r *corev1.ObjectReference) {
-	c.Spec.ClassReference = r
+// SetNonPortableClassReference of this GKECluster.
+func (c *GKECluster) SetNonPortableClassReference(r *corev1.ObjectReference) {
+	c.Spec.NonPortableClassReference = r
 }
 
-// GetClassReference of this GKECluster.
-func (c *GKECluster) GetClassReference() *corev1.ObjectReference {
-	return c.Spec.ClassReference
+// GetNonPortableClassReference of this GKECluster.
+func (c *GKECluster) GetNonPortableClassReference() *corev1.ObjectReference {
+	return c.Spec.NonPortableClassReference
 }
 
 // SetWriteConnectionSecretToReference of this GKECluster.
@@ -188,11 +188,12 @@ type GKEClusterList struct {
 
 // GKEClusterClassSpecTemplate is the Schema for the resource class
 type GKEClusterClassSpecTemplate struct {
-	runtimev1alpha1.ResourceClassSpecTemplate `json:",inline"`
-	GKEClusterParameters                      `json:",inline"`
+	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
+	GKEClusterParameters                         `json:",inline"`
 }
 
-var _ resource.Class = &GKEClusterClass{}
+// All non-portable classes must implement the NonPortableClass interface.
+var _ resource.NonPortableClass = &GKEClusterClass{}
 
 // +kubebuilder:object:root=true
 

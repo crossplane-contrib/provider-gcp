@@ -170,14 +170,14 @@ func (a *GlobalAddress) GetClaimReference() *corev1.ObjectReference {
 	return a.Spec.ClaimReference
 }
 
-// SetClassReference of this GlobalAddress.
-func (a *GlobalAddress) SetClassReference(r *corev1.ObjectReference) {
-	a.Spec.ClassReference = r
+// SetNonPortableClassReference of this GlobalAddress.
+func (a *GlobalAddress) SetNonPortableClassReference(r *corev1.ObjectReference) {
+	a.Spec.NonPortableClassReference = r
 }
 
-// GetClassReference of this GlobalAddress.
-func (a *GlobalAddress) GetClassReference() *corev1.ObjectReference {
-	return a.Spec.ClassReference
+// GetNonPortableClassReference of this GlobalAddress.
+func (a *GlobalAddress) GetNonPortableClassReference() *corev1.ObjectReference {
+	return a.Spec.NonPortableClassReference
 }
 
 // SetWriteConnectionSecretToReference of this GlobalAddress.

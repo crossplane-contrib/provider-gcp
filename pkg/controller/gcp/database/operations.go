@@ -28,10 +28,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	util "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
-	"github.com/crossplaneio/crossplane-runtime/pkg/util"
+	runtimeutil "github.com/crossplaneio/crossplane-runtime/pkg/util"
 
 	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gcp/cloudsql"
@@ -126,13 +127,13 @@ func (h *localHandler) getConnectionSecret(ctx context.Context) (*corev1.Secret,
 func (h *localHandler) updateConnectionSecret(ctx context.Context) (*corev1.Secret, error) {
 	secret := h.ConnectionSecret()
 
-	password, err := util.GeneratePassword(v1alpha2.PasswordLength)
+	password, err := runtimeutil.GeneratePassword(v1alpha2.PasswordLength)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate password")
 	}
 
 	s := secret.DeepCopy()
-	if err := util.CreateOrUpdate(ctx, h.client, s, func() error {
+	if _, err := util.CreateOrUpdate(ctx, h.client, s, func() error {
 		if !meta.HaveSameController(s, secret) {
 			return errors.Errorf("connection secret %s/%s exists and is not controlled by %s/%s",
 				s.GetNamespace(), s.GetName(), h.GetNamespace(), h.GetName())

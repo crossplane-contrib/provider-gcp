@@ -41,7 +41,7 @@ type CloudMemorystoreInstanceClaimController struct{}
 func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(cachev1alpha1.RedisClusterGroupVersionKind),
-		resource.ClassKind(v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind),
+		resource.ClassKinds{Portable: cachev1alpha1.RedisClusterClassGroupVersionKind, NonPortable: v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind},
 		resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance),
@@ -54,14 +54,14 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 		Named(name).
 		Watches(&source.Kind{Type: &v1alpha2.CloudMemorystoreInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&cachev1alpha1.RedisCluster{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind)))).
+		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: cachev1alpha1.RedisClusterClassGroupVersionKind, NonPortable: v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind}))).
 		Complete(r)
 }
 
 // ConfigureCloudMemorystoreInstance configures the supplied resource (presumed
 // to be a CloudMemorystoreInstance) using the supplied resource claim (presumed
 // to be a RedisCluster) and resource class.
-func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
+func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
 	rc, cmok := cm.(*cachev1alpha1.RedisCluster)
 	if !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), cachev1alpha1.RedisClusterGroupVersionKind)

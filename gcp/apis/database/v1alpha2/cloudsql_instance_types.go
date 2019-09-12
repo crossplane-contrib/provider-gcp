@@ -154,14 +154,14 @@ func (i *CloudsqlInstance) GetClaimReference() *corev1.ObjectReference {
 	return i.Spec.ClaimReference
 }
 
-// SetClassReference of this CloudsqlInstance.
-func (i *CloudsqlInstance) SetClassReference(r *corev1.ObjectReference) {
-	i.Spec.ClassReference = r
+// SetNonPortableClassReference of this CloudsqlInstance.
+func (i *CloudsqlInstance) SetNonPortableClassReference(r *corev1.ObjectReference) {
+	i.Spec.NonPortableClassReference = r
 }
 
-// GetClassReference of this CloudsqlInstance.
-func (i *CloudsqlInstance) GetClassReference() *corev1.ObjectReference {
-	return i.Spec.ClassReference
+// GetNonPortableClassReference of this CloudsqlInstance.
+func (i *CloudsqlInstance) GetNonPortableClassReference() *corev1.ObjectReference {
+	return i.Spec.NonPortableClassReference
 }
 
 // GetProviderReference of this CloudsqlInstance
@@ -309,11 +309,12 @@ func (i *CloudsqlInstance) SetStatus(inst *sqladmin.DatabaseInstance) {
 
 // CloudsqlInstanceClassSpecTemplate is the Schema for the resource class
 type CloudsqlInstanceClassSpecTemplate struct {
-	runtimev1alpha1.ResourceClassSpecTemplate `json:",inline"`
-	CloudsqlInstanceParameters                `json:",inline"`
+	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
+	CloudsqlInstanceParameters                   `json:",inline"`
 }
 
-var _ resource.Class = &CloudsqlInstanceClass{}
+// All non-portable classes must implement the NonPortableClass interface.
+var _ resource.NonPortableClass = &CloudsqlInstanceClass{}
 
 // +kubebuilder:object:root=true
 

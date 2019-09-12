@@ -175,14 +175,14 @@ func (i *CloudMemorystoreInstance) GetClaimReference() *corev1.ObjectReference {
 	return i.Spec.ClaimReference
 }
 
-// SetClassReference of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) SetClassReference(r *corev1.ObjectReference) {
-	i.Spec.ClassReference = r
+// SetNonPortableClassReference of this CloudMemorystoreInstance.
+func (i *CloudMemorystoreInstance) SetNonPortableClassReference(r *corev1.ObjectReference) {
+	i.Spec.NonPortableClassReference = r
 }
 
-// GetClassReference of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) GetClassReference() *corev1.ObjectReference {
-	return i.Spec.ClassReference
+// GetNonPortableClassReference of this CloudMemorystoreInstance.
+func (i *CloudMemorystoreInstance) GetNonPortableClassReference() *corev1.ObjectReference {
+	return i.Spec.NonPortableClassReference
 }
 
 // SetWriteConnectionSecretToReference of this CloudMemorystoreInstance.
@@ -216,11 +216,12 @@ type CloudMemorystoreInstanceList struct {
 
 // CloudMemorystoreInstanceClassSpecTemplate is the Schema for the resource class
 type CloudMemorystoreInstanceClassSpecTemplate struct {
-	runtimev1alpha1.ResourceClassSpecTemplate `json:",inline"`
-	CloudMemorystoreInstanceParameters        `json:",inline"`
+	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
+	CloudMemorystoreInstanceParameters           `json:",inline"`
 }
 
-var _ resource.Class = &CloudMemorystoreInstanceClass{}
+// All non-portable classes must implement the NonPortableClass interface.
+var _ resource.NonPortableClass = &CloudMemorystoreInstanceClass{}
 
 // +kubebuilder:object:root=true
 

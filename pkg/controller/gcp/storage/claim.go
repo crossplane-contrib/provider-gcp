@@ -41,7 +41,7 @@ type BucketClaimController struct{}
 func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
-		resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
+		resource.ClassKinds{Portable: storagev1alpha1.BucketClassGroupVersionKind, NonPortable: v1alpha2.BucketClassGroupVersionKind},
 		resource.ManagedKind(v1alpha2.BucketGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -56,14 +56,14 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		Named(name).
 		Watches(&source.Kind{Type: &v1alpha2.Bucket{}}, &resource.EnqueueRequestForClaim{}).
 		For(&storagev1alpha1.Bucket{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.BucketClassGroupVersionKind)))).
+		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: storagev1alpha1.BucketClassGroupVersionKind, NonPortable: v1alpha2.BucketClassGroupVersionKind}))).
 		Complete(r)
 }
 
 // ConfigureBucket configures the supplied resource (presumed
 // to be a Bucket) using the supplied resource claim (presumed
 // to be a Bucket) and resource class.
-func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
+func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
 	bcm, cmok := cm.(*storagev1alpha1.Bucket)
 	if !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), storagev1alpha1.BucketGroupVersionKind)
