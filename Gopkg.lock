@@ -57,7 +57,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e891dabca719a29f484ab3becd8ebdf009856ade6cc5baa46c5d97ad8703788a"
+  digest = "1:d5f7d37aa4379b8811e62190f6577de2b019ebd80148b2d890497c098babbf44"
   name = "github.com/crossplaneio/crossplane"
   packages = [
     "apis",
@@ -77,7 +77,7 @@
     "apis/workload/v1alpha1",
   ]
   pruneopts = "UT"
-  revision = "7de0e648929564c73560a767bd31dd4a0516e405"
+  revision = "a5489468a5b1be40f7157c42ed183ae21cdbd6a0"
 
 [[projects]]
   branch = "master"

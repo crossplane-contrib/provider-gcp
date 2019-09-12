@@ -846,8 +846,7 @@ func Test_localHandler_updateConnectionSecret(t *testing.T) {
 			},
 			want: want{
 				sec: nil,
-				err: errors.Wrap(errors.New("connection secret test-ns/test-name exists and is not controlled by test-ns/test-name"),
-					"could not mutate object for update"),
+				err: errors.New("connection secret test-ns/test-name exists and is not controlled by test-ns/test-name"),
 			},
 		},
 		"ExistsUpdateIPAddresses": {
