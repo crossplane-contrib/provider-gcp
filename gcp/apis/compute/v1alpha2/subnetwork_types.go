@@ -74,14 +74,14 @@ func (s *Subnetwork) GetClaimReference() *corev1.ObjectReference {
 	return s.Spec.ClaimReference
 }
 
-// SetClassReference of this Subnetwork.
-func (s *Subnetwork) SetClassReference(r *corev1.ObjectReference) {
-	s.Spec.ClassReference = r
+// SetNonPortableClassReference of this Subnetwork.
+func (s *Subnetwork) SetNonPortableClassReference(r *corev1.ObjectReference) {
+	s.Spec.NonPortableClassReference = r
 }
 
-// GetClassReference of this Subnetwork.
-func (s *Subnetwork) GetClassReference() *corev1.ObjectReference {
-	return s.Spec.ClassReference
+// GetNonPortableClassReference of this Subnetwork.
+func (s *Subnetwork) GetNonPortableClassReference() *corev1.ObjectReference {
+	return s.Spec.NonPortableClassReference
 }
 
 // SetWriteConnectionSecretToReference of this Subnetwork.

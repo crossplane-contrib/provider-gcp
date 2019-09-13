@@ -42,7 +42,7 @@ func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		cm  resource.Claim
-		cs  resource.Class
+		cs  resource.NonPortableClass
 		mg  resource.Managed
 	}
 
@@ -66,7 +66,7 @@ func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
 				},
 				cs: &v1alpha2.CloudsqlInstanceClass{
 					SpecTemplate: v1alpha2.CloudsqlInstanceClassSpecTemplate{
-						ResourceClassSpecTemplate: runtimev1alpha1.ResourceClassSpecTemplate{
+						NonPortableClassSpecTemplate: runtimev1alpha1.NonPortableClassSpecTemplate{
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},
@@ -112,7 +112,7 @@ func TestConfigureMyCloudsqlInstance(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		cm  resource.Claim
-		cs  resource.Class
+		cs  resource.NonPortableClass
 		mg  resource.Managed
 	}
 
@@ -136,7 +136,7 @@ func TestConfigureMyCloudsqlInstance(t *testing.T) {
 				},
 				cs: &v1alpha2.CloudsqlInstanceClass{
 					SpecTemplate: v1alpha2.CloudsqlInstanceClassSpecTemplate{
-						ResourceClassSpecTemplate: runtimev1alpha1.ResourceClassSpecTemplate{
+						NonPortableClassSpecTemplate: runtimev1alpha1.NonPortableClassSpecTemplate{
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},

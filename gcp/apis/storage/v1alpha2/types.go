@@ -834,14 +834,14 @@ func (b *Bucket) GetClaimReference() *corev1.ObjectReference {
 	return b.Spec.ClaimReference
 }
 
-// SetClassReference of this Bucket.
-func (b *Bucket) SetClassReference(r *corev1.ObjectReference) {
-	b.Spec.ClassReference = r
+// SetNonPortableClassReference of this Bucket.
+func (b *Bucket) SetNonPortableClassReference(r *corev1.ObjectReference) {
+	b.Spec.NonPortableClassReference = r
 }
 
-// GetClassReference of this Bucket.
-func (b *Bucket) GetClassReference() *corev1.ObjectReference {
-	return b.Spec.ClassReference
+// GetNonPortableClassReference of this Bucket.
+func (b *Bucket) GetNonPortableClassReference() *corev1.ObjectReference {
+	return b.Spec.NonPortableClassReference
 }
 
 // SetWriteConnectionSecretToReference of this Bucket.
@@ -893,11 +893,12 @@ type BucketList struct {
 
 // BucketClassSpecTemplate is the Schema for the resource class
 type BucketClassSpecTemplate struct {
-	runtimev1alpha1.ResourceClassSpecTemplate `json:",inline"`
-	BucketParameters                          `json:",inline"`
+	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
+	BucketParameters                             `json:",inline"`
 }
 
-var _ resource.Class = &BucketClass{}
+// All non-portable classes must implement the NonPortableClass interface.
+var _ resource.NonPortableClass = &BucketClass{}
 
 // +kubebuilder:object:root=true
 

@@ -34,7 +34,7 @@ import (
 // ConfigurePostgreSQLCloudsqlInstance configures the supplied instance (presumed
 // to be a CloudsqlInstance) using the supplied instance claim (presumed to be a
 // PostgreSQLInstance) and instance class.
-func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
+func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
 	pg, cmok := cm.(*databasev1alpha1.PostgreSQLInstance)
 	if !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), databasev1alpha1.PostgreSQLInstanceGroupVersionKind)
@@ -76,7 +76,7 @@ func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, c
 // ConfigureMyCloudsqlInstance configures the supplied instance (presumed to be
 // a CloudsqlInstance) using the supplied instance claim (presumed to be a
 // MySQLInstance) and instance class.
-func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
+func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
 	my, cmok := cm.(*databasev1alpha1.MySQLInstance)
 	if !cmok {
 		return errors.Errorf("expected instance claim %s to be %s", cm.GetName(), databasev1alpha1.MySQLInstanceGroupVersionKind)

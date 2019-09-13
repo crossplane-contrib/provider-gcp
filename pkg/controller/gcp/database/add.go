@@ -56,7 +56,7 @@ type PostgreSQLInstanceClaimController struct{}
 func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
-		resource.ClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind),
+		resource.ClassKinds{Portable: databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind, NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind},
 		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -71,7 +71,7 @@ func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) e
 		Named(name).
 		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.PostgreSQLInstance{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind)))).
+		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: databasev1alpha1.MySQLInstanceClassGroupVersionKind, NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind}))).
 		Complete(r)
 }
 
@@ -83,7 +83,7 @@ type MySQLInstanceClaimController struct{}
 func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
-		resource.ClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind),
+		resource.ClassKinds{Portable: databasev1alpha1.MySQLInstanceClassGroupVersionKind, NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind},
 		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -98,6 +98,6 @@ func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error 
 		Named(name).
 		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.MySQLInstance{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind)))).
+		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: databasev1alpha1.MySQLInstanceClassGroupVersionKind, NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind}))).
 		Complete(r)
 }

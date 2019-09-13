@@ -99,14 +99,14 @@ func (a *Connection) GetClaimReference() *corev1.ObjectReference {
 	return a.Spec.ClaimReference
 }
 
-// SetClassReference of this Connection.
-func (a *Connection) SetClassReference(r *corev1.ObjectReference) {
-	a.Spec.ClassReference = r
+// SetNonPortableClassReference of this Connection.
+func (a *Connection) SetNonPortableClassReference(r *corev1.ObjectReference) {
+	a.Spec.NonPortableClassReference = r
 }
 
-// GetClassReference of this Connection.
-func (a *Connection) GetClassReference() *corev1.ObjectReference {
-	return a.Spec.ClassReference
+// GetNonPortableClassReference of this Connection.
+func (a *Connection) GetNonPortableClassReference() *corev1.ObjectReference {
+	return a.Spec.NonPortableClassReference
 }
 
 // SetWriteConnectionSecretToReference of this Connection.
