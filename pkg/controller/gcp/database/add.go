@@ -71,7 +71,7 @@ func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) e
 		Named(name).
 		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.PostgreSQLInstance{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: databasev1alpha1.MySQLInstanceClassGroupVersionKind, NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind}))).
+		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind, NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind}))).
 		Complete(r)
 }
 
