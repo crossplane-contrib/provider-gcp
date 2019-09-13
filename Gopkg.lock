@@ -1276,6 +1276,8 @@
     "google.golang.org/api/sqladmin/v1beta4",
     "google.golang.org/genproto/googleapis/cloud/redis/v1",
     "google.golang.org/genproto/protobuf/field_mask",
+    "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/status",
     "gopkg.in/alecthomas/kingpin.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",

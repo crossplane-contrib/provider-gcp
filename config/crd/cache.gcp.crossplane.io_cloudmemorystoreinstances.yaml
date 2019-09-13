@@ -26,7 +26,8 @@ spec:
     plural: cloudmemorystoreinstances
     singular: cloudmemorystoreinstance
   scope: ""
-  subresources: {}
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: CloudMemorystoreInstance is the Schema for the instances API
@@ -285,10 +286,6 @@ spec:
               description: Endpoint of the Cloud Memorystore instance used in connection
                 strings.
               type: string
-            instanceName:
-              description: InstanceName of the Cloud Memorystore instance. Does not
-                include the project and location (region) IDs. e.g. 'foo', not 'projects/fooproj/locations/us-foo1/instances/foo'
-              type: string
             message:
               type: string
             port:
@@ -297,7 +294,7 @@ spec:
               type: integer
             providerID:
               description: ProviderID is the external ID to identify this resource
-                in the cloud provider
+                in the cloud provider, e.g. 'projects/fooproj/locations/us-foo1/instances/foo'
               type: string
             state:
               type: string

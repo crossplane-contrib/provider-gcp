@@ -113,7 +113,7 @@ type CloudMemorystoreInstanceStatus struct {
 	Message string `json:"message,omitempty"`
 
 	// ProviderID is the external ID to identify this resource in the cloud
-	// provider
+	// provider, e.g. 'projects/fooproj/locations/us-foo1/instances/foo'
 	ProviderID string `json:"providerID,omitempty"`
 
 	// CurrentLocationID is the current zone where the Redis endpoint is placed.
@@ -128,16 +128,12 @@ type CloudMemorystoreInstanceStatus struct {
 
 	// Port at which the Cloud Memorystore instance endpoint is listening.
 	Port int `json:"port,omitempty"`
-
-	// InstanceName of the Cloud Memorystore instance. Does not include the
-	// project and location (region) IDs. e.g. 'foo', not
-	// 'projects/fooproj/locations/us-foo1/instances/foo'
-	InstanceName string `json:"instanceName,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
 // CloudMemorystoreInstance is the Schema for the instances API
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.state"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="VERSION",type="string",JSONPath=".spec.redisVersion"
