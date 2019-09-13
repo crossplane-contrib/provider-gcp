@@ -14,5 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha2 contains API Schema definitions for the container v1alpha2 API group
+// Package v1alpha2 contains managed resources for GCP compute services such as
+// GKE.
+// +kubebuilder:object:generate=true
+// +groupName=compute.gcp.crossplane.io
+// +versionName=v1alpha2
 package v1alpha2
