@@ -23,9 +23,11 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/google"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	core "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -68,6 +70,24 @@ var (
 
 	log = logging.Logger.WithName("controller." + controllerName)
 )
+
+// CloudsqlController is responsible for adding the Cloudsql
+// controller and its corresponding reconciler to the manager with any runtime configuration.
+type CloudsqlController struct{}
+
+// SetupWithManager creates a Controller that reconciles CloudsqlInstance resources.
+func (c *CloudsqlController) SetupWithManager(mgr ctrl.Manager) error {
+	r := &Reconciler{
+		client:  mgr.GetClient(),
+		factory: &operationsFactory{mgr.GetClient()},
+	}
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(controllerName).
+		For(&v1alpha2.CloudsqlInstance{}).
+		Owns(&core.Secret{}).
+		Complete(r)
+}
 
 // Reconciler reconciles cloudsql instance objects
 type Reconciler struct {

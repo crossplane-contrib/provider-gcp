@@ -39,9 +39,25 @@ type CloudMemorystoreInstanceClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles RedisCluster resource claims.
 func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
+		cachev1alpha1.RedisClusterKind,
+		v1alpha2.CloudMemorystoreInstanceKind,
+		v1alpha2.Group))
+
+	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind)),
+		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind)),
+		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
+			Portable:    cachev1alpha1.RedisClusterClassGroupVersionKind,
+			NonPortable: v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind,
+		})))
+
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(cachev1alpha1.RedisClusterGroupVersionKind),
-		resource.ClassKinds{Portable: cachev1alpha1.RedisClusterClassGroupVersionKind, NonPortable: v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind},
+		resource.ClassKinds{
+			Portable:    cachev1alpha1.RedisClusterClassGroupVersionKind,
+			NonPortable: v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind,
+		},
 		resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -50,16 +66,11 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
 		))
 
-	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
-		cachev1alpha1.RedisClusterKind,
-		v1alpha2.CloudMemorystoreInstanceKind,
-		v1alpha2.Group))
-
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		Watches(&source.Kind{Type: &v1alpha2.CloudMemorystoreInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&cachev1alpha1.RedisCluster{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: cachev1alpha1.RedisClusterClassGroupVersionKind, NonPortable: v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind}))).
+		WithEventFilter(p).
 		Complete(r)
 }
 

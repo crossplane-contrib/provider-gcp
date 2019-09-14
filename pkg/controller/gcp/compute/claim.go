@@ -39,22 +39,36 @@ type GKEClusterClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles KubernetesCluster resource claims.
 func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
+		computev1alpha1.KubernetesClusterKind,
+		v1alpha2.GKEClusterClassKind,
+		v1alpha2.Group))
+
+	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind)),
+		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.GKEClusterClassGroupVersionKind)),
+		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
+			Portable:    computev1alpha1.KubernetesClusterClassGroupVersionKind,
+			NonPortable: v1alpha2.GKEClusterClassGroupVersionKind,
+		})))
+
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
-		resource.ClassKinds{Portable: computev1alpha1.KubernetesClusterClassGroupVersionKind, NonPortable: v1alpha2.GKEClusterClassGroupVersionKind},
+		resource.ClassKinds{
+			Portable:    computev1alpha1.KubernetesClusterClassGroupVersionKind,
+			NonPortable: v1alpha2.GKEClusterClassGroupVersionKind,
+		},
 		resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureGKECluster),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
 		))
 
-	name := strings.ToLower(fmt.Sprintf("%s.%s", computev1alpha1.KubernetesClusterKind, controllerName))
-
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		Watches(&source.Kind{Type: &v1alpha2.GKECluster{}}, &resource.EnqueueRequestForClaim{}).
 		For(&computev1alpha1.KubernetesCluster{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: computev1alpha1.KubernetesClusterClassGroupVersionKind, NonPortable: v1alpha2.GKEClusterClassGroupVersionKind}))).
+		WithEventFilter(p).
 		Complete(r)
 }
 
