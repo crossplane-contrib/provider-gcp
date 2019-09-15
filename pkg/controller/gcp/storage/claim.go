@@ -39,9 +39,25 @@ type BucketClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles Bucket resource claims.
 func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
+		storagev1alpha1.BucketKind,
+		v1alpha2.BucketKind,
+		v1alpha2.Group))
+
+	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.BucketGroupVersionKind)),
+		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.BucketClassGroupVersionKind)),
+		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
+			Portable:    storagev1alpha1.BucketClassGroupVersionKind,
+			NonPortable: v1alpha2.BucketClassGroupVersionKind,
+		})))
+
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
-		resource.ClassKinds{Portable: storagev1alpha1.BucketClassGroupVersionKind, NonPortable: v1alpha2.BucketClassGroupVersionKind},
+		resource.ClassKinds{
+			Portable:    storagev1alpha1.BucketClassGroupVersionKind,
+			NonPortable: v1alpha2.BucketClassGroupVersionKind,
+		},
 		resource.ManagedKind(v1alpha2.BucketGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -50,13 +66,11 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
 		))
 
-	name := strings.ToLower(fmt.Sprintf("%s.%s", storagev1alpha1.BucketKind, controllerName))
-
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		Watches(&source.Kind{Type: &v1alpha2.Bucket{}}, &resource.EnqueueRequestForClaim{}).
 		For(&storagev1alpha1.Bucket{}).
-		WithEventFilter(resource.NewPredicates(resource.HasClassReferenceKinds(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{Portable: storagev1alpha1.BucketClassGroupVersionKind, NonPortable: v1alpha2.BucketClassGroupVersionKind}))).
+		WithEventFilter(p).
 		Complete(r)
 }
 

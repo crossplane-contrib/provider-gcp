@@ -23,6 +23,8 @@ import (
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -30,6 +32,47 @@ import (
 
 	"github.com/crossplaneio/stack-gcp/gcp/apis/database/v1alpha2"
 )
+
+// PostgreSQLInstanceClaimController is responsible for adding the PostgreSQLInstance
+// claim controller and its corresponding reconciler to the manager with any runtime configuration.
+type PostgreSQLInstanceClaimController struct{}
+
+// SetupWithManager adds a controller that reconciles PostgreSQLInstance instance claims.
+func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
+		databasev1alpha1.PostgreSQLInstanceKind,
+		v1alpha2.CloudsqlInstanceKind,
+		v1alpha2.Group))
+
+	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind)),
+		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind)),
+		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
+			Portable:    databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind,
+			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
+		})))
+
+	r := resource.NewClaimReconciler(mgr,
+		resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
+		resource.ClassKinds{
+			Portable:    databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind,
+			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
+		},
+		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
+		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
+		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
+		resource.WithManagedConfigurators(
+			resource.ManagedConfiguratorFn(ConfigurePostgreSQLCloudsqlInstance),
+			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
+		))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
+		For(&databasev1alpha1.PostgreSQLInstance{}).
+		WithEventFilter(p).
+		Complete(r)
+}
 
 // ConfigurePostgreSQLCloudsqlInstance configures the supplied instance (presumed
 // to be a CloudsqlInstance) using the supplied instance claim (presumed to be a
@@ -71,6 +114,47 @@ func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, c
 	i.Spec = *spec
 
 	return nil
+}
+
+// MySQLInstanceClaimController is responsible for adding the MySQLInstance
+// claim controller and its corresponding reconciler to the manager with any runtime configuration.
+type MySQLInstanceClaimController struct{}
+
+// SetupWithManager adds a controller that reconciles MySQLInstance instance claims.
+func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
+		databasev1alpha1.MySQLInstanceKind,
+		v1alpha2.CloudsqlInstanceKind,
+		v1alpha2.Group))
+
+	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind)),
+		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind)),
+		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
+			Portable:    databasev1alpha1.MySQLInstanceClassGroupVersionKind,
+			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
+		})))
+
+	r := resource.NewClaimReconciler(mgr,
+		resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
+		resource.ClassKinds{
+			Portable:    databasev1alpha1.MySQLInstanceClassGroupVersionKind,
+			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
+		},
+		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
+		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
+		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
+		resource.WithManagedConfigurators(
+			resource.ManagedConfiguratorFn(ConfigureMyCloudsqlInstance),
+			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
+		))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
+		For(&databasev1alpha1.MySQLInstance{}).
+		WithEventFilter(p).
+		Complete(r)
 }
 
 // ConfigureMyCloudsqlInstance configures the supplied instance (presumed to be
