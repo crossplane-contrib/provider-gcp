@@ -26,7 +26,9 @@ spec:
   subresources: {}
   validation:
     openAPIV3Schema:
-      description: CloudsqlInstanceClass is the Schema for the resource class
+      description: A CloudsqlInstanceClass is a non-portable resource class. It defines
+        the desired spec of resource claims that use it to dynamically provision a
+        managed resource.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -41,34 +43,41 @@ spec:
         metadata:
           type: object
         specTemplate:
-          description: CloudsqlInstanceClassSpecTemplate is the Schema for the resource
-            class
+          description: SpecTemplate is a template for the spec of a dynamically provisioned
+            CloudsqlInstance.
           properties:
             authorizedNetworks:
+              description: AuthorizedNetworks is the list of external networks that
+                are allowed to connect to the instance using the IP. In CIDR notation,
+                also known as 'slash' notation (e.g. 192.168.100.0/24).
               items:
                 type: string
               type: array
             databaseVersion:
-              description: The database engine (MySQL or PostgreSQL) and its specific
-                version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
+              description: DatabaseVersion specifies he database engine type and version.
+                MySQL Second Generation instances use MYSQL_5_7 (default) or MYSQL_5_6.
+                MySQL First Generation instances use MYSQL_5_6 (default) or MYSQL_5_5
+                PostgreSQL instances uses POSTGRES_9_6 (default) or POSTGRES_11.
               type: string
             ipv4Enabled:
-              description: 'Ipv4Enabled: Whether the instance should be assigned an
-                IP address or not.'
+              description: Ipv4Enabled specifies whether the instance should be assigned
+                an IP address or not.
               type: boolean
             labels:
               additionalProperties:
                 type: string
+              description: Labels to apply to this CloudSQL instance.
               type: object
             nameFormat:
-              description: NameFormat to format resource name passing it a object
-                UID If not provided, defaults to "%s", i.e. UID value
+              description: NameFormat specifies the name of the extenral CloudSQL
+                instance. The first instance of the string '%s' will be replaced with
+                the Kubernetes UID of this CloudsqlInstance.
               type: string
             privateNetwork:
-              description: 'PrivateNetwork: The resource link for the VPC network
+              description: PrivateNetwork is the resource link for the VPC network
                 from which the Cloud SQL instance is accessible for private IP. For
                 example, /projects/myProject/global/networks/default. This setting
-                can be updated, but it cannot be removed after it is set.'
+                can be updated, but it cannot be removed after it is set.
               type: string
             providerRef:
               description: ProviderReference specifies the provider that will be used
@@ -117,20 +126,23 @@ spec:
                 per https://github.com/crossplaneio/crossplane-runtime/issues/21
               type: string
             region:
+              description: Region specifies the geographical region of this CloudSQL
+                instance.
               type: string
             storageGB:
+              description: StorageGB specifies the size of the data disk. The minimum
+                is 10GB.
               format: int64
               type: integer
             storageType:
+              description: StorageType specifies the type of the data disk, either
+                PD_SSD or PD_HDD.
               type: string
             tier:
-              description: MySQL and PostgreSQL use different machine types.  MySQL
-                only allows a predefined set of machine types, while PostgreSQL can
-                only use custom machine instance types and shared-core instance types.
-                For the full set of MySQL machine types, see https://cloud.google.com/sql/pricing#2nd-gen-instance-pricing.
-                For more information on custom machine types that can be used with
-                PostgreSQL, see the examples on https://cloud.google.com/sql/docs/postgres/create-instance?authuser=1#machine-types
-                and the naming rules on https://cloud.google.com/sql/docs/postgres/create-instance#create-2ndgen-curl.
+              description: Tier (or machine type) for this instance, for example db-n1-standard-1
+                (MySQL instances) or db-custom-1-3840 (PostgreSQL instances). For
+                MySQL instances, this property determines whether the instance is
+                First or Second Generation. For more information, see https://cloud.google.com/sql/docs/mysql/instance-settings
               type: string
           required:
           - databaseVersion

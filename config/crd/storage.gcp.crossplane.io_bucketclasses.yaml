@@ -26,7 +26,9 @@ spec:
   subresources: {}
   validation:
     openAPIV3Schema:
-      description: BucketClass is the Schema for the resource class
+      description: A BucketClass is a non-portable resource class. It defines the
+        desired spec of resource claims that use it to dynamically provision a managed
+        resource.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -41,7 +43,8 @@ spec:
         metadata:
           type: object
         specTemplate:
-          description: BucketClassSpecTemplate is the Schema for the resource class
+          description: SpecTemplate is a template for the spec of a dynamically provisioned
+            Bucket.
           properties:
             acl:
               description: ACL is the list of access control rules on the bucket.
@@ -246,8 +249,9 @@ spec:
                   type: string
               type: object
             nameFormat:
-              description: NameFormat to format bucket name passing it a object UID
-                If not provided, defaults to "%s", i.e. UID value
+              description: NameFormat specifies the name of the extenral CloudSQL
+                instance. The first instance of the string '%s' will be replaced with
+                the Kubernetes UID of this CloudsqlInstance.
               type: string
             predefinedAcl:
               description: If not empty, applies a predefined set of access controls.

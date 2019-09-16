@@ -53,68 +53,90 @@ const (
 	PublicIPKey  = "publicIP"
 )
 
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// CloudsqlInstanceParameters defines the desired state of CloudsqlInstance
+// CloudsqlInstanceParameters define the desired state of a Google CloudSQL
+// instance.
 type CloudsqlInstanceParameters struct {
+	// AuthorizedNetworks is the list of external networks that are allowed to
+	// connect to the instance using the IP. In CIDR notation, also known as
+	// 'slash' notation (e.g. 192.168.100.0/24).
+	// +optional
 	AuthorizedNetworks []string `json:"authorizedNetworks,omitempty"`
 
-	// PrivateNetwork: The resource link for the VPC network from which the
+	// PrivateNetwork is the resource link for the VPC network from which the
 	// Cloud SQL instance is accessible for private IP. For example,
 	// /projects/myProject/global/networks/default. This setting can be
 	// updated, but it cannot be removed after it is set.
+	// +optional
 	PrivateNetwork string `json:"privateNetwork,omitempty"`
 
-	// Ipv4Enabled: Whether the instance should be assigned an IP address or
-	// not.
+	// Ipv4Enabled specifies whether the instance should be assigned an IP
+	// address or not.
+	// +optional
 	Ipv4Enabled bool `json:"ipv4Enabled,omitempty"`
 
 	// The database engine (MySQL or PostgreSQL) and its specific version to use, e.g., MYSQL_5_7 or POSTGRES_9_6.
+
+	// DatabaseVersion specifies he database engine type and version. MySQL
+	// Second Generation instances use MYSQL_5_7 (default) or MYSQL_5_6.
+	// MySQL First Generation instances use MYSQL_5_6 (default) or MYSQL_5_5
+	// PostgreSQL instances uses POSTGRES_9_6 (default) or POSTGRES_11.
 	DatabaseVersion string `json:"databaseVersion"`
 
-	Labels      map[string]string `json:"labels,omitempty"`
-	Region      string            `json:"region"`
-	StorageType string            `json:"storageType"`
-	StorageGB   int64             `json:"storageGB"`
+	// Labels to apply to this CloudSQL instance.
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
 
-	// MySQL and PostgreSQL use different machine types.  MySQL only allows a predefined set of machine types,
-	// while PostgreSQL can only use custom machine instance types and shared-core instance types. For the full
-	// set of MySQL machine types, see https://cloud.google.com/sql/pricing#2nd-gen-instance-pricing. For more
-	// information on custom machine types that can be used with PostgreSQL, see the examples on
-	// https://cloud.google.com/sql/docs/postgres/create-instance?authuser=1#machine-types and the naming rules
-	// on https://cloud.google.com/sql/docs/postgres/create-instance#create-2ndgen-curl.
+	// Region specifies the geographical region of this CloudSQL instance.
+	Region string `json:"region"`
+
+	// StorageType specifies the type of the data disk, either PD_SSD or PD_HDD.
+	StorageType string `json:"storageType"`
+
+	// StorageGB specifies the size of the data disk. The minimum is 10GB.
+	StorageGB int64 `json:"storageGB"`
+
+	// Tier (or machine type) for this instance, for example db-n1-standard-1
+	// (MySQL instances) or db-custom-1-3840 (PostgreSQL instances). For MySQL
+	// instances, this property determines whether the instance is First or
+	// Second Generation. For more information, see
+	// https://cloud.google.com/sql/docs/mysql/instance-settings
 	Tier string `json:"tier"`
 
-	// TODO(illya) - this should be defined in ResourceSpec
-
-	// NameFormat to format resource name passing it a object UID
-	// If not provided, defaults to "%s", i.e. UID value
+	// NameFormat specifies the name of the extenral CloudSQL instance. The
+	// first instance of the string '%s' will be replaced with the Kubernetes
+	// UID of this CloudsqlInstance.
 	NameFormat string `json:"nameFormat,omitempty"`
 }
 
-// CloudsqlInstanceSpec defines the desired state of CloudsqlInstance
+// A CloudsqlInstanceSpec defines the desired state of a CloudsqlInstance.
 type CloudsqlInstanceSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
 	CloudsqlInstanceParameters   `json:",inline"`
 }
 
-// CloudsqlInstanceStatus defines the observed state of CloudsqlInstance
+// A CloudsqlInstanceStatus represents the observed state of a CloudsqlInstance.
 type CloudsqlInstanceStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
 
+	// State of this CloudsqlInstance.
 	State string `json:"state,omitempty"`
 
-	// TODO(muvaf): Convert these types to *string during managed reconciler refactor because both are optional.
+	// TODO(muvaf): Convert these types to *string during managed reconciler
+	// refactor because both are optional.
+	// https://github.com/crossplaneio/crossplane/issues/741
 
-	// PublicIP is used to connect to this resource from other authorized networks.
+	// PublicIP is used to connect to this resource from other authorized
+	// networks.
 	PublicIP string `json:"publicIp,omitempty"`
+
 	// PrivateIP is used to connect to this instance from the same Network.
 	PrivateIP string `json:"privateIp,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// CloudsqlInstance is the Schema for the instances API
+// A CloudsqlInstance is a managed resource that represents a Google CloudSQL
+// instance.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.state"
@@ -307,7 +329,8 @@ func (i *CloudsqlInstance) SetStatus(inst *sqladmin.DatabaseInstance) {
 	}
 }
 
-// CloudsqlInstanceClassSpecTemplate is the Schema for the resource class
+// A CloudsqlInstanceClassSpecTemplate is a template for the spec of a
+// dynamically provisioned CloudsqlInstance.
 type CloudsqlInstanceClassSpecTemplate struct {
 	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
 	CloudsqlInstanceParameters                   `json:",inline"`
@@ -318,7 +341,9 @@ var _ resource.NonPortableClass = &CloudsqlInstanceClass{}
 
 // +kubebuilder:object:root=true
 
-// CloudsqlInstanceClass is the Schema for the resource class
+// A CloudsqlInstanceClass is a non-portable resource class. It defines the
+// desired spec of resource claims that use it to dynamically provision a
+// managed resource.
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
@@ -326,6 +351,8 @@ type CloudsqlInstanceClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// SpecTemplate is a template for the spec of a dynamically provisioned
+	// CloudsqlInstance.
 	SpecTemplate CloudsqlInstanceClassSpecTemplate `json:"specTemplate,omitempty"`
 }
 

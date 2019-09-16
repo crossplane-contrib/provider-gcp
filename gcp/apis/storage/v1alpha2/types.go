@@ -147,9 +147,8 @@ func CopyToLifecyleAction(la LifecycleAction) storage.LifecycleAction {
 }
 
 // LifecycleCondition is a set of conditions used to match objects and take an
-// action automatically.
-//
-// All configured conditions must be met for the associated action to be taken.
+// action automatically. All configured conditions must be met for the
+// associated action to be taken.
 type LifecycleCondition struct {
 	// AgeInDays is the age of the object in days.
 	AgeInDays int64 `json:"ageInDays,omitempty"`
@@ -536,8 +535,8 @@ func CopyToBucketPolicyOnly(bp *BucketPolicyOnly) storage.BucketPolicyOnly {
 	}
 }
 
-// BucketUpdatableAttrs represents the subset of metadata for a Google Cloud Storage
-// bucket limited to all updatable input attributes
+// BucketUpdatableAttrs represents the subset of parameters of a Google Cloud
+// Storage bucket that may be updated.
 type BucketUpdatableAttrs struct {
 	// BucketPolicyOnly configures access checks to use only bucket-level IAM
 	// policies.
@@ -766,12 +765,15 @@ func NewBucketOutputAttrs(attrs *storage.BucketAttrs) BucketOutputAttrs {
 	}
 }
 
-// BucketParameters defines the desired state of Bucket
+// BucketParameters define the desired state of a Google Cloud Storage Bucket.
+// Most fields map directly to a bucket resource:
+// https://cloud.google.com/storage/docs/json_api/v1/buckets#resource
 type BucketParameters struct {
 	BucketSpecAttrs `json:",inline"`
 
-	// NameFormat to format bucket name passing it a object UID
-	// If not provided, defaults to "%s", i.e. UID value
+	// NameFormat specifies the name of the extenral CloudSQL instance. The
+	// first instance of the string '%s' will be replaced with the Kubernetes
+	// UID of this CloudsqlInstance.
 	NameFormat string `json:"nameFormat,omitempty"`
 
 	// ServiceAccountSecretRef contains GCP ServiceAccount secret that will be used
@@ -779,13 +781,13 @@ type BucketParameters struct {
 	ServiceAccountSecretRef *corev1.LocalObjectReference `json:"serviceAccountSecretRef,omitempty"`
 }
 
-// BucketSpec defines the desired state of Bucket
+// A BucketSpec defines the desired state of a Bucket.
 type BucketSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
 	BucketParameters             `json:",inline"`
 }
 
-// BucketStatus defines the observed state of GoogleBucket
+// A BucketStatus represents the observed state of a Bucket.
 type BucketStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
 
@@ -794,7 +796,7 @@ type BucketStatus struct {
 
 // +kubebuilder:object:root=true
 
-// Bucket is the Schema for the instances API
+// A Bucket is a managed resource that represents a Google Cloud Storage bucket.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STORAGE_CLASS",type="string",JSONPath=".spec.storageClass"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.location"
@@ -892,6 +894,9 @@ type BucketList struct {
 }
 
 // BucketClassSpecTemplate is the Schema for the resource class
+
+// A BucketClassSpecTemplate is a template for the spec of a dynamically
+// provisioned Bucket.
 type BucketClassSpecTemplate struct {
 	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
 	BucketParameters                             `json:",inline"`
@@ -902,7 +907,8 @@ var _ resource.NonPortableClass = &BucketClass{}
 
 // +kubebuilder:object:root=true
 
-// BucketClass is the Schema for the resource class
+// A BucketClass is a non-portable resource class. It defines the desired spec
+// of resource claims that use it to dynamically provision a managed resource.
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
@@ -910,6 +916,8 @@ type BucketClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// SpecTemplate is a template for the spec of a dynamically provisioned
+	// Bucket.
 	SpecTemplate BucketClassSpecTemplate `json:"specTemplate,omitempty"`
 }
 

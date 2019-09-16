@@ -61,8 +61,7 @@ func TestProvider(t *testing.T) {
 				LocalObjectReference: v1.LocalObjectReference{Name: "u-235"},
 				Key:                  secretDataKey,
 			},
-			ProjectID:           "manhattan",
-			RequiredPermissions: []string{"crate", "update", "delete"},
+			ProjectID: "manhattan",
 		},
 	}
 	g := gomega.NewGomegaWithT(t)

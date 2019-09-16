@@ -42,12 +42,11 @@ var (
 	TierStandardHA = redis.Instance_STANDARD_HA.String()
 )
 
-// CloudMemorystoreInstanceParameters define the fields required for provisioning
-// a cloud memorystore instance on GCP
-// Most fields map directly to a GCP Instance resource.
+// CloudMemorystoreInstanceParameters define the desired state of an Google
+// Cloud Memorystore instance. Most fields map directly to an Instance:
 // https://cloud.google.com/memorystore/docs/redis/reference/rest/v1/projects.locations.instances#Instance
 type CloudMemorystoreInstanceParameters struct {
-	// Region in which to create this CloudMemorystore cluster.
+	// Region in which to create this Cloud Memorystore cluster.
 	Region string `json:"region"`
 
 	// Tier specifies the replication level of the Redis cluster. BASIC provides
@@ -61,12 +60,14 @@ type CloudMemorystoreInstanceParameters struct {
 	// not provided, the service will choose a zone for the instance. For
 	// STANDARD_HA tier, instances will be created across two zones for
 	// protection against zonal failures.
+	// +optional
 	LocationID string `json:"locationId,omitempty"`
 
 	// AlternativeLocationID is only applicable to STANDARD_HA tier, which
 	// protects the instance against zonal failures by provisioning it across
 	// two zones. If provided, it must be a different zone from the one provided
 	// in locationId.
+	// +optional
 	AlternativeLocationID string `json:"alternativeLocationId,omitempty"`
 
 	// MemorySizeGB specifies the Redis memory size in GiB.
@@ -77,18 +78,21 @@ type CloudMemorystoreInstanceParameters struct {
 	// unused /29 block, for example, 10.0.0.0/29 or 192.168.0.0/29. Ranges must
 	// be unique and non-overlapping with existing subnets in an authorized
 	// network.
+	// +optional
 	ReservedIPRange string `json:"reservedIpRange,omitempty"`
 
 	// AuthorizedNetwork specifies the full name of the Google Compute Engine
 	// network to which the instance is connected. If left unspecified, the
 	// default network will be used.
+	// +optional
 	AuthorizedNetwork string `json:"authorizedNetwork,omitempty"`
 
 	// RedisVersion specifies the version of Redis software. If not provided,
 	// latest supported version will be used. Updating the version will perform
 	// an upgrade/downgrade to the new version. Currently, the supported values
-	// are REDIS_3_2 for Redis 3.2.
-	// +kubebuilder:validation:Enum=REDIS_3_2
+	// are REDIS_3_2 for Redis 3.2, and REDIS_4_0 for Redis 4.0 (the default).
+	// +kubebuilder:validation:Enum=REDIS_3_2;REDIS_4_0
+	// +optional
 	RedisVersion string `json:"redisVersion,omitempty"`
 
 	// RedisConfigs specifies Redis configuration parameters, according to
@@ -96,20 +100,27 @@ type CloudMemorystoreInstanceParameters struct {
 	// are:
 	// * maxmemory-policy
 	// * notify-keyspace-events
+	// +optional
 	RedisConfigs map[string]string `json:"redisConfigs,omitempty"`
 }
 
-// CloudMemorystoreInstanceSpec defines the desired state of CloudMemorystoreInstance
+// A CloudMemorystoreInstanceSpec defines the desired state of a
+// CloudMemorystoreInstance.
 type CloudMemorystoreInstanceSpec struct {
 	runtimev1alpha1.ResourceSpec       `json:",inline"`
 	CloudMemorystoreInstanceParameters `json:",inline"`
 }
 
-// CloudMemorystoreInstanceStatus defines the observed state of CloudMemorystoreInstance
+// A CloudMemorystoreInstanceStatus represents the observed state of a
+// CloudMemorystoreInstance.
 type CloudMemorystoreInstanceStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
 
-	State   string `json:"state,omitempty"`
+	// State of this instance.
+	State string `json:"state,omitempty"`
+
+	// Additional information about the current status of this instance, if
+	// available.
 	Message string `json:"message,omitempty"`
 
 	// ProviderID is the external ID to identify this resource in the cloud
@@ -132,7 +143,8 @@ type CloudMemorystoreInstanceStatus struct {
 
 // +kubebuilder:object:root=true
 
-// CloudMemorystoreInstance is the Schema for the instances API
+// A CloudMemorystoreInstance is a managed resource that represents a Google
+// Cloud Memorystore instance.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.state"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
@@ -210,7 +222,8 @@ type CloudMemorystoreInstanceList struct {
 	Items           []CloudMemorystoreInstance `json:"items"`
 }
 
-// CloudMemorystoreInstanceClassSpecTemplate is the Schema for the resource class
+// A CloudMemorystoreInstanceClassSpecTemplate is a template for the spec of a
+// dynamically provisioned CloudMemorystoreInstance.
 type CloudMemorystoreInstanceClassSpecTemplate struct {
 	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
 	CloudMemorystoreInstanceParameters           `json:",inline"`
@@ -221,7 +234,9 @@ var _ resource.NonPortableClass = &CloudMemorystoreInstanceClass{}
 
 // +kubebuilder:object:root=true
 
-// CloudMemorystoreInstanceClass is the Schema for the resource class
+// A CloudMemorystoreInstanceClass is a non-portable resource class. It defines
+// the desired spec of resource claims that use it to dynamically provision a
+// managed resource.
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
@@ -229,7 +244,9 @@ type CloudMemorystoreInstanceClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	SpecTemplate CloudMemorystoreInstanceClassSpecTemplate `json:"specTemplate,omitempty"`
+	// SpecTemplate is a template for the spec of a dynamically provisioned
+	// CloudMemorystoreInstance.
+	SpecTemplate CloudMemorystoreInstanceClassSpecTemplate `json:"specTemplate"`
 }
 
 // GetReclaimPolicy of this CloudMemorystoreInstanceClass.

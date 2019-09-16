@@ -26,7 +26,9 @@ spec:
   subresources: {}
   validation:
     openAPIV3Schema:
-      description: GKEClusterClass is the Schema for the resource class
+      description: A GKEClusterClass is a non-portable resource class. It defines
+        the desired spec of resource claims that use it to dynamically provision a
+        managed resource.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -41,100 +43,67 @@ spec:
         metadata:
           type: object
         specTemplate:
-          description: GKEClusterClassSpecTemplate is the Schema for the resource
-            class
+          description: SpecTemplate is a template for the spec of a dynamically provisioned
+            GKECluster.
           properties:
-            addons:
-              items:
-                type: string
-              type: array
-            async:
-              type: boolean
             clusterIPV4CIDR:
+              description: ClusterIPV4CIDR specifies the IP address range of the pod
+                IPs in this cluster. This is applicable only if EnableIPAlias is true.
+                Omit this field to have a range chosen with the default size. Set
+                it to a netmask (e.g. /24) to have a range chosen with a specific
+                netmask.
               type: string
             clusterSecondaryRangeName:
+              description: ClusterSecondaryRangeName specifies the name of the secondary
+                range to be used for the cluster CIDR block. The secondary range will
+                be used for pod IP addresses. This must be an existing secondary range
+                associated with the cluster subnetwork.
               type: string
             clusterVersion:
+              description: ClusterVersion is the initial Kubernetes version for this
+                cluster. Users may specify either explicit versions offered by Kubernetes
+                Engine or version aliases, for example "latest", "1.X", or "1.X.Y".
+                Leave unset to use the default version.
               type: string
             createSubnetwork:
-              type: boolean
-            diskSize:
-              type: string
-            enableAutorepair:
-              type: boolean
-            enableAutoscaling:
-              type: boolean
-            enableAutoupgrade:
-              type: boolean
-            enableBasicAuth:
-              type: boolean
-            enableCloudEndpoints:
-              type: boolean
-            enableCloudLogging:
-              type: boolean
-            enableCloudMonitoring:
+              description: CreateSubnetwork determines whether a new subnetwork will
+                be created automatically for the cluster. Only applicable when EnableIPAlias
+                is true.
               type: boolean
             enableIPAlias:
+              description: EnableIPAlias determines whether Alias IPs will be used
+                for pod IPs in the cluster.
               type: boolean
-            enableKubernetesAlpha:
-              type: boolean
-            enableLegacyAuthorization:
-              type: boolean
-            enableNetworkPolicy:
-              type: boolean
-            imageType:
-              type: string
             labels:
               additionalProperties:
                 type: string
+              description: Labels for the cluster to use to annotate any related Google
+                Compute Engine resources.
               type: object
-            localSSDCount:
-              format: int64
-              type: integer
             machineType:
+              description: MachineType is the name of a Google Compute Engine machine
+                type (e.g. n1-standard-1). If unspecified the default machine type
+                is n1-standard-1.
               type: string
-            maintenanceWindow:
-              type: string
-            maxNodes:
-              format: int64
-              type: integer
-            maxNodesPerPool:
-              format: int64
-              type: integer
-            minCPUPlatform:
-              type: string
-            minNodes:
-              format: int64
-              type: integer
             network:
+              description: Network is the name of the Google Compute Engine network
+                to which the cluster is connected. If left unspecified, the default
+                network will be used.
               type: string
-            noIssueClientCertificates:
-              type: boolean
             nodeIPV4CIDR:
+              description: NodeIPV4CIDR specifies the IP address range of the instance
+                IPs in this cluster. This is applicable only if CreateSubnetwork is
+                true. Omit this field to have a range chosen with the default size.
+                Set it to a netmask (e.g. /24) to have a range chosen with a specific
+                netmask.
               type: string
-            nodeLabels:
-              items:
-                type: string
-              type: array
-            nodeLocations:
-              items:
-                type: string
-              type: array
-            nodeTaints:
-              items:
-                type: string
-              type: array
-            nodeVersion:
-              items:
-                type: string
-              type: array
             numNodes:
+              description: NumNodes is the number of nodes to create in this cluster.
+                You must ensure that your Compute Engine resource quota is sufficient
+                for this number of instances. You must also have available firewall
+                and routes quota.
               format: int64
               type: integer
-            password:
-              type: string
-            preemtible:
-              type: boolean
             providerRef:
               description: ProviderReference specifies the provider that will be used
                 to create, observe, update, and delete managed resources that are
@@ -182,28 +151,38 @@ spec:
                 per https://github.com/crossplaneio/crossplane-runtime/issues/21
               type: string
             scopes:
+              description: Scopes are the set of Google API scopes to be made available
+                on all of the node VMs under the "default" service account.
               items:
                 type: string
               type: array
-            serviceAccount:
-              type: string
             serviceIPV4CIDR:
+              description: ServiceIPV4CIDR specifies the IP address range of service
+                IPs in this cluster. This is applicable only if EnableIPAlias is true.
+                Omit this field to have a range chosen with the default size. Set
+                it to a netmask (e.g. /24) to have a range chosen with a specific
+                netmask.
               type: string
             servicesSecondaryRangeName:
+              description: ServicesSecondaryRangeName specifies the name of the secondary
+                range to be used as for the services CIDR block. The secondary range
+                will be used for service ClusterIPs. This must be an existing secondary
+                range associated with the cluster subnetwork.
               type: string
             subnetwork:
-              type: string
-            tags:
-              items:
-                type: string
-              type: array
-            username:
+              description: Subnetwork is the name of the Google Compute Engine subnetwork
+                to which the cluster is connected.
               type: string
             zone:
+              description: Zone specifies the name of the Google Compute Engine zone
+                in which this cluster resides.
               type: string
           required:
+          - numNodes
           - providerRef
           type: object
+      required:
+      - specTemplate
       type: object
   version: v1alpha2
   versions:

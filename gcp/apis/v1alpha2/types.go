@@ -21,23 +21,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ProviderSpec defines the desired state of Provider
+// A ProviderSpec defines the desired state of a Provider.
 type ProviderSpec struct {
-	// Important: Run "make generate" to regenerate code after modifying this file
 
-	// GCP ServiceAccount json secret key reference
+	// A Secret containing JSON encoded credentials for a Google Service Account
+	// that will be used to authenticate to this GCP Provider.
 	Secret corev1.SecretKeySelector `json:"credentialsSecretRef"`
 
-	// GCP ProjectID (name)
+	// ProjectID is the project name (not numerical ID) of this GCP Provider.
 	ProjectID string `json:"projectID"`
-
-	// RequiredPermissions  - list of granted GCP permissions this provider's service account is expected to have
-	RequiredPermissions []string `json:"requiredPermissions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// Provider is the Schema for the instances API
+// A Provider configures a GCP 'provider', i.e. a connection to a particular
+// GCP project using a particular GCP service account
 // +kubebuilder:printcolumn:name="PROJECT-ID",type="string",JSONPath=".spec.projectID"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="SECRET-NAME",type="string",JSONPath=".spec.credentialsSecretRef.name",priority=1
