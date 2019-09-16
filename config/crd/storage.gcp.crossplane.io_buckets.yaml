@@ -33,7 +33,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Bucket is the Schema for the instances API
+      description: A Bucket is a managed resource that represents a Google Cloud Storage
+        bucket.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -48,7 +49,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: BucketSpec defines the desired state of Bucket
+          description: A BucketSpec defines the desired state of a Bucket.
           properties:
             acl:
               description: ACL is the list of access control rules on the bucket.
@@ -331,8 +332,9 @@ spec:
                   type: string
               type: object
             nameFormat:
-              description: NameFormat to format bucket name passing it a object UID
-                If not provided, defaults to "%s", i.e. UID value
+              description: NameFormat specifies the name of the extenral CloudSQL
+                instance. The first instance of the string '%s' will be replaced with
+                the Kubernetes UID of this CloudsqlInstance.
               type: string
             predefinedAcl:
               description: If not empty, applies a predefined set of access controls.
@@ -475,7 +477,7 @@ spec:
           - providerRef
           type: object
         status:
-          description: BucketStatus defines the observed state of GoogleBucket
+          description: A BucketStatus represents the observed state of a Bucket.
           properties:
             attributes:
               description: BucketOutputAttrs represent the subset of metadata for

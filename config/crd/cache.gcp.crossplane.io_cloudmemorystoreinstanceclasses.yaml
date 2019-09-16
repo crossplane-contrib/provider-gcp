@@ -26,7 +26,9 @@ spec:
   subresources: {}
   validation:
     openAPIV3Schema:
-      description: CloudMemorystoreInstanceClass is the Schema for the resource class
+      description: A CloudMemorystoreInstanceClass is a non-portable resource class.
+        It defines the desired spec of resource claims that use it to dynamically
+        provision a managed resource.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -41,8 +43,8 @@ spec:
         metadata:
           type: object
         specTemplate:
-          description: CloudMemorystoreInstanceClassSpecTemplate is the Schema for
-            the resource class
+          description: SpecTemplate is a template for the spec of a dynamically provisioned
+            CloudMemorystoreInstance.
           properties:
             alternativeLocationId:
               description: AlternativeLocationID is only applicable to STANDARD_HA
@@ -121,12 +123,14 @@ spec:
               description: RedisVersion specifies the version of Redis software. If
                 not provided, latest supported version will be used. Updating the
                 version will perform an upgrade/downgrade to the new version. Currently,
-                the supported values are REDIS_3_2 for Redis 3.2.
+                the supported values are REDIS_3_2 for Redis 3.2, and REDIS_4_0 for
+                Redis 4.0 (the default).
               enum:
               - REDIS_3_2
+              - REDIS_4_0
               type: string
             region:
-              description: Region in which to create this CloudMemorystore cluster.
+              description: Region in which to create this Cloud Memorystore cluster.
               type: string
             reservedIpRange:
               description: ReservedIPRange specifies the CIDR range of internal addresses
@@ -150,6 +154,8 @@ spec:
           - region
           - tier
           type: object
+      required:
+      - specTemplate
       type: object
   version: v1alpha2
   versions:

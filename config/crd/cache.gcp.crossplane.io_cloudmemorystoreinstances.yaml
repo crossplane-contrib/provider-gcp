@@ -30,7 +30,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: CloudMemorystoreInstance is the Schema for the instances API
+      description: A CloudMemorystoreInstance is a managed resource that represents
+        a Google Cloud Memorystore instance.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -45,7 +46,8 @@ spec:
         metadata:
           type: object
         spec:
-          description: CloudMemorystoreInstanceSpec defines the desired state of CloudMemorystoreInstance
+          description: A CloudMemorystoreInstanceSpec defines the desired state of
+            a CloudMemorystoreInstance.
           properties:
             alternativeLocationId:
               description: AlternativeLocationID is only applicable to STANDARD_HA
@@ -201,12 +203,14 @@ spec:
               description: RedisVersion specifies the version of Redis software. If
                 not provided, latest supported version will be used. Updating the
                 version will perform an upgrade/downgrade to the new version. Currently,
-                the supported values are REDIS_3_2 for Redis 3.2.
+                the supported values are REDIS_3_2 for Redis 3.2, and REDIS_4_0 for
+                Redis 4.0 (the default).
               enum:
               - REDIS_3_2
+              - REDIS_4_0
               type: string
             region:
-              description: Region in which to create this CloudMemorystore cluster.
+              description: Region in which to create this Cloud Memorystore cluster.
               type: string
             reservedIpRange:
               description: ReservedIPRange specifies the CIDR range of internal addresses
@@ -243,8 +247,8 @@ spec:
           - tier
           type: object
         status:
-          description: CloudMemorystoreInstanceStatus defines the observed state of
-            CloudMemorystoreInstance
+          description: A CloudMemorystoreInstanceStatus represents the observed state
+            of a CloudMemorystoreInstance.
           properties:
             bindingPhase:
               description: Phase represents the binding phase of a managed resource
@@ -302,6 +306,8 @@ spec:
                 strings.
               type: string
             message:
+              description: Additional information about the current status of this
+                instance, if available.
               type: string
             port:
               description: Port at which the Cloud Memorystore instance endpoint is
@@ -312,6 +318,7 @@ spec:
                 in the cloud provider, e.g. 'projects/fooproj/locations/us-foo1/instances/foo'
               type: string
             state:
+              description: State of this instance.
               type: string
           type: object
       type: object

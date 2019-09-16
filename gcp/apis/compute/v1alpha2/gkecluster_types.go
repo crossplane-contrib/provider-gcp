@@ -36,76 +36,127 @@ const (
 	DefaultNumberOfNodes = int64(1)
 )
 
-// GKEClusterParameters specifies the configuration of a GKE cluster.
+// GKEClusterParameters define the desired state of a Google Kubernetes Engine
+// cluster.
 type GKEClusterParameters struct {
-	Addons                     []string          `json:"addons,omitempty"`
-	Async                      bool              `json:"async,omitempty"`
-	ClusterIPV4CIDR            string            `json:"clusterIPV4CIDR,omitempty"`
-	ClusterSecondaryRangeName  string            `json:"clusterSecondaryRangeName,omitempty"`
-	ClusterVersion             string            `json:"clusterVersion,omitempty"`
-	CreateSubnetwork           bool              `json:"createSubnetwork,omitempty"`
-	DiskSize                   string            `json:"diskSize,omitempty"`
-	EnableAutorepair           bool              `json:"enableAutorepair,omitempty"`
-	EnableAutoupgrade          bool              `json:"enableAutoupgrade,omitempty"`
-	EnableCloudLogging         bool              `json:"enableCloudLogging,omitempty"`
-	EnableCloudMonitoring      bool              `json:"enableCloudMonitoring,omitempty"`
-	EnableIPAlias              bool              `json:"enableIPAlias,omitempty"`
-	EnableKubernetesAlpha      bool              `json:"enableKubernetesAlpha,omitempty"`
-	EnableLegacyAuthorization  bool              `json:"enableLegacyAuthorization,omitempty"`
-	EnableNetworkPolicy        bool              `json:"enableNetworkPolicy,omitempty"`
-	ImageType                  string            `json:"imageType,omitempty"`
-	NoIssueClientCertificates  bool              `json:"noIssueClientCertificates,omitempty"`
-	Labels                     map[string]string `json:"labels,omitempty"`
-	LocalSSDCount              int64             `json:"localSSDCount,omitempty"`
-	MachineType                string            `json:"machineType,omitempty"`
-	MaintenanceWindow          string            `json:"maintenanceWindow,omitempty"`
-	MaxNodesPerPool            int64             `json:"maxNodesPerPool,omitempty"`
-	MinCPUPlatform             string            `json:"minCPUPlatform,omitempty"`
-	Network                    string            `json:"network,omitempty"`
-	NodeIPV4CIDR               string            `json:"nodeIPV4CIDR,omitempty"`
-	NodeLabels                 []string          `json:"nodeLabels,omitempty"`
-	NodeLocations              []string          `json:"nodeLocations,omitempty"`
-	NodeTaints                 []string          `json:"nodeTaints,omitempty"`
-	NodeVersion                []string          `json:"nodeVersion,omitempty"`
-	NumNodes                   int64             `json:"numNodes,omitempty"`
-	Preemtible                 bool              `json:"preemtible,omitempty"`
-	ServiceIPV4CIDR            string            `json:"serviceIPV4CIDR,omitempty"`
-	ServicesSecondaryRangeName string            `json:"servicesSecondaryRangeName,omitempty"`
-	Subnetwork                 string            `json:"subnetwork,omitempty"`
-	Tags                       []string          `json:"tags,omitempty"`
-	Zone                       string            `json:"zone,omitempty"`
+	// ClusterVersion is the initial Kubernetes version for this cluster.
+	// Users may specify either explicit versions offered by Kubernetes Engine
+	// or version aliases, for example "latest", "1.X", or "1.X.Y". Leave unset
+	// to use the default version.
+	// +optional
+	ClusterVersion string `json:"clusterVersion,omitempty"`
 
-	EnableAutoscaling bool  `json:"enableAutoscaling,omitempty"`
-	MaxNodes          int64 `json:"maxNodes,omitempty"`
-	MinNodes          int64 `json:"minNodes,omitempty"`
+	// Labels for the cluster to use to annotate any related Google Compute
+	// Engine resources.
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
 
-	Password        string `json:"password,omitempty"`
-	EnableBasicAuth bool   `json:"enableBasicAuth,omitempty"`
-	Username        string `json:"username,omitempty"`
+	// MachineType is the name of a Google Compute Engine machine type (e.g.
+	// n1-standard-1). If unspecified the default machine type is n1-standard-1.
+	// +optional
+	MachineType string `json:"machineType,omitempty"`
 
-	ServiceAccount       string   `json:"serviceAccount,omitempty"`
-	EnableCloudEndpoints bool     `json:"enableCloudEndpoints,omitempty"`
-	Scopes               []string `json:"scopes,omitempty"`
+	// NumNodes is the number of nodes to create in this cluster. You must
+	// ensure that your Compute Engine resource quota is sufficient for this
+	// number of instances. You must also have available firewall and routes
+	// quota.
+	NumNodes int64 `json:"numNodes"`
+
+	// TODO(negz): Does setting the zone even do anything? The Google API docs
+	// state that the field is output only.
+
+	// Zone specifies the name of the Google Compute Engine zone in which this
+	// cluster resides.
+	// +optional
+	Zone string `json:"zone,omitempty"`
+
+	// Scopes are the set of Google API scopes to be made available on all of
+	// the node VMs under the "default" service account.
+	// +optional
+	Scopes []string `json:"scopes,omitempty"`
+
+	// Network is the name of the Google Compute Engine network to which the
+	// cluster is connected. If left unspecified, the default network will be
+	// used.
+	// +optional
+	Network string `json:"network,omitempty"`
+
+	// Subnetwork is the name of the Google Compute Engine subnetwork to which
+	// the cluster is connected.
+	// +optional
+	Subnetwork string `json:"subnetwork,omitempty"`
+
+	// EnableIPAlias determines whether Alias IPs will be used for pod IPs in
+	// the cluster.
+	// +optional
+	EnableIPAlias bool `json:"enableIPAlias,omitempty"`
+
+	// CreateSubnetwork determines whether a new subnetwork will be created
+	// automatically for the cluster. Only applicable when EnableIPAlias is
+	// true.
+	// +optional
+	CreateSubnetwork bool `json:"createSubnetwork,omitempty"`
+
+	// NodeIPV4CIDR specifies the IP address range of the instance IPs in this
+	// cluster. This is applicable only if CreateSubnetwork is true. Omit this
+	// field to have a range chosen with the default size. Set it to a netmask
+	// (e.g. /24) to have a range chosen with a specific netmask.
+	// +optional
+	NodeIPV4CIDR string `json:"nodeIPV4CIDR,omitempty"`
+
+	// ClusterIPV4CIDR specifies the IP address range of the pod IPs in this
+	// cluster. This is applicable only if EnableIPAlias is true. Omit this
+	// field to have a range chosen with the default size. Set it to a netmask
+	// (e.g. /24) to have a range chosen with a specific netmask.
+	// +optional
+	ClusterIPV4CIDR string `json:"clusterIPV4CIDR,omitempty"`
+
+	// ClusterSecondaryRangeName specifies the name of the secondary range to be
+	// used for the cluster CIDR block. The secondary range will be used for pod
+	// IP addresses. This must be an existing secondary range associated with
+	// the cluster subnetwork.
+	// +optional
+	ClusterSecondaryRangeName string `json:"clusterSecondaryRangeName,omitempty"`
+
+	// ServiceIPV4CIDR specifies the IP address range of service IPs in this
+	// cluster. This is applicable only if EnableIPAlias is true. Omit this
+	// field to have a range chosen with the default size. Set it to a netmask
+	// (e.g. /24) to have a range chosen with a specific netmask.
+	// +optional
+	ServiceIPV4CIDR string `json:"serviceIPV4CIDR,omitempty"`
+
+	// ServicesSecondaryRangeName specifies the name of the secondary range to
+	// be used as for the services CIDR block. The secondary range will be used
+	// for service ClusterIPs. This must be an existing secondary range
+	// associated with the cluster subnetwork.
+	ServicesSecondaryRangeName string `json:"servicesSecondaryRangeName,omitempty"`
 }
 
-// GKEClusterSpec specifies the configuration of a GKE cluster.
+// A GKEClusterSpec defines the desired state of a GKECluster.
 type GKEClusterSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
 	GKEClusterParameters         `json:",inline"`
 }
 
-// GKEClusterStatus represents the status of a GKE cluster.
+// A GKEClusterStatus represents the observed state of a GKECluster.
 type GKEClusterStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
 
+	// ClusterName is the name of this GKE cluster. The name is automatically
+	// generated by Crossplane.
 	ClusterName string `json:"clusterName"`
-	Endpoint    string `json:"endpoint"`
-	State       string `json:"state,omitempty"`
+
+	// Endpoint of the GKE cluster used in connection strings.
+	Endpoint string `json:"endpoint"`
+
+	// State of this GKE cluster.
+	State string `json:"state,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// GKECluster is the Schema for the instances API
+// A GKECluster is a managed resource that represents a Google Kubernetes Engine
+// cluster.
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.state"
 // +kubebuilder:printcolumn:name="CLUSTER-NAME",type="string",JSONPath=".status.clusterName"
@@ -186,7 +237,8 @@ type GKEClusterList struct {
 	Items           []GKECluster `json:"items"`
 }
 
-// GKEClusterClassSpecTemplate is the Schema for the resource class
+// A GKEClusterClassSpecTemplate is a template for the spec of a dynamically
+// provisioned GKECluster.
 type GKEClusterClassSpecTemplate struct {
 	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
 	GKEClusterParameters                         `json:",inline"`
@@ -197,7 +249,9 @@ var _ resource.NonPortableClass = &GKEClusterClass{}
 
 // +kubebuilder:object:root=true
 
-// GKEClusterClass is the Schema for the resource class
+// A GKEClusterClass is a non-portable resource class. It defines the desired
+// spec of resource claims that use it to dynamically provision a managed
+// resource.
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
@@ -205,7 +259,9 @@ type GKEClusterClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	SpecTemplate GKEClusterClassSpecTemplate `json:"specTemplate,omitempty"`
+	// SpecTemplate is a template for the spec of a dynamically provisioned
+	// GKECluster.
+	SpecTemplate GKEClusterClassSpecTemplate `json:"specTemplate"`
 }
 
 // GetReclaimPolicy of this GKEClusterClass.
