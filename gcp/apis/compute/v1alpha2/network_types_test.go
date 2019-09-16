@@ -22,15 +22,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestGCPNetworkSpec_IsSameAs(t *testing.T) {
+func TestNetworkParameters_IsSameAs(t *testing.T) {
 	trueVal := true
 	cases := map[string]struct {
-		spec   GCPNetworkSpec
+		spec   NetworkParameters
 		status GCPNetworkStatus
 		result bool
 	}{
 		"FullMatch": {
-			spec: GCPNetworkSpec{
+			spec: NetworkParameters{
 				Description:           "some desc",
 				Name:                  "some-name",
 				IPv4Range:             "10.0.0.0/9",
@@ -50,7 +50,7 @@ func TestGCPNetworkSpec_IsSameAs(t *testing.T) {
 			result: true,
 		},
 		"AutoCreateSubnetworksDifferent": {
-			spec: GCPNetworkSpec{
+			spec: NetworkParameters{
 				Description:           "some desc",
 				Name:                  "some-name",
 				IPv4Range:             "10.0.0.0/9",
@@ -70,7 +70,7 @@ func TestGCPNetworkSpec_IsSameAs(t *testing.T) {
 			result: false,
 		},
 		"RoutingConfigDifferent": {
-			spec: GCPNetworkSpec{
+			spec: NetworkParameters{
 				Description:           "some desc",
 				Name:                  "some-name",
 				IPv4Range:             "10.0.0.0/9",

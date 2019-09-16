@@ -771,9 +771,9 @@ func NewBucketOutputAttrs(attrs *storage.BucketAttrs) BucketOutputAttrs {
 type BucketParameters struct {
 	BucketSpecAttrs `json:",inline"`
 
-	// NameFormat specifies the name of the extenral CloudSQL instance. The
-	// first instance of the string '%s' will be replaced with the Kubernetes
-	// UID of this CloudsqlInstance.
+	// NameFormat specifies the name of the external Bucket. The first instance
+	// of the string '%s' will be replaced with the Kubernetes UID of this
+	// Bucket.
 	NameFormat string `json:"nameFormat,omitempty"`
 
 	// ServiceAccountSecretRef contains GCP ServiceAccount secret that will be used
@@ -918,7 +918,7 @@ type BucketClass struct {
 
 	// SpecTemplate is a template for the spec of a dynamically provisioned
 	// Bucket.
-	SpecTemplate BucketClassSpecTemplate `json:"specTemplate,omitempty"`
+	SpecTemplate BucketClassSpecTemplate `json:"specTemplate"`
 }
 
 // GetReclaimPolicy of this BucketClass.

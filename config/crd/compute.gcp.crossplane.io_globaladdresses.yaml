@@ -17,7 +17,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: GlobalAddress is the Schema for the GCP GlobalAddress API
+      description: A GlobalAddress is a managed resource that represents a Google
+        Compute Engine Global Address.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +33,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: GlobalAddressSpec defines the desired state of a GlobalAddress
+          description: A GlobalAddressSpec defines the desired state of a GlobalAddress.
           properties:
             address:
               description: 'Address: The static IP address represented by this resource.'
@@ -225,7 +226,7 @@ spec:
           - providerRef
           type: object
         status:
-          description: GlobalAddressStatus reflects the state of a GlobalAddress
+          description: A GlobalAddressStatus reflects the observed state of a GlobalAddress.
           properties:
             bindingPhase:
               description: Phase represents the binding phase of a managed resource

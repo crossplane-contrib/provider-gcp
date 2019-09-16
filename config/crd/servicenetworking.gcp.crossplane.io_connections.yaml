@@ -17,7 +17,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Connection is the Schema for the GCP Connection API
+      description: A Connection is a managed resource that represents a Google Cloud
+        Service Networking Connection.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +33,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: ConnectionSpec defines the desired state of a Connection
+          description: A ConnectionSpec defines the desired state of a Connection.
           properties:
             claimRef:
               description: ClaimReference specifies the resource claim to which this
@@ -192,10 +193,9 @@ spec:
           - network
           - parent
           - providerRef
-          - reservedPeeringRanges
           type: object
         status:
-          description: ConnectionStatus reflects the state of a Connection
+          description: A ConnectionStatus represents the observed state of a Connection.
           properties:
             bindingPhase:
               description: Phase represents the binding phase of a managed resource

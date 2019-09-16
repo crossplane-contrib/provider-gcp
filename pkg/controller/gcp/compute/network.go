@@ -146,7 +146,7 @@ func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (reso
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotNetwork)
 	}
-	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(cr.Spec.GCPNetworkSpec)).
+	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(cr.Spec.NetworkParameters)).
 		Context(ctx).
 		Do()
 	if clients.IsErrorAlreadyExists(err) {
@@ -167,7 +167,7 @@ func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (reso
 	_, err := c.Networks.Patch(
 		c.projectID,
 		cr.Spec.Name,
-		network.GenerateNetwork(cr.Spec.GCPNetworkSpec)).
+		network.GenerateNetwork(cr.Spec.NetworkParameters)).
 		Context(ctx).
 		Do()
 	return resource.ExternalUpdate{}, errors.Wrap(err, errNetworkUpdateFailed)

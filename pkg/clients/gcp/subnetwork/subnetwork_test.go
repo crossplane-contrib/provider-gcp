@@ -37,13 +37,13 @@ const (
 var equateSubnetworkSecondaryRange = func(i, j *compute.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
 var equateGCPSubnetworkSecondaryRange = func(i, j *v1alpha2.GCPSubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
 
-func TestGCPSubnetworkSpec_GenerateSubnetwork(t *testing.T) {
+func TestSubnetworkParameters_GenerateSubnetwork(t *testing.T) {
 	cases := map[string]struct {
-		in  v1alpha2.GCPSubnetworkSpec
+		in  v1alpha2.SubnetworkParameters
 		out *compute.Subnetwork
 	}{
 		"FilledGeneration": {
-			in: v1alpha2.GCPSubnetworkSpec{
+			in: v1alpha2.SubnetworkParameters{
 				Description:           testDescription,
 				Name:                  testName,
 				EnableFlowLogs:        true,

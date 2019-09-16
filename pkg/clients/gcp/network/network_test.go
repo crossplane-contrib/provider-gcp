@@ -39,16 +39,16 @@ const (
 	testPeeringStateDetails = "more-detailed than ACTIVE"
 )
 
-func TestGCPNetworkSpec_GenerateNetwork(t *testing.T) {
+func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 	trueVal := true
 	falseVal := false
 	cases := map[string]struct {
-		in   v1alpha2.GCPNetworkSpec
+		in   v1alpha2.NetworkParameters
 		out  *compute.Network
 		fail bool
 	}{
 		"AutoCreateSubnetworksNil": {
-			in: v1alpha2.GCPNetworkSpec{
+			in: v1alpha2.NetworkParameters{
 				IPv4Range:   testIPv4Range,
 				Description: testDescription,
 				Name:        testName,
@@ -67,7 +67,7 @@ func TestGCPNetworkSpec_GenerateNetwork(t *testing.T) {
 			},
 		},
 		"AutoCreateSubnetworksFalse": {
-			in: v1alpha2.GCPNetworkSpec{
+			in: v1alpha2.NetworkParameters{
 				IPv4Range:             testIPv4Range,
 				Description:           testDescription,
 				AutoCreateSubnetworks: &falseVal,
@@ -88,7 +88,7 @@ func TestGCPNetworkSpec_GenerateNetwork(t *testing.T) {
 			},
 		},
 		"AutoCreateSubnetworksTrue": {
-			in: v1alpha2.GCPNetworkSpec{
+			in: v1alpha2.NetworkParameters{
 				IPv4Range:             testIPv4Range,
 				Description:           testDescription,
 				AutoCreateSubnetworks: &trueVal,
@@ -108,7 +108,7 @@ func TestGCPNetworkSpec_GenerateNetwork(t *testing.T) {
 			},
 		},
 		"AutoCreateSubnetworksTrueFail": {
-			in: v1alpha2.GCPNetworkSpec{
+			in: v1alpha2.NetworkParameters{
 				IPv4Range:             testIPv4Range,
 				Description:           testDescription,
 				AutoCreateSubnetworks: &trueVal,

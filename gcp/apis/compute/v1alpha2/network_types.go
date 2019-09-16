@@ -23,22 +23,23 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// NetworkSpec defines the desired state of Network
+// A NetworkSpec defines the desired state of a Network.
 type NetworkSpec struct {
 	v1alpha1.ResourceSpec `json:",inline"`
-	GCPNetworkSpec        `json:",inline"`
+	NetworkParameters     `json:",inline"`
 }
 
-// NetworkStatus defines the observed state of Network
+// A NetworkStatus represents the observed state of a Network.
 type NetworkStatus struct {
 	v1alpha1.ResourceStatus `json:",inline"`
 	GCPNetworkStatus        `json:",inline"`
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
 
-// Network is the Schema for the GCP Network API
+// A Network is a managed resource that represents a Google Compute Engine VPC
+// Network.
+// +kubebuilder:subresource:status
 type Network struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -104,21 +105,22 @@ func (n *Network) SetReclaimPolicy(p v1alpha1.ReclaimPolicy) {
 
 // +kubebuilder:object:root=true
 
-// NetworkList contains a list of Network
+// NetworkList contains a list of Network.
 type NetworkList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Network `json:"items"`
 }
 
-// GCPNetworkSpec contains fields of googlecompute.Network object that are
-// configurable by the user, i.e. the ones that are not marked as [Output Only]
-// In the future, this can be generated automatically.
-type GCPNetworkSpec struct {
+// NetworkParameters define the desired state of a Google Compute Engine VPC
+// Network. Most fields map directly to a Network:
+// https://cloud.google.com/compute/docs/reference/rest/v1/networks
+type NetworkParameters struct {
 	// IPv4Range: Deprecated in favor of subnet mode networks. The range of
 	// internal addresses that are legal on this network. This range is a
 	// CIDR specification, for example: 192.168.0.0/16. Provided by the
 	// client when the network is created.
+	// +optional.
 	IPv4Range string `json:"IPv4Range,omitempty"`
 
 	// AutoCreateSubnetworks: When set to true, the VPC network is created
@@ -129,10 +131,12 @@ type GCPNetworkSpec struct {
 	// An auto mode VPC network starts with one subnet per region. Each
 	// subnet has a predetermined range as described in Auto mode VPC
 	// network IP ranges.
+	// +optional.
 	AutoCreateSubnetworks *bool `json:"autoCreateSubnetworks,omitempty"`
 
 	// Description: An optional description of this resource. Provide this
 	// field when you create the resource.
+	// +optional.
 	Description string `json:"description,omitempty"`
 
 	// Name: Name of the resource. Provided by the client when the resource
@@ -142,19 +146,21 @@ type GCPNetworkSpec struct {
 	// character must be a lowercase letter, and all following characters
 	// (except for the last character) must be a dash, lowercase letter, or
 	// digit. The last character must be a lowercase letter or digit.
+	// +optional.
 	Name string `json:"name,omitempty"`
 
 	// RoutingConfig: The network-level routing configuration for this
 	// network. Used by Cloud Router to determine what type of network-wide
 	// routing behavior to enforce.
+	// +optional.
 	RoutingConfig *GCPNetworkRoutingConfig `json:"routingConfig,omitempty"`
 }
 
-// IsSameAs compares the fields of GCPNetworkSpec and
+// IsSameAs compares the fields of NetworkParameters and
 // GCPNetworkStatus to report whether there is a difference. Its cyclomatic
 // complexity is related to how many fields exist, so, not much of an indicator.
 // nolint:gocyclo
-func (in GCPNetworkSpec) IsSameAs(n GCPNetworkStatus) bool {
+func (in NetworkParameters) IsSameAs(n GCPNetworkStatus) bool {
 	if (in.RoutingConfig != nil && n.RoutingConfig == nil) ||
 		(in.RoutingConfig == nil && n.RoutingConfig != nil) {
 		return false
@@ -173,8 +179,8 @@ func (in GCPNetworkSpec) IsSameAs(n GCPNetworkStatus) bool {
 	return true
 }
 
-// GCPNetworkStatus is the complete mirror of googlecompute.Network but
-// with deepcopy functions. In the future, this can be generated automatically.
+// A GCPNetworkStatus represents the observed state of a Google Compute Engine
+// VPC Network.
 type GCPNetworkStatus struct {
 	// IPv4Range: Deprecated in favor of subnet mode networks. The range of
 	// internal addresses that are legal on this network. This range is a
@@ -223,7 +229,8 @@ type GCPNetworkStatus struct {
 	Subnetworks []string `json:"subnetworks,omitempty"`
 }
 
-// GCPNetworkPeering is the mirror of googlecompute.NetworkPeering but with deepcopy functions.
+// A GCPNetworkPeering represents the observed state of a Google Compute Engine
+// VPC Network Peering.
 type GCPNetworkPeering struct {
 	// AutoCreateRoutes: This field will be deprecated soon. Use the
 	// exchange_subnet_routes field instead. Indicates whether full mesh
@@ -268,7 +275,8 @@ type GCPNetworkPeering struct {
 	StateDetails string `json:"stateDetails,omitempty"`
 }
 
-// GCPNetworkRoutingConfig is the mirror of googlecompute.NetworkRoutingConfig but with deepcopy functions.
+// A GCPNetworkRoutingConfig specifies the desired state of a Google Compute
+// Engine VPC Network Routing configuration.
 type GCPNetworkRoutingConfig struct {
 	// RoutingMode: The network-wide routing mode to use. If set to
 	// REGIONAL, this network's Cloud Routers will only advertise routes
@@ -279,5 +287,6 @@ type GCPNetworkRoutingConfig struct {
 	// Possible values:
 	//   "GLOBAL"
 	//   "REGIONAL"
+	// +optional.
 	RoutingMode string `json:"routingMode,omitempty"`
 }

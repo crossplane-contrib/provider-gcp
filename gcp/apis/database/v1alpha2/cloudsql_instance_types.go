@@ -353,7 +353,7 @@ type CloudsqlInstanceClass struct {
 
 	// SpecTemplate is a template for the spec of a dynamically provisioned
 	// CloudsqlInstance.
-	SpecTemplate CloudsqlInstanceClassSpecTemplate `json:"specTemplate,omitempty"`
+	SpecTemplate CloudsqlInstanceClassSpecTemplate `json:"specTemplate"`
 }
 
 // GetReclaimPolicy of this CloudsqlInstanceClass.
