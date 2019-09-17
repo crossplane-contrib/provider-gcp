@@ -17,7 +17,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Network is the Schema for the GCP Network API
+      description: A Network is a managed resource that represents a Google Compute
+        Engine VPC Network.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +33,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: NetworkSpec defines the desired state of Network
+          description: A NetworkSpec defines the desired state of a Network.
           properties:
             IPv4Range:
               description: 'IPv4Range: Deprecated in favor of subnet mode networks.
@@ -215,7 +216,7 @@ spec:
           - providerRef
           type: object
         status:
-          description: NetworkStatus defines the observed state of Network
+          description: A NetworkStatus represents the observed state of a Network.
           properties:
             IPv4Range:
               description: 'IPv4Range: Deprecated in favor of subnet mode networks.
@@ -294,8 +295,8 @@ spec:
             peerings:
               description: 'Peerings: A list of network peerings for the resource.'
               items:
-                description: GCPNetworkPeering is the mirror of googlecompute.NetworkPeering
-                  but with deepcopy functions.
+                description: A GCPNetworkPeering represents the observed state of
+                  a Google Compute Engine VPC Network Peering.
                 properties:
                   autoCreateRoutes:
                     description: 'AutoCreateRoutes: This field will be deprecated

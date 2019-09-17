@@ -22,10 +22,10 @@ import (
 	"github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha2"
 )
 
-// GenerateNetwork takes a *GCPNetworkSpec and returns *googlecompute.Network.
+// GenerateNetwork takes a *NetworkParameters and returns *googlecompute.Network.
 // It assigns only the fields that are writable, i.e. not labelled as [Output Only]
 // in Google's reference.
-func GenerateNetwork(in v1alpha2.GCPNetworkSpec) *googlecompute.Network {
+func GenerateNetwork(in v1alpha2.NetworkParameters) *googlecompute.Network {
 	n := &googlecompute.Network{}
 	n.IPv4Range = in.IPv4Range
 	if in.AutoCreateSubnetworks != nil {

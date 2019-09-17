@@ -152,6 +152,8 @@ spec:
           - storageType
           - tier
           type: object
+      required:
+      - specTemplate
       type: object
   version: v1alpha2
   versions:

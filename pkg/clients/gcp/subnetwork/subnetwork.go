@@ -22,8 +22,8 @@ import (
 	"github.com/crossplaneio/stack-gcp/gcp/apis/compute/v1alpha2"
 )
 
-// GenerateSubnetwork creates a *googlecompute.Subnetwork object using GCPSubnetworkSpec.
-func GenerateSubnetwork(s v1alpha2.GCPSubnetworkSpec) *compute.Subnetwork {
+// GenerateSubnetwork creates a *googlecompute.Subnetwork object using SubnetworkParameters.
+func GenerateSubnetwork(s v1alpha2.SubnetworkParameters) *compute.Subnetwork {
 	sn := &compute.Subnetwork{}
 	sn.Name = s.Name
 	sn.Description = s.Description

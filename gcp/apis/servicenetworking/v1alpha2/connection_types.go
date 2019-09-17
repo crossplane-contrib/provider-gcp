@@ -23,13 +23,15 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// ConnectionSpec defines the desired state of a Connection
+// A ConnectionSpec defines the desired state of a Connection.
 type ConnectionSpec struct {
 	v1alpha1.ResourceSpec `json:",inline"`
 	ConnectionParameters  `json:",inline"`
 }
 
-// ConnectionParameters specifies the configuration of a Connection.
+// ConnectionParameters define the desired state of a Google Cloud Service
+// Networking Connection. Most fields map direct to a Connection:
+// https://cloud.google.com/service-infrastructure/docs/service-networking/reference/rest/v1/services.connections#Connection
 type ConnectionParameters struct {
 	// Parent: The service that is managing peering connectivity for a service
 	// producer's organization. For Google services that support this
@@ -46,10 +48,11 @@ type ConnectionParameters struct {
 
 	// ReservedPeeringRanges: The name of one or more allocated IP address
 	// ranges for this service producer of type `PEERING`.
+	// +optional
 	ReservedPeeringRanges []string `json:"reservedPeeringRanges"`
 }
 
-// ConnectionStatus reflects the state of a Connection
+// A ConnectionStatus represents the observed state of a Connection.
 type ConnectionStatus struct {
 	v1alpha1.ResourceStatus `json:",inline"`
 
@@ -65,7 +68,8 @@ type ConnectionStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Connection is the Schema for the GCP Connection API
+// A Connection is a managed resource that represents a Google Cloud Service
+// Networking Connection.
 type Connection struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -131,7 +135,7 @@ func (a *Connection) SetReclaimPolicy(p v1alpha1.ReclaimPolicy) {
 
 // +kubebuilder:object:root=true
 
-// ConnectionList contains a list of Connection
+// ConnectionList contains a list of Connection.
 type ConnectionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

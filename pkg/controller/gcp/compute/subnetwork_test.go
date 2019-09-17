@@ -88,7 +88,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 								Namespace: testNamespace,
 							},
 						},
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name:   testSubnetworkName,
 							Region: testSubnetworkRegion,
 						},
@@ -123,7 +123,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Subnetwork{
 					Spec: v1alpha2.SubnetworkSpec{
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Region: testSubnetworkRegion,
 						},
 					},
@@ -136,7 +136,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Subnetwork{
 					Spec: v1alpha2.SubnetworkSpec{
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name: testSubnetworkName,
 						},
 					},
@@ -155,7 +155,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 								Namespace: testNamespace,
 							},
 						},
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name:   testSubnetworkName,
 							Region: testSubnetworkRegion,
 						},
@@ -181,7 +181,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 								Namespace: testNamespace,
 							},
 						},
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name:   testSubnetworkName,
 							Region: testSubnetworkRegion,
 						},
@@ -219,7 +219,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 								Namespace: testNamespace,
 							},
 						},
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name:   testSubnetworkName,
 							Region: testSubnetworkRegion,
 						},
@@ -294,7 +294,7 @@ func TestSubsubnetworkExternal_Observe(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Subnetwork{
 					Spec: v1alpha2.SubnetworkSpec{
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name: testSubnetworkName,
 						},
 					},
@@ -314,7 +314,7 @@ func TestSubsubnetworkExternal_Observe(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Subnetwork{
 					Spec: v1alpha2.SubnetworkSpec{
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name: testSubnetworkName,
 						},
 					},
@@ -385,7 +385,7 @@ func TestSubsubnetworkExternal_Create(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Subnetwork{
 					Spec: v1alpha2.SubnetworkSpec{
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name:        testSubnetworkName,
 							Description: testSubnetworkDescription,
 						},
@@ -467,7 +467,7 @@ func TestSubsubnetworkExternal_Update(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Subnetwork{
 					Spec: v1alpha2.SubnetworkSpec{
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name:        testSubnetworkName,
 							Description: testSubnetworkDescription,
 						},
@@ -487,7 +487,7 @@ func TestSubsubnetworkExternal_Update(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Subnetwork{
 					Spec: v1alpha2.SubnetworkSpec{
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name:        testSubnetworkName,
 							Description: testSubnetworkDescription,
 						},
@@ -555,7 +555,7 @@ func TestSubsubnetworkExternal_Delete(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Subnetwork{
 					Spec: v1alpha2.SubnetworkSpec{
-						GCPSubnetworkSpec: v1alpha2.GCPSubnetworkSpec{
+						SubnetworkParameters: v1alpha2.SubnetworkParameters{
 							Name:        testSubnetworkName,
 							Description: testSubnetworkDescription,
 						},

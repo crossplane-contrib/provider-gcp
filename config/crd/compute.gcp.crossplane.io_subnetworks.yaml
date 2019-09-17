@@ -17,7 +17,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Subnetwork is the Schema for the GCP Network API
+      description: A Subnetwork is a managed resource that represents a Google Compute
+        Engine VPC Subnetwork.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +33,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: SubnetworkSpec defines the desired state of Network
+          description: A SubnetworkSpec defines the desired state of a Subnetwork.
           properties:
             claimRef:
               description: ClaimReference specifies the resource claim to which this
@@ -207,8 +208,8 @@ spec:
                 The alias IPs may belong to either primary or secondary ranges. This
                 field can be updated with a patch request.'
               items:
-                description: GCPSubnetworkSecondaryRange is the mirror of googlecompute.SubnetworkSecondaryRange
-                  but with deepcopy functions.
+                description: A GCPSubnetworkSecondaryRange defines the state of a
+                  Google Compute Engine VPC Subnetwork secondary range.
                 properties:
                   ipCidrRange:
                     description: 'IPCIDRRange: The range of IP addresses belonging
@@ -223,6 +224,9 @@ spec:
                       instance. The name must be 1-63 characters long, and comply
                       with RFC1035. The name must be unique within the subnetwork.'
                     type: string
+                required:
+                - ipCidrRange
+                - rangeName
                 type: object
               type: array
             writeConnectionSecretToRef:
@@ -244,7 +248,7 @@ spec:
           - providerRef
           type: object
         status:
-          description: SubnetworkStatus defines the observed state of Network
+          description: A SubnetworkStatus represents the observed state of a Subnetwork.
           properties:
             bindingPhase:
               description: Phase represents the binding phase of a managed resource
@@ -365,8 +369,8 @@ spec:
                 The alias IPs may belong to either primary or secondary ranges. This
                 field can be updated with a patch request.'
               items:
-                description: GCPSubnetworkSecondaryRange is the mirror of googlecompute.SubnetworkSecondaryRange
-                  but with deepcopy functions.
+                description: A GCPSubnetworkSecondaryRange defines the state of a
+                  Google Compute Engine VPC Subnetwork secondary range.
                 properties:
                   ipCidrRange:
                     description: 'IPCIDRRange: The range of IP addresses belonging
@@ -381,6 +385,9 @@ spec:
                       instance. The name must be 1-63 characters long, and comply
                       with RFC1035. The name must be unique within the subnetwork.'
                     type: string
+                required:
+                - ipCidrRange
+                - rangeName
                 type: object
               type: array
             selfLink:

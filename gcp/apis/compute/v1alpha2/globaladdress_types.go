@@ -23,13 +23,15 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// GlobalAddressSpec defines the desired state of a GlobalAddress
+// A GlobalAddressSpec defines the desired state of a GlobalAddress.
 type GlobalAddressSpec struct {
 	v1alpha1.ResourceSpec   `json:",inline"`
 	GlobalAddressParameters `json:",inline"`
 }
 
-// GlobalAddressParameters specifies the configuration of a GlobalAddress.
+// GlobalAddressParameters define the desired state of a Google Compute Engine
+// Global Address. Most fields map directly to an Address:
+// https://cloud.google.com/compute/docs/reference/rest/v1/globalAddresses
 type GlobalAddressParameters struct {
 	// Address: The static IP address represented by this resource.
 	// +optional
@@ -104,7 +106,7 @@ type GlobalAddressParameters struct {
 	Subnetwork *string `json:"subnetwork,omitempty"`
 }
 
-// GlobalAddressStatus reflects the state of a GlobalAddress
+// A GlobalAddressStatus reflects the observed state of a GlobalAddress.
 type GlobalAddressStatus struct {
 	v1alpha1.ResourceStatus `json:",inline"`
 
@@ -136,7 +138,8 @@ type GlobalAddressStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// GlobalAddress is the Schema for the GCP GlobalAddress API
+// A GlobalAddress is a managed resource that represents a Google Compute Engine
+// Global Address.
 type GlobalAddress struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -202,7 +205,7 @@ func (a *GlobalAddress) SetReclaimPolicy(p v1alpha1.ReclaimPolicy) {
 
 // +kubebuilder:object:root=true
 
-// GlobalAddressList contains a list of GlobalAddress
+// GlobalAddressList contains a list of GlobalAddress.
 type GlobalAddressList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

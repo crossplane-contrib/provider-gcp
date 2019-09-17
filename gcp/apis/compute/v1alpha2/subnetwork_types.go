@@ -25,22 +25,23 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// SubnetworkSpec defines the desired state of Network
+// A SubnetworkSpec defines the desired state of a Subnetwork.
 type SubnetworkSpec struct {
 	v1alpha1.ResourceSpec `json:",inline"`
-	GCPSubnetworkSpec     `json:",inline"`
+	SubnetworkParameters  `json:",inline"`
 }
 
-// SubnetworkStatus defines the observed state of Network
+// A SubnetworkStatus represents the observed state of a Subnetwork.
 type SubnetworkStatus struct {
 	v1alpha1.ResourceStatus `json:",inline"`
 	GCPSubnetworkStatus     `json:",inline"`
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
 
-// Subnetwork is the Schema for the GCP Network API
+// A Subnetwork is a managed resource that represents a Google Compute Engine
+// VPC Subnetwork.
+// +kubebuilder:subresource:status
 type Subnetwork struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -104,18 +105,20 @@ func (s *Subnetwork) SetReclaimPolicy(p v1alpha1.ReclaimPolicy) {
 	s.Spec.ReclaimPolicy = p
 }
 
-// GCPSubnetworkSpec contains fields of googlecompute.Subnetwork object that are
-// configurable by the user, i.e. the ones that are not marked as [Output Only]
-// In the future, this can be generated automatically.
-type GCPSubnetworkSpec struct {
+// SubnetworkParameters define the desired state of a Google Compute Engine VPC
+// Subnetwork. Most fields map directly to a Subnetwork:
+// https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks
+type SubnetworkParameters struct {
 	// Description: An optional description of this resource. Provide this
 	// property when you create the resource. This field can be set only at
 	// resource creation time.
+	// +optional
 	Description string `json:"description,omitempty"`
 
 	// EnableFlowLogs: Whether to enable flow logging for this subnetwork.
 	// If this field is not explicitly set, it will not appear in get
 	// listings. If not set the default behavior is to disable flow logging.
+	// +optional
 	EnableFlowLogs bool `json:"enableFlowLogs,omitempty"`
 
 	// IPCIDRRange: The range of internal addresses that are owned by this
@@ -144,10 +147,12 @@ type GCPSubnetworkSpec struct {
 	// Google services without assigned external IP addresses. This field
 	// can be both set at resource creation time and updated using
 	// setPrivateIPGoogleAccess.
+	// +optional
 	PrivateIPGoogleAccess bool `json:"privateIpGoogleAccess,omitempty"`
 
 	// Region: URL of the region where the Subnetwork resides. This field
 	// can be set only at resource creation time.
+	// +optional
 	Region string `json:"region,omitempty"`
 
 	// SecondaryIPRanges: An array of configurations for secondary IP ranges
@@ -155,14 +160,15 @@ type GCPSubnetworkSpec struct {
 	// VM must belong to the primary ipCidrRange of the subnetwork. The
 	// alias IPs may belong to either primary or secondary ranges. This
 	// field can be updated with a patch request.
+	// +optional
 	SecondaryIPRanges []*GCPSubnetworkSecondaryRange `json:"secondaryIpRanges,omitempty"`
 }
 
-// IsSameAs compares the fields of GCPSubnetworkSpec and
+// IsSameAs compares the fields of SubnetworkParameters and
 // GCPSubnetworkStatus to report whether there is a difference. Its cyclomatic
 // complexity is related to how many fields exist, so, not much of an indicator.
 // nolint:gocyclo
-func (s GCPSubnetworkSpec) IsSameAs(o GCPSubnetworkStatus) bool {
+func (s SubnetworkParameters) IsSameAs(o GCPSubnetworkStatus) bool {
 	if s.Name != o.Name ||
 		s.Description != o.Description ||
 		s.EnableFlowLogs != o.EnableFlowLogs ||
@@ -190,8 +196,8 @@ func (s GCPSubnetworkSpec) IsSameAs(o GCPSubnetworkStatus) bool {
 	return true
 }
 
-// GCPSubnetworkStatus is the complete mirror of googlecompute.Subnetwork but
-// with deepcopy functions. In the future, this can be generated automatically.
+// A GCPSubnetworkStatus represents the observed state of a Google Compute
+// Engine VPC Subnetwork.
 type GCPSubnetworkStatus struct {
 	// CreationTimestamp: Creation timestamp in RFC3339 text
 	// format.
@@ -272,25 +278,26 @@ type GCPSubnetworkStatus struct {
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
-// GCPSubnetworkSecondaryRange is the mirror of googlecompute.SubnetworkSecondaryRange but with deepcopy functions.
+// A GCPSubnetworkSecondaryRange defines the state of a Google Compute Engine
+// VPC Subnetwork secondary range.
 type GCPSubnetworkSecondaryRange struct {
 	// IPCIDRRange: The range of IP addresses belonging to this subnetwork
 	// secondary range. Provide this property when you create the
 	// subnetwork. Ranges must be unique and non-overlapping with all
 	// primary and secondary IP ranges within a network. Only IPv4 is
 	// supported.
-	IPCidrRange string `json:"ipCidrRange,omitempty"`
+	IPCidrRange string `json:"ipCidrRange"`
 
 	// RangeName: The name associated with this subnetwork secondary range,
 	// used when adding an alias IP range to a VM instance. The name must be
 	// 1-63 characters long, and comply with RFC1035. The name must be
 	// unique within the subnetwork.
-	RangeName string `json:"rangeName,omitempty"`
+	RangeName string `json:"rangeName"`
 }
 
 // +kubebuilder:object:root=true
 
-// SubnetworkList contains a list of Network
+// SubnetworkList contains a list of Subnetwork.
 type SubnetworkList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

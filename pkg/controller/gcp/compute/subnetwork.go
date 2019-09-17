@@ -142,7 +142,7 @@ func (c *subnetworkExternal) Create(ctx context.Context, mg resource.Managed) (r
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotSubnetwork)
 	}
-	_, err := c.Subnetworks.Insert(c.projectID, cr.Spec.Region, subnetwork.GenerateSubnetwork(cr.Spec.GCPSubnetworkSpec)).
+	_, err := c.Subnetworks.Insert(c.projectID, cr.Spec.Region, subnetwork.GenerateSubnetwork(cr.Spec.SubnetworkParameters)).
 		Context(ctx).
 		Do()
 	if clients.IsErrorAlreadyExists(err) {
@@ -160,7 +160,7 @@ func (c *subnetworkExternal) Update(ctx context.Context, mg resource.Managed) (r
 	if cr.Spec.IsSameAs(cr.Status.GCPSubnetworkStatus) {
 		return resource.ExternalUpdate{}, nil
 	}
-	subnetworkBody := subnetwork.GenerateSubnetwork(cr.Spec.GCPSubnetworkSpec)
+	subnetworkBody := subnetwork.GenerateSubnetwork(cr.Spec.SubnetworkParameters)
 	// Fingerprint from the last GET is required for updates.
 	subnetworkBody.Fingerprint = cr.Status.Fingerprint
 	// The API rejects region to be updated, in fact, it rejects the update when this field is even included. Calm down.

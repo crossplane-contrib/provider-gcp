@@ -105,7 +105,7 @@ func TestNetworkConnector_Connect(t *testing.T) {
 								Namespace: testNamespace,
 							},
 						},
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name: testNetworkName,
 						},
 					},
@@ -146,7 +146,7 @@ func TestNetworkConnector_Connect(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Network{
 					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name: testNetworkName,
 						},
 						ResourceSpec: corev1alpha1.ResourceSpec{
@@ -177,7 +177,7 @@ func TestNetworkConnector_Connect(t *testing.T) {
 								Namespace: testNamespace,
 							},
 						},
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name: testNetworkName,
 						},
 					},
@@ -214,7 +214,7 @@ func TestNetworkConnector_Connect(t *testing.T) {
 								Namespace: testNamespace,
 							},
 						},
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name: testNetworkName,
 						},
 					},
@@ -288,7 +288,7 @@ func TestNetworkExternal_Observe(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Network{
 					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name: testNetworkName,
 						},
 					},
@@ -308,7 +308,7 @@ func TestNetworkExternal_Observe(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Network{
 					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name: testNetworkName,
 						},
 					},
@@ -380,7 +380,7 @@ func TestNetworkExternal_Create(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Network{
 					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name:                  testNetworkName,
 							AutoCreateSubnetworks: &trueVal,
 							Description:           testNetworkDescription,
@@ -467,7 +467,7 @@ func TestNetworkExternal_Update(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Network{
 					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name:                  testNetworkName,
 							AutoCreateSubnetworks: &trueVal,
 							Description:           testNetworkDescription,
@@ -500,7 +500,7 @@ func TestNetworkExternal_Update(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Network{
 					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name:                  testNetworkName,
 							AutoCreateSubnetworks: &trueVal,
 							Description:           testNetworkDescription,
@@ -530,7 +530,7 @@ func TestNetworkExternal_Update(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Network{
 					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name:                  testNetworkName,
 							AutoCreateSubnetworks: &trueVal,
 							Description:           testNetworkDescription,
@@ -599,7 +599,7 @@ func TestNetworkExternal_Delete(t *testing.T) {
 			args: args{
 				cr: &v1alpha2.Network{
 					Spec: v1alpha2.NetworkSpec{
-						GCPNetworkSpec: v1alpha2.GCPNetworkSpec{
+						NetworkParameters: v1alpha2.NetworkParameters{
 							Name:                  testNetworkName,
 							AutoCreateSubnetworks: &trueVal,
 							Description:           testNetworkDescription,

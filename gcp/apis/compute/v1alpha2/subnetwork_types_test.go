@@ -22,14 +22,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestGCPSubnetworkSpec_IsSameAs(t *testing.T) {
+func TestSubnetworkParameters_IsSameAs(t *testing.T) {
 	cases := map[string]struct {
-		spec   GCPSubnetworkSpec
+		spec   SubnetworkParameters
 		status GCPSubnetworkStatus
 		result bool
 	}{
 		"FullMatchSliceOrderDifferent": {
-			spec: GCPSubnetworkSpec{
+			spec: SubnetworkParameters{
 				Description:           "some desc",
 				Name:                  "some-name",
 				EnableFlowLogs:        true,
@@ -70,7 +70,7 @@ func TestGCPSubnetworkSpec_IsSameAs(t *testing.T) {
 			result: true,
 		},
 		"BiggerStatus": {
-			spec: GCPSubnetworkSpec{
+			spec: SubnetworkParameters{
 				Description:           "some desc",
 				Name:                  "some-name",
 				EnableFlowLogs:        true,
@@ -114,7 +114,7 @@ func TestGCPSubnetworkSpec_IsSameAs(t *testing.T) {
 			result: true,
 		},
 		"DifferentEnableFlowLogs": {
-			spec: GCPSubnetworkSpec{
+			spec: SubnetworkParameters{
 				Description:           "some desc",
 				Name:                  "some-name",
 				EnableFlowLogs:        true,
