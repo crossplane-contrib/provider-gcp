@@ -1,0 +1,13 @@
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Cloud Interconnect</title>
+  <g>
+    <path d="M126.47,58.12l-26.3-45.74A11.56,11.56,0,0,0,90.31,6.5H37.7a11.55,11.55,0,0,0-9.86,5.88L1.53,58a11.48,11.48,0,0,0,0,11.44l26.3,46a11.77,11.77,0,0,0,9.86,6.09H90.3a11.73,11.73,0,0,0,9.87-6.06l26.3-45.74A11.73,11.73,0,0,0,126.47,58.12Z" style="fill: #4285f4"/>
+    <path d="M80.69,39.31,50,45,60.24,55.24,33,67,52,86l-1.75,2.63L83.11,121.5H90.3a11.73,11.73,0,0,0,9.87-6.06l20.69-36Z" style="opacity: 0.070000000298023;isolation: isolate"/>
+    <rect x="79.5" y="61" width="13.5" height="6" style="fill: #fff"/>
+    <rect x="75" y="45" width="6" height="38" style="fill: #fff"/>
+    <rect x="33" y="61" width="12" height="6" style="fill: #fff"/>
+    <path d="M51,39H80a1,1,0,0,1,1,1h0v5H50V40A1,1,0,0,1,51,39Z" style="fill: #fff"/>
+    <path d="M50,83H81v5a1,1,0,0,1-1,1H51a1,1,0,0,1-1-1h0V83Z" style="fill: #fff"/>
+    <rect x="44" y="52" width="24" height="24" rx="0.89" ry="0.89" style="fill: #fff"/>
+  </g>
+</svg>

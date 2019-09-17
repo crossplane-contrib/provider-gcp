@@ -1,0 +1,12 @@
+id: network
+title: Network
+titlePlural: Networks
+category: Compute
+overviewShort: Represents a VPC Network resource.
+overview: |
+ Represents a VPC Network resource.
+ Networks connect resources to each other and to the internet.
+readme: |
+ ## Learn more
+
+ This content is from the [GCP documentation](https://cloud.google.com/compute/docs/reference/rest/v1/networks).

@@ -1,0 +1,45 @@
+id: cloudsqlinstance
+title: Cloud SQL
+titlePlural: Cloud SQL
+category: Database
+overviewShort: Cloud SQL is a fully-managed database service that makes it easy to set up, maintain, manage, and administer your relational databases on Google Cloud Platform.
+overview: |
+ Cloud SQL is a fully managed database service that makes it easy to set up, maintain, manage, and administer your relational PostgreSQL, MySQL, and SQL Server databases in the cloud.
+ Cloud SQL offers high performance, scalability, and convenience.
+ Hosted on Google Cloud Platform, Cloud SQL provides a database infrastructure for applications running anywhere.
+readme: |
+ ## Fully managed relational database services
+
+ Cloud SQL is a fully managed database service that makes it easy to set up, maintain, manage, and administer your relational PostgreSQL, MySQL, and SQL Server databases in the cloud.
+ Cloud SQL offers high performance, scalability, and convenience.
+ Hosted on Google Cloud Platform, Cloud SQL provides a database infrastructure for applications running anywhere.
+
+ ## Focus on your application
+
+ Let Google manage your database, so you can focus on your applications.
+ Cloud SQL is perfect for WordPress sites, ecommerce applications, CRM tools, geospatial applications, and any other application that is compatible with MySQL, PostgreSQL, or SQL Server.
+
+ ## Simple and fully managed
+
+ Cloud SQL is easy to use.
+ It doesn’t require any software installation.
+ It automates all your backups, replication, patches, and updates — while ensuring greater than 99.95% availability, anywhere in the world.
+
+ ## Performance and scalability
+
+ Cloud SQL delivers high performance and scalability with up to 30 TB of storage capacity, 60,000 IOPS, and 416 GB of RAM per instance.
+
+ ## Reliability and security
+
+ Easily configure replication and backups to protect your data.
+ Go further by enabling automatic failover to make your database highly available (HA).
+ Your data is automatically encrypted and Cloud SQL is SSAE 16, ISO 27001, and PCI DSS v3.0 compliant and supports HIPAA compliance.
+
+ ## Discounts without lock-in
+
+ Cloud SQL offers per-second billing, automatic sustained-use discounts, and instance sizes to fit any budget.
+ Database instances are easy to stop and start. There is no up-front commitment, and with sustained-use discounts, you’ll automatically get discounted prices for databases that run continuously.
+
+ ## Learn more
+
+ This content is from https://cloud.google.com/sql/, you can learn more in the [GCP documentation](https://cloud.google.com/sql/docs/).

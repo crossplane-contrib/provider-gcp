@@ -1,0 +1,39 @@
+id: bucket
+title: Cloud Storage
+titlePlural: Cloud Storage
+category: Storage
+overviewShort: Unified object storage for developers and enterprises
+overview: |
+ Cloud Storage allows world-wide storage and retrieval of any amount of data at any time.
+ You can use Cloud Storage for a range of scenarios including serving website content, storing data for archival and disaster recovery, or distributing large data objects to users via direct download.
+
+readme: |
+ ## A single API for all storage classes
+
+ Cloud Storage’s consistent API, latency, and speed across storage classes simplifies development integration and reduces code complexity.
+ Implement Object Lifecycle Management to set a Time to Live (TTL) for objects, archive older version of objects, or downgrade storage classes without compromising on latency or accessibility.
+ Set custom policies to transition data seamlessly from one storage class to the next, depending on your cost and availability needs at the time.
+
+ ## Highly scalable and performant
+
+ Cloud Storage offers unlimited object storage and individual objects can be as large as 5TB.
+ Objects can be overwritten no more than once per second and there is no limit to read frequency.
+ Objects larger than 5MB should be uploaded with multipart or resumable uploading.
+ For more details, review Cloud Storage Quotas & Limits.
+
+ ## Zero carbon emissions
+
+ By moving storage from a self-managed data center or colocation facility to GCP, the emissions directly associated with your company’s data storage will be zero.
+
+ ## Designed for eleven 9’s of durability
+
+ Cloud Storage is designed for 99.999999999% durability. It stores data redundantly, with automatic checksums to ensure data integrity.
+ Multi-region and dual-region locations allow you to store your data geo-redundantly for higher availability.
+
+ ## Strongly consistent
+ When a write succeeds, the latest copy of the object is guaranteed to be returned to any GET, globally.
+ This applies to PUTs of new or overwritten objects and DELETEs.
+
+ ## Learn more
+
+ This content is from https://cloud.google.com/storage/features/, you can learn more in the [GCP documentation](https://cloud.google.com/storage/docs/).
