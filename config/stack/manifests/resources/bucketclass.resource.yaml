@@ -1,0 +1,9 @@
+id: bucketclass
+title: BucketClass
+titlePlural: BucketClasses
+category: Storage
+overviewShort: "A BucketClass is a non-portable resource class. It defines the desired spec of resource claims that use it to dynamically provision a managed resource."
+overview: |
+ "A BucketClass is a non-portable resource class. It defines the desired spec of resource claims that use it to dynamically provision a managed resource."
+readme: |
+ Full documentation can be found in the Crossplane [API Reference docs](https://crossplane.io/docs/master/api/crossplaneio/stack-gcp/storage-gcp-crossplane-io-v1alpha2.html#BucketClass).

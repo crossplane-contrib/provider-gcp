@@ -1,0 +1,42 @@
+id: cloudmemorystoreinstance
+title: Cloud Memorystore
+titlePlural: Cloud Memorystores
+category: Cache
+overviewShort: Fully-managed in-memory data store service for Redis
+overview: |
+ Cloud Memorystore for Redis provides a fully managed in-memory data store service built on scalable, secure, and highly available infrastructure managed by Google.
+ Use Cloud Memorystore to build application caches that provides sub-millisecond data access.
+ Cloud Memorystore is compatible with the Redis protocol, allowing easy migration with zero code changes.
+readme: |
+ ## Fully-managed in-memory data store service for Redis
+
+ Cloud Memorystore for Redis provides a fully managed in-memory data store service built on scalable, secure, and highly available infrastructure managed by Google.
+ Use Cloud Memorystore to build application caches that provides sub-millisecond data access.
+ Cloud Memorystore is compatible with the Redis protocol, allowing easy migration with zero code changes.
+
+ ## Focus on Building Great Apps
+ Spend more time writing code and less time managing by taking advantage of the power of open source Redis.
+ Cloud Memorystore automates complex tasks like enabling high availability, failover, patching, and monitoring so that you can spend more time coding.
+
+ ## Scale as Needed
+
+ With Cloud Memorystore for Redis, you can easily achieve the sub-millisecond latency and throughput your applications need. Start with the lowest tier and smallest size, and then grow your instance effortlessly with minimal impact to application availability. Cloud Memorystore can support instances up to 300 GB and network throughput of 12 Gbps.
+
+ ## Highly Available
+
+ High availability instances are replicated across two zones and provide a 99.9% availability SLA.
+ Instances are monitored constantly, and with automatic failover, applications experience minimal disruption.
+
+ ## Google Grade Security
+
+ Cloud Memorystore instances are isolated and protected from the internet using private IPs and are further secured using IAM role-based access control.
+
+ ## Easy Lift and Shift
+
+ Cloud Memorystore for Redis is fully compatible with the Redis protocol.
+ You can lift and shift your applications from open source Redis to Cloud Memorystore without any code changes by using the import/export feature.
+ There is no need to learn new tools since all existing tools and client libraries just work.
+
+ ## Learn more
+
+ This content is from https://cloud.google.com/memorystore/, you can learn more in the [GCP documentation](https://cloud.google.com/memorystore/docs/redis/).

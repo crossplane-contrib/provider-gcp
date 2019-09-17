@@ -1,0 +1,14 @@
+id: globaladdress
+title: Global Address
+titlePlural: Global Addresses
+category: Compute
+overviewShort: A globaladdress resource represent a global external IP address.
+overview: |
+ A globalAddresses resource represent a global external IP address.
+ Global external IP addresses are IPv4 or IPv6 addresses.
+ They can only be assigned to global forwarding rules for HTTP(S), SSL Proxy, or TCP Proxy load balancers in Premium Tier. For more information, read Global resources.
+readme: |
+
+ ## Learn more
+
+ This content is from the [GCP documentation](https://cloud.google.com/compute/docs/reference/rest/v1/globalAddresses).
