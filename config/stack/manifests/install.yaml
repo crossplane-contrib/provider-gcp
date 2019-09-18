@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: "stack-gcp-controller"
-        image: "crossplane/stack-gcp:master"
+        image: "crossplane/stack-gcp:v0.1.0"
         env:
         - name: POD_NAME
           valueFrom:
