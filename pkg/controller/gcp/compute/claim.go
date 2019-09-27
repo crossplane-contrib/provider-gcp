@@ -46,7 +46,7 @@ func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind)),
-		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.GKEClusterClassGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind), mgr.GetScheme()),
 		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
 			Portable:    computev1alpha1.KubernetesClusterClassGroupVersionKind,
 			NonPortable: v1alpha2.GKEClusterClassGroupVersionKind,

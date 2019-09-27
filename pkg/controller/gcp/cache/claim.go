@@ -46,7 +46,7 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind)),
-		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind), mgr.GetScheme()),
 		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
 			Portable:    cachev1alpha1.RedisClusterClassGroupVersionKind,
 			NonPortable: v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind,
