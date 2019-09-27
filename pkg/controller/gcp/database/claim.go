@@ -46,7 +46,7 @@ func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) e
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind)),
-		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
 		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
 			Portable:    databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind,
 			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
@@ -129,7 +129,7 @@ func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error 
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind)),
-		resource.HasDirectClassReferenceKind(resource.NonPortableClassKind(v1alpha2.CloudsqlInstanceClassGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
 		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
 			Portable:    databasev1alpha1.MySQLInstanceClassGroupVersionKind,
 			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
