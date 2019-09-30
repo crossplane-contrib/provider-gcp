@@ -19,7 +19,6 @@ package v1alpha2
 import (
 	"sort"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
@@ -48,61 +47,6 @@ type Subnetwork struct {
 
 	Spec   SubnetworkSpec   `json:"spec,omitempty"`
 	Status SubnetworkStatus `json:"status,omitempty"`
-}
-
-// SetBindingPhase of this Subnetwork.
-func (s *Subnetwork) SetBindingPhase(p v1alpha1.BindingPhase) {
-	s.Status.SetBindingPhase(p)
-}
-
-// SetConditions of this Subnetwork.
-func (s *Subnetwork) SetConditions(c ...v1alpha1.Condition) {
-	s.Status.SetConditions(c...)
-}
-
-// GetBindingPhase of this Subnetwork.
-func (s *Subnetwork) GetBindingPhase() v1alpha1.BindingPhase {
-	return s.Status.GetBindingPhase()
-}
-
-// SetClaimReference of this Subnetwork.
-func (s *Subnetwork) SetClaimReference(r *corev1.ObjectReference) {
-	s.Spec.ClaimReference = r
-}
-
-// GetClaimReference of this Subnetwork.
-func (s *Subnetwork) GetClaimReference() *corev1.ObjectReference {
-	return s.Spec.ClaimReference
-}
-
-// SetNonPortableClassReference of this Subnetwork.
-func (s *Subnetwork) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	s.Spec.NonPortableClassReference = r
-}
-
-// GetNonPortableClassReference of this Subnetwork.
-func (s *Subnetwork) GetNonPortableClassReference() *corev1.ObjectReference {
-	return s.Spec.NonPortableClassReference
-}
-
-// SetWriteConnectionSecretToReference of this Subnetwork.
-func (s *Subnetwork) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
-	s.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetWriteConnectionSecretToReference of this Subnetwork.
-func (s *Subnetwork) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
-	return s.Spec.WriteConnectionSecretToReference
-}
-
-// GetReclaimPolicy of this Subnetwork.
-func (s *Subnetwork) GetReclaimPolicy() v1alpha1.ReclaimPolicy {
-	return s.Spec.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this Subnetwork.
-func (s *Subnetwork) SetReclaimPolicy(p v1alpha1.ReclaimPolicy) {
-	s.Spec.ReclaimPolicy = p
 }
 
 // SubnetworkParameters define the desired state of a Google Compute Engine VPC

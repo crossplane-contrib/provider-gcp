@@ -151,64 +151,9 @@ type CloudsqlInstance struct {
 	Status CloudsqlInstanceStatus `json:"status,omitempty"`
 }
 
-// SetBindingPhase of this CloudsqlInstance.
-func (i *CloudsqlInstance) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
-	i.Status.SetBindingPhase(p)
-}
-
-// GetBindingPhase of this CloudsqlInstance.
-func (i *CloudsqlInstance) GetBindingPhase() runtimev1alpha1.BindingPhase {
-	return i.Status.GetBindingPhase()
-}
-
-// SetConditions of this CloudsqlInstance.
-func (i *CloudsqlInstance) SetConditions(c ...runtimev1alpha1.Condition) {
-	i.Status.SetConditions(c...)
-}
-
-// SetClaimReference of this CloudsqlInstance.
-func (i *CloudsqlInstance) SetClaimReference(r *corev1.ObjectReference) {
-	i.Spec.ClaimReference = r
-}
-
-// GetClaimReference of this CloudsqlInstance.
-func (i *CloudsqlInstance) GetClaimReference() *corev1.ObjectReference {
-	return i.Spec.ClaimReference
-}
-
-// SetNonPortableClassReference of this CloudsqlInstance.
-func (i *CloudsqlInstance) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	i.Spec.NonPortableClassReference = r
-}
-
-// GetNonPortableClassReference of this CloudsqlInstance.
-func (i *CloudsqlInstance) GetNonPortableClassReference() *corev1.ObjectReference {
-	return i.Spec.NonPortableClassReference
-}
-
 // GetProviderReference of this CloudsqlInstance
 func (i *CloudsqlInstance) GetProviderReference() *corev1.ObjectReference {
 	return i.Spec.ProviderReference
-}
-
-// GetReclaimPolicy of this CloudsqlInstance.
-func (i *CloudsqlInstance) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return i.Spec.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this CloudsqlInstance.
-func (i *CloudsqlInstance) SetReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) {
-	i.Spec.ReclaimPolicy = p
-}
-
-// SetWriteConnectionSecretToReference of this CloudsqlInstance.
-func (i *CloudsqlInstance) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
-	i.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetWriteConnectionSecretToReference of this CloudsqlInstance.
-func (i *CloudsqlInstance) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
-	return i.Spec.WriteConnectionSecretToReference
 }
 
 // +kubebuilder:object:root=true
@@ -336,9 +281,6 @@ type CloudsqlInstanceClassSpecTemplate struct {
 	CloudsqlInstanceParameters                   `json:",inline"`
 }
 
-// All non-portable classes must implement the NonPortableClass interface.
-var _ resource.NonPortableClass = &CloudsqlInstanceClass{}
-
 // +kubebuilder:object:root=true
 
 // A CloudsqlInstanceClass is a non-portable resource class. It defines the
@@ -354,16 +296,6 @@ type CloudsqlInstanceClass struct {
 	// SpecTemplate is a template for the spec of a dynamically provisioned
 	// CloudsqlInstance.
 	SpecTemplate CloudsqlInstanceClassSpecTemplate `json:"specTemplate"`
-}
-
-// GetReclaimPolicy of this CloudsqlInstanceClass.
-func (i *CloudsqlInstanceClass) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return i.SpecTemplate.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this CloudsqlInstanceClass.
-func (i *CloudsqlInstanceClass) SetReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) {
-	i.SpecTemplate.ReclaimPolicy = p
 }
 
 // +kubebuilder:object:root=true

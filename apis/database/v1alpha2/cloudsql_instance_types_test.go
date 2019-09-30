@@ -20,8 +20,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/onsi/gomega"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
@@ -43,8 +41,7 @@ const (
 
 var (
 	c   client.Client
-	ctx                  = context.TODO()
-	_   resource.Managed = &CloudsqlInstance{}
+	ctx = context.TODO()
 )
 
 func TestMain(m *testing.M) {

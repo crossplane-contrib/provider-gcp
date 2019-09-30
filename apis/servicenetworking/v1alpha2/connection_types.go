@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha2
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
@@ -76,61 +75,6 @@ type Connection struct {
 
 	Spec   ConnectionSpec   `json:"spec,omitempty"`
 	Status ConnectionStatus `json:"status,omitempty"`
-}
-
-// SetBindingPhase of this Connection.
-func (a *Connection) SetBindingPhase(p v1alpha1.BindingPhase) {
-	a.Status.SetBindingPhase(p)
-}
-
-// SetConditions of this Connection.
-func (a *Connection) SetConditions(c ...v1alpha1.Condition) {
-	a.Status.SetConditions(c...)
-}
-
-// GetBindingPhase of this Connection.
-func (a *Connection) GetBindingPhase() v1alpha1.BindingPhase {
-	return a.Status.GetBindingPhase()
-}
-
-// SetClaimReference of this Connection.
-func (a *Connection) SetClaimReference(r *corev1.ObjectReference) {
-	a.Spec.ClaimReference = r
-}
-
-// GetClaimReference of this Connection.
-func (a *Connection) GetClaimReference() *corev1.ObjectReference {
-	return a.Spec.ClaimReference
-}
-
-// SetNonPortableClassReference of this Connection.
-func (a *Connection) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	a.Spec.NonPortableClassReference = r
-}
-
-// GetNonPortableClassReference of this Connection.
-func (a *Connection) GetNonPortableClassReference() *corev1.ObjectReference {
-	return a.Spec.NonPortableClassReference
-}
-
-// SetWriteConnectionSecretToReference of this Connection.
-func (a *Connection) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
-	a.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetWriteConnectionSecretToReference of this Connection.
-func (a *Connection) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
-	return a.Spec.WriteConnectionSecretToReference
-}
-
-// GetReclaimPolicy of this Connection.
-func (a *Connection) GetReclaimPolicy() v1alpha1.ReclaimPolicy {
-	return a.Spec.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this Connection.
-func (a *Connection) SetReclaimPolicy(p v1alpha1.ReclaimPolicy) {
-	a.Spec.ReclaimPolicy = p
 }
 
 // +kubebuilder:object:root=true

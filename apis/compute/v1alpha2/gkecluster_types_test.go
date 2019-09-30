@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
 	localtest "github.com/crossplaneio/stack-gcp/pkg/test"
@@ -42,8 +41,6 @@ var (
 	c   client.Client
 	ctx = context.TODO()
 )
-
-var _ resource.Managed = &GKECluster{}
 
 func TestMain(m *testing.M) {
 	t := test.NewEnv(namespace, SchemeBuilder.SchemeBuilder, localtest.CRDs())

@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha2
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
@@ -146,61 +145,6 @@ type GlobalAddress struct {
 
 	Spec   GlobalAddressSpec   `json:"spec,omitempty"`
 	Status GlobalAddressStatus `json:"status,omitempty"`
-}
-
-// SetBindingPhase of this GlobalAddress.
-func (a *GlobalAddress) SetBindingPhase(p v1alpha1.BindingPhase) {
-	a.Status.SetBindingPhase(p)
-}
-
-// SetConditions of this GlobalAddress.
-func (a *GlobalAddress) SetConditions(c ...v1alpha1.Condition) {
-	a.Status.SetConditions(c...)
-}
-
-// GetBindingPhase of this GlobalAddress.
-func (a *GlobalAddress) GetBindingPhase() v1alpha1.BindingPhase {
-	return a.Status.GetBindingPhase()
-}
-
-// SetClaimReference of this GlobalAddress.
-func (a *GlobalAddress) SetClaimReference(r *corev1.ObjectReference) {
-	a.Spec.ClaimReference = r
-}
-
-// GetClaimReference of this GlobalAddress.
-func (a *GlobalAddress) GetClaimReference() *corev1.ObjectReference {
-	return a.Spec.ClaimReference
-}
-
-// SetNonPortableClassReference of this GlobalAddress.
-func (a *GlobalAddress) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	a.Spec.NonPortableClassReference = r
-}
-
-// GetNonPortableClassReference of this GlobalAddress.
-func (a *GlobalAddress) GetNonPortableClassReference() *corev1.ObjectReference {
-	return a.Spec.NonPortableClassReference
-}
-
-// SetWriteConnectionSecretToReference of this GlobalAddress.
-func (a *GlobalAddress) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
-	a.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetWriteConnectionSecretToReference of this GlobalAddress.
-func (a *GlobalAddress) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
-	return a.Spec.WriteConnectionSecretToReference
-}
-
-// GetReclaimPolicy of this GlobalAddress.
-func (a *GlobalAddress) GetReclaimPolicy() v1alpha1.ReclaimPolicy {
-	return a.Spec.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this GlobalAddress.
-func (a *GlobalAddress) SetReclaimPolicy(p v1alpha1.ReclaimPolicy) {
-	a.Spec.ReclaimPolicy = p
 }
 
 // +kubebuilder:object:root=true
