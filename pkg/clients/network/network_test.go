@@ -21,27 +21,31 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/compute/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
 )
 
-const (
+var (
 	testIPv4Range         = "10.0.0.0/256"
 	testDescription       = "some desc"
 	testName              = "some-name"
 	testRoutingMode       = "GLOBAL"
 	testCreationTimestamp = "10/10/2023"
 	testGatewayIPv4       = "10.0.0.0"
+	testSelfLink          = "/my/self/link"
 
-	testPeeringName         = "some-peering-name"
-	testPeeringNetwork      = "name"
-	testPeeringState        = "ACTIVE"
-	testPeeringStateDetails = "more-detailed than ACTIVE"
+	testPeeringName                = "some-peering-name"
+	testPeeringNetwork             = "name"
+	testPeeringState               = "ACTIVE"
+	testPeeringStateDetails        = "more-detailed than ACTIVE"
+	testID                  uint64 = 2029819203
+	trueVal                        = true
+	falseVal                       = false
 )
 
 func TestNetworkParameters_GenerateNetwork(t *testing.T) {
-	trueVal := true
-	falseVal := false
+
 	cases := map[string]struct {
 		in   v1alpha2.NetworkParameters
 		out  *compute.Network
@@ -49,11 +53,10 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 	}{
 		"AutoCreateSubnetworksNil": {
 			in: v1alpha2.NetworkParameters{
-				IPv4Range:   testIPv4Range,
-				Description: testDescription,
-				Name:        testName,
+				IPv4Range:   &testIPv4Range,
+				Description: &testDescription,
 				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-					RoutingMode: testRoutingMode,
+					RoutingMode: &testRoutingMode,
 				},
 			},
 			out: &compute.Network{
@@ -68,12 +71,11 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 		},
 		"AutoCreateSubnetworksFalse": {
 			in: v1alpha2.NetworkParameters{
-				IPv4Range:             testIPv4Range,
-				Description:           testDescription,
+				IPv4Range:             &testIPv4Range,
+				Description:           &testDescription,
 				AutoCreateSubnetworks: &falseVal,
-				Name:                  testName,
 				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-					RoutingMode: testRoutingMode,
+					RoutingMode: &testRoutingMode,
 				},
 			},
 			out: &compute.Network{
@@ -89,12 +91,11 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 		},
 		"AutoCreateSubnetworksTrue": {
 			in: v1alpha2.NetworkParameters{
-				IPv4Range:             testIPv4Range,
-				Description:           testDescription,
+				IPv4Range:             &testIPv4Range,
+				Description:           &testDescription,
 				AutoCreateSubnetworks: &trueVal,
-				Name:                  testName,
 				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-					RoutingMode: testRoutingMode,
+					RoutingMode: &testRoutingMode,
 				},
 			},
 			out: &compute.Network{
@@ -109,12 +110,11 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 		},
 		"AutoCreateSubnetworksTrueFail": {
 			in: v1alpha2.NetworkParameters{
-				IPv4Range:             testIPv4Range,
-				Description:           testDescription,
+				IPv4Range:             &testIPv4Range,
+				Description:           &testDescription,
 				AutoCreateSubnetworks: &trueVal,
-				Name:                  testName,
 				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-					RoutingMode: testRoutingMode,
+					RoutingMode: &testRoutingMode,
 				},
 			},
 			out: &compute.Network{
@@ -132,7 +132,17 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := GenerateNetwork(tc.in)
+			n := v1alpha2.Network{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						externalResourceNameAnnotationKey: testName,
+					},
+				},
+				Spec: v1alpha2.NetworkSpec{
+					ForProvider: tc.in,
+				},
+			}
+			r := GenerateNetwork(n)
 			if diff := cmp.Diff(r, tc.out); diff != "" && !tc.fail {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
@@ -152,7 +162,8 @@ func TestGenerateGCPNetworkStatus(t *testing.T) {
 				Description:       testDescription,
 				CreationTimestamp: testCreationTimestamp,
 				GatewayIPv4:       testGatewayIPv4,
-				Id:                2029819203,
+				Id:                testID,
+				SelfLink:          testSelfLink,
 				Peerings: []*compute.NetworkPeering{
 					{
 						AutoCreateRoutes:     true,
@@ -172,36 +183,40 @@ func TestGenerateGCPNetworkStatus(t *testing.T) {
 				},
 			},
 			out: v1alpha2.GCPNetworkStatus{
-				IPv4Range:         testIPv4Range,
-				Description:       testDescription,
-				CreationTimestamp: testCreationTimestamp,
-				GatewayIPv4:       testGatewayIPv4,
-				ID:                2029819203,
+				IPv4Range:             &testIPv4Range,
+				Description:           &testDescription,
+				CreationTimestamp:     &testCreationTimestamp,
+				GatewayIPv4:           &testGatewayIPv4,
+				ID:                    &testID,
+				AutoCreateSubnetworks: &falseVal,
+				SelfLink:              &testSelfLink,
 				Peerings: []*v1alpha2.GCPNetworkPeering{
 					{
-						AutoCreateRoutes:     true,
-						ExchangeSubnetRoutes: true,
-						Name:                 testPeeringName,
-						Network:              testPeeringNetwork,
-						State:                testPeeringState,
-						StateDetails:         testPeeringStateDetails,
+						AutoCreateRoutes:     &trueVal,
+						ExchangeSubnetRoutes: &trueVal,
+						Name:                 &testPeeringName,
+						Network:              &testPeeringNetwork,
+						State:                &testPeeringState,
+						StateDetails:         &testPeeringStateDetails,
 					},
 				},
 				Subnetworks: []string{
 					"my-subnetwork",
 				},
 				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-					RoutingMode: testRoutingMode,
+					RoutingMode: &testRoutingMode,
 				},
 			},
 		},
 		"AllFilledFail": {
 			in: compute.Network{
-				IPv4Range:         testIPv4Range,
-				Description:       testDescription,
-				CreationTimestamp: testCreationTimestamp,
-				GatewayIPv4:       testGatewayIPv4,
-				Id:                2029819203,
+				IPv4Range:             testIPv4Range,
+				Description:           testDescription,
+				CreationTimestamp:     testCreationTimestamp,
+				GatewayIPv4:           testGatewayIPv4,
+				Id:                    testID,
+				SelfLink:              testSelfLink,
+				AutoCreateSubnetworks: true,
 				Peerings: []*compute.NetworkPeering{
 					{
 						AutoCreateRoutes:     true,
@@ -221,26 +236,28 @@ func TestGenerateGCPNetworkStatus(t *testing.T) {
 				},
 			},
 			out: v1alpha2.GCPNetworkStatus{
-				IPv4Range:         testIPv4Range,
-				Description:       testDescription,
-				CreationTimestamp: testCreationTimestamp,
-				GatewayIPv4:       testGatewayIPv4,
-				ID:                2029819223103,
+				IPv4Range:             &testIPv4Range,
+				Description:           &testDescription,
+				CreationTimestamp:     &testCreationTimestamp,
+				GatewayIPv4:           &testGatewayIPv4,
+				AutoCreateSubnetworks: &trueVal,
+				SelfLink:              &testSelfLink,
+				ID:                    &testID,
 				Peerings: []*v1alpha2.GCPNetworkPeering{
 					{
-						AutoCreateRoutes:     true,
-						ExchangeSubnetRoutes: true,
-						Name:                 testPeeringName,
-						Network:              testPeeringNetwork,
-						State:                testPeeringState,
-						StateDetails:         testPeeringStateDetails,
+						AutoCreateRoutes:     &trueVal,
+						ExchangeSubnetRoutes: &trueVal,
+						Name:                 &testPeeringName,
+						Network:              &testPeeringNetwork,
+						State:                &testPeeringState,
+						StateDetails:         &testPeeringStateDetails,
 					},
 				},
 				Subnetworks: []string{
 					"my-subnetwork",
 				},
 				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-					RoutingMode: testRoutingMode,
+					RoutingMode: &testRoutingMode,
 				},
 			},
 			fail: true,
@@ -250,7 +267,7 @@ func TestGenerateGCPNetworkStatus(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			r := GenerateGCPNetworkStatus(tc.in)
-			if diff := cmp.Diff(r, tc.out); diff != "" && !tc.fail {
+			if diff := cmp.Diff(tc.out, r); diff != "" && !tc.fail {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
 		})

@@ -42,11 +42,17 @@ import (
 )
 
 const (
-	testNetworkName        = "test-network"
+	testNetworkName     = "test-network"
+	testGoogleProjectID = "test-project-id"
+	testProviderName    = "test-provider"
+	testNamespace       = "test-namespace"
+)
+
+var (
 	testNetworkDescription = "this is my test network!"
-	testGoogleProjectID    = "test-project-id"
-	testProviderName       = "test-provider"
-	testNamespace          = "test-namespace"
+	trueVal                = true
+	globalString           = "GLOBAL"
+	regionalString         = "REGIONAL"
 )
 
 const testGCPCredentialsJSON = `
@@ -98,15 +104,17 @@ func TestNetworkConnector_Connect(t *testing.T) {
 		"Successful": {
 			args: args{
 				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
 					Spec: v1alpha2.NetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name:      testProviderName,
 								Namespace: testNamespace,
 							},
-						},
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name: testNetworkName,
 						},
 					},
 				},
@@ -135,20 +143,15 @@ func TestNetworkConnector_Connect(t *testing.T) {
 				},
 			},
 		},
-		"UnnamedNetworkResource": {
-			args: args{
-				cr: &v1alpha2.Network{},
-				c:  &networkConnector{},
-			},
-			err: errors.New(errInsufficientNetworkSpec),
-		},
 		"ProviderRetrievalFailed": {
 			args: args{
 				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name: testNetworkName,
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
 						},
+					},
+					Spec: v1alpha2.NetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name:      testProviderName,
@@ -170,15 +173,17 @@ func TestNetworkConnector_Connect(t *testing.T) {
 		"CredFromSecretRetrievalFailed": {
 			args: args{
 				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
 					Spec: v1alpha2.NetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name:      testProviderName,
 								Namespace: testNamespace,
 							},
-						},
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name: testNetworkName,
 						},
 					},
 				},
@@ -207,15 +212,17 @@ func TestNetworkConnector_Connect(t *testing.T) {
 		"NewServiceFailed": {
 			args: args{
 				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
 					Spec: v1alpha2.NetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name:      testProviderName,
 								Namespace: testNamespace,
 							},
-						},
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name: testNetworkName,
 						},
 					},
 				},
@@ -287,9 +294,9 @@ func TestNetworkExternal_Observe(t *testing.T) {
 			}),
 			args: args{
 				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name: testNetworkName,
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
 						},
 					},
 				},
@@ -307,9 +314,9 @@ func TestNetworkExternal_Observe(t *testing.T) {
 			}),
 			args: args{
 				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name: testNetworkName,
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
 						},
 					},
 				},
@@ -345,6 +352,7 @@ func TestNetworkExternal_Observe(t *testing.T) {
 			e := networkExternal{
 				projectID: testGoogleProjectID,
 				Service:   s,
+				kube:      test.NewMockClient(),
 			}
 			obs, err := e.Observe(context.Background(), tc.args.cr)
 			if diff := cmp.Diff(tc.error, err != nil); diff != "" {
@@ -379,13 +387,17 @@ func TestNetworkExternal_Create(t *testing.T) {
 			}),
 			args: args{
 				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
 					Spec: v1alpha2.NetworkSpec{
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name:                  testNetworkName,
+						ForProvider: v1alpha2.NetworkParameters{
 							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
+							Description:           &testNetworkDescription,
 							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
+								RoutingMode: &regionalString,
 							},
 						},
 					},
@@ -402,7 +414,13 @@ func TestNetworkExternal_Create(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
+				},
 			},
 			error: true,
 		},
@@ -416,7 +434,13 @@ func TestNetworkExternal_Create(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
+				},
 			},
 		},
 		"DifferentType": {
@@ -449,7 +473,6 @@ func TestNetworkExternal_Update(t *testing.T) {
 		cr resource.Managed
 	}
 
-	trueVal := true
 	cases := map[string]struct {
 		handler http.Handler
 		args    args
@@ -466,22 +489,26 @@ func TestNetworkExternal_Update(t *testing.T) {
 			}),
 			args: args{
 				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
 					Spec: v1alpha2.NetworkSpec{
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name:                  testNetworkName,
+						ForProvider: v1alpha2.NetworkParameters{
 							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
+							Description:           &testNetworkDescription,
 							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
+								RoutingMode: &regionalString,
 							},
 						},
 					},
 					Status: v1alpha2.NetworkStatus{
-						GCPNetworkStatus: v1alpha2.GCPNetworkStatus{
-							AutoCreateSubnetworks: trueVal,
-							Description:           testNetworkDescription,
+						AtProvider: v1alpha2.GCPNetworkStatus{
+							AutoCreateSubnetworks: &trueVal,
+							Description:           &testNetworkDescription,
 							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "GLOBAL",
+								RoutingMode: &globalString,
 							},
 						},
 					},
@@ -499,22 +526,26 @@ func TestNetworkExternal_Update(t *testing.T) {
 			}),
 			args: args{
 				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
 					Spec: v1alpha2.NetworkSpec{
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name:                  testNetworkName,
+						ForProvider: v1alpha2.NetworkParameters{
 							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
+							Description:           &testNetworkDescription,
 							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
+								RoutingMode: &regionalString,
 							},
 						},
 					},
 					Status: v1alpha2.NetworkStatus{
-						GCPNetworkStatus: v1alpha2.GCPNetworkStatus{
-							AutoCreateSubnetworks: trueVal,
-							Description:           testNetworkDescription,
+						AtProvider: v1alpha2.GCPNetworkStatus{
+							AutoCreateSubnetworks: &trueVal,
+							Description:           &testNetworkDescription,
 							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "GLOBAL",
+								RoutingMode: &globalString,
 							},
 						},
 					},
@@ -529,22 +560,26 @@ func TestNetworkExternal_Update(t *testing.T) {
 			}),
 			args: args{
 				cr: &v1alpha2.Network{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
+						},
+					},
 					Spec: v1alpha2.NetworkSpec{
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name:                  testNetworkName,
+						ForProvider: v1alpha2.NetworkParameters{
 							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
+							Description:           &testNetworkDescription,
 							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
+								RoutingMode: &regionalString,
 							},
 						},
 					},
 					Status: v1alpha2.NetworkStatus{
-						GCPNetworkStatus: v1alpha2.GCPNetworkStatus{
-							AutoCreateSubnetworks: trueVal,
-							Description:           testNetworkDescription,
+						AtProvider: v1alpha2.GCPNetworkStatus{
+							AutoCreateSubnetworks: &trueVal,
+							Description:           &testNetworkDescription,
 							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
+								RoutingMode: &regionalString,
 							},
 						},
 					},
@@ -581,7 +616,6 @@ func TestNetworkExternal_Delete(t *testing.T) {
 		cr resource.Managed
 	}
 
-	trueVal := true
 	cases := map[string]struct {
 		handler http.Handler
 		args    args
@@ -598,14 +632,9 @@ func TestNetworkExternal_Delete(t *testing.T) {
 			}),
 			args: args{
 				cr: &v1alpha2.Network{
-					Spec: v1alpha2.NetworkSpec{
-						NetworkParameters: v1alpha2.NetworkParameters{
-							Name:                  testNetworkName,
-							AutoCreateSubnetworks: &trueVal,
-							Description:           testNetworkDescription,
-							RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
-								RoutingMode: "REGIONAL",
-							},
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							ExternalResourceNameAnnotationKey: testNetworkName,
 						},
 					},
 				},

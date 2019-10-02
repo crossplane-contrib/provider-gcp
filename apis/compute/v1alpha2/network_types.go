@@ -161,8 +161,8 @@ func (in NetworkParameters) IsSameAs(n GCPNetworkStatus) bool {
 	if in.RoutingConfig != nil && n.RoutingConfig != nil && in.RoutingConfig.RoutingMode != n.RoutingConfig.RoutingMode {
 		return false
 	}
-	if (in.AutoCreateSubnetworks == nil && n.AutoCreateSubnetworks) ||
-		(in.AutoCreateSubnetworks != nil && *in.AutoCreateSubnetworks != n.AutoCreateSubnetworks) {
+	if (in.AutoCreateSubnetworks == nil && *n.AutoCreateSubnetworks) ||
+		(in.AutoCreateSubnetworks != nil && *in.AutoCreateSubnetworks != *n.AutoCreateSubnetworks) {
 		return false
 	}
 	if in.Description != n.Description ||
@@ -229,7 +229,7 @@ type GCPNetworkStatus struct {
 	// Subnetworks: Server-defined fully-qualified URLs for
 	// all subnetworks in this VPC network.
 	// +optional
-	Subnetworks []*string `json:"subnetworks,omitempty"`
+	Subnetworks []string `json:"subnetworks,omitempty"`
 }
 
 // A GCPNetworkPeering represents the observed state of a Google Compute Engine

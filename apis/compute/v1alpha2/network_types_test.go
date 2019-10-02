@@ -24,6 +24,11 @@ import (
 
 func TestNetworkParameters_IsSameAs(t *testing.T) {
 	trueVal := true
+	falseVal := false
+	desc := "this is my test network!"
+	ipv4 := "10.0.0.0/9"
+	globalString := "GLOBAL"
+	regionalString := "REGIONAL"
 	cases := map[string]struct {
 		spec   NetworkParameters
 		status GCPNetworkStatus
@@ -31,60 +36,57 @@ func TestNetworkParameters_IsSameAs(t *testing.T) {
 	}{
 		"FullMatch": {
 			spec: NetworkParameters{
-				Description:           "some desc",
-				Name:                  "some-name",
-				IPv4Range:             "10.0.0.0/9",
+				Description:           &desc,
+				IPv4Range:             &ipv4,
 				AutoCreateSubnetworks: nil,
 				RoutingConfig: &GCPNetworkRoutingConfig{
-					RoutingMode: "REGIONAL",
+					RoutingMode: &regionalString,
 				},
 			},
 			status: GCPNetworkStatus{
-				Description:           "some desc",
-				IPv4Range:             "10.0.0.0/9",
-				AutoCreateSubnetworks: false,
+				Description:           &desc,
+				IPv4Range:             &ipv4,
+				AutoCreateSubnetworks: &falseVal,
 				RoutingConfig: &GCPNetworkRoutingConfig{
-					RoutingMode: "REGIONAL",
+					RoutingMode: &regionalString,
 				},
 			},
 			result: true,
 		},
 		"AutoCreateSubnetworksDifferent": {
 			spec: NetworkParameters{
-				Description:           "some desc",
-				Name:                  "some-name",
-				IPv4Range:             "10.0.0.0/9",
+				Description:           &desc,
+				IPv4Range:             &ipv4,
 				AutoCreateSubnetworks: &trueVal,
 				RoutingConfig: &GCPNetworkRoutingConfig{
-					RoutingMode: "REGIONAL",
+					RoutingMode: &regionalString,
 				},
 			},
 			status: GCPNetworkStatus{
-				Description:           "some desc",
-				IPv4Range:             "10.0.0.0/9",
-				AutoCreateSubnetworks: false,
+				Description:           &desc,
+				IPv4Range:             &ipv4,
+				AutoCreateSubnetworks: &falseVal,
 				RoutingConfig: &GCPNetworkRoutingConfig{
-					RoutingMode: "REGIONAL",
+					RoutingMode: &regionalString,
 				},
 			},
 			result: false,
 		},
 		"RoutingConfigDifferent": {
 			spec: NetworkParameters{
-				Description:           "some desc",
-				Name:                  "some-name",
-				IPv4Range:             "10.0.0.0/9",
+				Description:           &desc,
+				IPv4Range:             &ipv4,
 				AutoCreateSubnetworks: &trueVal,
 				RoutingConfig: &GCPNetworkRoutingConfig{
-					RoutingMode: "REGIONAL",
+					RoutingMode: &regionalString,
 				},
 			},
 			status: GCPNetworkStatus{
-				Description:           "some desc",
-				IPv4Range:             "10.0.0.0/9",
-				AutoCreateSubnetworks: true,
+				Description:           &desc,
+				IPv4Range:             &ipv4,
+				AutoCreateSubnetworks: &trueVal,
 				RoutingConfig: &GCPNetworkRoutingConfig{
-					RoutingMode: "GLOBAL",
+					RoutingMode: &globalString,
 				},
 			},
 			result: false,

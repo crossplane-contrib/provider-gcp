@@ -42,7 +42,6 @@ const (
 	// Error strings.
 	errNewClient                  = "cannot create new Compute Service"
 	errNotNetwork                 = "managed resource is not a Network resource"
-	errInsufficientNetworkSpec    = "name for network external resource is not provided"
 	errProviderNotRetrieved       = "provider could not be retrieved"
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
 
@@ -50,9 +49,8 @@ const (
 	errNetworkCreateFailed = "creation of Network resource has failed"
 	errNetworkDeleteFailed = "deletion of Network resource has failed"
 
-	// TEMPORARY. This should go to crossplane core repo.
-	externalResourceNameAnnotationKey = "crossplane.io/external-name"
-	errExternalName = "external name for the resource could not be decided"
+	// ExternalResourceNameAnnotationKey TEMPORARY. This should go to crossplane core repo.
+	ExternalResourceNameAnnotationKey = "crossplane.io/external-name"
 )
 
 // NetworkController is the controller for Network CRD.
@@ -88,9 +86,6 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (re
 	// such as this. Setting it directly here does not work since managed reconciler issues updates only to
 	// `status` subresource. We require name to be given until we have a pre-process hook like configurator in Claim
 	// reconciler
-	if cr.Spec.Name == "" {
-		return nil, errors.New(errInsufficientNetworkSpec)
-	}
 
 	provider := &apisv1alpha2.Provider{}
 	n := meta.NamespacedNameOf(cr.Spec.ProviderReference)
@@ -115,12 +110,13 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (re
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	return &networkExternal{Service: s, projectID: provider.Spec.ProjectID}, nil
+	return &networkExternal{Service: s, projectID: provider.Spec.ProjectID, kube: c.kube}, nil
 }
 
 type networkExternal struct {
 	*googlecompute.Service
 	projectID string
+	kube      client.Client
 }
 
 func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
@@ -128,7 +124,7 @@ func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (res
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotNetwork)
 	}
-	observed, err := c.Networks.Get(c.projectID, cr.Spec.Name).Context(ctx).Do()
+	observed, err := c.Networks.Get(c.projectID, cr.Annotations[ExternalResourceNameAnnotationKey]).Context(ctx).Do()
 	if clients.IsErrorNotFound(err) {
 		return resource.ExternalObservation{
 			ResourceExists: false,
@@ -137,9 +133,16 @@ func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (res
 	if err != nil {
 		return resource.ExternalObservation{}, err
 	}
-	cr.Status.GCPNetworkStatus = network.GenerateGCPNetworkStatus(*observed)
+	cr.Status.AtProvider = network.GenerateGCPNetworkStatus(*observed)
 	// If the Network resource is retrieved, it is ready to be used
 	cr.Status.SetConditions(runtimev1alpha1.Available())
+
+	if network.PopulateMissingParameters(&cr.Spec.ForProvider, *observed) {
+		if err := c.kube.Update(ctx, cr); err != nil {
+			return resource.ExternalObservation{}, errors.Wrap(err, "could not update spec with default values")
+		}
+	}
+
 	return resource.ExternalObservation{
 		ResourceExists: true,
 	}, nil
@@ -150,11 +153,11 @@ func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (reso
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotNetwork)
 	}
-	if cr.Annotations[externalResourceNameAnnotationKey] == "" {
+	if cr.Annotations[ExternalResourceNameAnnotationKey] == "" {
 		if network.ValidateName(cr.Name) {
-			cr.Annotations[externalResourceNameAnnotationKey] = cr.Name
+			cr.Annotations[ExternalResourceNameAnnotationKey] = cr.Name
 		} else {
-			cr.Annotations[externalResourceNameAnnotationKey] = network.GenerateName(cr.ObjectMeta)
+			cr.Annotations[ExternalResourceNameAnnotationKey] = network.GenerateName(cr.ObjectMeta)
 		}
 	}
 	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(*cr)).
@@ -172,13 +175,13 @@ func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (reso
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotNetwork)
 	}
-	if cr.Spec.IsSameAs(cr.Status.GCPNetworkStatus) {
+	if cr.Spec.ForProvider.IsSameAs(cr.Status.AtProvider) {
 		return resource.ExternalUpdate{}, nil
 	}
 	_, err := c.Networks.Patch(
 		c.projectID,
-		cr.Spec.Name,
-		network.GenerateNetwork(cr.Spec.NetworkParameters)).
+		cr.Annotations[ExternalResourceNameAnnotationKey],
+		network.GenerateNetwork(*cr)).
 		Context(ctx).
 		Do()
 	return resource.ExternalUpdate{}, errors.Wrap(err, errNetworkUpdateFailed)
@@ -189,7 +192,7 @@ func (c *networkExternal) Delete(ctx context.Context, mg resource.Managed) error
 	if !ok {
 		return errors.New(errNotNetwork)
 	}
-	_, err := c.Networks.Delete(c.projectID, cr.Spec.Name).
+	_, err := c.Networks.Delete(c.projectID, cr.Annotations[ExternalResourceNameAnnotationKey]).
 		Context(ctx).
 		Do()
 	if clients.IsErrorNotFound(err) {
