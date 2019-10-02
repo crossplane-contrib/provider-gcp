@@ -119,7 +119,27 @@ type networkExternal struct {
 	kube      client.Client
 }
 
+// PreReconcileHook runs first before all external client operations.
+// TEMPORARY. This should exist in crossplane-runtime as part of ExternalClient.
+func PreReconcileHook(_ context.Context, mg resource.Managed) error {
+	cr, ok := mg.(*v1alpha2.Network)
+	if !ok {
+		return errors.New(errNotNetwork)
+	}
+	if cr.Annotations[ExternalResourceNameAnnotationKey] == "" {
+		if network.ValidateName(cr.Name) {
+			cr.Annotations[ExternalResourceNameAnnotationKey] = cr.Name
+		} else {
+			cr.Annotations[ExternalResourceNameAnnotationKey] = network.GenerateName(cr.ObjectMeta)
+		}
+	}
+	return nil
+}
+
 func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+	if err := PreReconcileHook(ctx, mg); err != nil {
+		return resource.ExternalObservation{}, err
+	}
 	cr, ok := mg.(*v1alpha2.Network)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotNetwork)
@@ -149,16 +169,12 @@ func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (res
 }
 
 func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+	if err := PreReconcileHook(ctx, mg); err != nil {
+		return resource.ExternalCreation{}, err
+	}
 	cr, ok := mg.(*v1alpha2.Network)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotNetwork)
-	}
-	if cr.Annotations[ExternalResourceNameAnnotationKey] == "" {
-		if network.ValidateName(cr.Name) {
-			cr.Annotations[ExternalResourceNameAnnotationKey] = cr.Name
-		} else {
-			cr.Annotations[ExternalResourceNameAnnotationKey] = network.GenerateName(cr.ObjectMeta)
-		}
 	}
 	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(*cr)).
 		Context(ctx).
@@ -171,6 +187,9 @@ func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (reso
 }
 
 func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+	if err := PreReconcileHook(ctx, mg); err != nil {
+		return resource.ExternalUpdate{}, err
+	}
 	cr, ok := mg.(*v1alpha2.Network)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotNetwork)
@@ -188,6 +207,9 @@ func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (reso
 }
 
 func (c *networkExternal) Delete(ctx context.Context, mg resource.Managed) error {
+	if err := PreReconcileHook(ctx, mg); err != nil {
+		return err
+	}
 	cr, ok := mg.(*v1alpha2.Network)
 	if !ok {
 		return errors.New(errNotNetwork)

@@ -49,7 +49,7 @@ func GenerateNetwork(in v1alpha2.Network) *googlecompute.Network {
 	n.IPv4Range = gcp.StringValue(in.Spec.ForProvider.IPv4Range)
 	if in.Spec.ForProvider.AutoCreateSubnetworks != nil {
 		n.AutoCreateSubnetworks = *in.Spec.ForProvider.AutoCreateSubnetworks
-		if !n.AutoCreateSubnetworks {
+		if !n.AutoCreateSubnetworks && n.IPv4Range == "" {
 			n.ForceSendFields = []string{"AutoCreateSubnetworks"}
 		}
 	}
@@ -110,11 +110,9 @@ func PopulateMissingParameters(p *v1alpha2.NetworkParameters, in googlecompute.N
 	}
 	if in.RoutingConfig != nil &&
 		(p.RoutingConfig == nil || (p.RoutingConfig != nil && p.RoutingConfig.RoutingMode == nil)) {
-		if in.RoutingConfig != nil {
 			p.RoutingConfig = &v1alpha2.GCPNetworkRoutingConfig{
 				RoutingMode: &in.RoutingConfig.RoutingMode,
 			}
-		}
 	}
 	return cmp.Diff(initial, p) != ""
 }

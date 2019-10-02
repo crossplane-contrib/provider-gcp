@@ -139,13 +139,13 @@ type NetworkParameters struct {
 	// Description: An optional description of this resource. Provide this
 	// field when you create the resource.
 	// +optional.
+	// +immutable
 	Description *string `json:"description,omitempty"`
 
 	// RoutingConfig: The network-level routing configuration for this
 	// network. Used by Cloud Router to determine what type of network-wide
 	// routing behavior to enforce.
 	// +optional.
-	// +immutable
 	RoutingConfig *GCPNetworkRoutingConfig `json:"routingConfig,omitempty"`
 }
 
@@ -297,6 +297,5 @@ type GCPNetworkRoutingConfig struct {
 	//   "GLOBAL"
 	//   "REGIONAL"
 	// +optional.
-	// +immutable
 	RoutingMode *string `json:"routingMode,omitempty"`
 }
