@@ -49,6 +49,10 @@ const (
 	errNetworkUpdateFailed = "update of Network resource has failed"
 	errNetworkCreateFailed = "creation of Network resource has failed"
 	errNetworkDeleteFailed = "deletion of Network resource has failed"
+
+	// TEMPORARY. This should go to crossplane core repo.
+	externalResourceNameAnnotationKey = "crossplane.io/external-name"
+	errExternalName = "external name for the resource could not be decided"
 )
 
 // NetworkController is the controller for Network CRD.
@@ -146,7 +150,14 @@ func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (reso
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotNetwork)
 	}
-	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(cr.Spec.NetworkParameters)).
+	if cr.Annotations[externalResourceNameAnnotationKey] == "" {
+		if network.ValidateName(cr.Name) {
+			cr.Annotations[externalResourceNameAnnotationKey] = cr.Name
+		} else {
+			cr.Annotations[externalResourceNameAnnotationKey] = network.GenerateName(cr.ObjectMeta)
+		}
+	}
+	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(*cr)).
 		Context(ctx).
 		Do()
 	if clients.IsErrorAlreadyExists(err) {

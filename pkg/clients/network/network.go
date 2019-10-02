@@ -17,28 +17,48 @@ limitations under the License.
 package network
 
 import (
+	"fmt"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	"github.com/pkg/errors"
 	googlecompute "google.golang.org/api/compute/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
 )
 
+// TEMPORARY. This should go to crossplane core repo.
+const externalResourceNameAnnotationKey = "crossplane.io/external-name"
+
+// ValidateName checks whether given string complies with name format
+// that is required by GCP Network API, which is RFC1035.
+func ValidateName(name string) bool {
+	return len(validation.IsDNS1035Label(name)) == 0
+}
+
+// GenerateName generates a network resource name that complies with
+// GCP Network API.
+func GenerateName(meta v1.ObjectMeta) string {
+	return "network-" + string(meta.UID)
+}
+
 // GenerateNetwork takes a *NetworkParameters and returns *googlecompute.Network.
 // It assigns only the fields that are writable, i.e. not labelled as [Output Only]
 // in Google's reference.
-func GenerateNetwork(in v1alpha2.NetworkParameters) *googlecompute.Network {
+func GenerateNetwork(in v1alpha2.Network) *googlecompute.Network {
 	n := &googlecompute.Network{}
-	n.IPv4Range = in.IPv4Range
-	if in.AutoCreateSubnetworks != nil {
-		n.AutoCreateSubnetworks = *in.AutoCreateSubnetworks
+	n.IPv4Range = in.Spec.ForProvider.IPv4Range
+	if in.Spec.ForProvider.AutoCreateSubnetworks != nil {
+		n.AutoCreateSubnetworks = *in.Spec.ForProvider.AutoCreateSubnetworks
 		if !n.AutoCreateSubnetworks {
 			n.ForceSendFields = []string{"AutoCreateSubnetworks"}
 		}
 	}
-	n.Description = in.Description
-	n.Name = in.Name
-	if in.RoutingConfig != nil {
+	n.Description = in.Spec.ForProvider.Description
+	n.Name = in.Annotations[externalResourceNameAnnotationKey]
+	if in.Spec.ForProvider.RoutingConfig != nil {
 		n.RoutingConfig = &googlecompute.NetworkRoutingConfig{
-			RoutingMode: in.RoutingConfig.RoutingMode,
+			RoutingMode: in.Spec.ForProvider.RoutingConfig.RoutingMode,
 		}
 	}
 	return n

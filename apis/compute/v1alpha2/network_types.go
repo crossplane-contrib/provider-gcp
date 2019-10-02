@@ -26,13 +26,13 @@ import (
 // A NetworkSpec defines the desired state of a Network.
 type NetworkSpec struct {
 	v1alpha1.ResourceSpec `json:",inline"`
-	NetworkParameters     `json:",inline"`
+	ForProvider           NetworkParameters `json:"forProvider,omitempty"`
 }
 
 // A NetworkStatus represents the observed state of a Network.
 type NetworkStatus struct {
 	v1alpha1.ResourceStatus `json:",inline"`
-	GCPNetworkStatus        `json:",inline"`
+	AtProvider              GCPNetworkStatus `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -121,7 +121,8 @@ type NetworkParameters struct {
 	// CIDR specification, for example: 192.168.0.0/16. Provided by the
 	// client when the network is created.
 	// +optional.
-	IPv4Range string `json:"IPv4Range,omitempty"`
+	// +immutable
+	IPv4Range *string `json:"IPv4Range,omitempty"`
 
 	// AutoCreateSubnetworks: When set to true, the VPC network is created
 	// in "auto" mode. When set to false, the VPC network is created in
@@ -132,27 +133,19 @@ type NetworkParameters struct {
 	// subnet has a predetermined range as described in Auto mode VPC
 	// network IP ranges.
 	// +optional.
+	// +immutable
 	AutoCreateSubnetworks *bool `json:"autoCreateSubnetworks,omitempty"`
 
 	// Description: An optional description of this resource. Provide this
 	// field when you create the resource.
 	// +optional.
-	Description string `json:"description,omitempty"`
-
-	// Name: Name of the resource. Provided by the client when the resource
-	// is created. The name must be 1-63 characters long, and comply with
-	// RFC1035. Specifically, the name must be 1-63 characters long and
-	// match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?. The first
-	// character must be a lowercase letter, and all following characters
-	// (except for the last character) must be a dash, lowercase letter, or
-	// digit. The last character must be a lowercase letter or digit.
-	// +optional.
-	Name string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
 
 	// RoutingConfig: The network-level routing configuration for this
 	// network. Used by Cloud Router to determine what type of network-wide
 	// routing behavior to enforce.
 	// +optional.
+	// +immutable
 	RoutingConfig *GCPNetworkRoutingConfig `json:"routingConfig,omitempty"`
 }
 
@@ -186,7 +179,8 @@ type GCPNetworkStatus struct {
 	// internal addresses that are legal on this network. This range is a
 	// CIDR specification, for example: 192.168.0.0/16. Provided by the
 	// client when the network is created.
-	IPv4Range string `json:"IPv4Range,omitempty"`
+	// +optional
+	IPv4Range *string `json:"IPv4Range,omitempty"`
 
 	// AutoCreateSubnetworks: When set to true, the VPC network is created
 	// in "auto" mode. When set to false, the VPC network is created in
@@ -195,38 +189,47 @@ type GCPNetworkStatus struct {
 	// An auto mode VPC network starts with one subnet per region. Each
 	// subnet has a predetermined range as described in Auto mode VPC
 	// network IP ranges.
-	AutoCreateSubnetworks bool `json:"autoCreateSubnetworks,omitempty"`
+	// +optional
+	AutoCreateSubnetworks *bool `json:"autoCreateSubnetworks,omitempty"`
 
 	// CreationTimestamp: Creation timestamp in RFC3339 text
 	// format.
-	CreationTimestamp string `json:"creationTimestamp,omitempty"`
+	// +optional
+	CreationTimestamp *string `json:"creationTimestamp,omitempty"`
 
 	// Description: An optional description of this resource. Provide this
 	// field when you create the resource.
-	Description string `json:"description,omitempty"`
+	// +optional
+	Description *string `json:"description,omitempty"`
 
 	// GatewayIPv4: The gateway address for default routing
 	// out of the network, selected by GCP.
-	GatewayIPv4 string `json:"gatewayIPv4,omitempty"`
+	// +optional
+	GatewayIPv4 *string `json:"gatewayIPv4,omitempty"`
 
 	// Id: The unique identifier for the resource. This
 	// identifier is defined by the server.
-	ID uint64 `json:"id,omitempty"`
+	// +optional
+	ID *uint64 `json:"id,omitempty"`
 
 	// Peerings: A list of network peerings for the resource.
+	// +optional
 	Peerings []*GCPNetworkPeering `json:"peerings,omitempty"`
 
 	// RoutingConfig: The network-level routing configuration for this
 	// network. Used by Cloud Router to determine what type of network-wide
 	// routing behavior to enforce.
+	// +optional
 	RoutingConfig *GCPNetworkRoutingConfig `json:"routingConfig,omitempty"`
 
 	// SelfLink: Server-defined URL for the resource.
-	SelfLink string `json:"selfLink,omitempty"`
+	// +optional
+	SelfLink *string `json:"selfLink,omitempty"`
 
 	// Subnetworks: Server-defined fully-qualified URLs for
 	// all subnetworks in this VPC network.
-	Subnetworks []string `json:"subnetworks,omitempty"`
+	// +optional
+	Subnetworks []*string `json:"subnetworks,omitempty"`
 }
 
 // A GCPNetworkPeering represents the observed state of a Google Compute Engine
@@ -238,14 +241,16 @@ type GCPNetworkPeering struct {
 	// networks. Currently this field should always be true since Google
 	// Compute Engine will automatically create and manage subnetwork routes
 	// between two networks when peering state is ACTIVE.
-	AutoCreateRoutes bool `json:"autoCreateRoutes,omitempty"`
+	// +optional
+	AutoCreateRoutes *bool `json:"autoCreateRoutes,omitempty"`
 
 	// ExchangeSubnetRoutes: Indicates whether full mesh connectivity is
 	// created and managed automatically between peered networks. Currently
 	// this field should always be true since Google Compute Engine will
 	// automatically create and manage subnetwork routes between two
 	// networks when peering state is ACTIVE.
-	ExchangeSubnetRoutes bool `json:"exchangeSubnetRoutes,omitempty"`
+	// +optional
+	ExchangeSubnetRoutes *bool `json:"exchangeSubnetRoutes,omitempty"`
 
 	// Name: Name of this peering. Provided by the client when the peering
 	// is created. The name must comply with RFC1035. Specifically, the name
@@ -253,13 +258,15 @@ type GCPNetworkPeering struct {
 	// `[a-z]([-a-z0-9]*[a-z0-9])?`. The first character must be a lowercase
 	// letter, and all the following characters must be a dash, lowercase
 	// letter, or digit, except the last character, which cannot be a dash.
-	Name string `json:"name,omitempty"`
+	// +optional
+	Name *string `json:"name,omitempty"`
 
 	// Network: The URL of the peer network. It can be either full URL or
 	// partial URL. The peer network may belong to a different project. If
 	// the partial URL does not contain project, it is assumed that the peer
 	// network is in the same project as the current network.
-	Network string `json:"network,omitempty"`
+	// +optional
+	Network *string `json:"network,omitempty"`
 
 	// State: State for the peering, either `ACTIVE` or
 	// `INACTIVE`. The peering is `ACTIVE` when there's a matching
@@ -268,11 +275,13 @@ type GCPNetworkPeering struct {
 	// Possible values:
 	//   "ACTIVE"
 	//   "INACTIVE"
-	State string `json:"state,omitempty"`
+	// +optional
+	State *string `json:"state,omitempty"`
 
 	// StateDetails: Details about the current state of the
 	// peering.
-	StateDetails string `json:"stateDetails,omitempty"`
+	// +optional
+	StateDetails *string `json:"stateDetails,omitempty"`
 }
 
 // A GCPNetworkRoutingConfig specifies the desired state of a Google Compute
@@ -288,5 +297,6 @@ type GCPNetworkRoutingConfig struct {
 	//   "GLOBAL"
 	//   "REGIONAL"
 	// +optional.
-	RoutingMode string `json:"routingMode,omitempty"`
+	// +immutable
+	RoutingMode *string `json:"routingMode,omitempty"`
 }
