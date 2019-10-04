@@ -18,11 +18,9 @@ package v1alpha2
 
 import (
 	"google.golang.org/genproto/googleapis/cloud/redis/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 )
 
 // Cloud Memorystore instance states.
@@ -158,61 +156,6 @@ type CloudMemorystoreInstance struct {
 	Status CloudMemorystoreInstanceStatus `json:"status,omitempty"`
 }
 
-// SetBindingPhase of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
-	i.Status.SetBindingPhase(p)
-}
-
-// GetBindingPhase of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) GetBindingPhase() runtimev1alpha1.BindingPhase {
-	return i.Status.GetBindingPhase()
-}
-
-// SetConditions of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) SetConditions(c ...runtimev1alpha1.Condition) {
-	i.Status.SetConditions(c...)
-}
-
-// SetClaimReference of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) SetClaimReference(r *corev1.ObjectReference) {
-	i.Spec.ClaimReference = r
-}
-
-// GetClaimReference of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) GetClaimReference() *corev1.ObjectReference {
-	return i.Spec.ClaimReference
-}
-
-// SetNonPortableClassReference of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	i.Spec.NonPortableClassReference = r
-}
-
-// GetNonPortableClassReference of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) GetNonPortableClassReference() *corev1.ObjectReference {
-	return i.Spec.NonPortableClassReference
-}
-
-// SetWriteConnectionSecretToReference of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
-	i.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetWriteConnectionSecretToReference of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
-	return i.Spec.WriteConnectionSecretToReference
-}
-
-// GetReclaimPolicy of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return i.Spec.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this CloudMemorystoreInstance.
-func (i *CloudMemorystoreInstance) SetReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) {
-	i.Spec.ReclaimPolicy = p
-}
-
 // +kubebuilder:object:root=true
 
 // CloudMemorystoreInstanceList contains a list of CloudMemorystoreInstance
@@ -229,9 +172,6 @@ type CloudMemorystoreInstanceClassSpecTemplate struct {
 	CloudMemorystoreInstanceParameters           `json:",inline"`
 }
 
-// All non-portable classes must implement the NonPortableClass interface.
-var _ resource.NonPortableClass = &CloudMemorystoreInstanceClass{}
-
 // +kubebuilder:object:root=true
 
 // A CloudMemorystoreInstanceClass is a non-portable resource class. It defines
@@ -247,16 +187,6 @@ type CloudMemorystoreInstanceClass struct {
 	// SpecTemplate is a template for the spec of a dynamically provisioned
 	// CloudMemorystoreInstance.
 	SpecTemplate CloudMemorystoreInstanceClassSpecTemplate `json:"specTemplate"`
-}
-
-// GetReclaimPolicy of this CloudMemorystoreInstanceClass.
-func (i *CloudMemorystoreInstanceClass) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return i.SpecTemplate.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this CloudMemorystoreInstanceClass.
-func (i *CloudMemorystoreInstanceClass) SetReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) {
-	i.SpecTemplate.ReclaimPolicy = p
 }
 
 // +kubebuilder:object:root=true

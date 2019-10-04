@@ -18,9 +18,7 @@ package v1alpha2
 
 import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -173,61 +171,6 @@ type GKECluster struct {
 	Status GKEClusterStatus `json:"status,omitempty"`
 }
 
-// SetBindingPhase of this GKECluster.
-func (c *GKECluster) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
-	c.Status.SetBindingPhase(p)
-}
-
-// GetBindingPhase of this GKECluster.
-func (c *GKECluster) GetBindingPhase() runtimev1alpha1.BindingPhase {
-	return c.Status.GetBindingPhase()
-}
-
-// SetConditions of this GKECluster.
-func (c *GKECluster) SetConditions(cd ...runtimev1alpha1.Condition) {
-	c.Status.SetConditions(cd...)
-}
-
-// SetClaimReference of this GKECluster.
-func (c *GKECluster) SetClaimReference(r *corev1.ObjectReference) {
-	c.Spec.ClaimReference = r
-}
-
-// GetClaimReference of this GKECluster.
-func (c *GKECluster) GetClaimReference() *corev1.ObjectReference {
-	return c.Spec.ClaimReference
-}
-
-// SetNonPortableClassReference of this GKECluster.
-func (c *GKECluster) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	c.Spec.NonPortableClassReference = r
-}
-
-// GetNonPortableClassReference of this GKECluster.
-func (c *GKECluster) GetNonPortableClassReference() *corev1.ObjectReference {
-	return c.Spec.NonPortableClassReference
-}
-
-// SetWriteConnectionSecretToReference of this GKECluster.
-func (c *GKECluster) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
-	c.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetWriteConnectionSecretToReference of this GKECluster.
-func (c *GKECluster) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
-	return c.Spec.WriteConnectionSecretToReference
-}
-
-// GetReclaimPolicy of this GKECluster.
-func (c *GKECluster) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return c.Spec.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this GKECluster.
-func (c *GKECluster) SetReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) {
-	c.Spec.ReclaimPolicy = p
-}
-
 // +kubebuilder:object:root=true
 
 // GKEClusterList contains a list of GKECluster items
@@ -244,9 +187,6 @@ type GKEClusterClassSpecTemplate struct {
 	GKEClusterParameters                         `json:",inline"`
 }
 
-// All non-portable classes must implement the NonPortableClass interface.
-var _ resource.NonPortableClass = &GKEClusterClass{}
-
 // +kubebuilder:object:root=true
 
 // A GKEClusterClass is a non-portable resource class. It defines the desired
@@ -262,16 +202,6 @@ type GKEClusterClass struct {
 	// SpecTemplate is a template for the spec of a dynamically provisioned
 	// GKECluster.
 	SpecTemplate GKEClusterClassSpecTemplate `json:"specTemplate"`
-}
-
-// GetReclaimPolicy of this GKEClusterClass.
-func (i *GKEClusterClass) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return i.SpecTemplate.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this GKEClusterClass.
-func (i *GKEClusterClass) SetReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) {
-	i.SpecTemplate.ReclaimPolicy = p
 }
 
 // +kubebuilder:object:root=true

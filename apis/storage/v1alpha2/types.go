@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 )
 
@@ -811,61 +810,6 @@ type Bucket struct {
 	Status BucketStatus `json:"status,omitempty"`
 }
 
-// SetBindingPhase of this Bucket.
-func (b *Bucket) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
-	b.Status.SetBindingPhase(p)
-}
-
-// GetBindingPhase of this Bucket.
-func (b *Bucket) GetBindingPhase() runtimev1alpha1.BindingPhase {
-	return b.Status.GetBindingPhase()
-}
-
-// SetConditions of this Bucket.
-func (b *Bucket) SetConditions(c ...runtimev1alpha1.Condition) {
-	b.Status.SetConditions(c...)
-}
-
-// SetClaimReference of this Bucket.
-func (b *Bucket) SetClaimReference(r *corev1.ObjectReference) {
-	b.Spec.ClaimReference = r
-}
-
-// GetClaimReference of this Bucket.
-func (b *Bucket) GetClaimReference() *corev1.ObjectReference {
-	return b.Spec.ClaimReference
-}
-
-// SetNonPortableClassReference of this Bucket.
-func (b *Bucket) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	b.Spec.NonPortableClassReference = r
-}
-
-// GetNonPortableClassReference of this Bucket.
-func (b *Bucket) GetNonPortableClassReference() *corev1.ObjectReference {
-	return b.Spec.NonPortableClassReference
-}
-
-// SetWriteConnectionSecretToReference of this Bucket.
-func (b *Bucket) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
-	b.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetWriteConnectionSecretToReference of this Bucket.
-func (b *Bucket) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
-	return b.Spec.WriteConnectionSecretToReference
-}
-
-// GetReclaimPolicy of this Bucket.
-func (b *Bucket) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return b.Spec.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this Bucket.
-func (b *Bucket) SetReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) {
-	b.Spec.ReclaimPolicy = p
-}
-
 // GetBucketName based on the NameFormat spec value,
 // If name format is not provided, bucket name defaults to UID
 // If name format provided with '%s' value, bucket name will result in formatted string + UID,
@@ -902,9 +846,6 @@ type BucketClassSpecTemplate struct {
 	BucketParameters                             `json:",inline"`
 }
 
-// All non-portable classes must implement the NonPortableClass interface.
-var _ resource.NonPortableClass = &BucketClass{}
-
 // +kubebuilder:object:root=true
 
 // A BucketClass is a non-portable resource class. It defines the desired spec
@@ -919,16 +860,6 @@ type BucketClass struct {
 	// SpecTemplate is a template for the spec of a dynamically provisioned
 	// Bucket.
 	SpecTemplate BucketClassSpecTemplate `json:"specTemplate"`
-}
-
-// GetReclaimPolicy of this BucketClass.
-func (i *BucketClass) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return i.SpecTemplate.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this BucketClass.
-func (i *BucketClass) SetReclaimPolicy(p runtimev1alpha1.ReclaimPolicy) {
-	i.SpecTemplate.ReclaimPolicy = p
 }
 
 // +kubebuilder:object:root=true

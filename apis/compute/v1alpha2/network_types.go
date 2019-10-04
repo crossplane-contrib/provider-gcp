@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha2
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
@@ -46,61 +45,6 @@ type Network struct {
 
 	Spec   NetworkSpec   `json:"spec,omitempty"`
 	Status NetworkStatus `json:"status,omitempty"`
-}
-
-// SetBindingPhase of this Network.
-func (n *Network) SetBindingPhase(p v1alpha1.BindingPhase) {
-	n.Status.SetBindingPhase(p)
-}
-
-// SetConditions of this Network.
-func (n *Network) SetConditions(c ...v1alpha1.Condition) {
-	n.Status.SetConditions(c...)
-}
-
-// GetBindingPhase of this Network.
-func (n *Network) GetBindingPhase() v1alpha1.BindingPhase {
-	return n.Status.GetBindingPhase()
-}
-
-// SetClaimReference of this Network.
-func (n *Network) SetClaimReference(r *corev1.ObjectReference) {
-	n.Spec.ClaimReference = r
-}
-
-// GetClaimReference of this Network.
-func (n *Network) GetClaimReference() *corev1.ObjectReference {
-	return n.Spec.ClaimReference
-}
-
-// SetNonPortableClassReference of this Network.
-func (n *Network) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	n.Spec.NonPortableClassReference = r
-}
-
-// GetNonPortableClassReference of this Network.
-func (n *Network) GetNonPortableClassReference() *corev1.ObjectReference {
-	return n.Spec.NonPortableClassReference
-}
-
-// SetWriteConnectionSecretToReference of this Network.
-func (n *Network) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
-	n.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetWriteConnectionSecretToReference of this Network.
-func (n *Network) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
-	return n.Spec.WriteConnectionSecretToReference
-}
-
-// GetReclaimPolicy of this Network.
-func (n *Network) GetReclaimPolicy() v1alpha1.ReclaimPolicy {
-	return n.Spec.ReclaimPolicy
-}
-
-// SetReclaimPolicy of this Network.
-func (n *Network) SetReclaimPolicy(p v1alpha1.ReclaimPolicy) {
-	n.Spec.ReclaimPolicy = p
 }
 
 // +kubebuilder:object:root=true
