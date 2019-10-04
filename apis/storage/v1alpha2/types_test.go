@@ -22,72 +22,8 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"
-	"github.com/onsi/gomega"
-	"golang.org/x/net/context"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
-
-	localtest "github.com/crossplaneio/stack-gcp/pkg/test"
 )
-
-const namespace = "default"
-
-var (
-	c   client.Client
-	ctx = context.TODO()
-)
-
-func TestMain(m *testing.M) {
-	t := test.NewEnv(namespace, SchemeBuilder.SchemeBuilder, localtest.CRDs())
-	c = t.StartClient()
-	t.StopAndExit(m.Run())
-}
-
-func TestStorageGCPBucket(t *testing.T) {
-	key := types.NamespacedName{Name: "test", Namespace: "default"}
-	created := &Bucket{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      key.Name,
-			Namespace: key.Namespace,
-		},
-		Spec: BucketSpec{
-			BucketParameters: BucketParameters{
-				BucketSpecAttrs: BucketSpecAttrs{
-					Location:     "US",
-					StorageClass: "STANDARD",
-				},
-			},
-			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &corev1.ObjectReference{},
-			},
-		},
-	}
-	g := gomega.NewGomegaWithT(t)
-
-	// Test Create
-	fetched := &Bucket{}
-	g.Expect(c.Create(ctx, created)).NotTo(gomega.HaveOccurred())
-
-	g.Expect(c.Get(ctx, key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(created))
-
-	// Test Updating the Labels
-	updated := fetched.DeepCopy()
-	updated.Labels = map[string]string{"hello": "world"}
-	g.Expect(c.Update(ctx, updated)).NotTo(gomega.HaveOccurred())
-
-	g.Expect(c.Get(ctx, key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(updated))
-
-	// Test Delete
-	g.Expect(c.Delete(ctx, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Get(ctx, key, fetched)).To(gomega.HaveOccurred())
-}
 
 var (
 	testProjectTeam        = &ProjectTeam{ProjectNumber: "foo", Team: "bar"}
