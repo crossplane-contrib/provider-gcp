@@ -54,7 +54,8 @@ const (
 	requeueOnWait   = 30 * time.Second
 	requeueOnSucces = 2 * time.Minute
 
-	updateErrorMessageFormat = "failed to update cluster object: %s"
+	updateErrorMessageFormat         = "failed to update cluster object: %s"
+	erroredClusterErrorMessageFormat = "gke cluster is in %s state with message: %s"
 )
 
 var (
@@ -191,6 +192,10 @@ func (r *Reconciler) _sync(instance *gcpcomputev1alpha2.GKECluster, client gke.C
 	cluster, err := client.GetCluster(instance.Spec.Zone, instance.Status.ClusterName)
 	if err != nil {
 		return r.fail(instance, err)
+	}
+
+	if cluster.Status == gcpcomputev1alpha2.ClusterStateError {
+		return r.fail(instance, fmt.Errorf(erroredClusterErrorMessageFormat, cluster.Status, cluster.StatusMessage))
 	}
 
 	if cluster.Status != gcpcomputev1alpha2.ClusterStateRunning {

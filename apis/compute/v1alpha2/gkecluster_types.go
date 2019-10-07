@@ -26,6 +26,7 @@ import (
 const (
 	ClusterStateProvisioning = "PROVISIONING"
 	ClusterStateRunning      = "RUNNING"
+	ClusterStateError        = "ERROR"
 )
 
 // Defaults for GKE resources.
