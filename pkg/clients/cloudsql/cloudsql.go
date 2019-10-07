@@ -23,7 +23,7 @@ import (
 )
 
 // GenerateDatabaseInstance generates *sqladmin.DatabaseInstance instance from CloudsqlInstanceParameters.
-func GenerateDatabaseInstance(in *v1alpha2.CloudsqlInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
+func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
 	db := &sqladmin.DatabaseInstance{
 		BackendType:                in.BackendType,
 		ConnectionName:             in.ConnectionName,
@@ -149,7 +149,7 @@ func GenerateDatabaseInstance(in *v1alpha2.CloudsqlInstanceParameters, name stri
 }
 
 // GenerateObservation produces CloudsqlInstanceObservation object from *sqladmin.DatabaseInstance object.
-func GenerateObservation(in *sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstanceObservation { // nolint:gocyclo
+func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstanceObservation { // nolint:gocyclo
 	o := v1alpha2.CloudsqlInstanceObservation{
 		CurrentDiskSize: in.CurrentDiskSize,
 		ConnectionName:  in.ConnectionName,
@@ -179,4 +179,14 @@ func GenerateObservation(in *sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstanc
 		})
 	}
 	return o
+}
+
+func FillSpecWithDefaults(cr *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) (changed bool) {
+	// TODO(muvaf): find a way to avoid messy if statements for patching parameters with received DatabaseInstance.
+	return true
+}
+
+func IsUpToDate(cr v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) bool {
+	// TODO(muvaf): check whether spec is different than DatabaseInstance.
+	return false
 }
