@@ -151,12 +151,14 @@ func TestSyncErroredCluster(t *testing.T) {
 	}
 
 	expectedStatus := runtimev1alpha1.ConditionedStatus{}
+	expectedState := ClusterStateError
 	expectedStatus.SetConditions(runtimev1alpha1.ReconcileError(fmt.Errorf(erroredClusterErrorMessageFormat, gcpcomputev1alpha2.ClusterStateError, errorMessage)))
 
 	rs, err := r._sync(tc, cl)
 	g.Expect(rs).To(Equal(resultRequeue))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(called).To(BeTrue())
+	g.Expect(tc.Status.State).To(Equal(expectedState))
 	assertResource(g, r, expectedStatus)
 }
 
