@@ -44,7 +44,7 @@ func (c *Controllers) SetupWithManager(mgr ctrl.Manager) error {
 		&compute.SubnetworkController{},
 		&database.PostgreSQLInstanceClaimController{},
 		&database.MySQLInstanceClaimController{},
-		&database.CloudsqlController{},
+		&database.CloudsqlInstanceController{},
 		&servicenetworking.ConnectionController{},
 		&storage.BucketClaimController{},
 		&storage.BucketController{},

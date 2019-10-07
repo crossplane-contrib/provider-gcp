@@ -97,11 +97,11 @@ func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, c
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
-		CloudsqlInstanceParameters: rs.SpecTemplate.CloudsqlInstanceParameters,
+		ForProvider: rs.SpecTemplate.ForProvider,
 	}
 
 	if pg.Spec.EngineVersion != "" {
-		spec.DatabaseVersion = translateVersion(pg.Spec.EngineVersion, v1alpha2.PostgresqlDBVersionPrefix)
+		spec.ForProvider.DatabaseVersion = translateVersion(pg.Spec.EngineVersion, v1alpha2.PostgresqlDBVersionPrefix)
 	}
 
 	// NOTE(hasheddan): consider moving defaulting to either CRD or managed reconciler level
@@ -180,11 +180,11 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
-		CloudsqlInstanceParameters: rs.SpecTemplate.CloudsqlInstanceParameters,
+		ForProvider: rs.SpecTemplate.ForProvider,
 	}
 
 	if my.Spec.EngineVersion != "" {
-		spec.DatabaseVersion = translateVersion(my.Spec.EngineVersion, v1alpha2.MysqlDBVersionPrefix)
+		spec.ForProvider.DatabaseVersion = translateVersion(my.Spec.EngineVersion, v1alpha2.MysqlDBVersionPrefix)
 	}
 
 	// NOTE(hasheddan): consider moving defaulting to either CRD or managed reconciler level
@@ -207,13 +207,7 @@ func translateVersion(version, versionPrefix string) string {
 }
 
 func checkEmptySpec(spec *v1alpha2.CloudsqlInstanceSpec) {
-	if spec.Labels == nil {
-		spec.Labels = map[string]string{}
-	}
-	if spec.AuthorizedNetworks == nil {
-		spec.AuthorizedNetworks = []string{}
-	}
-	if spec.StorageGB == 0 {
-		spec.StorageGB = v1alpha2.DefaultStorageGB
+	if spec.ForProvider.MaxDiskSize == 0 {
+		spec.ForProvider.MaxDiskSize = v1alpha2.DefaultStorageGB
 	}
 }
