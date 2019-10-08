@@ -40,8 +40,6 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	gcpcomputev1alpha2 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
-
 	. "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/fake"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gke"
@@ -152,7 +150,8 @@ func TestSyncErroredCluster(t *testing.T) {
 
 	expectedStatus := runtimev1alpha1.ConditionedStatus{}
 	expectedState := ClusterStateError
-	expectedStatus.SetConditions(runtimev1alpha1.ReconcileError(fmt.Errorf(erroredClusterErrorMessageFormat, gcpcomputev1alpha2.ClusterStateError, errorMessage)))
+	expectedStatus.SetConditions(runtimev1alpha1.UnavailableWithMessage(
+		fmt.Sprintf(erroredClusterErrorMessageFormat, ClusterStateError, errorMessage)))
 
 	rs, err := r._sync(tc, cl)
 	g.Expect(rs).To(Equal(resultRequeue))

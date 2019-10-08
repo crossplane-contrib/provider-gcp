@@ -196,7 +196,9 @@ func (r *Reconciler) _sync(instance *gcpcomputev1alpha2.GKECluster, client gke.C
 
 	if cluster.Status == gcpcomputev1alpha2.ClusterStateError {
 		instance.Status.State = gcpcomputev1alpha2.ClusterStateError
-		return r.fail(instance, fmt.Errorf(erroredClusterErrorMessageFormat, cluster.Status, cluster.StatusMessage))
+		instance.Status.SetConditions(runtimev1alpha1.UnavailableWithMessage(
+			fmt.Sprintf(erroredClusterErrorMessageFormat, cluster.Status, cluster.StatusMessage)))
+		return resultRequeue, r.Update(context.TODO(), instance)
 	}
 
 	if cluster.Status != gcpcomputev1alpha2.ClusterStateRunning {
