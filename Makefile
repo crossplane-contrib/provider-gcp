@@ -37,6 +37,9 @@ GO_SUBDIRS += cmd pkg apis
 # ====================================================================================
 # Setup Kubebuilder
 
+CRD_DIR=config/crd
+API_DIR=./apis/...
+
 -include build/makelib/kubebuilder.mk
 
 # ====================================================================================
@@ -50,7 +53,6 @@ GO_SUBDIRS += cmd pkg apis
 STACK_PACKAGE=stack-package
 export STACK_PACKAGE
 STACK_PACKAGE_REGISTRY=$(STACK_PACKAGE)/.registry
-CRD_DIR=config/crd
 STACK_PACKAGE_REGISTRY_SOURCE=config/stack/manifests
 
 DOCKER_REGISTRY = crossplane
@@ -71,14 +73,6 @@ fallthrough: submodules
 	@echo Initial setup complete. Running make again . . .
 	@make
 
-go.test.unit: $(KUBEBUILDER)
-
-# Generate manifests e.g. CRD, RBAC etc.
-manifests: vendor
-	@$(INFO) Generating CRD manifests
-	@rm -rf $(CRD_DIR)
-	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go crd:trivialVersions=true paths=./apis/... output:dir=$(CRD_DIR)
-	@$(OK) Generating CRD manifests
 
 # Generate a coverage report for cobertura applying exclusions on
 # - generated file
@@ -144,14 +138,13 @@ clean: clean-stack-package
 clean-stack-package:
 	@rm -rf $(STACK_PACKAGE)
 
-.PHONY: manifests cobertura reviewable submodules fallthrough test-integration run clean-stack-package build-stack-package
+.PHONY: cobertura reviewable submodules fallthrough test-integration run clean-stack-package build-stack-package
 
 # ====================================================================================
 # Special Targets
 
 define CROSSPLANE_MAKE_HELP
 Crossplane Targets:
-    manifests             Generate manifests e.g. CRD, RBAC etc.
     cobertura             Generate a coverage report for cobertura applying exclusions on generated files.
     reviewable            Ensure a PR is ready for review.
     submodules            Update the submodules, such as the common build scripts.
