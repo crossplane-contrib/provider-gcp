@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -199,15 +201,17 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 	return nil
 }
 
-func translateVersion(version, versionPrefix string) string {
-	if version == "" {
-		return ""
+func translateVersion(version, versionPrefix string) *string {
+	r := ""
+	if version != "" {
+		r = fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
 	}
-	return fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
+	return &r
 }
 
 func checkEmptySpec(spec *v1alpha2.CloudsqlInstanceSpec) {
-	if spec.ForProvider.MaxDiskSize == 0 {
-		spec.ForProvider.MaxDiskSize = v1alpha2.DefaultStorageGB
+	if gcp.Int64Value(spec.ForProvider.Settings.DataDiskSizeGb) == 0 {
+		def := v1alpha2.DefaultStorageGB
+		spec.ForProvider.Settings.DataDiskSizeGb = &def
 	}
 }

@@ -146,11 +146,11 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 		conn, err = c.getConnectionDetails(ctx, cr)
 		if err != nil {
 			return resource.ExternalObservation{ResourceExists: true, ResourceUpToDate: upToDate},
-			errors.Wrap(err, "cannot get connection details")
+				errors.Wrap(err, "cannot get connection details")
 		}
 		if err := c.updateRootCredentials(ctx, cr, string(conn[v1alpha1.ResourceCredentialsSecretPasswordKey])); err != nil {
 			return resource.ExternalObservation{ResourceExists: true, ResourceUpToDate: upToDate},
-			errors.Wrap(err, "cannot update root user credentials")
+				errors.Wrap(err, "cannot update root user credentials")
 		}
 	case v1alpha2.StateCreating:
 		cr.Status.SetConditions(v1alpha1.Creating())

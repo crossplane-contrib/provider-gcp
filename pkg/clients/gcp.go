@@ -209,6 +209,15 @@ func Int64Value(v *int64) int64 {
 	return *v
 }
 
+// BoolValue converts the supplied bool pointer to an bool, returning false if
+// the pointer is nil.
+func BoolValue(v *bool) bool {
+	if v == nil {
+		return false
+	}
+	return *v
+}
+
 // LateInitializeString initializes s, presumed to be an optional field of a
 // Kubernetes API object's spec per Kubernetes "late initialization" semantics.
 // s is returned unchanged if it is non-nil or from is the empty string,
@@ -233,4 +242,31 @@ func LateInitializeInt64(i *int64, from int64) *int64 {
 		return i
 	}
 	return &from
+}
+
+// LateInitializeBool returns b unchanged if it is non-nil or from is false,
+// otherwise a pointer to from is returned.
+func LateInitializeBool(b *bool, from bool) *bool {
+	if b != nil || !from {
+		return b
+	}
+	return &from
+}
+
+// LateInitializeStringSlice returns s unchanged if it has any elements or from has
+// no elements, otherwise from is returned.
+func LateInitializeStringSlice(s []string, from []string) []string {
+	if len(s) != 0 || len(from) == 0 {
+		return s
+	}
+	return from
+}
+
+// LateInitializeStringMap returns s unchanged if it has any elements or from has
+// no elements, otherwise from is returned.
+func LateInitializeStringMap(s map[string]string, from map[string]string) map[string]string {
+	if len(s) != 0 || len(from) == 0 {
+		return s
+	}
+	return from
 }

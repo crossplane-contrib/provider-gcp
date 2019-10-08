@@ -19,6 +19,8 @@ package v1alpha2
 import (
 	"strings"
 
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -44,8 +46,8 @@ const (
 	PostgresqlDBVersionPrefix = "POSTGRES"
 	PostgresqlDefaultUser     = "postgres"
 
-	PasswordLength   = 20
-	DefaultStorageGB = 10
+	PasswordLength         = 20
+	DefaultStorageGB int64 = 10
 
 	PrivateIPType = "PRIVATE"
 	PublicIPType  = "PRIMARY"
@@ -56,6 +58,15 @@ const (
 
 // CloudsqlInstanceObservation is used to show the observed state of the Cloud SQL resource on GCP.
 type CloudsqlInstanceObservation struct {
+	// BackendType: FIRST_GEN: First Generation instance. MySQL
+	// only.
+	// SECOND_GEN: Second Generation instance or PostgreSQL
+	// instance.
+	// EXTERNAL: A database server that is not managed by Google.
+	// This property is read-only; use the tier property in the settings
+	// object to determine the database type and Second or First Generation.
+	BackendType string `json:"backendType,omitempty"`
+
 	// CurrentDiskSize: The current disk usage of the instance in bytes.
 	// This property has been deprecated. Users should use the
 	// "cloudsql.googleapis.com/database/disk/bytes_used" metric in Cloud
@@ -94,6 +105,17 @@ type CloudsqlInstanceObservation struct {
 	// SelfLink: The URI of this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
+	// ServiceAccountEmailAddress: The service account email address
+	// assigned to the instance. This property is applicable only to Second
+	// Generation instances.
+	// +optional
+	ServiceAccountEmailAddress string `json:"serviceAccountEmailAddress,omitempty"`
+
+	// ServerCaCert: SSL configuration.
+	// TODO(muvaf): This can be represented as standalone managed resource.
+	// +optional
+	ServerCaCert *SslCert `json:"serverCaCert,omitempty"`
+
 	// State: The current serving state of the Cloud SQL instance. This can
 	// be one of the following.
 	// RUNNABLE: The instance is running, or is ready to run when
@@ -117,43 +139,59 @@ type CloudsqlInstanceObservation struct {
 // CloudsqlInstanceParameters define the desired state of a Google CloudSQL
 // instance.
 type CloudsqlInstanceParameters struct {
-	// BackendType: FIRST_GEN: First Generation instance. MySQL
-	// only.
-	// SECOND_GEN: Second Generation instance or PostgreSQL
-	// instance.
-	// EXTERNAL: A database server that is not managed by Google.
-	// This property is read-only; use the tier property in the settings
-	// object to determine the database type and Second or First Generation.
-	BackendType string `json:"backendType,omitempty"`
+	// Region: The geographical region. Can be us-central (FIRST_GEN
+	// instances only), us-central1 (SECOND_GEN instances only), asia-east1
+	// or europe-west1. Defaults to us-central or us-central1 depending on
+	// the instance type (First Generation or Second Generation). The region
+	// can not be changed after instance creation.
+	// +immutable
+	Region string `json:"region"`
 
-	// ConnectionName: Connection name of the Cloud SQL instance used in
-	// connection strings.
-	ConnectionName string `json:"connectionName,omitempty"`
+	// Settings: The user settings.
+	Settings Settings `json:"settings"`
 
 	// DatabaseVersion: The database engine type and version. The
 	// databaseVersion field can not be changed after instance creation.
 	// MySQL Second Generation instances: MYSQL_5_7 (default) or MYSQL_5_6.
 	// PostgreSQL instances: POSTGRES_9_6 (default) or POSTGRES_11 Beta.
 	// MySQL First Generation instances: MYSQL_5_6 (default) or MYSQL_5_5
-	DatabaseVersion string `json:"databaseVersion,omitempty"`
+	// +immutable
+	// +optional
+	DatabaseVersion *string `json:"databaseVersion,omitempty"`
+
+	// MasterInstanceName: The name of the instance which will act as master
+	// in the replication setup.
+	// +optional
+	// +immutable
+	MasterInstanceName *string `json:"masterInstanceName,omitempty"`
+
+	// ReplicaConfiguration: Configuration specific to failover replicas and
+	// read replicas.
+	// +optional
+	ReplicaConfiguration *ReplicaConfiguration `json:"replicaConfiguration,omitempty"`
 
 	// DiskEncryptionConfiguration: Disk encryption configuration specific
 	// to an instance. Applies only to Second Generation instances.
+	// +optional
+	// +immutable
 	DiskEncryptionConfiguration *DiskEncryptionConfiguration `json:"diskEncryptionConfiguration,omitempty"`
 
 	// Etag: This field is deprecated and will be removed from a future
 	// version of the API. Use the settings.settingsVersion field instead.
-	Etag string `json:"etag,omitempty"`
+	// +optional
+	Etag *string `json:"etag,omitempty"`
 
 	// FailoverReplica: The name and status of the failover replica. This
 	// property is applicable only to Second Generation instances.
+	// +optional
 	FailoverReplica *DatabaseInstanceFailoverReplica `json:"failoverReplica,omitempty"`
 
 	// GceZone: The Compute Engine zone that the instance is currently
 	// serving from. This value could be different from the zone that was
 	// specified when the instance was created if the instance has failed
 	// over to its secondary zone.
-	GceZone string `json:"gceZone,omitempty"`
+	// +optional
+	GceZone *string `json:"gceZone,omitempty"`
 
 	// InstanceType: The instance type. This can be one of the
 	// following.
@@ -163,55 +201,42 @@ type CloudsqlInstanceParameters struct {
 	// premises.
 	// READ_REPLICA_INSTANCE: A Cloud SQL instance configured as a
 	// read-replica.
-	InstanceType string `json:"instanceType,omitempty"`
-
-	// MasterInstanceName: The name of the instance which will act as master
-	// in the replication setup.
-	MasterInstanceName string `json:"masterInstanceName,omitempty"`
+	// +optional
+	// +immutable
+	InstanceType *string `json:"instanceType,omitempty"`
 
 	// MaxDiskSize: The maximum disk size of the instance in bytes.
-	MaxDiskSize int64 `json:"maxDiskSize,omitempty"`
+	// +optional
+	MaxDiskSize *int64 `json:"maxDiskSize,omitempty"`
 
 	// OnPremisesConfiguration: Configuration specific to on-premises
 	// instances.
+	// +optional
 	OnPremisesConfiguration *OnPremisesConfiguration `json:"onPremisesConfiguration,omitempty"`
 
-	// Region: The geographical region. Can be us-central (FIRST_GEN
-	// instances only), us-central1 (SECOND_GEN instances only), asia-east1
-	// or europe-west1. Defaults to us-central or us-central1 depending on
-	// the instance type (First Generation or Second Generation). The region
-	// can not be changed after instance creation.
-	Region string `json:"region,omitempty"`
-
-	// ReplicaConfiguration: Configuration specific to failover replicas and
-	// read replicas.
-	ReplicaConfiguration *ReplicaConfiguration `json:"replicaConfiguration,omitempty"`
-
 	// ReplicaNames: The replicas of the instance.
+	// +optional
 	ReplicaNames []string `json:"replicaNames,omitempty"`
 
 	// RootPassword: Initial root password. Use only on creation.
-	RootPassword string `json:"rootPassword,omitempty"`
-
-	// ServerCaCert: SSL configuration.
-	// TODO(muvaf): This can be represented as standalone managed resource.
-	ServerCaCert *SslCert `json:"serverCaCert,omitempty"`
-
-	// ServiceAccountEmailAddress: The service account email address
-	// assigned to the instance. This property is applicable only to Second
-	// Generation instances.
-	ServiceAccountEmailAddress string `json:"serviceAccountEmailAddress,omitempty"`
-
-	// Settings: The user settings.
-	Settings *Settings `json:"settings,omitempty"`
+	// +optional
+	RootPassword *string `json:"rootPassword,omitempty"`
 
 	// SuspensionReason: If the instance state is SUSPENDED, the reason for
 	// the suspension.
+	// +optional
 	SuspensionReason []string `json:"suspensionReason,omitempty"`
 }
 
 // Settings is Cloud SQL database instance settings.
 type Settings struct {
+	// Tier: The tier (or machine type) for this instance, for example
+	// db-n1-standard-1 (MySQL instances) or db-custom-1-3840 (PostgreSQL
+	// instances). For MySQL instances, this property determines whether the
+	// instance is First or Second Generation. For more information, see
+	// Instance Settings.
+	Tier string `json:"tier"`
+
 	// ActivationPolicy: The activation policy specifies when the instance
 	// is activated; it is applicable only when the instance state is
 	// RUNNABLE. Valid values:
@@ -224,10 +249,12 @@ type Settings struct {
 	// with PER_USE pricing turn off after 15 minutes of inactivity.
 	// Instances with PER_PACKAGE pricing turn off after 12 hours of
 	// inactivity.
-	ActivationPolicy string `json:"activationPolicy,omitempty"`
+	// +optional
+	ActivationPolicy *string `json:"activationPolicy,omitempty"`
 
 	// AuthorizedGaeApplications: The App Engine app IDs that can access
 	// this instance. First Generation instances only.
+	// +optional
 	AuthorizedGaeApplications []string `json:"authorizedGaeApplications,omitempty"`
 
 	// AvailabilityType: Availability type (PostgreSQL instances only).
@@ -238,81 +265,89 @@ type Settings struct {
 	// region (it is highly available).
 	// For more information, see Overview of the High Availability
 	// Configuration.
-	AvailabilityType string `json:"availabilityType,omitempty"`
-
-	// BackupConfiguration is the daily backup configuration for the instance.
-	BackupConfiguration *BackupConfiguration `json:"backupConfiguration,omitempty"`
+	// +optional
+	AvailabilityType *string `json:"availabilityType,omitempty"`
 
 	// CrashSafeReplicationEnabled: Configuration specific to read replica
 	// instances. Indicates whether database flags for crash-safe
 	// replication are enabled. This property is only applicable to First
 	// Generation instances.
-	CrashSafeReplicationEnabled bool `json:"crashSafeReplicationEnabled,omitempty"`
+	// +optional
+	CrashSafeReplicationEnabled *bool `json:"crashSafeReplicationEnabled,omitempty"`
 
-	// DataDiskSizeGb: The size of data disk, in GB. The data disk size
-	// minimum is 10GB. Not used for First Generation instances.
-	DataDiskSizeGb int64 `json:"dataDiskSizeGb,omitempty"`
+	// StorageAutoResize: Configuration to increase storage size
+	// automatically. The default value is true. Not used for First
+	// Generation instances.
+	// +optional
+	StorageAutoResize *bool `json:"storageAutoResize,omitempty"`
 
 	// DataDiskType: The type of data disk: PD_SSD (default) or PD_HDD. Not
 	// used for First Generation instances.
-	DataDiskType string `json:"dataDiskType,omitempty"`
+	// +optional
+	DataDiskType *string `json:"dataDiskType,omitempty"`
+
+	// PricingPlan: The pricing plan for this instance. This can be either
+	// PER_USE or PACKAGE. Only PER_USE is supported for Second Generation
+	// instances.
+	// +optional
+	PricingPlan *string `json:"pricingPlan,omitempty"`
+
+	// ReplicationType: The type of replication this instance uses. This can
+	// be either ASYNCHRONOUS or SYNCHRONOUS. This property is only
+	// applicable to First Generation instances.
+	// +optional
+	ReplicationType *string `json:"replicationType,omitempty"`
+
+	// UserLabels: User-provided labels, represented as a dictionary where
+	// each label is a single key value pair.
+	// +optional
+	UserLabels map[string]string `json:"userLabels,omitempty"`
 
 	// DatabaseFlags is the array of database flags passed to the instance at
 	// startup.
+	// +optional
 	DatabaseFlags []*DatabaseFlags `json:"databaseFlags,omitempty"`
 
-	// DatabaseReplicationEnabled: Configuration specific to read replica
-	// instances. Indicates whether replication is enabled or not.
-	DatabaseReplicationEnabled bool `json:"databaseReplicationEnabled,omitempty"`
+	// BackupConfiguration is the daily backup configuration for the instance.
+	// +optional
+	BackupConfiguration *BackupConfiguration `json:"backupConfiguration,omitempty"`
 
 	// IPConfiguration: The settings for IP Management. This allows to
 	// enable or disable the instance IP and manage which external networks
 	// can connect to the instance. The IPv4 address cannot be disabled for
 	// Second Generation instances.
+	// +optional
 	IPConfiguration *IPConfiguration `json:"ipConfiguration,omitempty"`
 
 	// LocationPreference is the location preference settings. This allows the
 	// instance to be located as near as possible to either an App Engine
 	// app or Compute Engine zone for better performance. App Engine
 	// co-location is only applicable to First Generation instances.
+	// +optional
 	LocationPreference *LocationPreference `json:"locationPreference,omitempty"`
 
 	// MaintenanceWindow: The maintenance window for this instance. This
 	// specifies when the instance can be restarted for maintenance
 	// purposes. Not used for First Generation instances.
+	// +optional
 	MaintenanceWindow *MaintenanceWindow `json:"maintenanceWindow,omitempty"`
 
-	// PricingPlan: The pricing plan for this instance. This can be either
-	// PER_USE or PACKAGE. Only PER_USE is supported for Second Generation
-	// instances.
-	PricingPlan string `json:"pricingPlan,omitempty"`
+	// DataDiskSizeGb: The size of data disk, in GB. The data disk size
+	// minimum is 10GB. Not used for First Generation instances.
+	// +optional
+	DataDiskSizeGb *int64 `json:"dataDiskSizeGb,omitempty"`
 
-	// ReplicationType: The type of replication this instance uses. This can
-	// be either ASYNCHRONOUS or SYNCHRONOUS. This property is only
-	// applicable to First Generation instances.
-	ReplicationType string `json:"replicationType,omitempty"`
-
-	// StorageAutoResize: Configuration to increase storage size
-	// automatically. The default value is true. Not used for First
-	// Generation instances.
-	StorageAutoResize *bool `json:"storageAutoResize,omitempty"`
+	// DatabaseReplicationEnabled: Configuration specific to read replica
+	// instances. Indicates whether replication is enabled or not.
+	// +optional
+	DatabaseReplicationEnabled *bool `json:"databaseReplicationEnabled,omitempty"`
 
 	// StorageAutoResizeLimit: The maximum size to which storage capacity
 	// can be automatically increased. The default value is 0, which
 	// specifies that there is no limit. Not used for First Generation
 	// instances.
-	StorageAutoResizeLimit int64 `json:"storageAutoResizeLimit,omitempty"`
-
-	// Tier: The tier (or machine type) for this instance, for example
-	// db-n1-standard-1 (MySQL instances) or db-custom-1-3840 (PostgreSQL
-	// instances). For MySQL instances, this property determines whether the
-	// instance is First or Second Generation. For more information, see
-	// Instance Settings.
-	Tier string `json:"tier,omitempty"`
-
-	// UserLabels: User-provided labels, represented as a dictionary where
-	// each label is a single key value pair.
-	UserLabels map[string]string `json:"userLabels,omitempty"`
+	// +optional
+	StorageAutoResizeLimit *int64 `json:"storageAutoResizeLimit,omitempty"`
 }
 
 // LocationPreference is preferred location. This specifies where a Cloud
@@ -324,46 +359,56 @@ type Settings struct {
 type LocationPreference struct {
 	// FollowGaeApplication: The AppEngine application to follow, it must be
 	// in the same region as the Cloud SQL instance.
-	FollowGaeApplication string `json:"followGaeApplication,omitempty"`
+	// +optional
+	FollowGaeApplication *string `json:"followGaeApplication,omitempty"`
 
 	// Zone: The preferred Compute Engine zone (e.g. us-central1-a,
 	// us-central1-b, etc.).
-	Zone string `json:"zone,omitempty"`
+	// +optional
+	Zone *string `json:"zone,omitempty"`
 }
 
 // MaintenanceWindow specifies when a v2 Cloud SQL instance should preferably
 // be restarted for system maintenance purposes.
 type MaintenanceWindow struct {
 	// Day: day of week (1-7), starting on Monday.
-	Day int64 `json:"day,omitempty"`
+	// +optional
+	Day *int64 `json:"day,omitempty"`
 
 	// Hour: hour of day - 0 to 23.
-	Hour int64 `json:"hour,omitempty"`
+	// +optional
+	Hour *int64 `json:"hour,omitempty"`
 
 	// UpdateTrack: Maintenance timing setting: canary (Earlier) or stable
 	// (Later).
 	//  Learn more.
-	UpdateTrack string `json:"updateTrack,omitempty"`
+	// +optional
+	UpdateTrack *string `json:"updateTrack,omitempty"`
 }
 
 // BackupConfiguration is database instance backup configuration.
 type BackupConfiguration struct {
 	// BinaryLogEnabled: Whether binary log is enabled. If backup
 	// configuration is disabled, binary log must be disabled as well.
-	BinaryLogEnabled bool `json:"binaryLogEnabled,omitempty"`
+	// +optional
+	BinaryLogEnabled *bool `json:"binaryLogEnabled,omitempty"`
 
 	// Enabled: Whether this configuration is enabled.
-	Enabled bool `json:"enabled,omitempty"`
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// Location: The location of the backup.
-	Location string `json:"location,omitempty"`
+	// +optional
+	Location *string `json:"location,omitempty"`
 
 	// ReplicationLogArchivingEnabled: Reserved for future use.
-	ReplicationLogArchivingEnabled bool `json:"replicationLogArchivingEnabled,omitempty"`
+	// +optional
+	ReplicationLogArchivingEnabled *bool `json:"replicationLogArchivingEnabled,omitempty"`
 
 	// StartTime: Start time for the daily backup configuration in UTC
 	// timezone in the 24 hour format - HH:MM.
-	StartTime string `json:"startTime,omitempty"`
+	// +optional
+	StartTime *string `json:"startTime,omitempty"`
 }
 
 // DatabaseFlags are database flags for Cloud SQL instances.
@@ -373,12 +418,12 @@ type DatabaseFlags struct {
 	// MySQL. Flags should be specified with underscores, not hyphens. For
 	// more information, see Configuring Database Flags in the Cloud SQL
 	// documentation.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Value: The value of the flag. Booleans should be set to on for true
 	// and off for false. This field must be omitted if the flag doesn't
 	// take a value.
-	Value string `json:"value,omitempty"`
+	Value string `json:"value"`
 }
 
 // IPConfiguration is the IP Management configuration.
@@ -386,66 +431,78 @@ type IPConfiguration struct {
 	// AuthorizedNetworks: The list of external networks that are allowed to
 	// connect to the instance using the IP. In CIDR notation, also known as
 	// 'slash' notation (e.g. 192.168.100.0/24).
+	// +optional
 	AuthorizedNetworks []*ACLEntry `json:"authorizedNetworks,omitempty"`
 
 	// Ipv4Enabled: Whether the instance should be assigned an IP address or
 	// not.
-	Ipv4Enabled bool `json:"ipv4Enabled,omitempty"`
+	// +optional
+	Ipv4Enabled *bool `json:"ipv4Enabled,omitempty"`
 
 	// PrivateNetwork: The resource link for the VPC network from which the
 	// Cloud SQL instance is accessible for private IP. For example,
 	// /projects/myProject/global/networks/default. This setting can be
 	// updated, but it cannot be removed after it is set.
-	PrivateNetwork string `json:"privateNetwork,omitempty"`
+	// +optional
+	PrivateNetwork *string `json:"privateNetwork,omitempty"`
 
 	// RequireSsl: Whether SSL connections over IP should be enforced or
 	// not.
-	RequireSsl bool `json:"requireSsl,omitempty"`
+	// +optional
+	RequireSsl *bool `json:"requireSsl,omitempty"`
 }
 
 // ACLEntry is an entry for an Access Control list.
 type ACLEntry struct {
 	// ExpirationTime: The time when this access control entry expires in
 	// RFC 3339 format, for example 2012-11-15T16:19:00.094Z.
-	ExpirationTime string `json:"expirationTime,omitempty"`
+	// +optional
+	ExpirationTime *string `json:"expirationTime,omitempty"`
 
 	// Name: An optional label to identify this entry.
-	Name string `json:"name,omitempty"`
+	// +optional
+	Name *string `json:"name,omitempty"`
 
 	// Value: The whitelisted value for the access control list.
-	Value string `json:"value,omitempty"`
+	// +optional
+	Value *string `json:"value,omitempty"`
 }
 
 // SslCert is th SslCerts Resource
 type SslCert struct {
 	// Cert: PEM representation.
-	Cert string `json:"cert,omitempty"`
+	// +optional
+	Cert *string `json:"cert,omitempty"`
 
 	// CertSerialNumber: Serial number, as extracted from the certificate.
-	CertSerialNumber string `json:"certSerialNumber,omitempty"`
+	// +optional
+	CertSerialNumber *string `json:"certSerialNumber,omitempty"`
 
 	// CommonName: User supplied name. Constrained to [a-zA-Z.-_ ]+.
-	CommonName string `json:"commonName,omitempty"`
+	// +optional
+	CommonName *string `json:"commonName,omitempty"`
 
 	// CreateTime: The time when the certificate was created in RFC 3339
 	// format, for example 2012-11-15T16:19:00.094Z
-	CreateTime string `json:"createTime,omitempty"`
+	// +optional
+	CreateTime *string `json:"createTime,omitempty"`
 
 	// ExpirationTime: The time when the certificate expires in RFC 3339
 	// format, for example 2012-11-15T16:19:00.094Z.
-	ExpirationTime string `json:"expirationTime,omitempty"`
+	// +optional
+	ExpirationTime *string `json:"expirationTime,omitempty"`
 
 	// Instance: Name of the database instance.
-	Instance string `json:"instance,omitempty"`
-
-	// Kind: This is always sql#sslCert.
-	Kind string `json:"kind,omitempty"`
+	// +optional
+	Instance *string `json:"instance,omitempty"`
 
 	// SelfLink: The URI of this resource.
-	SelfLink string `json:"selfLink,omitempty"`
+	// +optional
+	SelfLink *string `json:"selfLink,omitempty"`
 
 	// Sha1Fingerprint: Sha1 Fingerprint.
-	Sha1Fingerprint string `json:"sha1Fingerprint,omitempty"`
+	// +optional
+	Sha1Fingerprint *string `json:"sha1Fingerprint,omitempty"`
 }
 
 // ReplicaConfiguration is Read-replica configuration for connecting to
@@ -457,7 +514,8 @@ type ReplicaConfiguration struct {
 	// be promoted as the new master instance.
 	// Only one replica can be specified as failover target, and the replica
 	// has to be in different zone with the master instance.
-	FailoverTarget bool `json:"failoverTarget,omitempty"`
+	// +optional
+	FailoverTarget *bool `json:"failoverTarget,omitempty"`
 
 	// MySQLReplicaConfiguration is MySQL specific configuration when
 	// replicating from a MySQL on-premises master. Replication
@@ -466,6 +524,7 @@ type ReplicaConfiguration struct {
 	// configuration information is used only to set up the replication
 	// connection and is stored by MySQL in a file named master.info in the
 	// data directory.
+	// +optional
 	MySQLReplicaConfiguration *MySQLReplicaConfiguration `json:"mysqlReplicaConfiguration,omitempty"`
 }
 
@@ -474,19 +533,23 @@ type ReplicaConfiguration struct {
 type MySQLReplicaConfiguration struct {
 	// CaCertificate: PEM representation of the trusted CA's x509
 	// certificate.
-	CaCertificate string `json:"caCertificate,omitempty"`
+	// +optional
+	CaCertificate *string `json:"caCertificate,omitempty"`
 
 	// ClientCertificate: PEM representation of the slave's x509
 	// certificate.
-	ClientCertificate string `json:"clientCertificate,omitempty"`
+	// +optional
+	ClientCertificate *string `json:"clientCertificate,omitempty"`
 
 	// ClientKey: PEM representation of the slave's private key. The
 	// corresponding public key is encoded in the client's certificate.
-	ClientKey string `json:"clientKey,omitempty"`
+	// +optional
+	ClientKey *string `json:"clientKey,omitempty"`
 
 	// ConnectRetryInterval: Seconds to wait between connect retries.
 	// MySQL's default is 60 seconds.
-	ConnectRetryInterval int64 `json:"connectRetryInterval,omitempty"`
+	// +optional
+	ConnectRetryInterval *int64 `json:"connectRetryInterval,omitempty"`
 
 	// DumpFilePath: Path to a SQL dump file in Google Cloud Storage from
 	// which the slave instance is to be created. The URI is in the form
@@ -494,31 +557,37 @@ type MySQLReplicaConfiguration struct {
 	// supported. Dumps should have the binlog co-ordinates from which
 	// replication should begin. This can be accomplished by setting
 	// --master-data to 1 when using mysqldump.
-	DumpFilePath string `json:"dumpFilePath,omitempty"`
+	// +optional
+	DumpFilePath *string `json:"dumpFilePath,omitempty"`
 
 	// MasterHeartbeatPeriod: Interval in milliseconds between replication
 	// heartbeats.
-	MasterHeartbeatPeriod int64 `json:"masterHeartbeatPeriod,omitempty"`
+	// +optional
+	MasterHeartbeatPeriod *int64 `json:"masterHeartbeatPeriod,omitempty"`
 
 	// Password: The password for the replication connection.
-	Password string `json:"password,omitempty"`
+	// +optional
+	Password *string `json:"password,omitempty"`
 
 	// SslCipher is A list of permissible ciphers to use for SSL encryption.
-	SslCipher string `json:"sslCipher,omitempty"`
+	// +optional
+	SslCipher *string `json:"sslCipher,omitempty"`
 
 	// Username: The username for the replication connection.
-	Username string `json:"username,omitempty"`
+	// +optional
+	Username *string `json:"username,omitempty"`
 
 	// VerifyServerCertificate: Whether or not to check the master's Common
 	// Name value in the certificate that it sends during the SSL handshake.
-	VerifyServerCertificate bool `json:"verifyServerCertificate,omitempty"`
+	// +optional
+	VerifyServerCertificate *bool `json:"verifyServerCertificate,omitempty"`
 }
 
 // OnPremisesConfiguration is on-premises instance configuration.
 type OnPremisesConfiguration struct {
 	// HostPort: The host and port of the on-premises instance in host:port
 	// format
-	HostPort string `json:"hostPort,omitempty"`
+	HostPort string `json:"hostPort"`
 }
 
 // IPMapping is database instance IP Mapping.
@@ -542,7 +611,7 @@ type IPMapping struct {
 // DiskEncryptionConfiguration is disk encryption configuration.
 type DiskEncryptionConfiguration struct {
 	// KmsKeyName: KMS key resource name
-	KmsKeyName string `json:"kmsKeyName,omitempty"`
+	KmsKeyName string `json:"kmsKeyName"`
 }
 
 // DiskEncryptionStatus is disk encryption status.
@@ -559,13 +628,15 @@ type DatabaseInstanceFailoverReplica struct {
 	// Available: The availability status of the failover replica. A false
 	// status indicates that the failover replica is out of sync. The master
 	// can only failover to the falover replica when the status is true.
-	Available bool `json:"available,omitempty"`
+	// +optional
+	Available *bool `json:"available,omitempty"`
 
 	// Name: The name of the failover replica. If specified at instance
 	// creation, a failover replica is created for the instance. The name
 	// doesn't include the project ID. This property is applicable only to
 	// Second Generation instances.
-	Name string `json:"name,omitempty"`
+	// +optional
+	Name *string `json:"name,omitempty"`
 }
 
 // A CloudsqlInstanceSpec defines the desired state of a CloudsqlInstance.
@@ -614,7 +685,7 @@ type CloudsqlInstanceList struct {
 
 // DatabaseUserName returns default database user name base on database version
 func (i *CloudsqlInstance) DatabaseUserName() string {
-	if strings.HasPrefix(i.Spec.ForProvider.DatabaseVersion, PostgresqlDBVersionPrefix) {
+	if strings.HasPrefix(gcp.StringValue(i.Spec.ForProvider.DatabaseVersion), PostgresqlDBVersionPrefix) {
 		return PostgresqlDefaultUser
 	}
 	return MysqlDefaultUser

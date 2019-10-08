@@ -20,25 +20,23 @@ import (
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
 // GenerateDatabaseInstance generates *sqladmin.DatabaseInstance instance from CloudsqlInstanceParameters.
 func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
 	db := &sqladmin.DatabaseInstance{
-		BackendType:                in.BackendType,
-		ConnectionName:             in.ConnectionName,
-		DatabaseVersion:            in.DatabaseVersion,
-		Etag:                       in.Etag,
-		GceZone:                    in.GceZone,
-		InstanceType:               in.InstanceType,
-		MasterInstanceName:         in.MasterInstanceName,
-		MaxDiskSize:                in.MaxDiskSize,
-		Name:                       name,
-		Region:                     in.Region,
-		ReplicaNames:               in.ReplicaNames,
-		RootPassword:               in.RootPassword,
-		ServiceAccountEmailAddress: in.ServiceAccountEmailAddress,
-		SuspensionReason:           in.SuspensionReason,
+		DatabaseVersion:    gcp.StringValue(in.DatabaseVersion),
+		Etag:               gcp.StringValue(in.Etag),
+		GceZone:            gcp.StringValue(in.GceZone),
+		InstanceType:       gcp.StringValue(in.InstanceType),
+		MasterInstanceName: gcp.StringValue(in.MasterInstanceName),
+		MaxDiskSize:        gcp.Int64Value(in.MaxDiskSize),
+		Name:               name,
+		Region:             in.Region,
+		ReplicaNames:       in.ReplicaNames,
+		RootPassword:       gcp.StringValue(in.RootPassword),
+		SuspensionReason:   in.SuspensionReason,
 	}
 	if in.DiskEncryptionConfiguration != nil {
 		db.DiskEncryptionConfiguration = &sqladmin.DiskEncryptionConfiguration{
@@ -47,7 +45,7 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 	}
 	if in.FailoverReplica != nil {
 		db.FailoverReplica = &sqladmin.DatabaseInstanceFailoverReplica{
-			Name: in.FailoverReplica.Name,
+			Name: gcp.StringValue(in.FailoverReplica.Name),
 		}
 	}
 	if in.OnPremisesConfiguration != nil {
@@ -57,78 +55,65 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 	}
 	if in.ReplicaConfiguration != nil {
 		db.ReplicaConfiguration = &sqladmin.ReplicaConfiguration{
-			FailoverTarget: in.ReplicaConfiguration.FailoverTarget,
+			FailoverTarget: gcp.BoolValue(in.ReplicaConfiguration.FailoverTarget),
 		}
 		if in.ReplicaConfiguration.MySQLReplicaConfiguration != nil {
 			db.ReplicaConfiguration.MysqlReplicaConfiguration = &sqladmin.MySqlReplicaConfiguration{
-				CaCertificate:           in.ReplicaConfiguration.MySQLReplicaConfiguration.CaCertificate,
-				ClientCertificate:       in.ReplicaConfiguration.MySQLReplicaConfiguration.ClientCertificate,
-				ClientKey:               in.ReplicaConfiguration.MySQLReplicaConfiguration.ClientKey,
-				ConnectRetryInterval:    in.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval,
-				DumpFilePath:            in.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath,
-				MasterHeartbeatPeriod:   in.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod,
-				Password:                in.ReplicaConfiguration.MySQLReplicaConfiguration.Password,
-				SslCipher:               in.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher,
-				Username:                in.ReplicaConfiguration.MySQLReplicaConfiguration.Username,
-				VerifyServerCertificate: in.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate,
+				CaCertificate:           gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.CaCertificate),
+				ClientCertificate:       gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.ClientCertificate),
+				ClientKey:               gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.ClientKey),
+				ConnectRetryInterval:    gcp.Int64Value(in.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval),
+				DumpFilePath:            gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath),
+				MasterHeartbeatPeriod:   gcp.Int64Value(in.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod),
+				Password:                gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.Password),
+				SslCipher:               gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher),
+				Username:                gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.Username),
+				VerifyServerCertificate: gcp.BoolValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate),
 			}
 		}
 	}
-	if in.ServerCaCert != nil {
-		db.ServerCaCert = &sqladmin.SslCert{
-			Cert:             in.ServerCaCert.Cert,
-			CertSerialNumber: in.ServerCaCert.CertSerialNumber,
-			CommonName:       in.ServerCaCert.CommonName,
-			CreateTime:       in.ServerCaCert.CreateTime,
-			ExpirationTime:   in.ServerCaCert.ExpirationTime,
-			Instance:         in.ServerCaCert.Instance,
-			Sha1Fingerprint:  in.ServerCaCert.Sha1Fingerprint,
+	db.Settings = &sqladmin.Settings{
+		ActivationPolicy:            gcp.StringValue(in.Settings.ActivationPolicy),
+		AuthorizedGaeApplications:   in.Settings.AuthorizedGaeApplications,
+		AvailabilityType:            gcp.StringValue(in.Settings.AvailabilityType),
+		CrashSafeReplicationEnabled: gcp.BoolValue(in.Settings.CrashSafeReplicationEnabled),
+		DataDiskSizeGb:              gcp.Int64Value(in.Settings.DataDiskSizeGb),
+		DataDiskType:                gcp.StringValue(in.Settings.DataDiskType),
+		DatabaseReplicationEnabled:  gcp.BoolValue(in.Settings.DatabaseReplicationEnabled),
+		PricingPlan:                 gcp.StringValue(in.Settings.PricingPlan),
+		ReplicationType:             gcp.StringValue(in.Settings.ReplicationType),
+		StorageAutoResize:           in.Settings.StorageAutoResize,
+		StorageAutoResizeLimit:      gcp.Int64Value(in.Settings.StorageAutoResizeLimit),
+		Tier:                        in.Settings.Tier,
+		UserLabels:                  in.Settings.UserLabels,
+	}
+	if in.Settings.BackupConfiguration != nil {
+		db.Settings.BackupConfiguration = &sqladmin.BackupConfiguration{
+			BinaryLogEnabled:               gcp.BoolValue(in.Settings.BackupConfiguration.BinaryLogEnabled),
+			Enabled:                        gcp.BoolValue(in.Settings.BackupConfiguration.Enabled),
+			Location:                       gcp.StringValue(in.Settings.BackupConfiguration.Location),
+			ReplicationLogArchivingEnabled: gcp.BoolValue(in.Settings.BackupConfiguration.ReplicationLogArchivingEnabled),
+			StartTime:                      gcp.StringValue(in.Settings.BackupConfiguration.StartTime),
 		}
 	}
-	if in.Settings != nil {
-		db.Settings = &sqladmin.Settings{
-			ActivationPolicy:            in.Settings.ActivationPolicy,
-			AuthorizedGaeApplications:   in.Settings.AuthorizedGaeApplications,
-			AvailabilityType:            in.Settings.AvailabilityType,
-			CrashSafeReplicationEnabled: in.Settings.CrashSafeReplicationEnabled,
-			DataDiskSizeGb:              in.Settings.DataDiskSizeGb,
-			DataDiskType:                in.Settings.DataDiskType,
-			DatabaseReplicationEnabled:  in.Settings.DatabaseReplicationEnabled,
-			PricingPlan:                 in.Settings.PricingPlan,
-			ReplicationType:             in.Settings.ReplicationType,
-			StorageAutoResize:           in.Settings.StorageAutoResize,
-			StorageAutoResizeLimit:      in.Settings.StorageAutoResizeLimit,
-			Tier:                        in.Settings.Tier,
-			UserLabels:                  in.Settings.UserLabels,
+	if in.Settings.IPConfiguration != nil {
+		db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
+			Ipv4Enabled:    gcp.BoolValue(in.Settings.IPConfiguration.Ipv4Enabled),
+			PrivateNetwork: gcp.StringValue(in.Settings.IPConfiguration.PrivateNetwork),
+			RequireSsl:     gcp.BoolValue(in.Settings.IPConfiguration.RequireSsl),
 		}
-		if in.Settings.BackupConfiguration != nil {
-			db.Settings.BackupConfiguration = &sqladmin.BackupConfiguration{
-				BinaryLogEnabled:               in.Settings.BackupConfiguration.BinaryLogEnabled,
-				Enabled:                        in.Settings.BackupConfiguration.Enabled,
-				Location:                       in.Settings.BackupConfiguration.Location,
-				ReplicationLogArchivingEnabled: in.Settings.BackupConfiguration.ReplicationLogArchivingEnabled,
-				StartTime:                      in.Settings.BackupConfiguration.StartTime,
-			}
+	}
+	if in.Settings.LocationPreference != nil {
+		db.Settings.LocationPreference = &sqladmin.LocationPreference{
+			FollowGaeApplication: gcp.StringValue(in.Settings.LocationPreference.FollowGaeApplication),
+			Zone:                 gcp.StringValue(in.Settings.LocationPreference.Zone),
 		}
-		if in.Settings.IPConfiguration != nil {
-			db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
-				Ipv4Enabled:    in.Settings.IPConfiguration.Ipv4Enabled,
-				PrivateNetwork: in.Settings.IPConfiguration.PrivateNetwork,
-				RequireSsl:     in.Settings.IPConfiguration.RequireSsl,
-			}
-		}
-		if in.Settings.LocationPreference != nil {
-			db.Settings.LocationPreference = &sqladmin.LocationPreference{
-				FollowGaeApplication: in.Settings.LocationPreference.FollowGaeApplication,
-				Zone:                 in.Settings.LocationPreference.Zone,
-			}
-		}
-		if in.Settings.MaintenanceWindow != nil {
-			db.Settings.MaintenanceWindow = &sqladmin.MaintenanceWindow{
-				Day:         in.Settings.MaintenanceWindow.Day,
-				Hour:        in.Settings.MaintenanceWindow.Hour,
-				UpdateTrack: in.Settings.MaintenanceWindow.UpdateTrack,
-			}
+	}
+	if in.Settings.MaintenanceWindow != nil {
+		db.Settings.MaintenanceWindow = &sqladmin.MaintenanceWindow{
+			Day:         gcp.Int64Value(in.Settings.MaintenanceWindow.Day),
+			Hour:        gcp.Int64Value(in.Settings.MaintenanceWindow.Hour),
+			UpdateTrack: gcp.StringValue(in.Settings.MaintenanceWindow.UpdateTrack),
 		}
 	}
 	for _, val := range in.Settings.DatabaseFlags {
@@ -139,9 +124,9 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 	}
 	for _, val := range in.Settings.IPConfiguration.AuthorizedNetworks {
 		acl := &sqladmin.AclEntry{
-			ExpirationTime: val.ExpirationTime,
-			Name:           val.Name,
-			Value:          val.Value,
+			ExpirationTime: gcp.StringValue(val.ExpirationTime),
+			Name:           gcp.StringValue(val.Name),
+			Value:          gcp.StringValue(val.Value),
 		}
 		db.Settings.IpConfiguration.AuthorizedNetworks = append(db.Settings.IpConfiguration.AuthorizedNetworks, acl)
 	}
@@ -151,14 +136,27 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 // GenerateObservation produces CloudsqlInstanceObservation object from *sqladmin.DatabaseInstance object.
 func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstanceObservation { // nolint:gocyclo
 	o := v1alpha2.CloudsqlInstanceObservation{
-		CurrentDiskSize: in.CurrentDiskSize,
-		ConnectionName:  in.ConnectionName,
-		GceZone:         in.GceZone,
-		Ipv6Address:     in.Ipv6Address,
-		Project:         in.Project,
-		SelfLink:        in.SelfLink,
-		State:           in.State,
-		SettingsVersion: in.Settings.SettingsVersion,
+		BackendType:                in.BackendType,
+		CurrentDiskSize:            in.CurrentDiskSize,
+		ConnectionName:             in.ConnectionName,
+		GceZone:                    in.GceZone,
+		Ipv6Address:                in.Ipv6Address,
+		Project:                    in.Project,
+		SelfLink:                   in.SelfLink,
+		ServiceAccountEmailAddress: in.ServiceAccountEmailAddress,
+		State:                      in.State,
+		SettingsVersion:            in.Settings.SettingsVersion,
+	}
+	if in.ServerCaCert != nil {
+		o.ServerCaCert = &v1alpha2.SslCert{
+			Cert:             &in.ServerCaCert.Cert,
+			CertSerialNumber: &in.ServerCaCert.CertSerialNumber,
+			CommonName:       &in.ServerCaCert.CommonName,
+			CreateTime:       &in.ServerCaCert.CreateTime,
+			ExpirationTime:   &in.ServerCaCert.ExpirationTime,
+			Instance:         &in.ServerCaCert.Instance,
+			Sha1Fingerprint:  &in.ServerCaCert.Sha1Fingerprint,
+		}
 	}
 	if in.DiskEncryptionStatus != nil {
 		o.DiskEncryptionStatus = &v1alpha2.DiskEncryptionStatus{
@@ -167,8 +165,8 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 	}
 	if in.FailoverReplica != nil {
 		o.FailoverReplica = &v1alpha2.DatabaseInstanceFailoverReplica{
-			Available: in.FailoverReplica.Available,
-			Name:      in.FailoverReplica.Name,
+			Available: &in.FailoverReplica.Available,
+			Name:      &in.FailoverReplica.Name,
 		}
 	}
 	for _, val := range in.IpAddresses {
@@ -181,12 +179,146 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 	return o
 }
 
-func FillSpecWithDefaults(cr *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) (changed bool) {
-	// TODO(muvaf): find a way to avoid messy if statements for patching parameters with received DatabaseInstance.
+// FillSpecWithDefaults fills unassigned fields with the values in sqladmin.DatabaseInstance object.
+func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) (changed bool) { // nolint:gocyclo
+	// TODO(muvaf): find a way to avoid this mess.
+	spec.DatabaseVersion = gcp.LateInitializeString(spec.DatabaseVersion, in.DatabaseVersion)
+	spec.MasterInstanceName = gcp.LateInitializeString(spec.MasterInstanceName, in.MasterInstanceName)
+	spec.Etag = gcp.LateInitializeString(spec.Etag, in.Etag)
+	spec.GceZone = gcp.LateInitializeString(spec.GceZone, in.GceZone)
+	spec.InstanceType = gcp.LateInitializeString(spec.InstanceType, in.InstanceType)
+	spec.MaxDiskSize = gcp.LateInitializeInt64(spec.MaxDiskSize, in.MaxDiskSize)
+	spec.ReplicaNames = gcp.LateInitializeStringSlice(spec.ReplicaNames, in.ReplicaNames)
+	spec.RootPassword = gcp.LateInitializeString(spec.RootPassword, in.RootPassword)
+	spec.SuspensionReason = gcp.LateInitializeStringSlice(spec.SuspensionReason, in.SuspensionReason)
+
+	if in.Settings != nil {
+		spec.Settings.ActivationPolicy = gcp.LateInitializeString(spec.Settings.ActivationPolicy, in.Settings.ActivationPolicy)
+		spec.Settings.AuthorizedGaeApplications = gcp.LateInitializeStringSlice(spec.Settings.AuthorizedGaeApplications, in.Settings.AuthorizedGaeApplications)
+		spec.Settings.AvailabilityType = gcp.LateInitializeString(spec.Settings.AvailabilityType, in.Settings.AvailabilityType)
+		spec.Settings.CrashSafeReplicationEnabled = gcp.LateInitializeBool(spec.Settings.CrashSafeReplicationEnabled, in.Settings.CrashSafeReplicationEnabled)
+
+		spec.Settings.DataDiskType = gcp.LateInitializeString(spec.Settings.DataDiskType, in.Settings.DataDiskType)
+		spec.Settings.PricingPlan = gcp.LateInitializeString(spec.Settings.PricingPlan, in.Settings.PricingPlan)
+		spec.Settings.ReplicationType = gcp.LateInitializeString(spec.Settings.ReplicationType, in.Settings.ReplicationType)
+		spec.Settings.UserLabels = gcp.LateInitializeStringMap(spec.Settings.UserLabels, in.Settings.UserLabels)
+		spec.Settings.DataDiskSizeGb = gcp.LateInitializeInt64(spec.Settings.DataDiskSizeGb, in.Settings.DataDiskSizeGb)
+		spec.Settings.DatabaseReplicationEnabled = gcp.LateInitializeBool(spec.Settings.DatabaseReplicationEnabled, in.Settings.DatabaseReplicationEnabled)
+		spec.Settings.StorageAutoResizeLimit = gcp.LateInitializeInt64(spec.Settings.StorageAutoResizeLimit, in.Settings.StorageAutoResizeLimit)
+		if spec.Settings.StorageAutoResize == nil {
+			spec.Settings.StorageAutoResize = in.Settings.StorageAutoResize
+		}
+		if len(spec.Settings.DatabaseFlags) == 0 && len(in.Settings.DatabaseFlags) != 0 {
+			spec.Settings.DatabaseFlags = make([]*v1alpha2.DatabaseFlags, len(in.Settings.DatabaseFlags))
+			for i, val := range in.Settings.DatabaseFlags {
+				spec.Settings.DatabaseFlags[i] = &v1alpha2.DatabaseFlags{
+					Name:  val.Name,
+					Value: val.Value,
+				}
+			}
+		}
+		if in.Settings.BackupConfiguration != nil {
+			if spec.Settings.BackupConfiguration == nil {
+				spec.Settings.BackupConfiguration = &v1alpha2.BackupConfiguration{}
+			}
+			spec.Settings.BackupConfiguration.BinaryLogEnabled = gcp.LateInitializeBool(
+				spec.Settings.BackupConfiguration.BinaryLogEnabled,
+				in.Settings.BackupConfiguration.BinaryLogEnabled)
+			spec.Settings.BackupConfiguration.Enabled = gcp.LateInitializeBool(
+				spec.Settings.BackupConfiguration.Enabled,
+				in.Settings.BackupConfiguration.Enabled)
+			spec.Settings.BackupConfiguration.Location = gcp.LateInitializeString(
+				spec.Settings.BackupConfiguration.Location,
+				in.Settings.BackupConfiguration.Location)
+			spec.Settings.BackupConfiguration.ReplicationLogArchivingEnabled = gcp.LateInitializeBool(
+				spec.Settings.BackupConfiguration.ReplicationLogArchivingEnabled,
+				in.Settings.BackupConfiguration.ReplicationLogArchivingEnabled)
+			spec.Settings.BackupConfiguration.StartTime = gcp.LateInitializeString(
+				spec.Settings.BackupConfiguration.StartTime,
+				in.Settings.BackupConfiguration.StartTime)
+		}
+		if in.Settings.IpConfiguration != nil {
+			if spec.Settings.IPConfiguration == nil {
+				spec.Settings.IPConfiguration = &v1alpha2.IPConfiguration{}
+			}
+			spec.Settings.IPConfiguration.Ipv4Enabled = gcp.LateInitializeBool(spec.Settings.IPConfiguration.Ipv4Enabled, in.Settings.IpConfiguration.Ipv4Enabled)
+			spec.Settings.IPConfiguration.PrivateNetwork = gcp.LateInitializeString(spec.Settings.IPConfiguration.PrivateNetwork, in.Settings.IpConfiguration.PrivateNetwork)
+			spec.Settings.IPConfiguration.RequireSsl = gcp.LateInitializeBool(spec.Settings.IPConfiguration.RequireSsl, in.Settings.IpConfiguration.RequireSsl)
+			if len(in.Settings.IpConfiguration.AuthorizedNetworks) != 0 && len(spec.Settings.IPConfiguration.AuthorizedNetworks) == 0 {
+				spec.Settings.IPConfiguration.AuthorizedNetworks = make([]*v1alpha2.ACLEntry, len(in.Settings.IpConfiguration.AuthorizedNetworks))
+				for i, val := range in.Settings.IpConfiguration.AuthorizedNetworks {
+					spec.Settings.IPConfiguration.AuthorizedNetworks[i] = &v1alpha2.ACLEntry{
+						ExpirationTime: &val.ExpirationTime,
+						Name:           &val.Name,
+						Value:          &val.Value,
+					}
+				}
+			}
+		}
+		if in.Settings.LocationPreference != nil {
+			if spec.Settings.LocationPreference == nil {
+				spec.Settings.LocationPreference = &v1alpha2.LocationPreference{}
+			}
+			spec.Settings.LocationPreference.Zone = gcp.LateInitializeString(spec.Settings.LocationPreference.Zone, in.Settings.LocationPreference.Zone)
+			spec.Settings.LocationPreference.FollowGaeApplication = gcp.LateInitializeString(spec.Settings.LocationPreference.Zone, in.Settings.LocationPreference.FollowGaeApplication)
+
+		}
+		if in.Settings.MaintenanceWindow != nil {
+			if spec.Settings.MaintenanceWindow == nil {
+				spec.Settings.MaintenanceWindow = &v1alpha2.MaintenanceWindow{}
+			}
+			spec.Settings.MaintenanceWindow.UpdateTrack = gcp.LateInitializeString(spec.Settings.MaintenanceWindow.UpdateTrack, in.Settings.MaintenanceWindow.UpdateTrack)
+			spec.Settings.MaintenanceWindow.Day = gcp.LateInitializeInt64(spec.Settings.MaintenanceWindow.Day, in.Settings.MaintenanceWindow.Day)
+			spec.Settings.MaintenanceWindow.Hour = gcp.LateInitializeInt64(spec.Settings.MaintenanceWindow.Hour, in.Settings.MaintenanceWindow.Hour)
+		}
+	}
+
+	if in.ReplicaConfiguration != nil {
+		if spec.ReplicaConfiguration == nil {
+			spec.ReplicaConfiguration = &v1alpha2.ReplicaConfiguration{}
+		}
+		spec.ReplicaConfiguration.FailoverTarget = gcp.LateInitializeBool(spec.ReplicaConfiguration.FailoverTarget, in.ReplicaConfiguration.FailoverTarget)
+		if spec.ReplicaConfiguration.MySQLReplicaConfiguration == nil {
+			spec.ReplicaConfiguration.MySQLReplicaConfiguration = &v1alpha2.MySQLReplicaConfiguration{}
+		}
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.CaCertificate = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.CaCertificate, in.ReplicaConfiguration.MysqlReplicaConfiguration.CaCertificate)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.ClientCertificate = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.ClientCertificate, in.ReplicaConfiguration.MysqlReplicaConfiguration.ClientCertificate)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.ClientKey = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.ClientKey, in.ReplicaConfiguration.MysqlReplicaConfiguration.ClientKey)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval = gcp.LateInitializeInt64(spec.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval, in.ReplicaConfiguration.MysqlReplicaConfiguration.ConnectRetryInterval)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath, in.ReplicaConfiguration.MysqlReplicaConfiguration.DumpFilePath)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod = gcp.LateInitializeInt64(spec.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod, in.ReplicaConfiguration.MysqlReplicaConfiguration.MasterHeartbeatPeriod)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.Password = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.Password, in.ReplicaConfiguration.MysqlReplicaConfiguration.Password)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher, in.ReplicaConfiguration.MysqlReplicaConfiguration.SslCipher)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.Username = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.Username, in.ReplicaConfiguration.MysqlReplicaConfiguration.Username)
+		spec.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate = gcp.LateInitializeBool(spec.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate, in.ReplicaConfiguration.MysqlReplicaConfiguration.VerifyServerCertificate)
+	}
+	if in.DiskEncryptionConfiguration != nil {
+		if spec.DiskEncryptionConfiguration == nil {
+			spec.DiskEncryptionConfiguration = &v1alpha2.DiskEncryptionConfiguration{}
+		}
+		if spec.DiskEncryptionConfiguration.KmsKeyName == "" {
+			spec.DiskEncryptionConfiguration.KmsKeyName = in.DiskEncryptionConfiguration.KmsKeyName
+		}
+	}
+	if in.FailoverReplica != nil {
+		if spec.FailoverReplica == nil {
+			spec.FailoverReplica = &v1alpha2.DatabaseInstanceFailoverReplica{}
+		}
+		spec.FailoverReplica.Name = gcp.LateInitializeString(spec.FailoverReplica.Name, in.FailoverReplica.Name)
+		spec.FailoverReplica.Available = gcp.LateInitializeBool(spec.FailoverReplica.Available, in.FailoverReplica.Available)
+	}
+	if in.OnPremisesConfiguration != nil {
+		if spec.OnPremisesConfiguration == nil {
+			spec.OnPremisesConfiguration = &v1alpha2.OnPremisesConfiguration{
+				HostPort: in.OnPremisesConfiguration.HostPort,
+			}
+		}
+	}
 	return true
 }
 
-func IsUpToDate(cr v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) bool {
+// IsUpToDate checks whether our desired spec matches the observed state.
+func IsUpToDate(spec v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) bool {
 	// TODO(muvaf): check whether spec is different than DatabaseInstance.
 	return false
 }
