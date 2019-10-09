@@ -17,6 +17,8 @@ limitations under the License.
 package cloudsql
 
 import (
+	"reflect"
+
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
@@ -181,7 +183,8 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 
 // FillSpecWithDefaults fills unassigned fields with the values in sqladmin.DatabaseInstance object.
 func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) (changed bool) { // nolint:gocyclo
-	// TODO(muvaf): find a way to avoid this mess.
+	initial := spec.DeepCopy()
+	// TODO(muvaf): json methods have performance issues. learn code-generation to avoid this mess.
 	spec.DatabaseVersion = gcp.LateInitializeString(spec.DatabaseVersion, in.DatabaseVersion)
 	spec.MasterInstanceName = gcp.LateInitializeString(spec.MasterInstanceName, in.MasterInstanceName)
 	spec.Etag = gcp.LateInitializeString(spec.Etag, in.Etag)
@@ -191,7 +194,6 @@ func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin
 	spec.ReplicaNames = gcp.LateInitializeStringSlice(spec.ReplicaNames, in.ReplicaNames)
 	spec.RootPassword = gcp.LateInitializeString(spec.RootPassword, in.RootPassword)
 	spec.SuspensionReason = gcp.LateInitializeStringSlice(spec.SuspensionReason, in.SuspensionReason)
-
 	if in.Settings != nil {
 		spec.Settings.ActivationPolicy = gcp.LateInitializeString(spec.Settings.ActivationPolicy, in.Settings.ActivationPolicy)
 		spec.Settings.AuthorizedGaeApplications = gcp.LateInitializeStringSlice(spec.Settings.AuthorizedGaeApplications, in.Settings.AuthorizedGaeApplications)
@@ -272,7 +274,6 @@ func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin
 			spec.Settings.MaintenanceWindow.Hour = gcp.LateInitializeInt64(spec.Settings.MaintenanceWindow.Hour, in.Settings.MaintenanceWindow.Hour)
 		}
 	}
-
 	if in.ReplicaConfiguration != nil {
 		if spec.ReplicaConfiguration == nil {
 			spec.ReplicaConfiguration = &v1alpha2.ReplicaConfiguration{}
@@ -314,11 +315,12 @@ func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin
 			}
 		}
 	}
-	return true
+	return reflect.DeepEqual(spec, initial)
 }
 
 // IsUpToDate checks whether our desired spec matches the observed state.
 func IsUpToDate(spec v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) bool {
-	// TODO(muvaf): check whether spec is different than DatabaseInstance.
-	return false
+	observed := &v1alpha2.CloudsqlInstanceParameters{}
+	FillSpecWithDefaults(observed, in)
+	return reflect.DeepEqual(spec, observed)
 }

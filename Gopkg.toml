@@ -47,7 +47,7 @@ required = [
 [[override]]
   name="github.com/crossplaneio/crossplane-runtime"
   source = "https://github.com/muvaf/crossplane-runtime.git"
-  revision="05040078ca76314644bb20778e05f9a82b949dff"
+  revision="79b5ee6000aaedd8fbe21cabbadbd322301b8b9e"
 
 [[override]]
   name="sigs.k8s.io/controller-tools"

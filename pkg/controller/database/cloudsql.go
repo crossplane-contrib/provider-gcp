@@ -27,7 +27,6 @@ import (
 	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	v1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -122,52 +121,44 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotCloudsql)
 	}
-	if err := c.EnsureExternalNameAnnotation(ctx, cr); err != nil {
-		return resource.ExternalObservation{}, err
-	}
 	instance, err := c.db.Get(c.projectID, cr.Annotations[v1alpha1.ExternalNameAnnotationKey]).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
 	}
 	cr.Status.AtProvider = cloudsql.GenerateObservation(*instance)
+	upToDate := cloudsql.IsUpToDate(cr.Spec.ForProvider, *instance)
 	if cloudsql.FillSpecWithDefaults(&cr.Spec.ForProvider, *instance) {
 		if err := c.kube.Update(ctx, cr); err != nil {
-			return resource.ExternalObservation{ResourceExists: true}, errors.Wrap(err, "cannot update CloudsqlInstance CR")
+			return resource.ExternalObservation{}, errors.Wrap(err, "cannot update CloudsqlInstance CR")
 		}
 	}
-	upToDate := cloudsql.IsUpToDate(cr.Spec.ForProvider, *instance)
 	var conn resource.ConnectionDetails
 	switch cr.Status.AtProvider.State {
 	case v1alpha2.StateRunnable:
 		cr.Status.SetConditions(v1alpha1.Available())
-		if cr.Status.Phase != v1alpha1.BindingPhaseBound {
+		if !resource.IsBound(cr) {
 			resource.SetBindable(cr)
 		}
 		conn, err = c.getConnectionDetails(ctx, cr)
 		if err != nil {
-			return resource.ExternalObservation{ResourceExists: true, ResourceUpToDate: upToDate},
-				errors.Wrap(err, "cannot get connection details")
-		}
-		if err := c.updateRootCredentials(ctx, cr, string(conn[v1alpha1.ResourceCredentialsSecretPasswordKey])); err != nil {
-			return resource.ExternalObservation{ResourceExists: true, ResourceUpToDate: upToDate},
-				errors.Wrap(err, "cannot update root user credentials")
+			return resource.ExternalObservation{}, errors.Wrap(err, "cannot get connection details")
 		}
 	case v1alpha2.StateCreating:
 		cr.Status.SetConditions(v1alpha1.Creating())
 	case v1alpha2.StateCreationFailed, v1alpha2.StateSuspended, v1alpha2.StateMaintenance, v1alpha2.StateUnknownState:
 		cr.Status.SetConditions(v1alpha1.Unavailable())
 	}
-	return resource.ExternalObservation{ResourceExists: true, ResourceUpToDate: upToDate, ConnectionDetails: conn}, nil
+	return resource.ExternalObservation{
+		ResourceExists:    true,
+		ResourceUpToDate:  upToDate,
+		ConnectionDetails: conn,
+	}, nil
 }
 
 func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha2.CloudsqlInstance)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotCloudsql)
-	}
-	// This pre-reconcile hook logic will be moved to crossplane-runtime
-	if err := c.EnsureExternalNameAnnotation(ctx, cr); err != nil {
-		return resource.ExternalCreation{}, err
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, cr.Annotations[v1alpha1.ExternalNameAnnotationKey])
 	_, err := c.db.Insert(c.projectID, instance).Context(ctx).Do()
@@ -192,9 +183,6 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	if !ok {
 		return errors.New(errNotCloudsql)
 	}
-	if err := c.EnsureExternalNameAnnotation(ctx, cr); err != nil {
-		return err
-	}
 	_, err := c.db.Delete(c.projectID, cr.Annotations[v1alpha1.ExternalNameAnnotationKey]).Context(ctx).Do()
 	if gcp.IsErrorNotFound(err) {
 		return nil
@@ -202,32 +190,22 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	return errors.Wrap(err, errDeleteFailed)
 }
 
-// TODO(muvaf): consider implementing a set of configurators for naming.
-func (c *cloudsqlExternal) EnsureExternalNameAnnotation(ctx context.Context, cr *v1alpha2.CloudsqlInstance) error {
-	if cr.Annotations[v1alpha1.ExternalNameAnnotationKey] == "" {
-		if cr.Annotations == nil {
-			cr.Annotations = make(map[string]string)
-		}
-		cr.Annotations[v1alpha1.ExternalNameAnnotationKey] = cr.Name
-		if err := c.kube.Update(ctx, cr); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha2.CloudsqlInstance) (resource.ConnectionDetails, error) {
-	password, err := util.GeneratePassword(v1alpha2.PasswordLength)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot generate password")
-	}
 	s := &v1.Secret{}
 	name := types.NamespacedName{Name: cr.Spec.WriteConnectionSecretToReference.Name, Namespace: cr.Namespace}
-	if err := c.kube.Get(ctx, name, s); !k8serrors.IsNotFound(err) && err != nil {
+	err := c.kube.Get(ctx, name, s)
+	if resource.IgnoreNotFound(err) != nil {
 		return nil, errors.Wrap(err, "connection secret could not be retrieved")
+	}
+	password, err := util.GeneratePassword(v1alpha2.PasswordLength)
+	if err != nil {
+		return nil, err
 	}
 	if s.Data != nil && len(s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey]) != 0 {
 		password = string(s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey])
+	}
+	if err := c.updateRootCredentials(ctx, cr, password); err != nil {
+		return nil, errors.Wrap(err, "cannot update root user credentials")
 	}
 	m := map[string][]byte{
 		v1alpha1.ResourceCredentialsSecretUserKey:     []byte(cr.DatabaseUserName()),

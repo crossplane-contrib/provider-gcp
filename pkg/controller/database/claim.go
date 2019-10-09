@@ -148,7 +148,7 @@ func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error 
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureMyCloudsqlInstance),
-			resource.NewObjectMetaConfiguratorWithNewNamingFormat(mgr.GetScheme()),
+			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
 		))
 
 	return ctrl.NewControllerManagedBy(mgr).

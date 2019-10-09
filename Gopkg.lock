@@ -80,7 +80,7 @@
   revision = "a5489468a5b1be40f7157c42ed183ae21cdbd6a0"
 
 [[projects]]
-  digest = "1:47bbb4f4414b18f7d48866a194d3400f696dbb73c59dbe1b6b45af21f57dd528"
+  digest = "1:efc9cfcc8c912082af0fb5c5d2b55a32831ae83036426c25ceb94cab8ca1d065"
   name = "github.com/crossplaneio/crossplane-runtime"
   packages = [
     "apis/core/v1alpha1",
@@ -91,7 +91,7 @@
     "pkg/util",
   ]
   pruneopts = "UT"
-  revision = "05040078ca76314644bb20778e05f9a82b949dff"
+  revision = "79b5ee6000aaedd8fbe21cabbadbd322301b8b9e"
   source = "https://github.com/muvaf/crossplane-runtime.git"
 
 [[projects]]
