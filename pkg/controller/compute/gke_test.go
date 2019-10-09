@@ -150,8 +150,8 @@ func TestSyncErroredCluster(t *testing.T) {
 
 	expectedStatus := runtimev1alpha1.ConditionedStatus{}
 	expectedState := ClusterStateError
-	expectedStatus.SetConditions(runtimev1alpha1.UnavailableWithMessage(
-		fmt.Sprintf(erroredClusterErrorMessageFormat, ClusterStateError, errorMessage)))
+	expectedStatus.SetConditions(runtimev1alpha1.Unavailable().
+		WithMessage(fmt.Sprintf(erroredClusterErrorMessageFormat, ClusterStateError, errorMessage)))
 
 	rs, err := r._sync(tc, cl)
 	g.Expect(rs).To(Equal(resultRequeue))
