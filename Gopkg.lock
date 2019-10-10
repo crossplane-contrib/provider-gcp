@@ -1144,7 +1144,7 @@
   revision = "581e00157fb1a0435d4fac54a52d1ca1e481d60e"
 
 [[projects]]
-  digest = "1:2f667f447b3b8b32dc8707fd85a65d047c6bbfca26a1cb3c6977970bcf91eb64"
+  digest = "1:59741debf5a9a1d10117565ced8492266fa1fdf37d7d4a4369aba8084d288e8b"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     ".",
@@ -1190,8 +1190,8 @@
     "pkg/webhook/internal/metrics",
   ]
   pruneopts = "UT"
-  revision = "e1159d6655b260c4812fd0792cd1344ecc96a57e"
-  version = "v0.2.0"
+  revision = "fc5542c693e3340f8abbe91c6345bd64c494a60c"
+  version = "v0.2.2"
 
 [[projects]]
   digest = "1:6852be48889f976ee43ef7ca2e1a25ee9cfd3d0d46dbcdfcf32f8b7186c019e0"
@@ -1257,6 +1257,7 @@
     "github.com/googleapis/gax-go",
     "github.com/onsi/gomega",
     "github.com/pkg/errors",
+    "go.uber.org/zap",
     "golang.org/x/oauth2",
     "golang.org/x/oauth2/google",
     "google.golang.org/api/cloudresourcemanager/v1",
@@ -1287,6 +1288,7 @@
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",
     "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil",
+    "sigs.k8s.io/controller-runtime/pkg/log/zap",
     "sigs.k8s.io/controller-runtime/pkg/manager",
     "sigs.k8s.io/controller-runtime/pkg/reconcile",
     "sigs.k8s.io/controller-runtime/pkg/runtime/log",
