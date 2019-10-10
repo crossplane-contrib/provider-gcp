@@ -19,6 +19,7 @@ package compute
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/crossplaneio/stack-gcp/apis"
@@ -121,6 +122,42 @@ func TestSyncClusterGetError(t *testing.T) {
 	g.Expect(rs).To(Equal(resultRequeue))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(called).To(BeTrue())
+	assertResource(g, r, expectedStatus)
+}
+
+func TestSyncErroredCluster(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	tc := testCluster()
+
+	r := &Reconciler{
+		Client:     NewFakeClient(tc),
+		kubeclient: NewSimpleClientset(),
+	}
+
+	errorMessage := "Something went wrong on gcloud side."
+
+	called := false
+
+	cl := fake.NewGKEClient()
+	cl.MockGetCluster = func(string, string) (*container.Cluster, error) {
+		called = true
+		return &container.Cluster{
+			Status:        ClusterStateError,
+			StatusMessage: errorMessage,
+		}, nil
+	}
+
+	expectedStatus := runtimev1alpha1.ConditionedStatus{}
+	expectedState := ClusterStateError
+	expectedStatus.SetConditions(runtimev1alpha1.Unavailable().
+		WithMessage(fmt.Sprintf(erroredClusterErrorMessageFormat, ClusterStateError, errorMessage)))
+
+	rs, err := r._sync(tc, cl)
+	g.Expect(rs).To(Equal(resultRequeue))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(called).To(BeTrue())
+	g.Expect(tc.Status.State).To(Equal(expectedState))
 	assertResource(g, r, expectedStatus)
 }
 
