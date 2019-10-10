@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -121,17 +122,21 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotCloudsql)
 	}
-	instance, err := c.db.Get(c.projectID, cr.Annotations[v1alpha1.ExternalNameAnnotationKey]).Context(ctx).Do()
+	instance, err := c.db.Get(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
 	}
 	cr.Status.AtProvider = cloudsql.GenerateObservation(*instance)
 	upToDate := cloudsql.IsUpToDate(cr.Spec.ForProvider, *instance)
-	if cloudsql.FillSpecWithDefaults(&cr.Spec.ForProvider, *instance) {
+
+	currentSpec := cr.Spec.ForProvider.DeepCopy()
+	cloudsql.FillSpecWithDefaults(&cr.Spec.ForProvider, *instance)
+	if !reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider) {
 		if err := c.kube.Update(ctx, cr); err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, "cannot update CloudsqlInstance CR")
 		}
 	}
+
 	var conn resource.ConnectionDetails
 	switch cr.Status.AtProvider.State {
 	case v1alpha2.StateRunnable:
@@ -160,7 +165,7 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotCloudsql)
 	}
-	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, cr.Annotations[v1alpha1.ExternalNameAnnotationKey])
+	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	_, err := c.db.Insert(c.projectID, instance).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalCreation{}, errors.Wrap(err, errInsertFailed)
@@ -173,8 +178,8 @@ func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (res
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotCloudsql)
 	}
-	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, cr.Annotations[v1alpha1.ExternalNameAnnotationKey])
-	_, err := c.db.Patch(c.projectID, cr.Annotations[v1alpha1.ExternalNameAnnotationKey], instance).Context(ctx).Do()
+	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	_, err := c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
 }
 
@@ -183,7 +188,7 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	if !ok {
 		return errors.New(errNotCloudsql)
 	}
-	_, err := c.db.Delete(c.projectID, cr.Annotations[v1alpha1.ExternalNameAnnotationKey]).Context(ctx).Do()
+	_, err := c.db.Delete(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if gcp.IsErrorNotFound(err) {
 		return nil
 	}
@@ -233,7 +238,7 @@ func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha
 }
 
 func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alpha2.CloudsqlInstance, password string) error {
-	users, err := c.user.List(c.projectID, cr.Annotations[v1alpha1.ExternalNameAnnotationKey]).Context(ctx).Do()
+	users, err := c.user.List(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
 		return err
 	}
@@ -251,7 +256,7 @@ func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alph
 		}
 	}
 	rootUser.Password = password
-	_, err = c.user.Update(c.projectID, cr.Annotations[v1alpha1.ExternalNameAnnotationKey], rootUser.Name, rootUser).
+	_, err = c.user.Update(c.projectID, meta.GetExternalName(cr), rootUser.Name, rootUser).
 		Host(rootUser.Host).
 		Context(ctx).
 		Do()

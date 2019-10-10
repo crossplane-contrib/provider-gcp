@@ -182,9 +182,8 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 }
 
 // FillSpecWithDefaults fills unassigned fields with the values in sqladmin.DatabaseInstance object.
-func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) (changed bool) { // nolint:gocyclo
-	initial := spec.DeepCopy()
-	// TODO(muvaf): json methods have performance issues. learn code-generation to avoid this mess.
+func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
+	// TODO(muvaf): json comparison methods might have performance issues. learn code-generation to avoid this mess.
 	spec.DatabaseVersion = gcp.LateInitializeString(spec.DatabaseVersion, in.DatabaseVersion)
 	spec.MasterInstanceName = gcp.LateInitializeString(spec.MasterInstanceName, in.MasterInstanceName)
 	spec.Etag = gcp.LateInitializeString(spec.Etag, in.Etag)
@@ -315,7 +314,6 @@ func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin
 			}
 		}
 	}
-	return reflect.DeepEqual(spec, initial)
 }
 
 // IsUpToDate checks whether our desired spec matches the observed state.
