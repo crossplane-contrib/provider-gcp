@@ -132,6 +132,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	// TODO(muvaf): reflection in production code might cause performance bottlenecks. Generating comparison
 	// methods would make more sense.
 	upToDate := reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider)
+	// TODO(muvaf): Should we always update to correct root password drifts via Update calls?
 	if !upToDate {
 		if err := c.kube.Update(ctx, cr); err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, "cannot update CloudsqlInstance CR")
@@ -178,9 +179,13 @@ func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (res
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotCloudsql)
 	}
+	conn, err := c.updateRootCredentials(ctx, cr)
+	if err != nil {
+		return resource.ExternalUpdate{}, errors.Wrap(err, "cannot update root user credentials")
+	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
-	_, err := c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
-	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
+	_, err = c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
+	return resource.ExternalUpdate{ConnectionDetails: conn}, errors.Wrap(err, errUpdateFailed)
 }
 
 func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) error {
@@ -202,19 +207,9 @@ func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha
 	if resource.IgnoreNotFound(err) != nil {
 		return nil, errors.Wrap(err, "connection secret could not be retrieved")
 	}
-	password, err := util.GeneratePassword(v1alpha2.PasswordLength)
-	if err != nil {
-		return nil, err
-	}
-	if s.Data != nil && len(s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey]) != 0 {
-		password = string(s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey])
-	}
-	if err := c.updateRootCredentials(ctx, cr, password); err != nil {
-		return nil, errors.Wrap(err, "cannot update root user credentials")
-	}
 	m := map[string][]byte{
 		v1alpha1.ResourceCredentialsSecretUserKey:     []byte(cr.DatabaseUserName()),
-		v1alpha1.ResourceCredentialsSecretPasswordKey: []byte(password),
+		v1alpha1.ResourceCredentialsSecretPasswordKey: s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey],
 	}
 	endpoint := ""
 	// TODO(muvaf): There might be cases where more than 1 private and/or public IP address has been assigned. We should
@@ -237,10 +232,10 @@ func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha
 	return m, nil
 }
 
-func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alpha2.CloudsqlInstance, password string) error {
+func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alpha2.CloudsqlInstance) (resource.ConnectionDetails, error) {
 	users, err := c.user.List(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var rootUser *sqladmin.User
 	for _, val := range users.Items {
@@ -250,15 +245,26 @@ func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alph
 		}
 	}
 	if rootUser == nil {
-		return &googleapi.Error{
+		return nil, &googleapi.Error{
 			Code:    http.StatusNotFound,
 			Message: fmt.Sprintf("user: %s is not found", cr.DatabaseUserName()),
 		}
 	}
-	rootUser.Password = password
+	conn, err := c.getConnectionDetails(ctx, cr)
+	if err != nil {
+		return nil, err
+	}
+	if len(conn[v1alpha1.ResourceCredentialsSecretPasswordKey]) == 0 {
+		p, err := util.GeneratePassword(v1alpha2.PasswordLength)
+		if err != nil {
+			return nil, err
+		}
+		rootUser.Password = p
+		conn[v1alpha1.ResourceCredentialsSecretPasswordKey] = []byte(p)
+	}
 	_, err = c.user.Update(c.projectID, meta.GetExternalName(cr), rootUser.Name, rootUser).
 		Host(rootUser.Host).
 		Context(ctx).
 		Do()
-	return errors.Wrap(err, "cannot update root user credentials")
+	return conn, errors.Wrap(err, "cannot update root user credentials")
 }
