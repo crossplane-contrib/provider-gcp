@@ -150,11 +150,6 @@ spec:
                   required:
                   - kmsKeyName
                   type: object
-                etag:
-                  description: 'Etag: This field is deprecated and will be removed
-                    from a future version of the API. Use the settings.settingsVersion
-                    field instead.'
-                  type: string
                 failoverReplica:
                   description: 'FailoverReplica: The name and status of the failover
                     replica. This property is applicable only to Second Generation

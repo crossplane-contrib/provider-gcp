@@ -176,11 +176,6 @@ type CloudsqlInstanceParameters struct {
 	// +immutable
 	DiskEncryptionConfiguration *DiskEncryptionConfiguration `json:"diskEncryptionConfiguration,omitempty"`
 
-	// Etag: This field is deprecated and will be removed from a future
-	// version of the API. Use the settings.settingsVersion field instead.
-	// +optional
-	Etag *string `json:"etag,omitempty"`
-
 	// FailoverReplica: The name and status of the failover replica. This
 	// property is applicable only to Second Generation instances.
 	// +optional

@@ -17,8 +17,6 @@ limitations under the License.
 package cloudsql
 
 import (
-	"reflect"
-
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
@@ -29,7 +27,6 @@ import (
 func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
 	db := &sqladmin.DatabaseInstance{
 		DatabaseVersion:    gcp.StringValue(in.DatabaseVersion),
-		Etag:               gcp.StringValue(in.Etag),
 		GceZone:            gcp.StringValue(in.GceZone),
 		InstanceType:       gcp.StringValue(in.InstanceType),
 		MasterInstanceName: gcp.StringValue(in.MasterInstanceName),
@@ -104,6 +101,14 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 			PrivateNetwork: gcp.StringValue(in.Settings.IPConfiguration.PrivateNetwork),
 			RequireSsl:     gcp.BoolValue(in.Settings.IPConfiguration.RequireSsl),
 		}
+		for _, val := range in.Settings.IPConfiguration.AuthorizedNetworks {
+			acl := &sqladmin.AclEntry{
+				ExpirationTime: gcp.StringValue(val.ExpirationTime),
+				Name:           gcp.StringValue(val.Name),
+				Value:          gcp.StringValue(val.Value),
+			}
+			db.Settings.IpConfiguration.AuthorizedNetworks = append(db.Settings.IpConfiguration.AuthorizedNetworks, acl)
+		}
 	}
 	if in.Settings.LocationPreference != nil {
 		db.Settings.LocationPreference = &sqladmin.LocationPreference{
@@ -123,14 +128,6 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 			Name:  val.Name,
 			Value: val.Value,
 		})
-	}
-	for _, val := range in.Settings.IPConfiguration.AuthorizedNetworks {
-		acl := &sqladmin.AclEntry{
-			ExpirationTime: gcp.StringValue(val.ExpirationTime),
-			Name:           gcp.StringValue(val.Name),
-			Value:          gcp.StringValue(val.Value),
-		}
-		db.Settings.IpConfiguration.AuthorizedNetworks = append(db.Settings.IpConfiguration.AuthorizedNetworks, acl)
 	}
 	return db
 }
@@ -181,12 +178,14 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 	return o
 }
 
-// FillSpecWithDefaults fills unassigned fields with the values in sqladmin.DatabaseInstance object.
-func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
+// LateInitializeSpec fills unassigned fields with the values in sqladmin.DatabaseInstance object.
+func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
 	// TODO(muvaf): json comparison methods might have performance issues. learn code-generation to avoid this mess.
+	if spec.Region == "" {
+		spec.Region = in.Region
+	}
 	spec.DatabaseVersion = gcp.LateInitializeString(spec.DatabaseVersion, in.DatabaseVersion)
 	spec.MasterInstanceName = gcp.LateInitializeString(spec.MasterInstanceName, in.MasterInstanceName)
-	spec.Etag = gcp.LateInitializeString(spec.Etag, in.Etag)
 	spec.GceZone = gcp.LateInitializeString(spec.GceZone, in.GceZone)
 	spec.InstanceType = gcp.LateInitializeString(spec.InstanceType, in.InstanceType)
 	spec.MaxDiskSize = gcp.LateInitializeInt64(spec.MaxDiskSize, in.MaxDiskSize)
@@ -194,6 +193,9 @@ func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin
 	spec.RootPassword = gcp.LateInitializeString(spec.RootPassword, in.RootPassword)
 	spec.SuspensionReason = gcp.LateInitializeStringSlice(spec.SuspensionReason, in.SuspensionReason)
 	if in.Settings != nil {
+		if spec.Settings.Tier == "" {
+			spec.Settings.Tier = in.Settings.Tier
+		}
 		spec.Settings.ActivationPolicy = gcp.LateInitializeString(spec.Settings.ActivationPolicy, in.Settings.ActivationPolicy)
 		spec.Settings.AuthorizedGaeApplications = gcp.LateInitializeStringSlice(spec.Settings.AuthorizedGaeApplications, in.Settings.AuthorizedGaeApplications)
 		spec.Settings.AvailabilityType = gcp.LateInitializeString(spec.Settings.AvailabilityType, in.Settings.AvailabilityType)
@@ -261,7 +263,7 @@ func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin
 				spec.Settings.LocationPreference = &v1alpha2.LocationPreference{}
 			}
 			spec.Settings.LocationPreference.Zone = gcp.LateInitializeString(spec.Settings.LocationPreference.Zone, in.Settings.LocationPreference.Zone)
-			spec.Settings.LocationPreference.FollowGaeApplication = gcp.LateInitializeString(spec.Settings.LocationPreference.Zone, in.Settings.LocationPreference.FollowGaeApplication)
+			spec.Settings.LocationPreference.FollowGaeApplication = gcp.LateInitializeString(spec.Settings.LocationPreference.FollowGaeApplication, in.Settings.LocationPreference.FollowGaeApplication)
 
 		}
 		if in.Settings.MaintenanceWindow != nil {
@@ -314,11 +316,4 @@ func FillSpecWithDefaults(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin
 			}
 		}
 	}
-}
-
-// IsUpToDate checks whether our desired spec matches the observed state.
-func IsUpToDate(spec v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) bool {
-	observed := &v1alpha2.CloudsqlInstanceParameters{}
-	FillSpecWithDefaults(observed, in)
-	return reflect.DeepEqual(spec, observed)
 }

@@ -127,16 +127,16 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
 	}
 	cr.Status.AtProvider = cloudsql.GenerateObservation(*instance)
-	upToDate := cloudsql.IsUpToDate(cr.Spec.ForProvider, *instance)
-
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
-	cloudsql.FillSpecWithDefaults(&cr.Spec.ForProvider, *instance)
-	if !reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider) {
+	cloudsql.LateInitializeSpec(&cr.Spec.ForProvider, *instance)
+	// TODO(muvaf): reflection in production code might cause performance bottlenecks. Generating comparison
+	// methods would make more sense.
+	upToDate := reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider)
+	if !upToDate {
 		if err := c.kube.Update(ctx, cr); err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, "cannot update CloudsqlInstance CR")
 		}
 	}
-
 	var conn resource.ConnectionDetails
 	switch cr.Status.AtProvider.State {
 	case v1alpha2.StateRunnable:

@@ -293,11 +293,6 @@ func (in *CloudsqlInstanceParameters) DeepCopyInto(out *CloudsqlInstanceParamete
 		*out = new(DiskEncryptionConfiguration)
 		**out = **in
 	}
-	if in.Etag != nil {
-		in, out := &in.Etag, &out.Etag
-		*out = new(string)
-		**out = **in
-	}
 	if in.FailoverReplica != nil {
 		in, out := &in.FailoverReplica, &out.FailoverReplica
 		*out = new(DatabaseInstanceFailoverReplica)
