@@ -44,14 +44,18 @@ import (
 )
 
 const (
-	errNotCloudsql                = "managed resource is not a Cloudsql resource"
+	errNotCloudsql                = "managed resource is not a CloudsqlInstance CR"
 	errProviderNotRetrieved       = "provider could not be retrieved"
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
-	errNewClient                  = "cannot create new Sqladmin Service"
-	errInsertFailed               = "cannot insert new Cloudsql instance"
-	errDeleteFailed               = "cannot delete the Cloudsql instance"
-	errUpdateFailed               = "cannot update the Cloudsql instance"
-	errGetFailed                  = "cannot get the Cloudsql instance"
+	errManagedUpdateFailed        = "cannot update CloudsqlInstance CR"
+	errConnectionNotRetrieved     = "cannot get connection details"
+
+	errNewClient        = "cannot create new Sqladmin Service"
+	errInsertFailed     = "cannot insert new Cloudsql instance"
+	errDeleteFailed     = "cannot delete the Cloudsql instance"
+	errPatchFailed      = "cannot patch the Cloudsql instance"
+	errGetFailed        = "cannot get the Cloudsql instance"
+	errUpdateRootFailed = "cannot update root user credentials"
 )
 
 // CloudsqlInstanceController is the controller for Cloudsql CRD.
@@ -135,7 +139,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	// TODO(muvaf): Should we always update to correct root password drifts via Update calls?
 	if !upToDate {
 		if err := c.kube.Update(ctx, cr); err != nil {
-			return resource.ExternalObservation{}, errors.Wrap(err, "cannot update CloudsqlInstance CR")
+			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 		}
 	}
 	var conn resource.ConnectionDetails
@@ -147,7 +151,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 		}
 		conn, err = c.getConnectionDetails(ctx, cr)
 		if err != nil {
-			return resource.ExternalObservation{}, errors.Wrap(err, "cannot get connection details")
+			return resource.ExternalObservation{}, errors.Wrap(err, errConnectionNotRetrieved)
 		}
 	case v1alpha2.StateCreating:
 		cr.Status.SetConditions(v1alpha1.Creating())
@@ -168,10 +172,7 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	_, err := c.db.Insert(c.projectID, instance).Context(ctx).Do()
-	if err != nil {
-		return resource.ExternalCreation{}, errors.Wrap(err, errInsertFailed)
-	}
-	return resource.ExternalCreation{}, errors.Wrap(err, errInsertFailed)
+	return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errInsertFailed)
 }
 
 func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
@@ -181,11 +182,11 @@ func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (res
 	}
 	conn, err := c.updateRootCredentials(ctx, cr)
 	if err != nil {
-		return resource.ExternalUpdate{}, errors.Wrap(err, "cannot update root user credentials")
+		return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateRootFailed)
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	_, err = c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
-	return resource.ExternalUpdate{ConnectionDetails: conn}, errors.Wrap(err, errUpdateFailed)
+	return resource.ExternalUpdate{ConnectionDetails: conn}, errors.Wrap(err, errPatchFailed)
 }
 
 func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) error {
@@ -201,17 +202,18 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 }
 
 func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha2.CloudsqlInstance) (resource.ConnectionDetails, error) {
+	m := map[string][]byte{
+		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cr.DatabaseUserName()),
+	}
 	s := &v1.Secret{}
 	name := types.NamespacedName{Name: cr.Spec.WriteConnectionSecretToReference.Name, Namespace: cr.Namespace}
 	err := c.kube.Get(ctx, name, s)
 	if resource.IgnoreNotFound(err) != nil {
-		return nil, errors.Wrap(err, "connection secret could not be retrieved")
+		return nil, err
 	}
-	m := map[string][]byte{
-		v1alpha1.ResourceCredentialsSecretUserKey:     []byte(cr.DatabaseUserName()),
-		v1alpha1.ResourceCredentialsSecretPasswordKey: s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey],
+	if len(s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey]) != 0 {
+		m[v1alpha1.ResourceCredentialsSecretPasswordKey] = s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey]
 	}
-	endpoint := ""
 	// TODO(muvaf): There might be cases where more than 1 private and/or public IP address has been assigned. We should
 	// somehow show all addresses that are possible to use.
 	for _, ip := range cr.Status.AtProvider.IPAddresses {
@@ -219,16 +221,15 @@ func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha
 			m[v1alpha2.PrivateIPKey] = []byte(ip.IPAddress)
 			// TODO(muvaf): we explicitly enforce use of private IP if it's available. But this should be configured
 			// by resource class or claim.
-			endpoint = ip.IPAddress
+			m[v1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(ip.IPAddress)
 		}
 		if ip.Type == v1alpha2.PublicIPType {
 			m[v1alpha2.PublicIPKey] = []byte(ip.IPAddress)
-			if endpoint == "" {
-				endpoint = ip.IPAddress
+			if len(m[v1alpha1.ResourceCredentialsSecretEndpointKey]) == 0 {
+				m[v1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(ip.IPAddress)
 			}
 		}
 	}
-	m[v1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(endpoint)
 	return m, nil
 }
 
@@ -254,17 +255,18 @@ func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alph
 	if err != nil {
 		return nil, err
 	}
-	if len(conn[v1alpha1.ResourceCredentialsSecretPasswordKey]) == 0 {
-		p, err := util.GeneratePassword(v1alpha2.PasswordLength)
+	password := string(conn[v1alpha1.ResourceCredentialsSecretPasswordKey])
+	if len(password) == 0 {
+		password, err = util.GeneratePassword(v1alpha2.PasswordLength)
 		if err != nil {
 			return nil, err
 		}
-		rootUser.Password = p
-		conn[v1alpha1.ResourceCredentialsSecretPasswordKey] = []byte(p)
+		conn[v1alpha1.ResourceCredentialsSecretPasswordKey] = []byte(password)
 	}
+	rootUser.Password = password
 	_, err = c.user.Update(c.projectID, meta.GetExternalName(cr), rootUser.Name, rootUser).
 		Host(rootUser.Host).
 		Context(ctx).
 		Do()
-	return conn, errors.Wrap(err, "cannot update root user credentials")
+	return conn, err
 }
