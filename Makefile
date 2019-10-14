@@ -32,6 +32,7 @@ GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/stack
 GO_LDFLAGS += -X $(GO_PROJECT)/pkg/version.Version=$(VERSION)
 GO_SUBDIRS += cmd pkg apis
+GO111MODULE = on
 -include build/makelib/golang.mk
 
 # ====================================================================================
@@ -163,3 +164,17 @@ crossplane.help:
 help-special: crossplane.help
 
 .PHONY: crossplane.help help-special
+
+# target for resolving angryjet dependency
+# TODO(soorena776): move this to golang.mk in build submodule
+CROSSPLANETOOLS_ANGRYJET := $(TOOLS_HOST_DIR)/angryjet
+export CROSSPLANETOOLS_ANGRYJET
+
+$(CROSSPLANETOOLS_ANGRYJET):
+	@$(INFO) installing Crossplane AngryJet
+	@mkdir -p $(TOOLS_HOST_DIR)/tmp-angryjet || $(FAIL)
+	@GO111MODULE=off GOPATH=$(TOOLS_HOST_DIR)/tmp-angryjet GOBIN=$(TOOLS_HOST_DIR) $(GOHOST) get github.com/crossplaneio/crossplane-tools/cmd/angryjet || rm -fr $(TOOLS_HOST_DIR)/tmp-angryjet|| $(FAIL)
+	@rm -fr $(TOOLS_HOST_DIR)/tmp-angryjet
+	@$(OK) installing Crossplane AngryJet
+
+go.generate: $(CROSSPLANETOOLS_ANGRYJET)
