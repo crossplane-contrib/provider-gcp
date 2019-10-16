@@ -593,11 +593,6 @@ func (in *MySQLReplicaConfiguration) DeepCopyInto(out *MySQLReplicaConfiguration
 		*out = new(int64)
 		**out = **in
 	}
-	if in.Password != nil {
-		in, out := &in.Password, &out.Password
-		*out = new(string)
-		**out = **in
-	}
 	if in.SslCipher != nil {
 		in, out := &in.SslCipher, &out.SslCipher
 		*out = new(string)

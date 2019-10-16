@@ -66,7 +66,7 @@ type CloudsqlInstanceController struct{}
 func (c *CloudsqlInstanceController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewManagedReconciler(mgr,
 		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
-		resource.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient()}))
+		resource.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}))
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha2.CloudsqlInstanceKindAPIVersion, v1alpha2.Group))
 
@@ -101,9 +101,6 @@ func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (r
 		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)
 	}
 
-	if c.newServiceFn == nil {
-		c.newServiceFn = sqladmin.NewService
-	}
 	s, err := c.newServiceFn(ctx,
 		option.WithCredentialsJSON(secret.Data[provider.Spec.Secret.Key]),
 		option.WithScopes(sqladmin.SqlserviceAdminScope))
@@ -146,9 +143,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	switch cr.Status.AtProvider.State {
 	case v1alpha2.StateRunnable:
 		cr.Status.SetConditions(v1alpha1.Available())
-		if !resource.IsBound(cr) {
-			resource.SetBindable(cr)
-		}
+		resource.SetBindable(cr)
 		conn, err = c.getConnectionDetails(ctx, cr)
 		if err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, errConnectionNotRetrieved)
@@ -203,12 +198,11 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 
 func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha2.CloudsqlInstance) (resource.ConnectionDetails, error) {
 	m := map[string][]byte{
-		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cr.DatabaseUserName()),
+		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
 	}
 	s := &v1.Secret{}
 	name := types.NamespacedName{Name: cr.Spec.WriteConnectionSecretToReference.Name, Namespace: cr.Namespace}
-	err := c.kube.Get(ctx, name, s)
-	if resource.IgnoreNotFound(err) != nil {
+	if err := c.kube.Get(ctx, name, s); resource.IgnoreNotFound(err) != nil {
 		return nil, err
 	}
 	if len(s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey]) != 0 {
@@ -240,7 +234,7 @@ func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alph
 	}
 	var rootUser *sqladmin.User
 	for _, val := range users.Items {
-		if val.Name == cr.DatabaseUserName() {
+		if val.Name == cloudsql.DatabaseUserName(cr.Spec.ForProvider) {
 			rootUser = val
 			break
 		}
@@ -248,7 +242,7 @@ func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alph
 	if rootUser == nil {
 		return nil, &googleapi.Error{
 			Code:    http.StatusNotFound,
-			Message: fmt.Sprintf("user: %s is not found", cr.DatabaseUserName()),
+			Message: fmt.Sprintf("user: %s is not found", cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
 		}
 	}
 	conn, err := c.getConnectionDetails(ctx, cr)

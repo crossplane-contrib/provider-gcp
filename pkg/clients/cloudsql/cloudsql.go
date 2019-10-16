@@ -17,11 +17,18 @@ limitations under the License.
 package cloudsql
 
 import (
+	"strings"
+
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
+
+// Cyclomatic complexity test is disabled for translation methods
+// because all they do is simple comparison & assignment without
+// real logic. But every if statement increases the cyclomatic
+// complexity rate.
 
 // GenerateDatabaseInstance generates *sqladmin.DatabaseInstance instance from CloudsqlInstanceParameters.
 func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
@@ -64,7 +71,6 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 				ConnectRetryInterval:    gcp.Int64Value(in.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval),
 				DumpFilePath:            gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath),
 				MasterHeartbeatPeriod:   gcp.Int64Value(in.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod),
-				Password:                gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.Password),
 				SslCipher:               gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher),
 				Username:                gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.Username),
 				VerifyServerCertificate: gcp.BoolValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate),
@@ -139,7 +145,7 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 		CurrentDiskSize:            in.CurrentDiskSize,
 		ConnectionName:             in.ConnectionName,
 		GceZone:                    in.GceZone,
-		Ipv6Address:                in.Ipv6Address,
+		IPv6Address:                in.Ipv6Address,
 		Project:                    in.Project,
 		SelfLink:                   in.SelfLink,
 		ServiceAccountEmailAddress: in.ServiceAccountEmailAddress,
@@ -180,6 +186,7 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 
 // LateInitializeSpec fills unassigned fields with the values in sqladmin.DatabaseInstance object.
 func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
+
 	// TODO(muvaf): json comparison methods might have performance issues. learn code-generation to avoid this mess.
 	if spec.Region == "" {
 		spec.Region = in.Region
@@ -289,7 +296,6 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 		spec.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval = gcp.LateInitializeInt64(spec.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval, in.ReplicaConfiguration.MysqlReplicaConfiguration.ConnectRetryInterval)
 		spec.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath, in.ReplicaConfiguration.MysqlReplicaConfiguration.DumpFilePath)
 		spec.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod = gcp.LateInitializeInt64(spec.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod, in.ReplicaConfiguration.MysqlReplicaConfiguration.MasterHeartbeatPeriod)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.Password = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.Password, in.ReplicaConfiguration.MysqlReplicaConfiguration.Password)
 		spec.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher, in.ReplicaConfiguration.MysqlReplicaConfiguration.SslCipher)
 		spec.ReplicaConfiguration.MySQLReplicaConfiguration.Username = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.Username, in.ReplicaConfiguration.MysqlReplicaConfiguration.Username)
 		spec.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate = gcp.LateInitializeBool(spec.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate, in.ReplicaConfiguration.MysqlReplicaConfiguration.VerifyServerCertificate)
@@ -316,4 +322,12 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 			}
 		}
 	}
+}
+
+// DatabaseUserName returns default database user name base on database version
+func DatabaseUserName(p v1alpha2.CloudsqlInstanceParameters) string {
+	if strings.HasPrefix(gcp.StringValue(p.DatabaseVersion), v1alpha2.PostgresqlDBVersionPrefix) {
+		return v1alpha2.PostgresqlDefaultUser
+	}
+	return v1alpha2.MysqlDefaultUser
 }

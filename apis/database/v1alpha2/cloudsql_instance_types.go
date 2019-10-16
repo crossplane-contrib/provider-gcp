@@ -17,11 +17,6 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"strings"
-
-	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
-
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
@@ -46,8 +41,7 @@ const (
 	PostgresqlDBVersionPrefix = "POSTGRES"
 	PostgresqlDefaultUser     = "postgres"
 
-	PasswordLength         = 20
-	DefaultStorageGB int64 = 10
+	PasswordLength = 20
 
 	PrivateIPType = "PRIVATE"
 	PublicIPType  = "PRIMARY"
@@ -94,9 +88,9 @@ type CloudsqlInstanceObservation struct {
 	// IPAddresses: The assigned IP addresses for the instance.
 	IPAddresses []*IPMapping `json:"ipAddresses,omitempty"`
 
-	// Ipv6Address: The IPv6 address assigned to the instance. This property
+	// IPv6Address: The IPv6 address assigned to the instance. This property
 	// is applicable only to First Generation instances.
-	Ipv6Address string `json:"ipv6Address,omitempty"`
+	IPv6Address string `json:"ipv6Address,omitempty"`
 
 	// Project: The project ID of the project containing the Cloud SQL
 	// instance. The Google apps domain is prefixed if applicable.
@@ -111,8 +105,9 @@ type CloudsqlInstanceObservation struct {
 	// +optional
 	ServiceAccountEmailAddress string `json:"serviceAccountEmailAddress,omitempty"`
 
-	// ServerCaCert: SSL configuration.
 	// TODO(muvaf): This can be represented as standalone managed resource.
+
+	// ServerCaCert: SSL configuration.
 	// +optional
 	ServerCaCert *SslCert `json:"serverCaCert,omitempty"`
 
@@ -128,11 +123,13 @@ type CloudsqlInstanceObservation struct {
 	// UNKNOWN_STATE: The state of the instance is unknown.
 	State string `json:"state,omitempty"`
 
+	// NOTE(muvaf): This comes from Settings sub-struct, not directly from
+	// DatabaseInstance struct.
+
 	// SettingsVersion: The version of instance settings. This is a required
 	// field for update method to make sure concurrent updates are handled
 	// properly. During update, use the most recent settingsVersion value
 	// for this instance and do not try to update this value.
-	// NOTE(muvaf): This comes from Settings sub-struct, not directly from DatabaseInstance struct.
 	SettingsVersion int64 `json:"settingsVersion,omitempty"`
 }
 
@@ -376,7 +373,6 @@ type MaintenanceWindow struct {
 
 	// UpdateTrack: Maintenance timing setting: canary (Earlier) or stable
 	// (Later).
-	//  Learn more.
 	// +optional
 	UpdateTrack *string `json:"updateTrack,omitempty"`
 }
@@ -560,10 +556,6 @@ type MySQLReplicaConfiguration struct {
 	// +optional
 	MasterHeartbeatPeriod *int64 `json:"masterHeartbeatPeriod,omitempty"`
 
-	// Password: The password for the replication connection.
-	// +optional
-	Password *string `json:"password,omitempty"`
-
 	// SslCipher is A list of permissible ciphers to use for SSL encryption.
 	// +optional
 	SslCipher *string `json:"sslCipher,omitempty"`
@@ -664,11 +656,6 @@ type CloudsqlInstance struct {
 	Status CloudsqlInstanceStatus `json:"status,omitempty"`
 }
 
-// GetProviderReference of this CloudsqlInstance
-func (i *CloudsqlInstance) GetProviderReference() *corev1.ObjectReference {
-	return i.Spec.ProviderReference
-}
-
 // +kubebuilder:object:root=true
 
 // CloudsqlInstanceList contains a list of CloudsqlInstance
@@ -676,14 +663,6 @@ type CloudsqlInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CloudsqlInstance `json:"items"`
-}
-
-// DatabaseUserName returns default database user name base on database version
-func (i *CloudsqlInstance) DatabaseUserName() string {
-	if strings.HasPrefix(gcp.StringValue(i.Spec.ForProvider.DatabaseVersion), PostgresqlDBVersionPrefix) {
-		return PostgresqlDefaultUser
-	}
-	return MysqlDefaultUser
 }
 
 // A CloudsqlInstanceClassSpecTemplate is a template for the spec of a

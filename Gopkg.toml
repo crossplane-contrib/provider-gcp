@@ -45,11 +45,6 @@ required = [
   version="v0.2.0"
 
 [[override]]
-  name="github.com/crossplaneio/crossplane-runtime"
-  source = "https://github.com/muvaf/crossplane-runtime.git"
-  revision="6d8fc1500f64e9037309cb8f7772c0bd9d69a8d0"
-
-[[override]]
   name="sigs.k8s.io/controller-tools"
   revision = "ba11932048e4538f6e435f5ca0cdea19bf458338"
 

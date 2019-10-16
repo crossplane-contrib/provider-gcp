@@ -262,10 +262,6 @@ spec:
                             between replication heartbeats.'
                           format: int64
                           type: integer
-                        password:
-                          description: 'Password: The password for the replication
-                            connection.'
-                          type: string
                         sslCipher:
                           description: SslCipher is A list of permissible ciphers
                             to use for SSL encryption.
@@ -663,7 +659,7 @@ spec:
                     type: object
                   type: array
                 ipv6Address:
-                  description: 'Ipv6Address: The IPv6 address assigned to the instance.
+                  description: 'IPv6Address: The IPv6 address assigned to the instance.
                     This property is applicable only to First Generation instances.'
                   type: string
                 project:
@@ -675,8 +671,7 @@ spec:
                   description: 'SelfLink: The URI of this resource.'
                   type: string
                 serverCaCert:
-                  description: 'ServerCaCert: SSL configuration. TODO(muvaf): This
-                    can be represented as standalone managed resource.'
+                  description: 'ServerCaCert: SSL configuration.'
                   properties:
                     cert:
                       description: 'Cert: PEM representation.'
@@ -717,8 +712,7 @@ spec:
                     This is a required field for update method to make sure concurrent
                     updates are handled properly. During update, use the most recent
                     settingsVersion value for this instance and do not try to update
-                    this value. NOTE(muvaf): This comes from Settings sub-struct,
-                    not directly from DatabaseInstance struct.'
+                    this value.'
                   format: int64
                   type: integer
                 state:

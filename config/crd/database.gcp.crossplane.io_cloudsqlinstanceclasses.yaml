@@ -179,10 +179,6 @@ spec:
                             between replication heartbeats.'
                           format: int64
                           type: integer
-                        password:
-                          description: 'Password: The password for the replication
-                            connection.'
-                          type: string
                         sslCipher:
                           description: SslCipher is A list of permissible ciphers
                             to use for SSL encryption.

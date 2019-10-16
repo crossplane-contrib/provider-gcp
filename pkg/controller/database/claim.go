@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"strings"
 
-	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
-
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -106,9 +104,6 @@ func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, c
 		spec.ForProvider.DatabaseVersion = translateVersion(pg.Spec.EngineVersion, v1alpha2.PostgresqlDBVersionPrefix)
 	}
 
-	// NOTE(hasheddan): consider moving defaulting to either CRD or managed reconciler level
-	checkEmptySpec(spec)
-
 	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
 	spec.ReclaimPolicy = rs.SpecTemplate.ReclaimPolicy
@@ -189,9 +184,6 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 		spec.ForProvider.DatabaseVersion = translateVersion(my.Spec.EngineVersion, v1alpha2.MysqlDBVersionPrefix)
 	}
 
-	// NOTE(hasheddan): consider moving defaulting to either CRD or managed reconciler level
-	checkEmptySpec(spec)
-
 	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
 	spec.ReclaimPolicy = rs.SpecTemplate.ReclaimPolicy
@@ -202,16 +194,9 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 }
 
 func translateVersion(version, versionPrefix string) *string {
-	r := ""
 	if version != "" {
-		r = fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
+		r := fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
+		return &r
 	}
-	return &r
-}
-
-func checkEmptySpec(spec *v1alpha2.CloudsqlInstanceSpec) {
-	if gcp.Int64Value(spec.ForProvider.Settings.DataDiskSizeGb) == 0 {
-		def := v1alpha2.DefaultStorageGB
-		spec.ForProvider.Settings.DataDiskSizeGb = &def
-	}
+	return nil
 }
