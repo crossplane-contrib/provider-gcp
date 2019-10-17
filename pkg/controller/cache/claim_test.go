@@ -52,6 +52,7 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 	providerName := "coolprovider"
 	region := "cool-region"
 	tier := "cool-tier"
+	redisVersion := "REDIS_3_2"
 
 	cases := map[string]struct {
 		args args
@@ -85,8 +86,8 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
 							ProviderReference:                &corev1.ObjectReference{Name: providerName},
 						},
-						CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
-							RedisVersion: "REDIS_3_2",
+						ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
+							RedisVersion: &redisVersion,
 							Region:       region,
 							Tier:         tier,
 						},

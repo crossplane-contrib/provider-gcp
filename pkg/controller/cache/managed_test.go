@@ -20,6 +20,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+
 	redisv1 "cloud.google.com/go/redis/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
@@ -30,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
@@ -44,16 +45,14 @@ import (
 )
 
 const (
-	namespace         = "cool-namespace"
-	uid               = types.UID("definitely-a-uuid")
-	region            = "us-cool1"
-	project           = "coolProject"
-	instanceName      = cloudmemorystore.NamePrefix + "-" + string(uid)
-	qualifiedName     = "projects/" + project + "/locations/" + region + "/instances/" + instanceName
-	authorizedNetwork = "default"
-	memorySizeGB      = 1
-	host              = "172.16.0.1"
-	port              = 6379
+	namespace     = "cool-namespace"
+	region        = "us-cool1"
+	project       = "coolProject"
+	instanceName  = "claimns-claimname-8sdh3"
+	qualifiedName = "projects/" + project + "/locations/" + region + "/instances/" + instanceName
+	memorySizeGB  = 1
+	host          = "172.16.0.1"
+	port          = 6379
 
 	providerName       = "cool-gcp"
 	providerSecretName = "cool-gcp-secret"
@@ -64,6 +63,8 @@ const (
 )
 
 var (
+	authorizedNetwork = "default"
+
 	errorBoom    = errors.New("boom")
 	redisConfigs = map[string]string{"cool": "socool"}
 )
@@ -83,19 +84,19 @@ func withBindingPhase(p runtimev1alpha1.BindingPhase) instanceModifier {
 }
 
 func withState(s string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.State = s }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.State = s }
 }
 
-func withProviderID(id string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.ProviderID = id }
+func withFullName(name string) instanceModifier {
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.Name = name }
 }
 
-func withEndpoint(e string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.Endpoint = e }
+func withHost(e string) instanceModifier {
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.Host = e }
 }
 
 func withPort(p int) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.Port = p }
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.Port = int32(p) }
 }
 
 func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
@@ -103,18 +104,20 @@ func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  namespace,
 			Name:       instanceName,
-			UID:        uid,
 			Finalizers: []string{},
+			Annotations: map[string]string{
+				meta.ExternalNameAnnotationKey: instanceName,
+			},
 		},
 		Spec: v1alpha2.CloudMemorystoreInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
 				ProviderReference:                &corev1.ObjectReference{Namespace: namespace, Name: providerName},
 				WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: connectionSecretName},
 			},
-			CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+			ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 				MemorySizeGB:      memorySizeGB,
 				RedisConfigs:      redisConfigs,
-				AuthorizedNetwork: authorizedNetwork,
+				AuthorizedNetwork: &authorizedNetwork,
 			},
 		},
 	}
@@ -277,10 +280,10 @@ func TestObserve(t *testing.T) {
 				mg: instance(
 					withConditions(runtimev1alpha1.Available()),
 					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound),
-					withState(v1alpha2.StateReady),
-					withEndpoint(host),
+					withState(cloudmemorystore.StateReady),
+					withHost(host),
 					withPort(port),
-					withProviderID(qualifiedName)),
+					withFullName(qualifiedName)),
 				observation: resource.ExternalObservation{
 					ResourceExists: true,
 					ConnectionDetails: resource.ConnectionDetails{
@@ -305,8 +308,8 @@ func TestObserve(t *testing.T) {
 			want: want{
 				mg: instance(
 					withConditions(runtimev1alpha1.Creating()),
-					withState(v1alpha2.StateCreating),
-					withProviderID(qualifiedName)),
+					withState(cloudmemorystore.StateCreating),
+					withFullName(qualifiedName)),
 				observation: resource.ExternalObservation{
 					ResourceExists:    true,
 					ConnectionDetails: resource.ConnectionDetails{},
@@ -329,8 +332,8 @@ func TestObserve(t *testing.T) {
 			want: want{
 				mg: instance(
 					withConditions(runtimev1alpha1.Deleting()),
-					withState(v1alpha2.StateDeleting),
-					withProviderID(qualifiedName)),
+					withState(cloudmemorystore.StateDeleting),
+					withFullName(qualifiedName)),
 				observation: resource.ExternalObservation{
 					ResourceExists:    true,
 					ConnectionDetails: resource.ConnectionDetails{},
@@ -495,28 +498,8 @@ func TestUpdate(t *testing.T) {
 	}{
 		"UpdatedInstance": {
 			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{}, nil
-				},
 				MockUpdateInstance: func(_ context.Context, _ *redisv1pb.UpdateInstanceRequest, _ ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error) {
 					return nil, nil
-				},
-			}},
-			args: args{
-				ctx: context.Background(),
-				mg:  instance(),
-			},
-			want: want{
-				mg: instance(withConditions()),
-			},
-		},
-		"UpdateNotRequired": {
-			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{
-						MemorySizeGb: memorySizeGB,
-						RedisConfigs: redisConfigs,
-					}, nil
 				},
 			}},
 			args: args{
@@ -538,26 +521,8 @@ func TestUpdate(t *testing.T) {
 				err: errors.New(errNotInstance),
 			},
 		},
-		"FailedToGetInstance": {
-			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return nil, errorBoom
-				}},
-			},
-			args: args{
-				ctx: context.Background(),
-				mg:  instance(),
-			},
-			want: want{
-				mg:  instance(),
-				err: errors.Wrap(errorBoom, errGetInstance),
-			},
-		},
 		"FailedToUpdateInstance": {
 			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{}, nil
-				},
 				MockUpdateInstance: func(_ context.Context, _ *redisv1pb.UpdateInstanceRequest, _ ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error) {
 					return nil, errorBoom
 				},

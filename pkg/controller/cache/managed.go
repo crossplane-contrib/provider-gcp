@@ -97,12 +97,12 @@ type external struct {
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	cr, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotInstance)
 	}
 
-	id := cloudmemorystore.NewInstanceID(e.projectID, i)
+	id := cloudmemorystore.NewInstanceID(e.projectID, cr)
 	existing, err := e.cms.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
 	if cloudmemorystore.IsNotFound(err) {
 		return resource.ExternalObservation{ResourceExists: false}, nil
@@ -111,28 +111,28 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 		return resource.ExternalObservation{}, errors.Wrap(err, errGetInstance)
 	}
 
-	i.Status.State = existing.GetState().String()
-	i.Status.Endpoint = existing.GetHost()
-	i.Status.Port = int(existing.GetPort())
-	i.Status.ProviderID = existing.GetName()
+	cr.Status.AtProvider = cloudmemorystore.GenerateObservation(*existing)
 
-	switch i.Status.State {
-	case v1alpha2.StateReady:
-		i.Status.SetConditions(runtimev1alpha1.Available())
-		resource.SetBindable(i)
-	case v1alpha2.StateCreating:
-		i.Status.SetConditions(runtimev1alpha1.Creating())
-	case v1alpha2.StateDeleting:
-		i.Status.SetConditions(runtimev1alpha1.Deleting())
+	switch cr.Status.AtProvider.State {
+	case cloudmemorystore.StateReady:
+		cr.Status.SetConditions(runtimev1alpha1.Available())
+		resource.SetBindable(cr)
+	case cloudmemorystore.StateCreating:
+		cr.Status.SetConditions(runtimev1alpha1.Creating())
+	case cloudmemorystore.StateDeleting:
+		cr.Status.SetConditions(runtimev1alpha1.Deleting())
+	default:
+		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
 	}
 
 	o := resource.ExternalObservation{
 		ResourceExists:    true,
+		ResourceUpToDate:  cloudmemorystore.IsUpToDate(cr, existing),
 		ConnectionDetails: resource.ConnectionDetails{},
 	}
 
-	if i.Status.Endpoint != "" {
-		o.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(i.Status.Endpoint)
+	if cr.Status.AtProvider.Host != "" {
+		o.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(cr.Status.AtProvider.Host)
 	}
 
 	return o, nil
@@ -157,18 +157,8 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.Ex
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotInstance)
 	}
-
 	id := cloudmemorystore.NewInstanceID(e.projectID, i)
-	existing, err := e.cms.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
-	if err != nil {
-		return resource.ExternalUpdate{}, errors.Wrap(err, errGetInstance)
-	}
-
-	if !cloudmemorystore.NeedsUpdate(i, existing) {
-		return resource.ExternalUpdate{}, nil
-	}
-
-	_, err = e.cms.UpdateInstance(ctx, cloudmemorystore.NewUpdateInstanceRequest(id, i))
+	_, err := e.cms.UpdateInstance(ctx, cloudmemorystore.NewUpdateInstanceRequest(id, i))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
 }
 

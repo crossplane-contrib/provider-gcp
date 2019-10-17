@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -97,11 +99,11 @@ func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs 
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
-		CloudMemorystoreInstanceParameters: rl.SpecTemplate.CloudMemorystoreInstanceParameters,
+		ForProvider: rl.SpecTemplate.CloudMemorystoreInstanceParameters,
 	}
 
 	if rc.Spec.EngineVersion != "" {
-		spec.RedisVersion = toGCPFormat(rc.Spec.EngineVersion)
+		spec.ForProvider.RedisVersion = gcp.LateInitializeString(spec.ForProvider.RedisVersion, toGCPFormat(rc.Spec.EngineVersion))
 	}
 
 	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}

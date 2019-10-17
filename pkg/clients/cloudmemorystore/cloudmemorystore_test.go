@@ -18,34 +18,35 @@ package cloudmemorystore
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 
 	"github.com/crossplaneio/stack-gcp/apis/cache/v1alpha2"
 )
 
 const (
-	uid                   = types.UID("definitely-a-uuid")
-	region                = "us-cool1"
-	project               = "coolProject"
-	instanceName          = NamePrefix + "-" + string(uid)
-	qualifiedName         = "projects/" + project + "/locations/" + region + "/instances/" + instanceName
-	parent                = "projects/" + project + "/locations/" + region
+	region        = "us-cool1"
+	project       = "coolProject"
+	instanceName  = "claimnamespace-claimname-342sd"
+	qualifiedName = "projects/" + project + "/locations/" + region + "/instances/" + instanceName
+	parent        = "projects/" + project + "/locations/" + region
+
+	memorySizeGB = 1
+)
+
+var (
 	locationID            = region + "-a"
 	alternativeLocationID = region + "-b"
 	reservedIPRange       = "172.16.0.0/16"
 	authorizedNetwork     = "default"
 	redisVersion          = "REDIS_3_2"
-	memorySizeGB          = 1
-)
 
-var (
 	redisConfigs = map[string]string{"cool": "socool"}
-	updateMask   = &field_mask.FieldMask{Paths: []string{"memory_size_gb", "redis_configs"}}
+	updateMask   = &field_mask.FieldMask{Paths: []string{"memory_size_gb", "redis_configs", "labels", "display_name"}}
 )
 
 func TestInstanceID(t *testing.T) {
@@ -61,9 +62,13 @@ func TestInstanceID(t *testing.T) {
 			name:    "Success",
 			project: project,
 			i: &v1alpha2.CloudMemorystoreInstance{
-				ObjectMeta: metav1.ObjectMeta{UID: uid},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						meta.ExternalNameAnnotationKey: instanceName,
+					},
+				},
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region: region,
 					},
 				},
@@ -108,16 +113,20 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 			name:    "BasicInstance",
 			project: project,
 			i: &v1alpha2.CloudMemorystoreInstance{
-				ObjectMeta: metav1.ObjectMeta{UID: uid},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						meta.ExternalNameAnnotationKey: instanceName,
+					},
+				},
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:                region,
 						Tier:                  redisv1pb.Instance_BASIC.String(),
-						LocationID:            locationID,
-						AlternativeLocationID: alternativeLocationID,
-						ReservedIPRange:       reservedIPRange,
-						AuthorizedNetwork:     authorizedNetwork,
-						RedisVersion:          redisVersion,
+						LocationID:            &locationID,
+						AlternativeLocationID: &alternativeLocationID,
+						ReservedIPRange:       &reservedIPRange,
+						AuthorizedNetwork:     &authorizedNetwork,
+						RedisVersion:          &redisVersion,
 						RedisConfigs:          redisConfigs,
 						MemorySizeGB:          memorySizeGB,
 					},
@@ -127,6 +136,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 				Parent:     parent,
 				InstanceId: instanceName,
 				Instance: &redisv1pb.Instance{
+					Name:                  qualifiedName,
 					Tier:                  redisv1pb.Instance_BASIC,
 					LocationId:            locationID,
 					AlternativeLocationId: alternativeLocationID,
@@ -142,9 +152,13 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 			name:    "StandardHAInstance",
 			project: project,
 			i: &v1alpha2.CloudMemorystoreInstance{
-				ObjectMeta: metav1.ObjectMeta{UID: uid},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						meta.ExternalNameAnnotationKey: instanceName,
+					},
+				},
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:       region,
 						Tier:         redisv1pb.Instance_STANDARD_HA.String(),
 						MemorySizeGB: memorySizeGB,
@@ -155,6 +169,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 				Parent:     parent,
 				InstanceId: instanceName,
 				Instance: &redisv1pb.Instance{
+					Name:         qualifiedName,
 					Tier:         redisv1pb.Instance_STANDARD_HA,
 					MemorySizeGb: memorySizeGB,
 				},
@@ -183,44 +198,27 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 			name:    "UpdatableFieldsOnly",
 			project: project,
 			i: &v1alpha2.CloudMemorystoreInstance{
-				ObjectMeta: metav1.ObjectMeta{UID: uid},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						meta.ExternalNameAnnotationKey: instanceName,
+					},
+				},
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
-						Region:       region,
-						RedisConfigs: redisConfigs,
-						MemorySizeGB: memorySizeGB,
+					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
+						Region:            region,
+						RedisConfigs:      redisConfigs,
+						MemorySizeGB:      memorySizeGB,
+						AuthorizedNetwork: &authorizedNetwork,
 					},
 				},
 			},
 			want: &redisv1pb.UpdateInstanceRequest{
 				UpdateMask: updateMask,
 				Instance: &redisv1pb.Instance{
-					Name:         qualifiedName,
-					RedisConfigs: redisConfigs,
-					MemorySizeGb: memorySizeGB,
-				},
-			},
-		},
-		{
-			name:    "SuperfluousFields",
-			project: project,
-			i: &v1alpha2.CloudMemorystoreInstance{
-				ObjectMeta: metav1.ObjectMeta{UID: uid},
-				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
-						Region:       region,
-						MemorySizeGB: memorySizeGB,
-
-						// This field cannot be updated and should be omitted.
-						AuthorizedNetwork: authorizedNetwork,
-					},
-				},
-			},
-			want: &redisv1pb.UpdateInstanceRequest{
-				UpdateMask: updateMask,
-				Instance: &redisv1pb.Instance{
-					Name:         qualifiedName,
-					MemorySizeGb: memorySizeGB,
+					Name:              qualifiedName,
+					RedisConfigs:      redisConfigs,
+					MemorySizeGb:      memorySizeGB,
+					AuthorizedNetwork: authorizedNetwork,
 				},
 			},
 		},
@@ -238,6 +236,7 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 }
 
 func TestNeedsUpdate(t *testing.T) {
+	randString := "wat"
 	cases := []struct {
 		name string
 		kube *v1alpha2.CloudMemorystoreInstance
@@ -248,32 +247,32 @@ func TestNeedsUpdate(t *testing.T) {
 			name: "NeedsLessMemory",
 			kube: &v1alpha2.CloudMemorystoreInstance{
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 						RedisConfigs: redisConfigs,
 						MemorySizeGB: memorySizeGB,
 					},
 				},
 			},
 			gcp:  &redisv1pb.Instance{MemorySizeGb: memorySizeGB + 1},
-			want: true,
+			want: false,
 		},
 		{
 			name: "NeedsNewRedisConfigs",
 			kube: &v1alpha2.CloudMemorystoreInstance{
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 						RedisConfigs: redisConfigs,
 					},
 				},
 			},
 			gcp:  &redisv1pb.Instance{RedisConfigs: map[string]string{"super": "cool"}},
-			want: true,
+			want: false,
 		},
 		{
 			name: "NeedsNoUpdate",
 			kube: &v1alpha2.CloudMemorystoreInstance{
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 						RedisConfigs: redisConfigs,
 						MemorySizeGB: memorySizeGB,
 					},
@@ -283,18 +282,18 @@ func TestNeedsUpdate(t *testing.T) {
 				RedisConfigs: redisConfigs,
 				MemorySizeGb: memorySizeGB,
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "CannotUpdateField",
 			kube: &v1alpha2.CloudMemorystoreInstance{
 				Spec: v1alpha2.CloudMemorystoreInstanceSpec{
-					CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 						MemorySizeGB: memorySizeGB,
 
 						// We can't change this field without destroying and recreating
 						// the instance so it does not register as needing an update.
-						AuthorizedNetwork: "wat",
+						AuthorizedNetwork: &randString,
 					},
 				},
 			},
@@ -302,15 +301,15 @@ func TestNeedsUpdate(t *testing.T) {
 				MemorySizeGb:      memorySizeGB,
 				AuthorizedNetwork: authorizedNetwork,
 			},
-			want: false,
+			want: true,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := NeedsUpdate(tc.kube, tc.gcp)
+			got := IsUpToDate(tc.kube, tc.gcp)
 			if got != tc.want {
-				t.Errorf("NeedsUpdate(...): want: %t got: %t", tc.want, got)
+				t.Errorf("IsUpToDate(...): want: %t got: %t", tc.want, got)
 			}
 		})
 	}
