@@ -282,9 +282,6 @@ spec:
                   items:
                     type: string
                   type: array
-                rootPassword:
-                  description: 'RootPassword: Initial root password. Use only on creation.'
-                  type: string
                 settings:
                   description: 'Settings: The user settings.'
                   properties:
@@ -464,7 +461,7 @@ spec:
                           type: integer
                         updateTrack:
                           description: 'UpdateTrack: Maintenance timing setting: canary
-                            (Earlier) or stable (Later).  Learn more.'
+                            (Earlier) or stable (Later).'
                           type: string
                       type: object
                     pricingPlan:

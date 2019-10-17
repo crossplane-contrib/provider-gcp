@@ -3,10 +3,9 @@ package database
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -38,7 +37,9 @@ const (
 	providerName       = "gcp-provider"
 	providerSecretName = "gcp-creds"
 	providerSecretKey  = "creds"
-	password           = "my_PassWord123!"
+
+	connectionSecretName = "conn-secret"
+	password             = "my_PassWord123!"
 )
 
 var errBoom = errors.New("boom")
@@ -97,8 +98,7 @@ func instance(im ...instanceModifier) *v1alpha2.CloudsqlInstance {
 		},
 		Spec: v1alpha2.CloudsqlInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference:                &corev1.ObjectReference{Namespace: namespace, Name: providerName},
-				WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: providerSecretName},
+				ProviderReference: &corev1.ObjectReference{Namespace: namespace, Name: providerName},
 			},
 			ForProvider: v1alpha2.CloudsqlInstanceParameters{},
 		},
@@ -428,7 +428,6 @@ func TestObserve(t *testing.T) {
 				kube:      tc.kube,
 				projectID: projectID,
 				db:        s.Instances,
-				user:      s.Users,
 			}
 			obs, err := e.Observe(context.Background(), tc.args.mg)
 			if tc.want.err != nil && err != nil {
@@ -452,6 +451,11 @@ func TestObserve(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
+	secretWithPassword := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: connectionSecretName},
+		Data:       connDetails(password, "", ""),
+	}
+
 	type args struct {
 		ctx context.Context
 		mg  resource.Managed
@@ -477,10 +481,14 @@ func TestCreate(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
 			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
 			args: args{
 				mg: instance(),
 			},
 			want: want{
+				cre: resource.ExternalCreation{ConnectionDetails: connDetails("", "", "")},
 				mg:  instance(),
 				err: nil,
 			},
@@ -494,11 +502,82 @@ func TestCreate(t *testing.T) {
 				w.WriteHeader(http.StatusConflict)
 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
 			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
 			args: args{
 				mg: instance(),
 			},
 			want: want{
+				cre: resource.ExternalCreation{ConnectionDetails: connDetails("", "", "")},
+				mg:  instance(),
+			},
+		},
+		"PasswordGenerated": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				i := &sqladmin.DatabaseInstance{}
+				b, err := ioutil.ReadAll(r.Body)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				err = json.Unmarshal(b, i)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				if len(i.RootPassword) == 0 {
+					t.Errorf("r: wanted root password, got:%s", i.RootPassword)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = r.Body.Close()
+				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
 				mg: instance(),
+			},
+			want: want{
+				cre: resource.ExternalCreation{ConnectionDetails: connDetails("", "", "")},
+				mg:  instance(),
+			},
+		},
+		"PasswordAlreadyExists": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				i := &sqladmin.DatabaseInstance{}
+				b, err := ioutil.ReadAll(r.Body)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				err = json.Unmarshal(b, i)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				if i.RootPassword != string(secretWithPassword.Data[runtimev1alpha1.ResourceCredentialsSecretPasswordKey]) {
+					t.Errorf("r: wanted root password, got:%s", i.RootPassword)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = r.Body.Close()
+				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+			}),
+			kube: &test.MockClient{
+				MockGet: func(_ context.Context, _ client.ObjectKey, obj runtime.Object) error {
+					secretWithPassword.DeepCopyInto(obj.(*corev1.Secret))
+					return nil
+				},
+			},
+			args: args{
+				mg: instance(),
+			},
+			want: want{
+				cre: resource.ExternalCreation{ConnectionDetails: connDetails(password, "", "")},
+				mg:  instance(),
 			},
 		},
 		"Failed": {
@@ -510,12 +589,16 @@ func TestCreate(t *testing.T) {
 				w.WriteHeader(http.StatusBadRequest)
 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
 			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
 			args: args{
 				mg: instance(),
 			},
 			want: want{
+				cre: resource.ExternalCreation{ConnectionDetails: connDetails("", "", "")},
 				mg:  instance(),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errInsertFailed),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateFailed),
 			},
 		},
 	}
@@ -529,7 +612,6 @@ func TestCreate(t *testing.T) {
 				kube:      tc.kube,
 				projectID: projectID,
 				db:        s.Instances,
-				user:      s.Users,
 			}
 			cre, err := e.Create(tc.args.ctx, tc.args.mg)
 			if tc.want.err != nil && err != nil {
@@ -541,6 +623,10 @@ func TestCreate(t *testing.T) {
 				if diff := cmp.Diff(tc.want.err, err); diff != "" {
 					t.Errorf("Create(...): -want, +got:\n%s", diff)
 				}
+			}
+			if len(tc.want.cre.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretPasswordKey]) == 0 {
+				tc.want.cre.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretPasswordKey] =
+					cre.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretPasswordKey]
 			}
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
@@ -629,7 +715,6 @@ func TestDelete(t *testing.T) {
 				kube:      tc.kube,
 				projectID: projectID,
 				db:        s.Instances,
-				user:      s.Users,
 			}
 			err := e.Delete(context.Background(), tc.args.mg)
 			if tc.want.err != nil && err != nil {
@@ -668,24 +753,11 @@ func TestUpdate(t *testing.T) {
 		"Successful": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if strings.Contains(r.URL.Path, "/users") {
-					switch r.Method {
-					case http.MethodGet:
-						w.WriteHeader(http.StatusOK)
-						_ = json.NewEncoder(w).Encode(&sqladmin.UsersListResponse{
-							Items: []*sqladmin.User{{Name: v1alpha2.MysqlDefaultUser}},
-						})
-					case http.MethodPut:
-						w.WriteHeader(http.StatusOK)
-						_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-					}
-				} else {
-					if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
-						t.Errorf("r: -want, +got:\n%s", diff)
-					}
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
 				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -694,63 +766,18 @@ func TestUpdate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				upd: resource.ExternalUpdate{
-					ConnectionDetails: map[string][]byte{
-						runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1alpha2.MysqlDefaultUser),
-					},
-				},
 				mg:  instance(),
 				err: nil,
-			},
-		},
-		"CredentialUpdateFails": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if strings.Contains(r.URL.Path, "/users") {
-					switch r.Method {
-					case http.MethodGet:
-						w.WriteHeader(http.StatusOK)
-						_ = json.NewEncoder(w).Encode(&sqladmin.UsersListResponse{
-							Items: []*sqladmin.User{{Name: v1alpha2.MysqlDefaultUser}},
-						})
-					case http.MethodPut:
-						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-					}
-				}
-			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(nil),
-			},
-			args: args{
-				mg: instance(),
-			},
-			want: want{
-				mg:  instance(),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateRootFailed),
 			},
 		},
 		"PatchFails": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if strings.Contains(r.URL.Path, "/users") {
-					switch r.Method {
-					case http.MethodGet:
-						w.WriteHeader(http.StatusOK)
-						_ = json.NewEncoder(w).Encode(&sqladmin.UsersListResponse{
-							Items: []*sqladmin.User{{Name: v1alpha2.MysqlDefaultUser}},
-						})
-					case http.MethodPut:
-						w.WriteHeader(http.StatusOK)
-						_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-					}
-				} else {
-					if diff := cmp.Diff("PATCH", r.Method); diff != "" {
-						t.Errorf("r: -want, +got:\n%s", diff)
-					}
-					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if diff := cmp.Diff("PATCH", r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
 				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -765,7 +792,7 @@ func TestUpdate(t *testing.T) {
 					},
 				},
 				mg:  instance(),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errPatchFailed),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateFailed),
 			},
 		},
 	}
@@ -779,7 +806,6 @@ func TestUpdate(t *testing.T) {
 				kube:      tc.kube,
 				projectID: projectID,
 				db:        s.Instances,
-				user:      s.Users,
 			}
 			upd, err := e.Update(context.Background(), tc.args.mg)
 			if tc.want.err != nil && err != nil {
@@ -793,14 +819,10 @@ func TestUpdate(t *testing.T) {
 				}
 			}
 			if tc.want.err == nil {
-				if len(upd.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretPasswordKey]) == 0 {
-					t.Errorf("Update(...): want password does not exist in connection details:\n")
-				}
-				delete(upd.ConnectionDetails, runtimev1alpha1.ResourceCredentialsSecretPasswordKey)
-				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
 					t.Errorf("Update(...): -want, +got:\n%s", diff)
 				}
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
 					t.Errorf("Update(...): -want, +got:\n%s", diff)
 				}
 			}
@@ -871,157 +893,6 @@ func TestGetConnectionDetails(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.want.conn, conn); diff != "" {
 				t.Errorf("getConnectionDetails(...): -want, +got:\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestUpdateRootCredentials(t *testing.T) {
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
-		Data: map[string][]byte{
-			runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(password),
-		},
-	}
-	type args struct {
-		cr *v1alpha2.CloudsqlInstance
-	}
-	type want struct {
-		conn resource.ConnectionDetails
-		err  error
-	}
-
-	cases := map[string]struct {
-		handler http.Handler
-		kube    client.Client
-		args    args
-		want    want
-	}{
-		"SuccessfulGeneratedPassword": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				switch r.Method {
-				case http.MethodGet:
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&sqladmin.UsersListResponse{
-						Items: []*sqladmin.User{{Name: v1alpha2.MysqlDefaultUser}},
-					})
-				case http.MethodPut:
-					user := &sqladmin.User{}
-					_ = json.NewDecoder(r.Body).Decode(user)
-					if user.Password == "" {
-						t.Errorf("updateRootCredentials(...): no password is sent over\n")
-					}
-					if diff := cmp.Diff(user.Name, v1alpha2.MysqlDefaultUser); diff != "" {
-						t.Errorf("updateRootCredentials(...): -want user name, +got user name:\n%s", diff)
-					}
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-				}
-				_ = r.Body.Close()
-			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(nil),
-			},
-			args: args{
-				cr: instance(),
-			},
-		},
-		"SuccessfulExistingPassword": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				switch r.Method {
-				case http.MethodGet:
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&sqladmin.UsersListResponse{
-						Items: []*sqladmin.User{{Name: v1alpha2.MysqlDefaultUser}},
-					})
-				case http.MethodPut:
-					user := &sqladmin.User{}
-					_ = json.NewDecoder(r.Body).Decode(user)
-					if diff := cmp.Diff(password, user.Password); diff != "" {
-						t.Errorf("updateRootCredentials(...): -want password, +got password:\n%s", diff)
-					}
-					if diff := cmp.Diff(v1alpha2.MysqlDefaultUser, user.Name); diff != "" {
-						t.Errorf("updateRootCredentials(...): -want user name, +got user name:\n%s", diff)
-					}
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-				}
-				_ = r.Body.Close()
-			}),
-			kube: &test.MockClient{
-				MockGet: func(_ context.Context, _ client.ObjectKey, obj runtime.Object) error {
-					secret.DeepCopyInto(obj.(*corev1.Secret))
-					return nil
-				},
-			},
-			args: args{
-				cr: instance(),
-			},
-			want: want{
-				conn: connDetails(password, "", ""),
-			},
-		},
-		"UserNotFound": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method == http.MethodGet {
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&sqladmin.UsersListResponse{})
-				}
-				_ = r.Body.Close()
-			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(nil),
-			},
-			args: args{
-				cr: instance(),
-			},
-			want: want{
-				err: gError(http.StatusNotFound, fmt.Sprintf("user: %s is not found", v1alpha2.MysqlDefaultUser)),
-			},
-		},
-		"GetConnectionDetailsFails": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method == http.MethodGet {
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&sqladmin.UsersListResponse{
-						Items: []*sqladmin.User{{Name: v1alpha2.MysqlDefaultUser}},
-					})
-				}
-				_ = r.Body.Close()
-			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(errBoom),
-			},
-			args: args{
-				cr: instance(),
-			},
-			want: want{
-				err: errBoom,
-			},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			server := httptest.NewServer(tc.handler)
-			defer server.Close()
-			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := cloudsqlExternal{
-				kube:      tc.kube,
-				projectID: projectID,
-				db:        s.Instances,
-				user:      s.Users,
-			}
-			_, err := e.updateRootCredentials(context.Background(), tc.args.cr)
-			if tc.want.err != nil && err != nil {
-				// the case where our mock server returns error.
-				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-					t.Errorf("updateRootCredentials(...): -want, +got:\n%s", diff)
-				}
-			} else {
-				if diff := cmp.Diff(tc.want.err, err); diff != "" {
-					t.Errorf("updateRootCredentials(...): -want, +got:\n%s", diff)
-				}
 			}
 		})
 	}

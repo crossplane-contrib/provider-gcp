@@ -194,9 +194,9 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 }
 
 func translateVersion(version, versionPrefix string) *string {
-	if version != "" {
-		r := fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
-		return &r
+	if version == "" {
+		return nil
 	}
-	return nil
+	r := fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
+	return &r
 }

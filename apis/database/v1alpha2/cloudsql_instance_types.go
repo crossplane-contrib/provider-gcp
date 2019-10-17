@@ -102,13 +102,11 @@ type CloudsqlInstanceObservation struct {
 	// ServiceAccountEmailAddress: The service account email address
 	// assigned to the instance. This property is applicable only to Second
 	// Generation instances.
-	// +optional
 	ServiceAccountEmailAddress string `json:"serviceAccountEmailAddress,omitempty"`
 
 	// TODO(muvaf): This can be represented as standalone managed resource.
 
 	// ServerCaCert: SSL configuration.
-	// +optional
 	ServerCaCert *SslCert `json:"serverCaCert,omitempty"`
 
 	// State: The current serving state of the Cloud SQL instance. This can
@@ -209,10 +207,6 @@ type CloudsqlInstanceParameters struct {
 	// ReplicaNames: The replicas of the instance.
 	// +optional
 	ReplicaNames []string `json:"replicaNames,omitempty"`
-
-	// RootPassword: Initial root password. Use only on creation.
-	// +optional
-	RootPassword *string `json:"rootPassword,omitempty"`
 
 	// SuspensionReason: If the instance state is SUSPENDED, the reason for
 	// the suspension.
@@ -459,7 +453,7 @@ type ACLEntry struct {
 	Value *string `json:"value,omitempty"`
 }
 
-// SslCert is th SslCerts Resource
+// SslCert can be used to configure MySQL clients to use SSL for connection.
 type SslCert struct {
 	// Cert: PEM representation.
 	// +optional

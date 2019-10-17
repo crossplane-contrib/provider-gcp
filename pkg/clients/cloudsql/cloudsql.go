@@ -41,7 +41,6 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 		Name:               name,
 		Region:             in.Region,
 		ReplicaNames:       in.ReplicaNames,
-		RootPassword:       gcp.StringValue(in.RootPassword),
 		SuspensionReason:   in.SuspensionReason,
 	}
 	if in.DiskEncryptionConfiguration != nil {
@@ -187,7 +186,9 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 // LateInitializeSpec fills unassigned fields with the values in sqladmin.DatabaseInstance object.
 func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
 
-	// TODO(muvaf): json comparison methods might have performance issues. learn code-generation to avoid this mess.
+	// TODO(muvaf): One can marshall both objects into json and compare them as dictionaries since
+	//  they both have the same key names but this may create performance problems as it'll happen in each
+	//  reconcile. learn code-generation to make writing this easier and performant.
 	if spec.Region == "" {
 		spec.Region = in.Region
 	}
@@ -197,7 +198,6 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 	spec.InstanceType = gcp.LateInitializeString(spec.InstanceType, in.InstanceType)
 	spec.MaxDiskSize = gcp.LateInitializeInt64(spec.MaxDiskSize, in.MaxDiskSize)
 	spec.ReplicaNames = gcp.LateInitializeStringSlice(spec.ReplicaNames, in.ReplicaNames)
-	spec.RootPassword = gcp.LateInitializeString(spec.RootPassword, in.RootPassword)
 	spec.SuspensionReason = gcp.LateInitializeStringSlice(spec.SuspensionReason, in.SuspensionReason)
 	if in.Settings != nil {
 		if spec.Settings.Tier == "" {

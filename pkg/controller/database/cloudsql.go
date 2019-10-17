@@ -19,12 +19,10 @@ package database
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	v1 "k8s.io/api/core/v1"
@@ -44,18 +42,17 @@ import (
 )
 
 const (
-	errNotCloudsql                = "managed resource is not a CloudsqlInstance CR"
+	errNotCloudsql                = "managed resource is not a CloudsqlInstance custom resource"
 	errProviderNotRetrieved       = "provider could not be retrieved"
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
-	errManagedUpdateFailed        = "cannot update CloudsqlInstance CR"
+	errManagedUpdateFailed        = "cannot update CloudsqlInstance custom resource"
 	errConnectionNotRetrieved     = "cannot get connection details"
 
-	errNewClient        = "cannot create new Sqladmin Service"
-	errInsertFailed     = "cannot insert new Cloudsql instance"
-	errDeleteFailed     = "cannot delete the Cloudsql instance"
-	errPatchFailed      = "cannot patch the Cloudsql instance"
-	errGetFailed        = "cannot get the Cloudsql instance"
-	errUpdateRootFailed = "cannot update root user credentials"
+	errNewClient    = "cannot create new Sqladmin Service"
+	errCreateFailed = "cannot create new Cloudsql instance"
+	errDeleteFailed = "cannot delete the Cloudsql instance"
+	errUpdateFailed = "cannot update the Cloudsql instance"
+	errGetFailed    = "cannot get the Cloudsql instance"
 )
 
 // CloudsqlInstanceController is the controller for Cloudsql CRD.
@@ -108,13 +105,12 @@ func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (r
 		return nil, errors.Wrap(err, errNewClient)
 	}
 
-	return &cloudsqlExternal{kube: c.kube, db: s.Instances, user: s.Users, projectID: provider.Spec.ProjectID}, nil
+	return &cloudsqlExternal{kube: c.kube, db: s.Instances, projectID: provider.Spec.ProjectID}, nil
 }
 
 type cloudsqlExternal struct {
 	kube      client.Client
 	db        *sqladmin.InstancesService
-	user      *sqladmin.UsersService
 	projectID string
 }
 
@@ -166,8 +162,21 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 		return resource.ExternalCreation{}, errors.New(errNotCloudsql)
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
-	_, err := c.db.Insert(c.projectID, instance).Context(ctx).Do()
-	return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errInsertFailed)
+	conn, err := c.getConnectionDetails(ctx, cr)
+	if err != nil {
+		return resource.ExternalCreation{}, err
+	}
+	password := string(conn[v1alpha1.ResourceCredentialsSecretPasswordKey])
+	if len(password) == 0 {
+		password, err = util.GeneratePassword(v1alpha2.PasswordLength)
+		if err != nil {
+			return resource.ExternalCreation{}, err
+		}
+		conn[v1alpha1.ResourceCredentialsSecretPasswordKey] = []byte(password)
+	}
+	instance.RootPassword = password
+	_, err = c.db.Insert(c.projectID, instance).Context(ctx).Do()
+	return resource.ExternalCreation{ConnectionDetails: conn}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateFailed)
 }
 
 func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
@@ -175,13 +184,9 @@ func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (res
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotCloudsql)
 	}
-	conn, err := c.updateRootCredentials(ctx, cr)
-	if err != nil {
-		return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateRootFailed)
-	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
-	_, err = c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
-	return resource.ExternalUpdate{ConnectionDetails: conn}, errors.Wrap(err, errPatchFailed)
+	_, err := c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
+	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
 }
 
 func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) error {
@@ -225,42 +230,4 @@ func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha
 		}
 	}
 	return m, nil
-}
-
-func (c *cloudsqlExternal) updateRootCredentials(ctx context.Context, cr *v1alpha2.CloudsqlInstance) (resource.ConnectionDetails, error) {
-	users, err := c.user.List(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-	var rootUser *sqladmin.User
-	for _, val := range users.Items {
-		if val.Name == cloudsql.DatabaseUserName(cr.Spec.ForProvider) {
-			rootUser = val
-			break
-		}
-	}
-	if rootUser == nil {
-		return nil, &googleapi.Error{
-			Code:    http.StatusNotFound,
-			Message: fmt.Sprintf("user: %s is not found", cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
-		}
-	}
-	conn, err := c.getConnectionDetails(ctx, cr)
-	if err != nil {
-		return nil, err
-	}
-	password := string(conn[v1alpha1.ResourceCredentialsSecretPasswordKey])
-	if len(password) == 0 {
-		password, err = util.GeneratePassword(v1alpha2.PasswordLength)
-		if err != nil {
-			return nil, err
-		}
-		conn[v1alpha1.ResourceCredentialsSecretPasswordKey] = []byte(password)
-	}
-	rootUser.Password = password
-	_, err = c.user.Update(c.projectID, meta.GetExternalName(cr), rootUser.Name, rootUser).
-		Host(rootUser.Host).
-		Context(ctx).
-		Do()
-	return conn, err
 }

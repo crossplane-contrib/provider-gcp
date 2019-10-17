@@ -323,11 +323,6 @@ func (in *CloudsqlInstanceParameters) DeepCopyInto(out *CloudsqlInstanceParamete
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.RootPassword != nil {
-		in, out := &in.RootPassword, &out.RootPassword
-		*out = new(string)
-		**out = **in
-	}
 	if in.SuspensionReason != nil {
 		in, out := &in.SuspensionReason, &out.SuspensionReason
 		*out = make([]string, len(*in))
