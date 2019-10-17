@@ -70,7 +70,7 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},
-						CloudMemorystoreInstanceParameters: v1alpha2.CloudMemorystoreInstanceParameters{
+						ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 							Region: region,
 							Tier:   tier,
 						},

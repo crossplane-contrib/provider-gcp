@@ -19,6 +19,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -42,6 +43,7 @@ const (
 	errGetProviderSecret = "cannot get Provider Secret"
 	errNewClient         = "cannot create new CloudMemorystore client"
 	errNotInstance       = "managed resource is not an CloudMemorystore instance"
+	errUpdateCR          = "cannot update CloudMemorystore custom resource"
 	errGetInstance       = "cannot get CloudMemorystore instance"
 	errCreateInstance    = "cannot create CloudMemorystore instance"
 	errUpdateInstance    = "cannot update CloudMemorystore instance"
@@ -88,10 +90,11 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (resource.
 	}
 
 	cms, err := c.newCMS(ctx, s.Data[p.Spec.Secret.Key])
-	return &external{cms: cms, projectID: p.Spec.ProjectID}, errors.Wrap(err, errNewClient)
+	return &external{cms: cms, projectID: p.Spec.ProjectID, kube: c.client}, errors.Wrap(err, errNewClient)
 }
 
 type external struct {
+	kube      client.Client
 	cms       cloudmemorystore.Client
 	projectID string
 }
@@ -113,9 +116,19 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 
 	cr.Status.AtProvider = cloudmemorystore.GenerateObservation(*existing)
 
+	currentSpec := cr.Spec.ForProvider.DeepCopy()
+	cloudmemorystore.LateInitializeSpec(&cr.Spec.ForProvider, *existing)
+	if !reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider) {
+		if err := e.kube.Update(ctx, cr); err != nil {
+			return resource.ExternalObservation{}, errors.Wrap(err, errUpdateCR)
+		}
+	}
+
+	conn := resource.ConnectionDetails{}
 	switch cr.Status.AtProvider.State {
 	case cloudmemorystore.StateReady:
 		cr.Status.SetConditions(runtimev1alpha1.Available())
+		conn[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(cr.Status.AtProvider.Host)
 		resource.SetBindable(cr)
 	case cloudmemorystore.StateCreating:
 		cr.Status.SetConditions(runtimev1alpha1.Creating())
@@ -128,11 +141,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 	o := resource.ExternalObservation{
 		ResourceExists:    true,
 		ResourceUpToDate:  cloudmemorystore.IsUpToDate(cr, existing),
-		ConnectionDetails: resource.ConnectionDetails{},
-	}
-
-	if cr.Status.AtProvider.Host != "" {
-		o.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(cr.Status.AtProvider.Host)
+		ConnectionDetails: conn,
 	}
 
 	return o, nil

@@ -139,7 +139,7 @@ type CloudMemorystoreInstanceObservation struct {
 	CurrentLocationID string `json:"currentLocationId,omitempty"`
 
 	// Output only. The time the instance was created.
-	CreateTime *metav1.Timestamp `json:"createTime,omitempty"`
+	CreateTime *metav1.Time `json:"createTime,omitempty"`
 
 	// The current state of this instance.
 	State string `json:"state,omitempty"`
@@ -200,7 +200,7 @@ type CloudMemorystoreInstanceList struct {
 // dynamically provisioned CloudMemorystoreInstance.
 type CloudMemorystoreInstanceClassSpecTemplate struct {
 	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
-	CloudMemorystoreInstanceParameters           `json:",inline"`
+	ForProvider                                  CloudMemorystoreInstanceParameters `json:"forProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

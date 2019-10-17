@@ -44,8 +44,10 @@ var (
 	reservedIPRange       = "172.16.0.0/16"
 	authorizedNetwork     = "default"
 	redisVersion          = "REDIS_3_2"
+	displayName           = "my-precious-memory"
 
 	redisConfigs = map[string]string{"cool": "socool"}
+	labels       = map[string]string{"key-to": "heaven"}
 	updateMask   = &field_mask.FieldMask{Paths: []string{"memory_size_gb", "redis_configs", "labels", "display_name"}}
 )
 
@@ -122,13 +124,15 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 					ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
 						Region:                region,
 						Tier:                  redisv1pb.Instance_BASIC.String(),
+						MemorySizeGB:          memorySizeGB,
+						DisplayName:           &displayName,
+						Labels:                labels,
 						LocationID:            &locationID,
 						AlternativeLocationID: &alternativeLocationID,
-						ReservedIPRange:       &reservedIPRange,
-						AuthorizedNetwork:     &authorizedNetwork,
 						RedisVersion:          &redisVersion,
+						ReservedIPRange:       &reservedIPRange,
 						RedisConfigs:          redisConfigs,
-						MemorySizeGB:          memorySizeGB,
+						AuthorizedNetwork:     &authorizedNetwork,
 					},
 				},
 			},
@@ -137,14 +141,16 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 				InstanceId: instanceName,
 				Instance: &redisv1pb.Instance{
 					Name:                  qualifiedName,
-					Tier:                  redisv1pb.Instance_BASIC,
+					DisplayName:           displayName,
+					Labels:                labels,
 					LocationId:            locationID,
 					AlternativeLocationId: alternativeLocationID,
-					ReservedIpRange:       reservedIPRange,
-					AuthorizedNetwork:     authorizedNetwork,
 					RedisVersion:          redisVersion,
+					ReservedIpRange:       reservedIPRange,
 					RedisConfigs:          redisConfigs,
+					Tier:                  redisv1pb.Instance_BASIC,
 					MemorySizeGb:          memorySizeGB,
+					AuthorizedNetwork:     authorizedNetwork,
 				},
 			},
 		},
@@ -187,6 +193,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 		})
 	}
 }
+
 func TestNewUpdateInstanceRequest(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -235,7 +242,7 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 	}
 }
 
-func TestNeedsUpdate(t *testing.T) {
+func TestIsUpToDate(t *testing.T) {
 	randString := "wat"
 	cases := []struct {
 		name string

@@ -130,12 +130,28 @@ func GenerateObservation(r redisv1pb.Instance) v1alpha2.CloudMemorystoreInstance
 		PersistenceIamIdentity: r.PersistenceIamIdentity,
 	}
 	if r.CreateTime != nil {
-		o.CreateTime = &metav1.Timestamp{
-			Seconds: r.CreateTime.Seconds,
-			Nanos:   r.CreateTime.Nanos,
-		}
+		t := metav1.Unix(r.CreateTime.Seconds, int64(r.CreateTime.Nanos))
+		o.CreateTime = &t
 	}
 	return o
+}
+
+// LateInitializeSpec fills empty spec fields with the data retrieved from GCP.
+func LateInitializeSpec(spec *v1alpha2.CloudMemorystoreInstanceParameters, r redisv1pb.Instance) {
+	if spec.Tier == "" {
+		spec.Tier = r.Tier.String()
+	}
+	if spec.MemorySizeGB == 0 {
+		spec.MemorySizeGB = r.MemorySizeGb
+	}
+	spec.DisplayName = gcp.LateInitializeString(spec.DisplayName, r.DisplayName)
+	spec.Labels = gcp.LateInitializeStringMap(spec.Labels, r.Labels)
+	spec.LocationID = gcp.LateInitializeString(spec.LocationID, r.LocationId)
+	spec.AlternativeLocationID = gcp.LateInitializeString(spec.AlternativeLocationID, r.AlternativeLocationId)
+	spec.RedisVersion = gcp.LateInitializeString(spec.RedisVersion, r.RedisVersion)
+	spec.ReservedIPRange = gcp.LateInitializeString(spec.ReservedIPRange, r.ReservedIpRange)
+	spec.RedisConfigs = gcp.LateInitializeStringMap(spec.RedisConfigs, r.RedisConfigs)
+	spec.AuthorizedNetwork = gcp.LateInitializeString(spec.AuthorizedNetwork, r.AuthorizedNetwork)
 }
 
 // NewCreateInstanceRequest creates a request to create an instance suitable for
@@ -195,6 +211,5 @@ func NewGetInstanceRequest(id InstanceID) *redisv1pb.GetInstanceRequest {
 // IsNotFound returns true if the supplied error indicates a CloudMemorystore
 // instance was not found.
 func IsNotFound(err error) bool {
-	// TODO(negz): Confirm this is how this API indicates a non-existent resource.
 	return status.Code(err) == codes.NotFound
 }

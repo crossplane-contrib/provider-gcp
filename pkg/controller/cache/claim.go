@@ -99,7 +99,7 @@ func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs 
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
-		ForProvider: rl.SpecTemplate.CloudMemorystoreInstanceParameters,
+		ForProvider: rl.SpecTemplate.ForProvider,
 	}
 
 	if rc.Spec.EngineVersion != "" {
