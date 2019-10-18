@@ -58,24 +58,6 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 			HostPort: in.OnPremisesConfiguration.HostPort,
 		}
 	}
-	if in.ReplicaConfiguration != nil {
-		db.ReplicaConfiguration = &sqladmin.ReplicaConfiguration{
-			FailoverTarget: gcp.BoolValue(in.ReplicaConfiguration.FailoverTarget),
-		}
-		if in.ReplicaConfiguration.MySQLReplicaConfiguration != nil {
-			db.ReplicaConfiguration.MysqlReplicaConfiguration = &sqladmin.MySqlReplicaConfiguration{
-				CaCertificate:           gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.CaCertificate),
-				ClientCertificate:       gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.ClientCertificate),
-				ClientKey:               gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.ClientKey),
-				ConnectRetryInterval:    gcp.Int64Value(in.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval),
-				DumpFilePath:            gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath),
-				MasterHeartbeatPeriod:   gcp.Int64Value(in.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod),
-				SslCipher:               gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher),
-				Username:                gcp.StringValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.Username),
-				VerifyServerCertificate: gcp.BoolValue(in.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate),
-			}
-		}
-	}
 	db.Settings = &sqladmin.Settings{
 		ActivationPolicy:            gcp.StringValue(in.Settings.ActivationPolicy),
 		AuthorizedGaeApplications:   in.Settings.AuthorizedGaeApplications,
@@ -150,17 +132,6 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 		ServiceAccountEmailAddress: in.ServiceAccountEmailAddress,
 		State:                      in.State,
 		SettingsVersion:            in.Settings.SettingsVersion,
-	}
-	if in.ServerCaCert != nil {
-		o.ServerCaCert = &v1alpha2.SslCert{
-			Cert:             &in.ServerCaCert.Cert,
-			CertSerialNumber: &in.ServerCaCert.CertSerialNumber,
-			CommonName:       &in.ServerCaCert.CommonName,
-			CreateTime:       &in.ServerCaCert.CreateTime,
-			ExpirationTime:   &in.ServerCaCert.ExpirationTime,
-			Instance:         &in.ServerCaCert.Instance,
-			Sha1Fingerprint:  &in.ServerCaCert.Sha1Fingerprint,
-		}
 	}
 	if in.DiskEncryptionStatus != nil {
 		o.DiskEncryptionStatus = &v1alpha2.DiskEncryptionStatus{
@@ -282,24 +253,6 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 			spec.Settings.MaintenanceWindow.Hour = gcp.LateInitializeInt64(spec.Settings.MaintenanceWindow.Hour, in.Settings.MaintenanceWindow.Hour)
 		}
 	}
-	if in.ReplicaConfiguration != nil {
-		if spec.ReplicaConfiguration == nil {
-			spec.ReplicaConfiguration = &v1alpha2.ReplicaConfiguration{}
-		}
-		spec.ReplicaConfiguration.FailoverTarget = gcp.LateInitializeBool(spec.ReplicaConfiguration.FailoverTarget, in.ReplicaConfiguration.FailoverTarget)
-		if spec.ReplicaConfiguration.MySQLReplicaConfiguration == nil {
-			spec.ReplicaConfiguration.MySQLReplicaConfiguration = &v1alpha2.MySQLReplicaConfiguration{}
-		}
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.CaCertificate = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.CaCertificate, in.ReplicaConfiguration.MysqlReplicaConfiguration.CaCertificate)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.ClientCertificate = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.ClientCertificate, in.ReplicaConfiguration.MysqlReplicaConfiguration.ClientCertificate)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.ClientKey = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.ClientKey, in.ReplicaConfiguration.MysqlReplicaConfiguration.ClientKey)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval = gcp.LateInitializeInt64(spec.ReplicaConfiguration.MySQLReplicaConfiguration.ConnectRetryInterval, in.ReplicaConfiguration.MysqlReplicaConfiguration.ConnectRetryInterval)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.DumpFilePath, in.ReplicaConfiguration.MysqlReplicaConfiguration.DumpFilePath)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod = gcp.LateInitializeInt64(spec.ReplicaConfiguration.MySQLReplicaConfiguration.MasterHeartbeatPeriod, in.ReplicaConfiguration.MysqlReplicaConfiguration.MasterHeartbeatPeriod)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.SslCipher, in.ReplicaConfiguration.MysqlReplicaConfiguration.SslCipher)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.Username = gcp.LateInitializeString(spec.ReplicaConfiguration.MySQLReplicaConfiguration.Username, in.ReplicaConfiguration.MysqlReplicaConfiguration.Username)
-		spec.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate = gcp.LateInitializeBool(spec.ReplicaConfiguration.MySQLReplicaConfiguration.VerifyServerCertificate, in.ReplicaConfiguration.MysqlReplicaConfiguration.VerifyServerCertificate)
-	}
 	if in.DiskEncryptionConfiguration != nil {
 		if spec.DiskEncryptionConfiguration == nil {
 			spec.DiskEncryptionConfiguration = &v1alpha2.DiskEncryptionConfiguration{}
@@ -330,4 +283,21 @@ func DatabaseUserName(p v1alpha2.CloudsqlInstanceParameters) string {
 		return v1alpha2.PostgresqlDefaultUser
 	}
 	return v1alpha2.MysqlDefaultUser
+}
+
+// GetServerCACertificate takes sqladmin.DatabaseInstance and returns the server CA certificate
+// in a form that can be embedded directly into a connection secret.
+func GetServerCACertificate(in sqladmin.DatabaseInstance) map[string][]byte {
+	if in.ServerCaCert == nil {
+		return nil
+	}
+	return map[string][]byte{
+		v1alpha2.CloudSQLSecretServerCACertificateCertKey:             []byte(in.ServerCaCert.Cert),
+		v1alpha2.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(in.ServerCaCert.CertSerialNumber),
+		v1alpha2.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(in.ServerCaCert.CommonName),
+		v1alpha2.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(in.ServerCaCert.CreateTime),
+		v1alpha2.CloudSQLSecretServerCACertificateExpirationTimeKey:   []byte(in.ServerCaCert.ExpirationTime),
+		v1alpha2.CloudSQLSecretServerCACertificateInstanceKey:         []byte(in.ServerCaCert.Instance),
+		v1alpha2.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(in.ServerCaCert.Sha1Fingerprint),
+	}
 }

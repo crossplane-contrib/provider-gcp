@@ -129,7 +129,6 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	// TODO(muvaf): reflection in production code might cause performance bottlenecks. Generating comparison
 	// methods would make more sense.
 	upToDate := reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider)
-	// TODO(muvaf): Should we always update to correct root password drifts via Update calls?
 	if !upToDate {
 		if err := c.kube.Update(ctx, cr); err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
@@ -140,7 +139,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	case v1alpha2.StateRunnable:
 		cr.Status.SetConditions(v1alpha1.Available())
 		resource.SetBindable(cr)
-		conn, err = c.getConnectionDetails(ctx, cr)
+		conn, err = c.getConnectionDetails(ctx, cr, instance)
 		if err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, errConnectionNotRetrieved)
 		}
@@ -162,7 +161,7 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 		return resource.ExternalCreation{}, errors.New(errNotCloudsql)
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
-	conn, err := c.getConnectionDetails(ctx, cr)
+	conn, err := c.getConnectionDetails(ctx, cr, instance)
 	if err != nil {
 		return resource.ExternalCreation{}, err
 	}
@@ -201,7 +200,7 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	return errors.Wrap(err, errDeleteFailed)
 }
 
-func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha2.CloudsqlInstance) (resource.ConnectionDetails, error) {
+func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha2.CloudsqlInstance, instance *sqladmin.DatabaseInstance) (resource.ConnectionDetails, error) {
 	m := map[string][]byte{
 		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
 	}
@@ -228,6 +227,10 @@ func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1alpha
 				m[v1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(ip.IPAddress)
 			}
 		}
+	}
+	serverCACert := cloudsql.GetServerCACertificate(*instance)
+	for k, v := range serverCACert {
+		m[k] = v
 	}
 	return m, nil
 }

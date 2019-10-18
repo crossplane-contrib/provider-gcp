@@ -111,7 +111,7 @@ func instance(im ...instanceModifier) *v1alpha2.CloudsqlInstance {
 	return i
 }
 
-func connDetails(password, privateIP, publicIP string) map[string][]byte {
+func connDetails(password, privateIP, publicIP string, additions ...map[string][]byte) map[string][]byte {
 	m := map[string][]byte{
 		runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1alpha2.MysqlDefaultUser),
 	}
@@ -125,6 +125,11 @@ func connDetails(password, privateIP, publicIP string) map[string][]byte {
 	if privateIP != "" {
 		m[v1alpha2.PrivateIPKey] = []byte(privateIP)
 		m[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(privateIP)
+	}
+	for _, a := range additions {
+		for k, v := range a {
+			m[k] = v
+		}
 	}
 	return m
 }
@@ -834,6 +839,8 @@ func TestUpdate(t *testing.T) {
 func TestGetConnectionDetails(t *testing.T) {
 	privateIP := "10.0.0.2"
 	publicIP := "243.2.220.2"
+	cert := "My-precious-cert"
+	commonName := "And-its-precious-common-name"
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
 		Data: map[string][]byte{
@@ -843,6 +850,7 @@ func TestGetConnectionDetails(t *testing.T) {
 
 	type args struct {
 		cr *v1alpha2.CloudsqlInstance
+		i  *sqladmin.DatabaseInstance
 	}
 	type want struct {
 		conn resource.ConnectionDetails
@@ -866,9 +874,23 @@ func TestGetConnectionDetails(t *testing.T) {
 					withPublicIP(publicIP),
 					withPrivateIP(privateIP),
 				),
+				i: &sqladmin.DatabaseInstance{
+					ServerCaCert: &sqladmin.SslCert{
+						Cert:       cert,
+						CommonName: commonName,
+					},
+				},
 			},
 			want: want{
-				conn: connDetails(password, privateIP, publicIP),
+				conn: connDetails(password, privateIP, publicIP, map[string][]byte{
+					v1alpha2.CloudSQLSecretServerCACertificateCertKey:             []byte(cert),
+					v1alpha2.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(commonName),
+					v1alpha2.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(""),
+					v1alpha2.CloudSQLSecretServerCACertificateExpirationTimeKey:   []byte(""),
+					v1alpha2.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(""),
+					v1alpha2.CloudSQLSecretServerCACertificateInstanceKey:         []byte(""),
+					v1alpha2.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(""),
+				}),
 			},
 		},
 		"SecretGetFailed": {
@@ -887,7 +909,7 @@ func TestGetConnectionDetails(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			e := cloudsqlExternal{kube: tc.kube}
-			conn, err := e.getConnectionDetails(context.TODO(), tc.args.cr)
+			conn, err := e.getConnectionDetails(context.TODO(), tc.args.cr, tc.args.i)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("getConnectionDetails(...): -want, +got:\n%s", diff)
 			}

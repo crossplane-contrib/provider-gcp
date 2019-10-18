@@ -31,6 +31,14 @@ const (
 	StateMaintenance    = "MAINTENANCE"
 	StateCreationFailed = "FAILED"
 	StateUnknownState   = "UNKNOWN_STATE"
+
+	CloudSQLSecretServerCACertificateCertKey             = "serverCACertificateCert"
+	CloudSQLSecretServerCACertificateCertSerialNumberKey = "serverCACertificateCertSerialNumber"
+	CloudSQLSecretServerCACertificateCommonNameKey       = "serverCACertificateCommonName"
+	CloudSQLSecretServerCACertificateCreateTimeKey       = "serverCACertificateCreateTime"
+	CloudSQLSecretServerCACertificateExpirationTimeKey   = "serverCACertificateExpirationTime"
+	CloudSQLSecretServerCACertificateInstanceKey         = "serverCACertificateInstance"
+	CloudSQLSecretServerCACertificateSha1FingerprintKey  = "serverCACertificateSha1Fingerprint"
 )
 
 // CloudSQL version prefixes.
@@ -104,11 +112,6 @@ type CloudsqlInstanceObservation struct {
 	// Generation instances.
 	ServiceAccountEmailAddress string `json:"serviceAccountEmailAddress,omitempty"`
 
-	// TODO(muvaf): This can be represented as standalone managed resource.
-
-	// ServerCaCert: SSL configuration.
-	ServerCaCert *SslCert `json:"serverCaCert,omitempty"`
-
 	// State: The current serving state of the Cloud SQL instance. This can
 	// be one of the following.
 	// RUNNABLE: The instance is running, or is ready to run when
@@ -159,11 +162,6 @@ type CloudsqlInstanceParameters struct {
 	// +optional
 	// +immutable
 	MasterInstanceName *string `json:"masterInstanceName,omitempty"`
-
-	// ReplicaConfiguration: Configuration specific to failover replicas and
-	// read replicas.
-	// +optional
-	ReplicaConfiguration *ReplicaConfiguration `json:"replicaConfiguration,omitempty"`
 
 	// DiskEncryptionConfiguration: Disk encryption configuration specific
 	// to an instance. Applies only to Second Generation instances.
@@ -451,117 +449,6 @@ type ACLEntry struct {
 	// Value: The whitelisted value for the access control list.
 	// +optional
 	Value *string `json:"value,omitempty"`
-}
-
-// SslCert can be used to configure MySQL clients to use SSL for connection.
-type SslCert struct {
-	// Cert: PEM representation.
-	// +optional
-	Cert *string `json:"cert,omitempty"`
-
-	// CertSerialNumber: Serial number, as extracted from the certificate.
-	// +optional
-	CertSerialNumber *string `json:"certSerialNumber,omitempty"`
-
-	// CommonName: User supplied name. Constrained to [a-zA-Z.-_ ]+.
-	// +optional
-	CommonName *string `json:"commonName,omitempty"`
-
-	// CreateTime: The time when the certificate was created in RFC 3339
-	// format, for example 2012-11-15T16:19:00.094Z
-	// +optional
-	CreateTime *string `json:"createTime,omitempty"`
-
-	// ExpirationTime: The time when the certificate expires in RFC 3339
-	// format, for example 2012-11-15T16:19:00.094Z.
-	// +optional
-	ExpirationTime *string `json:"expirationTime,omitempty"`
-
-	// Instance: Name of the database instance.
-	// +optional
-	Instance *string `json:"instance,omitempty"`
-
-	// SelfLink: The URI of this resource.
-	// +optional
-	SelfLink *string `json:"selfLink,omitempty"`
-
-	// Sha1Fingerprint: Sha1 Fingerprint.
-	// +optional
-	Sha1Fingerprint *string `json:"sha1Fingerprint,omitempty"`
-}
-
-// ReplicaConfiguration is Read-replica configuration for connecting to
-// the master.
-type ReplicaConfiguration struct {
-	// FailoverTarget is Specifies if the replica is the failover target. If
-	// the field is set to true the replica will be designated as a failover
-	// replica. In case the master instance fails, the replica instance will
-	// be promoted as the new master instance.
-	// Only one replica can be specified as failover target, and the replica
-	// has to be in different zone with the master instance.
-	// +optional
-	FailoverTarget *bool `json:"failoverTarget,omitempty"`
-
-	// MySQLReplicaConfiguration is MySQL specific configuration when
-	// replicating from a MySQL on-premises master. Replication
-	// configuration information such as the username, password,
-	// certificates, and keys are not stored in the instance metadata. The
-	// configuration information is used only to set up the replication
-	// connection and is stored by MySQL in a file named master.info in the
-	// data directory.
-	// +optional
-	MySQLReplicaConfiguration *MySQLReplicaConfiguration `json:"mysqlReplicaConfiguration,omitempty"`
-}
-
-// MySQLReplicaConfiguration is read-replica configuration specific to
-// MySQL databases.
-type MySQLReplicaConfiguration struct {
-	// CaCertificate: PEM representation of the trusted CA's x509
-	// certificate.
-	// +optional
-	CaCertificate *string `json:"caCertificate,omitempty"`
-
-	// ClientCertificate: PEM representation of the slave's x509
-	// certificate.
-	// +optional
-	ClientCertificate *string `json:"clientCertificate,omitempty"`
-
-	// ClientKey: PEM representation of the slave's private key. The
-	// corresponding public key is encoded in the client's certificate.
-	// +optional
-	ClientKey *string `json:"clientKey,omitempty"`
-
-	// ConnectRetryInterval: Seconds to wait between connect retries.
-	// MySQL's default is 60 seconds.
-	// +optional
-	ConnectRetryInterval *int64 `json:"connectRetryInterval,omitempty"`
-
-	// DumpFilePath: Path to a SQL dump file in Google Cloud Storage from
-	// which the slave instance is to be created. The URI is in the form
-	// gs://bucketName/fileName. Compressed gzip files (.gz) are also
-	// supported. Dumps should have the binlog co-ordinates from which
-	// replication should begin. This can be accomplished by setting
-	// --master-data to 1 when using mysqldump.
-	// +optional
-	DumpFilePath *string `json:"dumpFilePath,omitempty"`
-
-	// MasterHeartbeatPeriod: Interval in milliseconds between replication
-	// heartbeats.
-	// +optional
-	MasterHeartbeatPeriod *int64 `json:"masterHeartbeatPeriod,omitempty"`
-
-	// SslCipher is A list of permissible ciphers to use for SSL encryption.
-	// +optional
-	SslCipher *string `json:"sslCipher,omitempty"`
-
-	// Username: The username for the replication connection.
-	// +optional
-	Username *string `json:"username,omitempty"`
-
-	// VerifyServerCertificate: Whether or not to check the master's Common
-	// Name value in the certificate that it sends during the SSL handshake.
-	// +optional
-	VerifyServerCertificate *bool `json:"verifyServerCertificate,omitempty"`
 }
 
 // OnPremisesConfiguration is on-premises instance configuration.
