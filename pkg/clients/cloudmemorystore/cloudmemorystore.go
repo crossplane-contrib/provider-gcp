@@ -32,7 +32,7 @@ import (
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 
-	"github.com/crossplaneio/stack-gcp/apis/cache/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
@@ -78,7 +78,7 @@ type InstanceID struct {
 // NewInstanceID returns an identifier used to represent CloudMemorystore
 // instances in the GCP API. Instances may have names of up to 40 characters.
 // https://godoc.org/google.golang.org/genproto/googleapis/cloud/redis/v1#CreateInstanceRequest
-func NewInstanceID(project string, i *v1alpha2.CloudMemorystoreInstance) InstanceID {
+func NewInstanceID(project string, i *v1beta1.CloudMemorystoreInstance) InstanceID {
 	return InstanceID{
 		Project:  project,
 		Region:   i.Spec.ForProvider.Region,
@@ -98,7 +98,7 @@ func (id InstanceID) Name() string {
 
 // GenerateRedisInstance is used to convert Crossplane CloudMemorystoreInstanceParameters
 // to GCP's Redis Instance object.
-func GenerateRedisInstance(id InstanceID, s v1alpha2.CloudMemorystoreInstanceParameters) *redisv1pb.Instance {
+func GenerateRedisInstance(id InstanceID, s v1beta1.CloudMemorystoreInstanceParameters) *redisv1pb.Instance {
 	return &redisv1pb.Instance{
 		Name:                  id.Name(),
 		Tier:                  redisv1pb.Instance_Tier(redisv1pb.Instance_Tier_value[s.Tier]),
@@ -116,8 +116,8 @@ func GenerateRedisInstance(id InstanceID, s v1alpha2.CloudMemorystoreInstancePar
 
 // GenerateObservation is used to produce an observation object from GCP's Redis
 // Instance object.
-func GenerateObservation(r redisv1pb.Instance) v1alpha2.CloudMemorystoreInstanceObservation {
-	o := v1alpha2.CloudMemorystoreInstanceObservation{
+func GenerateObservation(r redisv1pb.Instance) v1beta1.CloudMemorystoreInstanceObservation {
+	o := v1beta1.CloudMemorystoreInstanceObservation{
 		Name:                   r.Name,
 		Host:                   r.Host,
 		Port:                   r.Port,
@@ -134,7 +134,7 @@ func GenerateObservation(r redisv1pb.Instance) v1alpha2.CloudMemorystoreInstance
 }
 
 // LateInitializeSpec fills empty spec fields with the data retrieved from GCP.
-func LateInitializeSpec(spec *v1alpha2.CloudMemorystoreInstanceParameters, r redisv1pb.Instance) {
+func LateInitializeSpec(spec *v1beta1.CloudMemorystoreInstanceParameters, r redisv1pb.Instance) {
 	if spec.Tier == "" {
 		spec.Tier = r.Tier.String()
 	}
@@ -153,7 +153,7 @@ func LateInitializeSpec(spec *v1alpha2.CloudMemorystoreInstanceParameters, r red
 
 // NewCreateInstanceRequest creates a request to create an instance suitable for
 // use with the GCP API.
-func NewCreateInstanceRequest(id InstanceID, i *v1alpha2.CloudMemorystoreInstance) *redisv1pb.CreateInstanceRequest {
+func NewCreateInstanceRequest(id InstanceID, i *v1beta1.CloudMemorystoreInstance) *redisv1pb.CreateInstanceRequest {
 	return &redisv1pb.CreateInstanceRequest{
 		Parent:     id.Parent(),
 		InstanceId: id.Instance,
@@ -163,7 +163,7 @@ func NewCreateInstanceRequest(id InstanceID, i *v1alpha2.CloudMemorystoreInstanc
 
 // NewUpdateInstanceRequest creates a request to update an instance suitable for
 // use with the GCP API.
-func NewUpdateInstanceRequest(id InstanceID, i *v1alpha2.CloudMemorystoreInstance) *redisv1pb.UpdateInstanceRequest {
+func NewUpdateInstanceRequest(id InstanceID, i *v1beta1.CloudMemorystoreInstance) *redisv1pb.UpdateInstanceRequest {
 	return &redisv1pb.UpdateInstanceRequest{
 		// These are the only fields we're concerned with that can be updated.
 		// The documentation is incorrect regarding field masks - they must be
@@ -177,7 +177,7 @@ func NewUpdateInstanceRequest(id InstanceID, i *v1alpha2.CloudMemorystoreInstanc
 // IsUpToDate returns true if the supplied Kubernetes resource differs from the
 // supplied GCP resource. It considers only fields that can be modified in
 // place without deleting and recreating the instance.
-func IsUpToDate(i *v1alpha2.CloudMemorystoreInstance, gcp *redisv1pb.Instance) bool {
+func IsUpToDate(i *v1beta1.CloudMemorystoreInstance, gcp *redisv1pb.Instance) bool {
 	desired := GenerateRedisInstance(InstanceID{}, i.Spec.ForProvider)
 	if desired.MemorySizeGb != gcp.MemorySizeGb {
 		return false

@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	cachev1alpha1 "github.com/crossplaneio/crossplane/apis/cache/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/cache/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
 )
 
 var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance)
@@ -64,29 +64,29 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec:       cachev1alpha1.RedisClusterSpec{EngineVersion: "3.2"},
 				},
-				cs: &v1alpha2.CloudMemorystoreInstanceClass{
-					SpecTemplate: v1alpha2.CloudMemorystoreInstanceClassSpecTemplate{
+				cs: &v1beta1.CloudMemorystoreInstanceClass{
+					SpecTemplate: v1beta1.CloudMemorystoreInstanceClassSpecTemplate{
 						NonPortableClassSpecTemplate: runtimev1alpha1.NonPortableClassSpecTemplate{
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},
-						ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
+						ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
 							Region: region,
 							Tier:   tier,
 						},
 					},
 				},
-				mg: &v1alpha2.CloudMemorystoreInstance{},
+				mg: &v1beta1.CloudMemorystoreInstance{},
 			},
 			want: want{
-				mg: &v1alpha2.CloudMemorystoreInstance{
-					Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+				mg: &v1beta1.CloudMemorystoreInstance{
+					Spec: v1beta1.CloudMemorystoreInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
 							ProviderReference:                &corev1.ObjectReference{Name: providerName},
 						},
-						ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
+						ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
 							RedisVersion: &redisVersion,
 							Region:       region,
 							Tier:         tier,

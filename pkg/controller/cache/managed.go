@@ -32,7 +32,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/cache/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
 	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/cloudmemorystore"
 )
@@ -59,10 +59,10 @@ type CloudMemorystoreInstanceController struct{}
 // start it when the Manager is Started.
 func (c *CloudMemorystoreInstanceController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha2.CloudMemorystoreInstanceKind, v1alpha2.Group))).
-		For(&v1alpha2.CloudMemorystoreInstance{}).
+		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.CloudMemorystoreInstanceKind, v1beta1.Group))).
+		For(&v1beta1.CloudMemorystoreInstance{}).
 		Complete(resource.NewManagedReconciler(mgr,
-			resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind),
+			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
 			resource.WithExternalConnecter(&connecter{client: mgr.GetClient(), newCMS: cloudmemorystore.NewClient})))
 }
 
@@ -72,7 +72,7 @@ type connecter struct {
 }
 
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return nil, errors.New(errNotInstance)
 	}
@@ -100,7 +100,7 @@ type external struct {
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	cr, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotInstance)
 	}
@@ -149,7 +149,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotInstance)
 	}
@@ -162,7 +162,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.Ex
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotInstance)
 	}
@@ -172,7 +172,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.Ex
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return errors.New(errNotInstance)
 	}

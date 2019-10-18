@@ -18,7 +18,6 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	redisv1 "cloud.google.com/go/redis/apiv1"
@@ -38,7 +37,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/cache/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
 	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/cloudmemorystore"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/cloudmemorystore/fake"
@@ -73,38 +72,38 @@ type strange struct {
 	resource.Managed
 }
 
-type instanceModifier func(*v1alpha2.CloudMemorystoreInstance)
+type instanceModifier func(*v1beta1.CloudMemorystoreInstance)
 
 func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.SetConditions(c...) }
+	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.SetConditions(c...) }
 }
 
 func withBindingPhase(p runtimev1alpha1.BindingPhase) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.SetBindingPhase(p) }
+	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.SetBindingPhase(p) }
 }
 
 func withState(s string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.State = s }
+	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.AtProvider.State = s }
 }
 
 func withFullName(name string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.Name = name }
+	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.AtProvider.Name = name }
 }
 
 func withHost(e string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.Host = e }
+	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.AtProvider.Host = e }
 }
 
 func withPort(p int) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.Port = int32(p) }
+	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.AtProvider.Port = int32(p) }
 }
 
 func withTier(tier string) instanceModifier {
-	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Spec.ForProvider.Tier = tier }
+	return func(i *v1beta1.CloudMemorystoreInstance) { i.Spec.ForProvider.Tier = tier }
 }
 
-func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
-	i := &v1alpha2.CloudMemorystoreInstance{
+func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
+	i := &v1beta1.CloudMemorystoreInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  namespace,
 			Name:       instanceName,
@@ -113,12 +112,12 @@ func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
 				meta.ExternalNameAnnotationKey: instanceName,
 			},
 		},
-		Spec: v1alpha2.CloudMemorystoreInstanceSpec{
+		Spec: v1beta1.CloudMemorystoreInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
 				ProviderReference:                &corev1.ObjectReference{Namespace: namespace, Name: providerName},
 				WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: connectionSecretName},
 			},
-			ForProvider: v1alpha2.CloudMemorystoreInstanceParameters{
+			ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
 				MemorySizeGB:      memorySizeGB,
 				RedisConfigs:      redisConfigs,
 				AuthorizedNetwork: &authorizedNetwork,
@@ -401,8 +400,6 @@ func TestObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			a := name
-			fmt.Println(a)
 			got, err := tc.client.Observe(tc.args.ctx, tc.args.mg)
 
 			if diff := cmp.Diff(tc.want.observation, got, test.EquateErrors()); diff != "" {
