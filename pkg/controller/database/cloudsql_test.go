@@ -31,7 +31,6 @@ import (
 const (
 	name      = "test-sql"
 	namespace = "mynamespace"
-	uid       = "2320sdasd-12312-asda"
 
 	projectID          = "myproject-id-1234"
 	providerName       = "gcp-provider"
@@ -90,7 +89,6 @@ func instance(im ...instanceModifier) *v1alpha2.CloudsqlInstance {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  namespace,
 			Name:       name,
-			UID:        uid,
 			Finalizers: []string{},
 			Annotations: map[string]string{
 				meta.ExternalNameAnnotationKey: name,

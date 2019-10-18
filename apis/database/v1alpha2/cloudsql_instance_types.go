@@ -85,7 +85,7 @@ type CloudsqlInstanceObservation struct {
 
 	// FailoverReplica: The name and status of the failover replica. This
 	// property is applicable only to Second Generation instances.
-	FailoverReplica *DatabaseInstanceFailoverReplica `json:"failoverReplica,omitempty"`
+	FailoverReplica *DatabaseInstanceFailoverReplicaStatus `json:"failoverReplica,omitempty"`
 
 	// GceZone: The Compute Engine zone that the instance is currently
 	// serving from. This value could be different from the zone that was
@@ -172,7 +172,7 @@ type CloudsqlInstanceParameters struct {
 	// FailoverReplica: The name and status of the failover replica. This
 	// property is applicable only to Second Generation instances.
 	// +optional
-	FailoverReplica *DatabaseInstanceFailoverReplica `json:"failoverReplica,omitempty"`
+	FailoverReplica *DatabaseInstanceFailoverReplicaSpec `json:"failoverReplica,omitempty"`
 
 	// GceZone: The Compute Engine zone that the instance is currently
 	// serving from. This value could be different from the zone that was
@@ -486,25 +486,26 @@ type DiskEncryptionConfiguration struct {
 type DiskEncryptionStatus struct {
 	// KmsKeyVersionName: KMS key version used to encrypt the Cloud SQL
 	// instance disk
-	KmsKeyVersionName string `json:"kmsKeyVersionName,omitempty"`
+	KmsKeyVersionName string `json:"kmsKeyVersionName"`
 }
 
-// DatabaseInstanceFailoverReplica is the name and status of the failover
-// replica. This property is applicable only to Second Generation
-// instances.
-type DatabaseInstanceFailoverReplica struct {
-	// Available: The availability status of the failover replica. A false
-	// status indicates that the failover replica is out of sync. The master
-	// can only failover to the falover replica when the status is true.
-	// +optional
-	Available *bool `json:"available,omitempty"`
-
+// DatabaseInstanceFailoverReplicaSpec is where you can specify a name
+// for the failover replica.
+type DatabaseInstanceFailoverReplicaSpec struct {
 	// Name: The name of the failover replica. If specified at instance
 	// creation, a failover replica is created for the instance. The name
 	// doesn't include the project ID. This property is applicable only to
 	// Second Generation instances.
-	// +optional
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
+}
+
+// DatabaseInstanceFailoverReplicaStatus is status of the failover
+// replica.
+type DatabaseInstanceFailoverReplicaStatus struct {
+	// Available: The availability status of the failover replica. A false
+	// status indicates that the failover replica is out of sync. The master
+	// can only failover to the failover replica when the status is true.
+	Available bool `json:"available"`
 }
 
 // A CloudsqlInstanceSpec defines the desired state of a CloudsqlInstance.

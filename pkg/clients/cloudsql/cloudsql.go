@@ -50,7 +50,7 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 	}
 	if in.FailoverReplica != nil {
 		db.FailoverReplica = &sqladmin.DatabaseInstanceFailoverReplica{
-			Name: gcp.StringValue(in.FailoverReplica.Name),
+			Name: in.FailoverReplica.Name,
 		}
 	}
 	if in.OnPremisesConfiguration != nil {
@@ -139,9 +139,8 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 		}
 	}
 	if in.FailoverReplica != nil {
-		o.FailoverReplica = &v1alpha2.DatabaseInstanceFailoverReplica{
-			Available: &in.FailoverReplica.Available,
-			Name:      &in.FailoverReplica.Name,
+		o.FailoverReplica = &v1alpha2.DatabaseInstanceFailoverReplicaStatus{
+			Available: in.FailoverReplica.Available,
 		}
 	}
 	for _, val := range in.IpAddresses {
@@ -263,10 +262,10 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 	}
 	if in.FailoverReplica != nil {
 		if spec.FailoverReplica == nil {
-			spec.FailoverReplica = &v1alpha2.DatabaseInstanceFailoverReplica{}
+			spec.FailoverReplica = &v1alpha2.DatabaseInstanceFailoverReplicaSpec{
+				Name: in.FailoverReplica.Name,
+			}
 		}
-		spec.FailoverReplica.Name = gcp.LateInitializeString(spec.FailoverReplica.Name, in.FailoverReplica.Name)
-		spec.FailoverReplica.Available = gcp.LateInitializeBool(spec.FailoverReplica.Available, in.FailoverReplica.Available)
 	}
 	if in.OnPremisesConfiguration != nil {
 		if spec.OnPremisesConfiguration == nil {

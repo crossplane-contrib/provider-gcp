@@ -72,18 +72,14 @@ spec:
                     replica. This property is applicable only to Second Generation
                     instances.'
                   properties:
-                    available:
-                      description: 'Available: The availability status of the failover
-                        replica. A false status indicates that the failover replica
-                        is out of sync. The master can only failover to the falover
-                        replica when the status is true.'
-                      type: boolean
                     name:
                       description: 'Name: The name of the failover replica. If specified
                         at instance creation, a failover replica is created for the
                         instance. The name doesn''t include the project ID. This property
                         is applicable only to Second Generation instances.'
                       type: string
+                  required:
+                  - name
                   type: object
                 gceZone:
                   description: 'GceZone: The Compute Engine zone that the instance
