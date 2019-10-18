@@ -272,7 +272,7 @@ spec:
                 observed state of the CloudMemorystore resource on GCP.
               properties:
                 createTime:
-                  description: Output only. The time the instance was created.
+                  description: The time the instance was created.
                   format: date-time
                   type: string
                 currentLocationId:

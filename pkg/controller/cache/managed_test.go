@@ -18,9 +18,8 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"testing"
-
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 
 	redisv1 "cloud.google.com/go/redis/apiv1"
 	"github.com/google/go-cmp/cmp"
@@ -35,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
@@ -97,6 +97,10 @@ func withHost(e string) instanceModifier {
 
 func withPort(p int) instanceModifier {
 	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Status.AtProvider.Port = int32(p) }
+}
+
+func withTier(tier string) instanceModifier {
+	return func(i *v1alpha2.CloudMemorystoreInstance) { i.Spec.ForProvider.Tier = tier }
 }
 
 func instance(im ...instanceModifier) *v1alpha2.CloudMemorystoreInstance {
@@ -271,6 +275,9 @@ func TestObserve(t *testing.T) {
 						Name:  qualifiedName,
 					}, nil
 				}},
+				kube: &test.MockClient{
+					MockUpdate: test.NewMockUpdateFn(nil),
+				},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -283,7 +290,8 @@ func TestObserve(t *testing.T) {
 					withState(cloudmemorystore.StateReady),
 					withHost(host),
 					withPort(port),
-					withFullName(qualifiedName)),
+					withFullName(qualifiedName),
+					withTier(redisv1pb.Instance_TIER_UNSPECIFIED.String())),
 				observation: resource.ExternalObservation{
 					ResourceExists: true,
 					ConnectionDetails: resource.ConnectionDetails{
@@ -300,6 +308,9 @@ func TestObserve(t *testing.T) {
 						Name:  qualifiedName,
 					}, nil
 				}},
+				kube: &test.MockClient{
+					MockUpdate: test.NewMockUpdateFn(nil),
+				},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -309,7 +320,8 @@ func TestObserve(t *testing.T) {
 				mg: instance(
 					withConditions(runtimev1alpha1.Creating()),
 					withState(cloudmemorystore.StateCreating),
-					withFullName(qualifiedName)),
+					withFullName(qualifiedName),
+					withTier(redisv1pb.Instance_TIER_UNSPECIFIED.String())),
 				observation: resource.ExternalObservation{
 					ResourceExists:    true,
 					ConnectionDetails: resource.ConnectionDetails{},
@@ -324,6 +336,9 @@ func TestObserve(t *testing.T) {
 						Name:  qualifiedName,
 					}, nil
 				}},
+				kube: &test.MockClient{
+					MockUpdate: test.NewMockUpdateFn(nil),
+				},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -333,7 +348,8 @@ func TestObserve(t *testing.T) {
 				mg: instance(
 					withConditions(runtimev1alpha1.Deleting()),
 					withState(cloudmemorystore.StateDeleting),
-					withFullName(qualifiedName)),
+					withFullName(qualifiedName),
+					withTier(redisv1pb.Instance_TIER_UNSPECIFIED.String())),
 				observation: resource.ExternalObservation{
 					ResourceExists:    true,
 					ConnectionDetails: resource.ConnectionDetails{},
@@ -385,6 +401,8 @@ func TestObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
+			a := name
+			fmt.Println(a)
 			got, err := tc.client.Observe(tc.args.ctx, tc.args.mg)
 
 			if diff := cmp.Diff(tc.want.observation, got, test.EquateErrors()); diff != "" {

@@ -36,9 +36,6 @@ import (
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
-// NamePrefix is the prefix for all created CloudMemorystore instances.
-const NamePrefix = "cms"
-
 // Cloud Memorystore instance states. Only the subset that is used
 // is listed.
 var (
@@ -127,7 +124,7 @@ func GenerateObservation(r redisv1pb.Instance) v1alpha2.CloudMemorystoreInstance
 		CurrentLocationID:      r.CurrentLocationId,
 		State:                  r.State.String(),
 		StatusMessage:          r.StatusMessage,
-		PersistenceIamIdentity: r.PersistenceIamIdentity,
+		PersistenceIAMIdentity: r.PersistenceIamIdentity,
 	}
 	if r.CreateTime != nil {
 		t := metav1.Unix(r.CreateTime.Seconds, int64(r.CreateTime.Nanos))

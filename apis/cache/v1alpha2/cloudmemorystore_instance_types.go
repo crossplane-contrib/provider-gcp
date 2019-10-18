@@ -138,7 +138,7 @@ type CloudMemorystoreInstanceObservation struct {
 	// change after a failover event.
 	CurrentLocationID string `json:"currentLocationId,omitempty"`
 
-	// Output only. The time the instance was created.
+	// The time the instance was created.
 	CreateTime *metav1.Time `json:"createTime,omitempty"`
 
 	// The current state of this instance.
@@ -153,7 +153,7 @@ type CloudMemorystoreInstanceObservation struct {
 	// "serviceAccount:<service_account_email>". The value may change over time
 	// for a given instance so should be checked before each import/export
 	// operation.
-	PersistenceIamIdentity string `json:"persistenceIamIdentity,omitempty"`
+	PersistenceIAMIdentity string `json:"persistenceIamIdentity,omitempty"`
 }
 
 // A CloudMemorystoreInstanceSpec defines the desired state of a

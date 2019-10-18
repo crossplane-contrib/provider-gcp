@@ -80,17 +80,17 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 // to be a CloudMemorystoreInstance) using the supplied resource claim (presumed
 // to be a RedisCluster) and resource class.
 func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
-	rc, cmok := cm.(*cachev1alpha1.RedisCluster)
+	cr, cmok := cm.(*cachev1alpha1.RedisCluster)
 	if !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), cachev1alpha1.RedisClusterGroupVersionKind)
 	}
 
-	rl, csok := cs.(*v1alpha2.CloudMemorystoreInstanceClass)
+	rc, csok := cs.(*v1alpha2.CloudMemorystoreInstanceClass)
 	if !csok {
 		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha2.CloudMemorystoreInstanceClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	c, mgok := mg.(*v1alpha2.CloudMemorystoreInstance)
 	if !mgok {
 		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha2.CloudMemorystoreInstanceGroupVersionKind)
 	}
@@ -99,18 +99,18 @@ func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs 
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
-		ForProvider: rl.SpecTemplate.ForProvider,
+		ForProvider: rc.SpecTemplate.ForProvider,
 	}
 
-	if rc.Spec.EngineVersion != "" {
-		spec.ForProvider.RedisVersion = gcp.LateInitializeString(spec.ForProvider.RedisVersion, toGCPFormat(rc.Spec.EngineVersion))
+	if cr.Spec.EngineVersion != "" {
+		spec.ForProvider.RedisVersion = gcp.LateInitializeString(spec.ForProvider.RedisVersion, toGCPFormat(cr.Spec.EngineVersion))
 	}
 
 	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
-	spec.ProviderReference = rl.SpecTemplate.ProviderReference
-	spec.ReclaimPolicy = rl.SpecTemplate.ReclaimPolicy
+	spec.ProviderReference = rc.SpecTemplate.ProviderReference
+	spec.ReclaimPolicy = rc.SpecTemplate.ReclaimPolicy
 
-	i.Spec = *spec
+	c.Spec = *spec
 
 	return nil
 }
