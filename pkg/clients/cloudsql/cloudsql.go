@@ -21,7 +21,7 @@ import (
 
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 
-	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
@@ -31,7 +31,7 @@ import (
 // complexity rate.
 
 // GenerateDatabaseInstance generates *sqladmin.DatabaseInstance instance from CloudsqlInstanceParameters.
-func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
+func GenerateDatabaseInstance(in v1beta1.CloudsqlInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
 	db := &sqladmin.DatabaseInstance{
 		DatabaseVersion:    gcp.StringValue(in.DatabaseVersion),
 		GceZone:            gcp.StringValue(in.GceZone),
@@ -120,8 +120,8 @@ func GenerateDatabaseInstance(in v1alpha2.CloudsqlInstanceParameters, name strin
 }
 
 // GenerateObservation produces CloudsqlInstanceObservation object from *sqladmin.DatabaseInstance object.
-func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstanceObservation { // nolint:gocyclo
-	o := v1alpha2.CloudsqlInstanceObservation{
+func GenerateObservation(in sqladmin.DatabaseInstance) v1beta1.CloudsqlInstanceObservation { // nolint:gocyclo
+	o := v1beta1.CloudsqlInstanceObservation{
 		BackendType:                in.BackendType,
 		CurrentDiskSize:            in.CurrentDiskSize,
 		ConnectionName:             in.ConnectionName,
@@ -134,17 +134,17 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 		SettingsVersion:            in.Settings.SettingsVersion,
 	}
 	if in.DiskEncryptionStatus != nil {
-		o.DiskEncryptionStatus = &v1alpha2.DiskEncryptionStatus{
+		o.DiskEncryptionStatus = &v1beta1.DiskEncryptionStatus{
 			KmsKeyVersionName: in.DiskEncryptionStatus.KmsKeyVersionName,
 		}
 	}
 	if in.FailoverReplica != nil {
-		o.FailoverReplica = &v1alpha2.DatabaseInstanceFailoverReplicaStatus{
+		o.FailoverReplica = &v1beta1.DatabaseInstanceFailoverReplicaStatus{
 			Available: in.FailoverReplica.Available,
 		}
 	}
 	for _, val := range in.IpAddresses {
-		o.IPAddresses = append(o.IPAddresses, &v1alpha2.IPMapping{
+		o.IPAddresses = append(o.IPAddresses, &v1beta1.IPMapping{
 			IPAddress:    val.IpAddress,
 			TimeToRetire: val.TimeToRetire,
 			Type:         val.Type,
@@ -154,7 +154,7 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1alpha2.CloudsqlInstance
 }
 
 // LateInitializeSpec fills unassigned fields with the values in sqladmin.DatabaseInstance object.
-func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
+func LateInitializeSpec(spec *v1beta1.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
 
 	// TODO(muvaf): One can marshall both objects into json and compare them as dictionaries since
 	//  they both have the same key names but this may create performance problems as it'll happen in each
@@ -189,9 +189,9 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 			spec.Settings.StorageAutoResize = in.Settings.StorageAutoResize
 		}
 		if len(spec.Settings.DatabaseFlags) == 0 && len(in.Settings.DatabaseFlags) != 0 {
-			spec.Settings.DatabaseFlags = make([]*v1alpha2.DatabaseFlags, len(in.Settings.DatabaseFlags))
+			spec.Settings.DatabaseFlags = make([]*v1beta1.DatabaseFlags, len(in.Settings.DatabaseFlags))
 			for i, val := range in.Settings.DatabaseFlags {
-				spec.Settings.DatabaseFlags[i] = &v1alpha2.DatabaseFlags{
+				spec.Settings.DatabaseFlags[i] = &v1beta1.DatabaseFlags{
 					Name:  val.Name,
 					Value: val.Value,
 				}
@@ -199,7 +199,7 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 		}
 		if in.Settings.BackupConfiguration != nil {
 			if spec.Settings.BackupConfiguration == nil {
-				spec.Settings.BackupConfiguration = &v1alpha2.BackupConfiguration{}
+				spec.Settings.BackupConfiguration = &v1beta1.BackupConfiguration{}
 			}
 			spec.Settings.BackupConfiguration.BinaryLogEnabled = gcp.LateInitializeBool(
 				spec.Settings.BackupConfiguration.BinaryLogEnabled,
@@ -219,15 +219,15 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 		}
 		if in.Settings.IpConfiguration != nil {
 			if spec.Settings.IPConfiguration == nil {
-				spec.Settings.IPConfiguration = &v1alpha2.IPConfiguration{}
+				spec.Settings.IPConfiguration = &v1beta1.IPConfiguration{}
 			}
 			spec.Settings.IPConfiguration.Ipv4Enabled = gcp.LateInitializeBool(spec.Settings.IPConfiguration.Ipv4Enabled, in.Settings.IpConfiguration.Ipv4Enabled)
 			spec.Settings.IPConfiguration.PrivateNetwork = gcp.LateInitializeString(spec.Settings.IPConfiguration.PrivateNetwork, in.Settings.IpConfiguration.PrivateNetwork)
 			spec.Settings.IPConfiguration.RequireSsl = gcp.LateInitializeBool(spec.Settings.IPConfiguration.RequireSsl, in.Settings.IpConfiguration.RequireSsl)
 			if len(in.Settings.IpConfiguration.AuthorizedNetworks) != 0 && len(spec.Settings.IPConfiguration.AuthorizedNetworks) == 0 {
-				spec.Settings.IPConfiguration.AuthorizedNetworks = make([]*v1alpha2.ACLEntry, len(in.Settings.IpConfiguration.AuthorizedNetworks))
+				spec.Settings.IPConfiguration.AuthorizedNetworks = make([]*v1beta1.ACLEntry, len(in.Settings.IpConfiguration.AuthorizedNetworks))
 				for i, val := range in.Settings.IpConfiguration.AuthorizedNetworks {
-					spec.Settings.IPConfiguration.AuthorizedNetworks[i] = &v1alpha2.ACLEntry{
+					spec.Settings.IPConfiguration.AuthorizedNetworks[i] = &v1beta1.ACLEntry{
 						ExpirationTime: &val.ExpirationTime,
 						Name:           &val.Name,
 						Value:          &val.Value,
@@ -237,7 +237,7 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 		}
 		if in.Settings.LocationPreference != nil {
 			if spec.Settings.LocationPreference == nil {
-				spec.Settings.LocationPreference = &v1alpha2.LocationPreference{}
+				spec.Settings.LocationPreference = &v1beta1.LocationPreference{}
 			}
 			spec.Settings.LocationPreference.Zone = gcp.LateInitializeString(spec.Settings.LocationPreference.Zone, in.Settings.LocationPreference.Zone)
 			spec.Settings.LocationPreference.FollowGaeApplication = gcp.LateInitializeString(spec.Settings.LocationPreference.FollowGaeApplication, in.Settings.LocationPreference.FollowGaeApplication)
@@ -245,7 +245,7 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 		}
 		if in.Settings.MaintenanceWindow != nil {
 			if spec.Settings.MaintenanceWindow == nil {
-				spec.Settings.MaintenanceWindow = &v1alpha2.MaintenanceWindow{}
+				spec.Settings.MaintenanceWindow = &v1beta1.MaintenanceWindow{}
 			}
 			spec.Settings.MaintenanceWindow.UpdateTrack = gcp.LateInitializeString(spec.Settings.MaintenanceWindow.UpdateTrack, in.Settings.MaintenanceWindow.UpdateTrack)
 			spec.Settings.MaintenanceWindow.Day = gcp.LateInitializeInt64(spec.Settings.MaintenanceWindow.Day, in.Settings.MaintenanceWindow.Day)
@@ -254,7 +254,7 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 	}
 	if in.DiskEncryptionConfiguration != nil {
 		if spec.DiskEncryptionConfiguration == nil {
-			spec.DiskEncryptionConfiguration = &v1alpha2.DiskEncryptionConfiguration{}
+			spec.DiskEncryptionConfiguration = &v1beta1.DiskEncryptionConfiguration{}
 		}
 		if spec.DiskEncryptionConfiguration.KmsKeyName == "" {
 			spec.DiskEncryptionConfiguration.KmsKeyName = in.DiskEncryptionConfiguration.KmsKeyName
@@ -262,14 +262,14 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 	}
 	if in.FailoverReplica != nil {
 		if spec.FailoverReplica == nil {
-			spec.FailoverReplica = &v1alpha2.DatabaseInstanceFailoverReplicaSpec{
+			spec.FailoverReplica = &v1beta1.DatabaseInstanceFailoverReplicaSpec{
 				Name: in.FailoverReplica.Name,
 			}
 		}
 	}
 	if in.OnPremisesConfiguration != nil {
 		if spec.OnPremisesConfiguration == nil {
-			spec.OnPremisesConfiguration = &v1alpha2.OnPremisesConfiguration{
+			spec.OnPremisesConfiguration = &v1beta1.OnPremisesConfiguration{
 				HostPort: in.OnPremisesConfiguration.HostPort,
 			}
 		}
@@ -277,11 +277,11 @@ func LateInitializeSpec(spec *v1alpha2.CloudsqlInstanceParameters, in sqladmin.D
 }
 
 // DatabaseUserName returns default database user name base on database version
-func DatabaseUserName(p v1alpha2.CloudsqlInstanceParameters) string {
-	if strings.HasPrefix(gcp.StringValue(p.DatabaseVersion), v1alpha2.PostgresqlDBVersionPrefix) {
-		return v1alpha2.PostgresqlDefaultUser
+func DatabaseUserName(p v1beta1.CloudsqlInstanceParameters) string {
+	if strings.HasPrefix(gcp.StringValue(p.DatabaseVersion), v1beta1.PostgresqlDBVersionPrefix) {
+		return v1beta1.PostgresqlDefaultUser
 	}
-	return v1alpha2.MysqlDefaultUser
+	return v1beta1.MysqlDefaultUser
 }
 
 // GetServerCACertificate takes sqladmin.DatabaseInstance and returns the server CA certificate
@@ -291,12 +291,12 @@ func GetServerCACertificate(in sqladmin.DatabaseInstance) map[string][]byte {
 		return nil
 	}
 	return map[string][]byte{
-		v1alpha2.CloudSQLSecretServerCACertificateCertKey:             []byte(in.ServerCaCert.Cert),
-		v1alpha2.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(in.ServerCaCert.CertSerialNumber),
-		v1alpha2.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(in.ServerCaCert.CommonName),
-		v1alpha2.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(in.ServerCaCert.CreateTime),
-		v1alpha2.CloudSQLSecretServerCACertificateExpirationTimeKey:   []byte(in.ServerCaCert.ExpirationTime),
-		v1alpha2.CloudSQLSecretServerCACertificateInstanceKey:         []byte(in.ServerCaCert.Instance),
-		v1alpha2.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(in.ServerCaCert.Sha1Fingerprint),
+		v1beta1.CloudSQLSecretServerCACertificateCertKey:             []byte(in.ServerCaCert.Cert),
+		v1beta1.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(in.ServerCaCert.CertSerialNumber),
+		v1beta1.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(in.ServerCaCert.CommonName),
+		v1beta1.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(in.ServerCaCert.CreateTime),
+		v1beta1.CloudSQLSecretServerCACertificateExpirationTimeKey:   []byte(in.ServerCaCert.ExpirationTime),
+		v1beta1.CloudSQLSecretServerCACertificateInstanceKey:         []byte(in.ServerCaCert.Instance),
+		v1beta1.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(in.ServerCaCert.Sha1Fingerprint),
 	}
 }

@@ -6,17 +6,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 
-	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 )
 
 const (
 	name = "test-sql"
 )
 
-func params(m ...func(*v1alpha2.CloudsqlInstanceParameters)) *v1alpha2.CloudsqlInstanceParameters {
-	p := &v1alpha2.CloudsqlInstanceParameters{
+func params(m ...func(*v1beta1.CloudsqlInstanceParameters)) *v1beta1.CloudsqlInstanceParameters {
+	p := &v1beta1.CloudsqlInstanceParameters{
 		Region: "us-west2",
-		Settings: v1alpha2.Settings{
+		Settings: v1beta1.Settings{
 			Tier:                        "best-one-available",
 			ActivationPolicy:            getString("always"),
 			AuthorizedGaeApplications:   []string{"my-gapp"},
@@ -29,21 +29,21 @@ func params(m ...func(*v1alpha2.CloudsqlInstanceParameters)) *v1alpha2.CloudsqlI
 			UserLabels: map[string]string{
 				"importance": "high",
 			},
-			DatabaseFlags: []*v1alpha2.DatabaseFlags{
+			DatabaseFlags: []*v1beta1.DatabaseFlags{
 				{
 					Name:  "run",
 					Value: "forest",
 				},
 			},
-			BackupConfiguration: &v1alpha2.BackupConfiguration{
+			BackupConfiguration: &v1beta1.BackupConfiguration{
 				BinaryLogEnabled:               getBool(true),
 				Enabled:                        getBool(true),
 				Location:                       getString("us-west1"),
 				ReplicationLogArchivingEnabled: getBool(true),
 				StartTime:                      getString("20191018"),
 			},
-			IPConfiguration: &v1alpha2.IPConfiguration{
-				AuthorizedNetworks: []*v1alpha2.ACLEntry{
+			IPConfiguration: &v1beta1.IPConfiguration{
+				AuthorizedNetworks: []*v1beta1.ACLEntry{
 					{
 						ExpirationTime: getString("20201018"),
 						Name:           getString("hate"),
@@ -51,11 +51,11 @@ func params(m ...func(*v1alpha2.CloudsqlInstanceParameters)) *v1alpha2.CloudsqlI
 					},
 				},
 			},
-			LocationPreference: &v1alpha2.LocationPreference{
+			LocationPreference: &v1beta1.LocationPreference{
 				FollowGaeApplication: getString("my-gapp"),
 				Zone:                 getString("us-west1-a"),
 			},
-			MaintenanceWindow: &v1alpha2.MaintenanceWindow{
+			MaintenanceWindow: &v1beta1.MaintenanceWindow{
 				Day:         getInt64(1),
 				Hour:        getInt64(2),
 				UpdateTrack: getString("canary"),
@@ -66,16 +66,16 @@ func params(m ...func(*v1alpha2.CloudsqlInstanceParameters)) *v1alpha2.CloudsqlI
 		},
 		DatabaseVersion:    getString("3.2"),
 		MasterInstanceName: getString("myFunnyMaster"),
-		DiskEncryptionConfiguration: &v1alpha2.DiskEncryptionConfiguration{
+		DiskEncryptionConfiguration: &v1beta1.DiskEncryptionConfiguration{
 			KmsKeyName: "my-key",
 		},
-		FailoverReplica: &v1alpha2.DatabaseInstanceFailoverReplicaSpec{
+		FailoverReplica: &v1beta1.DatabaseInstanceFailoverReplicaSpec{
 			Name: "my-failover",
 		},
 		GceZone:      getString("us-west2"),
 		InstanceType: getString("db-standard-1"),
 		MaxDiskSize:  getInt64(3000000000),
-		OnPremisesConfiguration: &v1alpha2.OnPremisesConfiguration{
+		OnPremisesConfiguration: &v1beta1.OnPremisesConfiguration{
 			HostPort: "3306",
 		},
 		ReplicaNames:     []string{"my-replica1", "and2"},
@@ -87,22 +87,22 @@ func params(m ...func(*v1alpha2.CloudsqlInstanceParameters)) *v1alpha2.CloudsqlI
 	return p
 }
 
-func observation(m ...func(*v1alpha2.CloudsqlInstanceObservation)) *v1alpha2.CloudsqlInstanceObservation {
-	o := &v1alpha2.CloudsqlInstanceObservation{
+func observation(m ...func(*v1beta1.CloudsqlInstanceObservation)) *v1beta1.CloudsqlInstanceObservation {
+	o := &v1beta1.CloudsqlInstanceObservation{
 		BackendType:     "SECOND_GEN",
 		CurrentDiskSize: 2000000,
 		ConnectionName:  "special-conn",
-		DiskEncryptionStatus: &v1alpha2.DiskEncryptionStatus{
+		DiskEncryptionStatus: &v1beta1.DiskEncryptionStatus{
 			KmsKeyVersionName: "v1.0",
 		},
-		IPAddresses: []*v1alpha2.IPMapping{
+		IPAddresses: []*v1beta1.IPMapping{
 			{
 				IPAddress:    "20.0.0.1",
 				TimeToRetire: "2012-11-15T16:19:00.094Z",
 				Type:         "PRIVATE",
 			},
 		},
-		FailoverReplica: &v1alpha2.DatabaseInstanceFailoverReplicaStatus{
+		FailoverReplica: &v1beta1.DatabaseInstanceFailoverReplicaStatus{
 			Available: true,
 		},
 		IPv6Address:                "2.19sd920.2",
@@ -228,7 +228,7 @@ func getBool(b bool) *bool       { return &b }
 func TestGenerateDatabaseInstance(t *testing.T) {
 	type args struct {
 		name   string
-		params v1alpha2.CloudsqlInstanceParameters
+		params v1beta1.CloudsqlInstanceParameters
 	}
 	type want struct {
 		db *sqladmin.DatabaseInstance
@@ -244,7 +244,7 @@ func TestGenerateDatabaseInstance(t *testing.T) {
 		"MissingFields": {
 			args: args{
 				name: name,
-				params: *params(func(p *v1alpha2.CloudsqlInstanceParameters) {
+				params: *params(func(p *v1beta1.CloudsqlInstanceParameters) {
 					p.MasterInstanceName = nil
 					p.GceZone = nil
 				})},
@@ -267,10 +267,10 @@ func TestGenerateDatabaseInstance(t *testing.T) {
 func TestLateInitializeSpec(t *testing.T) {
 	type args struct {
 		db     *sqladmin.DatabaseInstance
-		params *v1alpha2.CloudsqlInstanceParameters
+		params *v1beta1.CloudsqlInstanceParameters
 	}
 	type want struct {
-		params *v1alpha2.CloudsqlInstanceParameters
+		params *v1beta1.CloudsqlInstanceParameters
 	}
 	cases := map[string]struct {
 		args args
@@ -278,7 +278,7 @@ func TestLateInitializeSpec(t *testing.T) {
 	}{
 		"SomeFields": {
 			args: args{
-				params: params(func(p *v1alpha2.CloudsqlInstanceParameters) {
+				params: params(func(p *v1beta1.CloudsqlInstanceParameters) {
 					p.GceZone = nil
 				}),
 				db: db(func(db *sqladmin.DatabaseInstance) {
@@ -286,7 +286,7 @@ func TestLateInitializeSpec(t *testing.T) {
 					db.MasterInstanceName = "not-what-you-expect"
 				}),
 			},
-			want: want{params: params(func(p *v1alpha2.CloudsqlInstanceParameters) {
+			want: want{params: params(func(p *v1beta1.CloudsqlInstanceParameters) {
 				p.GceZone = getString("us-different-2")
 			})},
 		},
@@ -315,7 +315,7 @@ func TestGenerateObservation(t *testing.T) {
 		db *sqladmin.DatabaseInstance
 	}
 	type want struct {
-		obs v1alpha2.CloudsqlInstanceObservation
+		obs v1beta1.CloudsqlInstanceObservation
 	}
 	cases := map[string]struct {
 		args args
@@ -339,14 +339,14 @@ func TestGenerateObservation(t *testing.T) {
 }
 
 func TestDatabaseUserName(t *testing.T) {
-	p := v1alpha2.CloudsqlInstanceParameters{
+	p := v1beta1.CloudsqlInstanceParameters{
 		DatabaseVersion: getString("POSTGRES_3.2"),
 	}
-	if diff := cmp.Diff(v1alpha2.PostgresqlDefaultUser, DatabaseUserName(p)); diff != "" {
+	if diff := cmp.Diff(v1beta1.PostgresqlDefaultUser, DatabaseUserName(p)); diff != "" {
 		t.Errorf("DatabaseUserName(...): -want, +got:\n%s", diff)
 	}
 	p.DatabaseVersion = getString("3.2")
-	if diff := cmp.Diff(v1alpha2.MysqlDefaultUser, DatabaseUserName(p)); diff != "" {
+	if diff := cmp.Diff(v1beta1.MysqlDefaultUser, DatabaseUserName(p)); diff != "" {
 		t.Errorf("DatabaseUserName(...): -want, +got:\n%s", diff)
 	}
 }
@@ -384,13 +384,13 @@ func TestGetServerCACertificate(t *testing.T) {
 				db.ServerCaCert = cert
 			})},
 			want: want{r: map[string][]byte{
-				v1alpha2.CloudSQLSecretServerCACertificateCertKey:             []byte(cert.Cert),
-				v1alpha2.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(cert.CertSerialNumber),
-				v1alpha2.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(cert.CommonName),
-				v1alpha2.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(cert.CreateTime),
-				v1alpha2.CloudSQLSecretServerCACertificateExpirationTimeKey:   []byte(cert.ExpirationTime),
-				v1alpha2.CloudSQLSecretServerCACertificateInstanceKey:         []byte(cert.Instance),
-				v1alpha2.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(cert.Sha1Fingerprint),
+				v1beta1.CloudSQLSecretServerCACertificateCertKey:             []byte(cert.Cert),
+				v1beta1.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(cert.CertSerialNumber),
+				v1beta1.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(cert.CommonName),
+				v1beta1.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(cert.CreateTime),
+				v1beta1.CloudSQLSecretServerCACertificateExpirationTimeKey:   []byte(cert.ExpirationTime),
+				v1beta1.CloudSQLSecretServerCACertificateInstanceKey:         []byte(cert.Instance),
+				v1beta1.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(cert.Sha1Fingerprint),
 			},
 			},
 		},

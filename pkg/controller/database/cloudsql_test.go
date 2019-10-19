@@ -23,7 +23,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/cloudsql"
 )
@@ -43,49 +43,49 @@ const (
 
 var errBoom = errors.New("boom")
 
-type instanceModifier func(*v1alpha2.CloudsqlInstance)
+type instanceModifier func(*v1beta1.CloudsqlInstance)
 
 func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
-	return func(i *v1alpha2.CloudsqlInstance) { i.Status.SetConditions(c...) }
+	return func(i *v1beta1.CloudsqlInstance) { i.Status.SetConditions(c...) }
 }
 
 func withProviderState(s string) instanceModifier {
-	return func(i *v1alpha2.CloudsqlInstance) { i.Status.AtProvider.State = s }
+	return func(i *v1beta1.CloudsqlInstance) { i.Status.AtProvider.State = s }
 }
 
 func withBindingPhase(p runtimev1alpha1.BindingPhase) instanceModifier {
-	return func(i *v1alpha2.CloudsqlInstance) { i.Status.SetBindingPhase(p) }
+	return func(i *v1beta1.CloudsqlInstance) { i.Status.SetBindingPhase(p) }
 }
 
 func withPublicIP(ip string) instanceModifier {
-	return func(i *v1alpha2.CloudsqlInstance) {
-		i.Status.AtProvider.IPAddresses = append(i.Status.AtProvider.IPAddresses, &v1alpha2.IPMapping{
+	return func(i *v1beta1.CloudsqlInstance) {
+		i.Status.AtProvider.IPAddresses = append(i.Status.AtProvider.IPAddresses, &v1beta1.IPMapping{
 			IPAddress: ip,
-			Type:      v1alpha2.PublicIPType,
+			Type:      v1beta1.PublicIPType,
 		})
 	}
 }
 
 func withPrivateIP(ip string) instanceModifier {
-	return func(i *v1alpha2.CloudsqlInstance) {
-		i.Status.AtProvider.IPAddresses = append(i.Status.AtProvider.IPAddresses, &v1alpha2.IPMapping{
+	return func(i *v1beta1.CloudsqlInstance) {
+		i.Status.AtProvider.IPAddresses = append(i.Status.AtProvider.IPAddresses, &v1beta1.IPMapping{
 			IPAddress: ip,
-			Type:      v1alpha2.PrivateIPType,
+			Type:      v1beta1.PrivateIPType,
 		})
 	}
 }
 
 // Mostly used for making a spec drift.
 func withBackupConfigurationStartTime(h string) instanceModifier {
-	return func(i *v1alpha2.CloudsqlInstance) {
-		i.Spec.ForProvider.Settings.BackupConfiguration = &v1alpha2.BackupConfiguration{
+	return func(i *v1beta1.CloudsqlInstance) {
+		i.Spec.ForProvider.Settings.BackupConfiguration = &v1beta1.BackupConfiguration{
 			StartTime: &h,
 		}
 	}
 }
 
-func instance(im ...instanceModifier) *v1alpha2.CloudsqlInstance {
-	i := &v1alpha2.CloudsqlInstance{
+func instance(im ...instanceModifier) *v1beta1.CloudsqlInstance {
+	i := &v1beta1.CloudsqlInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  namespace,
 			Name:       name,
@@ -94,11 +94,11 @@ func instance(im ...instanceModifier) *v1alpha2.CloudsqlInstance {
 				meta.ExternalNameAnnotationKey: name,
 			},
 		},
-		Spec: v1alpha2.CloudsqlInstanceSpec{
+		Spec: v1beta1.CloudsqlInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
 				ProviderReference: &corev1.ObjectReference{Namespace: namespace, Name: providerName},
 			},
-			ForProvider: v1alpha2.CloudsqlInstanceParameters{},
+			ForProvider: v1beta1.CloudsqlInstanceParameters{},
 		},
 	}
 
@@ -111,17 +111,17 @@ func instance(im ...instanceModifier) *v1alpha2.CloudsqlInstance {
 
 func connDetails(password, privateIP, publicIP string, additions ...map[string][]byte) map[string][]byte {
 	m := map[string][]byte{
-		runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1alpha2.MysqlDefaultUser),
+		runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
 	}
 	if password != "" {
 		m[runtimev1alpha1.ResourceCredentialsSecretPasswordKey] = []byte(password)
 	}
 	if publicIP != "" {
-		m[v1alpha2.PublicIPKey] = []byte(publicIP)
+		m[v1beta1.PublicIPKey] = []byte(publicIP)
 		m[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(publicIP)
 	}
 	if privateIP != "" {
-		m[v1alpha2.PrivateIPKey] = []byte(privateIP)
+		m[v1beta1.PrivateIPKey] = []byte(privateIP)
 		m[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(privateIP)
 	}
 	for _, a := range additions {
@@ -330,7 +330,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
-				db.State = v1alpha2.StateCreating
+				db.State = v1beta1.StateCreating
 				_ = json.NewEncoder(w).Encode(db)
 			}),
 			args: args{
@@ -341,7 +341,7 @@ func TestObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: instance(withProviderState(v1alpha2.StateCreating), withConditions(runtimev1alpha1.Creating())),
+				mg: instance(withProviderState(v1beta1.StateCreating), withConditions(runtimev1alpha1.Creating())),
 			},
 		},
 		"Unavailable": {
@@ -352,7 +352,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
-				db.State = v1alpha2.StateMaintenance
+				db.State = v1beta1.StateMaintenance
 				_ = json.NewEncoder(w).Encode(db)
 			}),
 			args: args{
@@ -363,7 +363,7 @@ func TestObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: instance(withProviderState(v1alpha2.StateMaintenance), withConditions(runtimev1alpha1.Unavailable())),
+				mg: instance(withProviderState(v1beta1.StateMaintenance), withConditions(runtimev1alpha1.Unavailable())),
 			},
 		},
 		"RunnableUnbound": {
@@ -374,7 +374,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
-				db.State = v1alpha2.StateRunnable
+				db.State = v1beta1.StateRunnable
 				_ = json.NewEncoder(w).Encode(db)
 			}),
 			kube: &test.MockClient{
@@ -390,7 +390,7 @@ func TestObserve(t *testing.T) {
 					ConnectionDetails: connDetails("", "", ""),
 				},
 				mg: instance(
-					withProviderState(v1alpha2.StateRunnable),
+					withProviderState(v1beta1.StateRunnable),
 					withConditions(runtimev1alpha1.Available()),
 					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
 			},
@@ -403,7 +403,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
-				db.State = v1alpha2.StateRunnable
+				db.State = v1beta1.StateRunnable
 				_ = json.NewEncoder(w).Encode(db)
 			}),
 			kube: &test.MockClient{
@@ -414,7 +414,7 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				mg: instance(
-					withProviderState(v1alpha2.StateRunnable),
+					withProviderState(v1beta1.StateRunnable),
 					withConditions(runtimev1alpha1.Available()),
 					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
 				err: errors.Wrap(errBoom, errConnectionNotRetrieved),
@@ -791,7 +791,7 @@ func TestUpdate(t *testing.T) {
 			want: want{
 				upd: resource.ExternalUpdate{
 					ConnectionDetails: map[string][]byte{
-						runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1alpha2.MysqlDefaultUser),
+						runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
 					},
 				},
 				mg:  instance(),
@@ -847,7 +847,7 @@ func TestGetConnectionDetails(t *testing.T) {
 	}
 
 	type args struct {
-		cr *v1alpha2.CloudsqlInstance
+		cr *v1beta1.CloudsqlInstance
 		i  *sqladmin.DatabaseInstance
 	}
 	type want struct {
@@ -881,13 +881,13 @@ func TestGetConnectionDetails(t *testing.T) {
 			},
 			want: want{
 				conn: connDetails(password, privateIP, publicIP, map[string][]byte{
-					v1alpha2.CloudSQLSecretServerCACertificateCertKey:             []byte(cert),
-					v1alpha2.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(commonName),
-					v1alpha2.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(""),
-					v1alpha2.CloudSQLSecretServerCACertificateExpirationTimeKey:   []byte(""),
-					v1alpha2.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(""),
-					v1alpha2.CloudSQLSecretServerCACertificateInstanceKey:         []byte(""),
-					v1alpha2.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(""),
+					v1beta1.CloudSQLSecretServerCACertificateCertKey:             []byte(cert),
+					v1beta1.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(commonName),
+					v1beta1.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(""),
+					v1beta1.CloudSQLSecretServerCACertificateExpirationTimeKey:   []byte(""),
+					v1beta1.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(""),
+					v1beta1.CloudSQLSecretServerCACertificateInstanceKey:         []byte(""),
+					v1beta1.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(""),
 				}),
 			},
 		},

@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha2 contains managed resources for GCP database services such as
+// Package v1beta1 contains managed resources for GCP database services such as
 // CloudSQL.
 // +kubebuilder:object:generate=true
 // +groupName=database.gcp.crossplane.io
-// +versionName=v1alpha2
-package v1alpha2
+// +versionName=v1beta1
+package v1beta1

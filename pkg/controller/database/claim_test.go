@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	databasev1alpha1 "github.com/crossplaneio/crossplane/apis/database/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 )
 
 var (
@@ -66,25 +66,25 @@ func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec:       databasev1alpha1.PostgreSQLInstanceSpec{EngineVersion: "9.6"},
 				},
-				cs: &v1alpha2.CloudsqlInstanceClass{
-					SpecTemplate: v1alpha2.CloudsqlInstanceClassSpecTemplate{
+				cs: &v1beta1.CloudsqlInstanceClass{
+					SpecTemplate: v1beta1.CloudsqlInstanceClassSpecTemplate{
 						NonPortableClassSpecTemplate: runtimev1alpha1.NonPortableClassSpecTemplate{
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},
 					},
 				},
-				mg: &v1alpha2.CloudsqlInstance{},
+				mg: &v1beta1.CloudsqlInstance{},
 			},
 			want: want{
-				mg: &v1alpha2.CloudsqlInstance{
-					Spec: v1alpha2.CloudsqlInstanceSpec{
+				mg: &v1beta1.CloudsqlInstance{
+					Spec: v1beta1.CloudsqlInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
 							ProviderReference:                &corev1.ObjectReference{Name: providerName},
 						},
-						ForProvider: v1alpha2.CloudsqlInstanceParameters{
+						ForProvider: v1beta1.CloudsqlInstanceParameters{
 							DatabaseVersion: getString("POSTGRES_9_6"),
 						},
 					},
@@ -133,25 +133,25 @@ func TestConfigureMyCloudsqlInstance(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec:       databasev1alpha1.MySQLInstanceSpec{EngineVersion: "5.6"},
 				},
-				cs: &v1alpha2.CloudsqlInstanceClass{
-					SpecTemplate: v1alpha2.CloudsqlInstanceClassSpecTemplate{
+				cs: &v1beta1.CloudsqlInstanceClass{
+					SpecTemplate: v1beta1.CloudsqlInstanceClassSpecTemplate{
 						NonPortableClassSpecTemplate: runtimev1alpha1.NonPortableClassSpecTemplate{
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
 						},
 					},
 				},
-				mg: &v1alpha2.CloudsqlInstance{},
+				mg: &v1beta1.CloudsqlInstance{},
 			},
 			want: want{
-				mg: &v1alpha2.CloudsqlInstance{
-					Spec: v1alpha2.CloudsqlInstanceSpec{
+				mg: &v1beta1.CloudsqlInstance{
+					Spec: v1beta1.CloudsqlInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
 							ProviderReference:                &corev1.ObjectReference{Name: providerName},
 						},
-						ForProvider: v1alpha2.CloudsqlInstanceParameters{
+						ForProvider: v1beta1.CloudsqlInstanceParameters{
 							DatabaseVersion: getString("MYSQL_5_6"),
 						},
 					},
