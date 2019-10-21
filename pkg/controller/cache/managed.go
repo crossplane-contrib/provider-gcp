@@ -19,6 +19,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/cache/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
 	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/cloudmemorystore"
 )
@@ -42,6 +43,7 @@ const (
 	errGetProviderSecret = "cannot get Provider Secret"
 	errNewClient         = "cannot create new CloudMemorystore client"
 	errNotInstance       = "managed resource is not an CloudMemorystore instance"
+	errUpdateCR          = "cannot update CloudMemorystore custom resource"
 	errGetInstance       = "cannot get CloudMemorystore instance"
 	errCreateInstance    = "cannot create CloudMemorystore instance"
 	errUpdateInstance    = "cannot update CloudMemorystore instance"
@@ -57,10 +59,10 @@ type CloudMemorystoreInstanceController struct{}
 // start it when the Manager is Started.
 func (c *CloudMemorystoreInstanceController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha2.CloudMemorystoreInstanceKind, v1alpha2.Group))).
-		For(&v1alpha2.CloudMemorystoreInstance{}).
+		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.CloudMemorystoreInstanceKind, v1beta1.Group))).
+		For(&v1beta1.CloudMemorystoreInstance{}).
 		Complete(resource.NewManagedReconciler(mgr,
-			resource.ManagedKind(v1alpha2.CloudMemorystoreInstanceGroupVersionKind),
+			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
 			resource.WithExternalConnecter(&connecter{client: mgr.GetClient(), newCMS: cloudmemorystore.NewClient})))
 }
 
@@ -70,7 +72,7 @@ type connecter struct {
 }
 
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return nil, errors.New(errNotInstance)
 	}
@@ -88,21 +90,22 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (resource.
 	}
 
 	cms, err := c.newCMS(ctx, s.Data[p.Spec.Secret.Key])
-	return &external{cms: cms, projectID: p.Spec.ProjectID}, errors.Wrap(err, errNewClient)
+	return &external{cms: cms, projectID: p.Spec.ProjectID, kube: c.client}, errors.Wrap(err, errNewClient)
 }
 
 type external struct {
+	kube      client.Client
 	cms       cloudmemorystore.Client
 	projectID string
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	cr, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotInstance)
 	}
 
-	id := cloudmemorystore.NewInstanceID(e.projectID, i)
+	id := cloudmemorystore.NewInstanceID(e.projectID, cr)
 	existing, err := e.cms.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
 	if cloudmemorystore.IsNotFound(err) {
 		return resource.ExternalObservation{ResourceExists: false}, nil
@@ -111,28 +114,34 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 		return resource.ExternalObservation{}, errors.Wrap(err, errGetInstance)
 	}
 
-	i.Status.State = existing.GetState().String()
-	i.Status.Endpoint = existing.GetHost()
-	i.Status.Port = int(existing.GetPort())
-	i.Status.ProviderID = existing.GetName()
+	cr.Status.AtProvider = cloudmemorystore.GenerateObservation(*existing)
 
-	switch i.Status.State {
-	case v1alpha2.StateReady:
-		i.Status.SetConditions(runtimev1alpha1.Available())
-		resource.SetBindable(i)
-	case v1alpha2.StateCreating:
-		i.Status.SetConditions(runtimev1alpha1.Creating())
-	case v1alpha2.StateDeleting:
-		i.Status.SetConditions(runtimev1alpha1.Deleting())
+	currentSpec := cr.Spec.ForProvider.DeepCopy()
+	cloudmemorystore.LateInitializeSpec(&cr.Spec.ForProvider, *existing)
+	if !reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider) {
+		if err := e.kube.Update(ctx, cr); err != nil {
+			return resource.ExternalObservation{}, errors.Wrap(err, errUpdateCR)
+		}
+	}
+
+	conn := resource.ConnectionDetails{}
+	switch cr.Status.AtProvider.State {
+	case cloudmemorystore.StateReady:
+		cr.Status.SetConditions(runtimev1alpha1.Available())
+		conn[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(cr.Status.AtProvider.Host)
+		resource.SetBindable(cr)
+	case cloudmemorystore.StateCreating:
+		cr.Status.SetConditions(runtimev1alpha1.Creating())
+	case cloudmemorystore.StateDeleting:
+		cr.Status.SetConditions(runtimev1alpha1.Deleting())
+	default:
+		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
 	}
 
 	o := resource.ExternalObservation{
 		ResourceExists:    true,
-		ConnectionDetails: resource.ConnectionDetails{},
-	}
-
-	if i.Status.Endpoint != "" {
-		o.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(i.Status.Endpoint)
+		ResourceUpToDate:  cloudmemorystore.IsUpToDate(cr, existing),
+		ConnectionDetails: conn,
 	}
 
 	return o, nil
@@ -140,7 +149,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotInstance)
 	}
@@ -153,27 +162,17 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.Ex
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotInstance)
 	}
-
 	id := cloudmemorystore.NewInstanceID(e.projectID, i)
-	existing, err := e.cms.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
-	if err != nil {
-		return resource.ExternalUpdate{}, errors.Wrap(err, errGetInstance)
-	}
-
-	if !cloudmemorystore.NeedsUpdate(i, existing) {
-		return resource.ExternalUpdate{}, nil
-	}
-
-	_, err = e.cms.UpdateInstance(ctx, cloudmemorystore.NewUpdateInstanceRequest(id, i))
+	_, err := e.cms.UpdateInstance(ctx, cloudmemorystore.NewUpdateInstanceRequest(id, i))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	i, ok := mg.(*v1alpha2.CloudMemorystoreInstance)
+	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return errors.New(errNotInstance)
 	}

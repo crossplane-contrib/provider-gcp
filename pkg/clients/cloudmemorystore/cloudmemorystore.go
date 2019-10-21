@@ -28,12 +28,21 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplaneio/stack-gcp/apis/cache/v1alpha2"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+
+	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
-// NamePrefix is the prefix for all created CloudMemorystore instances.
-const NamePrefix = "cms"
+// Cloud Memorystore instance states. Only the subset that is used
+// is listed.
+var (
+	StateCreating = redisv1pb.Instance_CREATING.String()
+	StateReady    = redisv1pb.Instance_READY.String()
+	StateDeleting = redisv1pb.Instance_DELETING.String()
+)
 
 // A Client handles CRUD operations for Cloud Memorystore instances. This
 // interface is compatible with the upstream CloudRedisClient.
@@ -67,14 +76,13 @@ type InstanceID struct {
 }
 
 // NewInstanceID returns an identifier used to represent CloudMemorystore
-// instances in the GCP API. Instances may have names of up to 40 characters. We
-// use a four character prefix and a 36 character UUID.
+// instances in the GCP API. Instances may have names of up to 40 characters.
 // https://godoc.org/google.golang.org/genproto/googleapis/cloud/redis/v1#CreateInstanceRequest
-func NewInstanceID(project string, i *v1alpha2.CloudMemorystoreInstance) InstanceID {
+func NewInstanceID(project string, i *v1beta1.CloudMemorystoreInstance) InstanceID {
 	return InstanceID{
 		Project:  project,
-		Region:   i.Spec.Region,
-		Instance: fmt.Sprintf("%s-%s", NamePrefix, i.GetUID()),
+		Region:   i.Spec.ForProvider.Region,
+		Instance: meta.GetExternalName(i),
 	}
 }
 
@@ -88,59 +96,102 @@ func (id InstanceID) Name() string {
 	return fmt.Sprintf("projects/%s/locations/%s/instances/%s", id.Project, id.Region, id.Instance)
 }
 
-// NewInstanceTier converts the supplied string representation of a tier into an
-// Instance_Tier suitable for use with requests to the GCP API.
-func NewInstanceTier(t string) redisv1pb.Instance_Tier {
-	return redisv1pb.Instance_Tier(redisv1pb.Instance_Tier_value[t])
+// GenerateRedisInstance is used to convert Crossplane CloudMemorystoreInstanceParameters
+// to GCP's Redis Instance object.
+func GenerateRedisInstance(id InstanceID, s v1beta1.CloudMemorystoreInstanceParameters) *redisv1pb.Instance {
+	return &redisv1pb.Instance{
+		Name:                  id.Name(),
+		Tier:                  redisv1pb.Instance_Tier(redisv1pb.Instance_Tier_value[s.Tier]),
+		MemorySizeGb:          s.MemorySizeGB,
+		Labels:                s.Labels,
+		RedisConfigs:          s.RedisConfigs,
+		DisplayName:           gcp.StringValue(s.DisplayName),
+		LocationId:            gcp.StringValue(s.LocationID),
+		AlternativeLocationId: gcp.StringValue(s.AlternativeLocationID),
+		RedisVersion:          gcp.StringValue(s.RedisVersion),
+		ReservedIpRange:       gcp.StringValue(s.ReservedIPRange),
+		AuthorizedNetwork:     gcp.StringValue(s.AuthorizedNetwork),
+	}
+}
+
+// GenerateObservation is used to produce an observation object from GCP's Redis
+// Instance object.
+func GenerateObservation(r redisv1pb.Instance) v1beta1.CloudMemorystoreInstanceObservation {
+	o := v1beta1.CloudMemorystoreInstanceObservation{
+		Name:                   r.Name,
+		Host:                   r.Host,
+		Port:                   r.Port,
+		CurrentLocationID:      r.CurrentLocationId,
+		State:                  r.State.String(),
+		StatusMessage:          r.StatusMessage,
+		PersistenceIAMIdentity: r.PersistenceIamIdentity,
+	}
+	if r.CreateTime != nil {
+		t := metav1.Unix(r.CreateTime.Seconds, int64(r.CreateTime.Nanos))
+		o.CreateTime = &t
+	}
+	return o
+}
+
+// LateInitializeSpec fills empty spec fields with the data retrieved from GCP.
+func LateInitializeSpec(spec *v1beta1.CloudMemorystoreInstanceParameters, r redisv1pb.Instance) {
+	if spec.Tier == "" {
+		spec.Tier = r.Tier.String()
+	}
+	if spec.MemorySizeGB == 0 {
+		spec.MemorySizeGB = r.MemorySizeGb
+	}
+	spec.DisplayName = gcp.LateInitializeString(spec.DisplayName, r.DisplayName)
+	spec.Labels = gcp.LateInitializeStringMap(spec.Labels, r.Labels)
+	spec.LocationID = gcp.LateInitializeString(spec.LocationID, r.LocationId)
+	spec.AlternativeLocationID = gcp.LateInitializeString(spec.AlternativeLocationID, r.AlternativeLocationId)
+	spec.RedisVersion = gcp.LateInitializeString(spec.RedisVersion, r.RedisVersion)
+	spec.ReservedIPRange = gcp.LateInitializeString(spec.ReservedIPRange, r.ReservedIpRange)
+	spec.RedisConfigs = gcp.LateInitializeStringMap(spec.RedisConfigs, r.RedisConfigs)
+	spec.AuthorizedNetwork = gcp.LateInitializeString(spec.AuthorizedNetwork, r.AuthorizedNetwork)
 }
 
 // NewCreateInstanceRequest creates a request to create an instance suitable for
 // use with the GCP API.
-func NewCreateInstanceRequest(id InstanceID, i *v1alpha2.CloudMemorystoreInstance) *redisv1pb.CreateInstanceRequest {
+func NewCreateInstanceRequest(id InstanceID, i *v1beta1.CloudMemorystoreInstance) *redisv1pb.CreateInstanceRequest {
 	return &redisv1pb.CreateInstanceRequest{
 		Parent:     id.Parent(),
 		InstanceId: id.Instance,
-		Instance: &redisv1pb.Instance{
-			Tier:                  NewInstanceTier(i.Spec.Tier),
-			LocationId:            i.Spec.LocationID,
-			AlternativeLocationId: i.Spec.AlternativeLocationID,
-			ReservedIpRange:       i.Spec.ReservedIPRange,
-			AuthorizedNetwork:     i.Spec.AuthorizedNetwork,
-			RedisVersion:          i.Spec.RedisVersion,
-			RedisConfigs:          i.Spec.RedisConfigs,
-			MemorySizeGb:          int32(i.Spec.MemorySizeGB),
-		},
+		Instance:   GenerateRedisInstance(id, i.Spec.ForProvider),
 	}
 }
 
 // NewUpdateInstanceRequest creates a request to update an instance suitable for
 // use with the GCP API.
-func NewUpdateInstanceRequest(id InstanceID, i *v1alpha2.CloudMemorystoreInstance) *redisv1pb.UpdateInstanceRequest {
+func NewUpdateInstanceRequest(id InstanceID, i *v1beta1.CloudMemorystoreInstance) *redisv1pb.UpdateInstanceRequest {
 	return &redisv1pb.UpdateInstanceRequest{
 		// These are the only fields we're concerned with that can be updated.
 		// The documentation is incorrect regarding field masks - they must be
 		// specified as snake case rather than camel case.
 		// https://godoc.org/google.golang.org/genproto/googleapis/cloud/redis/v1#UpdateInstanceRequest
-		UpdateMask: &field_mask.FieldMask{Paths: []string{"memory_size_gb", "redis_configs"}},
-		Instance: &redisv1pb.Instance{
-			Name:         id.Name(),
-			RedisConfigs: i.Spec.RedisConfigs,
-			MemorySizeGb: int32(i.Spec.MemorySizeGB),
-		},
+		UpdateMask: &field_mask.FieldMask{Paths: []string{"memory_size_gb", "redis_configs", "labels", "display_name"}},
+		Instance:   GenerateRedisInstance(id, i.Spec.ForProvider),
 	}
 }
 
-// NeedsUpdate returns true if the supplied Kubernetes resource differs from the
+// IsUpToDate returns true if the supplied Kubernetes resource differs from the
 // supplied GCP resource. It considers only fields that can be modified in
 // place without deleting and recreating the instance.
-func NeedsUpdate(kube *v1alpha2.CloudMemorystoreInstance, gcp *redisv1pb.Instance) bool {
-	if kube.Spec.MemorySizeGB != int(gcp.GetMemorySizeGb()) {
-		return true
+func IsUpToDate(i *v1beta1.CloudMemorystoreInstance, gcp *redisv1pb.Instance) bool {
+	desired := GenerateRedisInstance(InstanceID{}, i.Spec.ForProvider)
+	if desired.MemorySizeGb != gcp.MemorySizeGb {
+		return false
 	}
-	if !reflect.DeepEqual(kube.Spec.RedisConfigs, gcp.GetRedisConfigs()) {
-		return true
+	if desired.DisplayName != gcp.DisplayName {
+		return false
 	}
-	return false
+	if !reflect.DeepEqual(desired.RedisConfigs, gcp.RedisConfigs) {
+		return false
+	}
+	if !reflect.DeepEqual(desired.Labels, gcp.Labels) {
+		return false
+	}
+	return true
 }
 
 // NewDeleteInstanceRequest creates a request to delete an instance suitable for
@@ -157,6 +208,5 @@ func NewGetInstanceRequest(id InstanceID) *redisv1pb.GetInstanceRequest {
 // IsNotFound returns true if the supplied error indicates a CloudMemorystore
 // instance was not found.
 func IsNotFound(err error) bool {
-	// TODO(negz): Confirm this is how this API indicates a non-existent resource.
 	return status.Code(err) == codes.NotFound
 }
