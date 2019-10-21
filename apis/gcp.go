@@ -28,7 +28,7 @@ import (
 
 	cachev1alpha2 "github.com/crossplaneio/stack-gcp/apis/cache/v1alpha2"
 	computev1alpha2 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
-	databasev1alpha2 "github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
+	databasev1beta1 "github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 	servicenetworkingv1alpha2 "github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha2"
 	storagev1alpha2 "github.com/crossplaneio/stack-gcp/apis/storage/v1alpha2"
 	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
@@ -40,7 +40,7 @@ func init() {
 		gcpv1alpha2.SchemeBuilder.AddToScheme,
 		cachev1alpha2.SchemeBuilder.AddToScheme,
 		computev1alpha2.SchemeBuilder.AddToScheme,
-		databasev1alpha2.SchemeBuilder.AddToScheme,
+		databasev1beta1.SchemeBuilder.AddToScheme,
 		servicenetworkingv1alpha2.SchemeBuilder.AddToScheme,
 		storagev1alpha2.SchemeBuilder.AddToScheme,
 	)

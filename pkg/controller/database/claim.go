@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	databasev1alpha1 "github.com/crossplaneio/crossplane/apis/database/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/database/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 )
 
 // PostgreSQLInstanceClaimController is responsible for adding the PostgreSQLInstance
@@ -41,24 +41,24 @@ type PostgreSQLInstanceClaimController struct{}
 func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		databasev1alpha1.PostgreSQLInstanceKind,
-		v1alpha2.CloudsqlInstanceKind,
-		v1alpha2.Group))
+		v1beta1.CloudsqlInstanceKind,
+		v1beta1.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
-		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind)),
-		resource.IsManagedKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
 		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
 			Portable:    databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind,
-			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
+			NonPortable: v1beta1.CloudsqlInstanceClassGroupVersionKind,
 		})))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
 		resource.ClassKinds{
 			Portable:    databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind,
-			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
+			NonPortable: v1beta1.CloudsqlInstanceClassGroupVersionKind,
 		},
-		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
+		resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
@@ -68,7 +68,7 @@ func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) e
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1beta1.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.PostgreSQLInstance{}).
 		WithEventFilter(p).
 		Complete(r)
@@ -83,29 +83,26 @@ func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, c
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), databasev1alpha1.PostgreSQLInstanceGroupVersionKind)
 	}
 
-	rs, csok := cs.(*v1alpha2.CloudsqlInstanceClass)
+	rs, csok := cs.(*v1beta1.CloudsqlInstanceClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha2.CloudsqlInstanceClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1beta1.CloudsqlInstanceClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1alpha2.CloudsqlInstance)
+	i, mgok := mg.(*v1beta1.CloudsqlInstance)
 	if !mgok {
-		return errors.Errorf("expected managed instance %s to be %s", mg.GetName(), v1alpha2.CloudsqlInstanceGroupVersionKind)
+		return errors.Errorf("expected managed instance %s to be %s", mg.GetName(), v1beta1.CloudsqlInstanceGroupVersionKind)
 	}
 
-	spec := &v1alpha2.CloudsqlInstanceSpec{
+	spec := &v1beta1.CloudsqlInstanceSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
-		CloudsqlInstanceParameters: rs.SpecTemplate.CloudsqlInstanceParameters,
+		ForProvider: rs.SpecTemplate.ForProvider,
 	}
 
 	if pg.Spec.EngineVersion != "" {
-		spec.DatabaseVersion = translateVersion(pg.Spec.EngineVersion, v1alpha2.PostgresqlDBVersionPrefix)
+		spec.ForProvider.DatabaseVersion = translateVersion(pg.Spec.EngineVersion, v1beta1.PostgresqlDBVersionPrefix)
 	}
-
-	// NOTE(hasheddan): consider moving defaulting to either CRD or managed reconciler level
-	checkEmptySpec(spec)
 
 	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
@@ -124,24 +121,24 @@ type MySQLInstanceClaimController struct{}
 func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		databasev1alpha1.MySQLInstanceKind,
-		v1alpha2.CloudsqlInstanceKind,
-		v1alpha2.Group))
+		v1beta1.CloudsqlInstanceKind,
+		v1beta1.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
-		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind)),
-		resource.IsManagedKind(resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
 		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
 			Portable:    databasev1alpha1.MySQLInstanceClassGroupVersionKind,
-			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
+			NonPortable: v1beta1.CloudsqlInstanceClassGroupVersionKind,
 		})))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
 		resource.ClassKinds{
 			Portable:    databasev1alpha1.MySQLInstanceClassGroupVersionKind,
-			NonPortable: v1alpha2.CloudsqlInstanceClassGroupVersionKind,
+			NonPortable: v1beta1.CloudsqlInstanceClassGroupVersionKind,
 		},
-		resource.ManagedKind(v1alpha2.CloudsqlInstanceGroupVersionKind),
+		resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
@@ -151,7 +148,7 @@ func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error 
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1alpha2.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1beta1.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.MySQLInstance{}).
 		WithEventFilter(p).
 		Complete(r)
@@ -166,29 +163,26 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 		return errors.Errorf("expected instance claim %s to be %s", cm.GetName(), databasev1alpha1.MySQLInstanceGroupVersionKind)
 	}
 
-	rs, csok := cs.(*v1alpha2.CloudsqlInstanceClass)
+	rs, csok := cs.(*v1beta1.CloudsqlInstanceClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha2.CloudsqlInstanceClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1beta1.CloudsqlInstanceClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1alpha2.CloudsqlInstance)
+	i, mgok := mg.(*v1beta1.CloudsqlInstance)
 	if !mgok {
-		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha2.CloudsqlInstanceGroupVersionKind)
+		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1beta1.CloudsqlInstanceGroupVersionKind)
 	}
 
-	spec := &v1alpha2.CloudsqlInstanceSpec{
+	spec := &v1beta1.CloudsqlInstanceSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
-		CloudsqlInstanceParameters: rs.SpecTemplate.CloudsqlInstanceParameters,
+		ForProvider: rs.SpecTemplate.ForProvider,
 	}
 
 	if my.Spec.EngineVersion != "" {
-		spec.DatabaseVersion = translateVersion(my.Spec.EngineVersion, v1alpha2.MysqlDBVersionPrefix)
+		spec.ForProvider.DatabaseVersion = translateVersion(my.Spec.EngineVersion, v1beta1.MysqlDBVersionPrefix)
 	}
-
-	// NOTE(hasheddan): consider moving defaulting to either CRD or managed reconciler level
-	checkEmptySpec(spec)
 
 	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
@@ -199,21 +193,10 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 	return nil
 }
 
-func translateVersion(version, versionPrefix string) string {
+func translateVersion(version, versionPrefix string) *string {
 	if version == "" {
-		return ""
+		return nil
 	}
-	return fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
-}
-
-func checkEmptySpec(spec *v1alpha2.CloudsqlInstanceSpec) {
-	if spec.Labels == nil {
-		spec.Labels = map[string]string{}
-	}
-	if spec.AuthorizedNetworks == nil {
-		spec.AuthorizedNetworks = []string{}
-	}
-	if spec.StorageGB == 0 {
-		spec.StorageGB = v1alpha2.DefaultStorageGB
-	}
+	r := fmt.Sprintf("%s_%s", versionPrefix, strings.Replace(version, ".", "_", -1))
+	return &r
 }

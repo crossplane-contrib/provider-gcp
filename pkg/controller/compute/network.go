@@ -164,6 +164,8 @@ func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (reso
 	if cr.Spec.IsSameAs(cr.Status.GCPNetworkStatus) {
 		return resource.ExternalUpdate{}, nil
 	}
+	// NOTE(muvaf): All parameters except routing config are
+	// immutable.
 	_, err := c.Networks.Patch(
 		c.projectID,
 		cr.Spec.Name,
