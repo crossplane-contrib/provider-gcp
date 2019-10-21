@@ -184,14 +184,14 @@ type GKEClusterList struct {
 // A GKEClusterClassSpecTemplate is a template for the spec of a dynamically
 // provisioned GKECluster.
 type GKEClusterClassSpecTemplate struct {
-	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
-	GKEClusterParameters                         `json:",inline"`
+	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
+	GKEClusterParameters              `json:",inline"`
 }
 
 // +kubebuilder:object:root=true
 
-// A GKEClusterClass is a non-portable resource class. It defines the desired
-// spec of resource claims that use it to dynamically provision a managed
+// A GKEClusterClass is a resource class. It defines the desired spec of
+// resource claims that use it to dynamically provision a managed
 // resource.
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"

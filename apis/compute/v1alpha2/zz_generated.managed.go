@@ -33,9 +33,9 @@ func (mg *GKECluster) GetClaimReference() *corev1.ObjectReference {
 	return mg.Spec.ClaimReference
 }
 
-// GetNonPortableClassReference of this GKECluster.
-func (mg *GKECluster) GetNonPortableClassReference() *corev1.ObjectReference {
-	return mg.Spec.NonPortableClassReference
+// GetClassReference of this GKECluster.
+func (mg *GKECluster) GetClassReference() *corev1.ObjectReference {
+	return mg.Spec.ClassReference
 }
 
 // GetReclaimPolicy of this GKECluster.
@@ -44,7 +44,7 @@ func (mg *GKECluster) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 }
 
 // GetWriteConnectionSecretToReference of this GKECluster.
-func (mg *GKECluster) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
+func (mg *GKECluster) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
@@ -58,14 +58,14 @@ func (mg *GKECluster) SetClaimReference(r *corev1.ObjectReference) {
 	mg.Spec.ClaimReference = r
 }
 
+// SetClassReference of this GKECluster.
+func (mg *GKECluster) SetClassReference(r *corev1.ObjectReference) {
+	mg.Spec.ClassReference = r
+}
+
 // SetConditions of this GKECluster.
 func (mg *GKECluster) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
-}
-
-// SetNonPortableClassReference of this GKECluster.
-func (mg *GKECluster) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	mg.Spec.NonPortableClassReference = r
 }
 
 // SetReclaimPolicy of this GKECluster.
@@ -74,7 +74,7 @@ func (mg *GKECluster) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
 }
 
 // SetWriteConnectionSecretToReference of this GKECluster.
-func (mg *GKECluster) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
+func (mg *GKECluster) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
@@ -88,9 +88,9 @@ func (mg *GlobalAddress) GetClaimReference() *corev1.ObjectReference {
 	return mg.Spec.ClaimReference
 }
 
-// GetNonPortableClassReference of this GlobalAddress.
-func (mg *GlobalAddress) GetNonPortableClassReference() *corev1.ObjectReference {
-	return mg.Spec.NonPortableClassReference
+// GetClassReference of this GlobalAddress.
+func (mg *GlobalAddress) GetClassReference() *corev1.ObjectReference {
+	return mg.Spec.ClassReference
 }
 
 // GetReclaimPolicy of this GlobalAddress.
@@ -99,7 +99,7 @@ func (mg *GlobalAddress) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 }
 
 // GetWriteConnectionSecretToReference of this GlobalAddress.
-func (mg *GlobalAddress) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
+func (mg *GlobalAddress) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
@@ -113,14 +113,14 @@ func (mg *GlobalAddress) SetClaimReference(r *corev1.ObjectReference) {
 	mg.Spec.ClaimReference = r
 }
 
+// SetClassReference of this GlobalAddress.
+func (mg *GlobalAddress) SetClassReference(r *corev1.ObjectReference) {
+	mg.Spec.ClassReference = r
+}
+
 // SetConditions of this GlobalAddress.
 func (mg *GlobalAddress) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
-}
-
-// SetNonPortableClassReference of this GlobalAddress.
-func (mg *GlobalAddress) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	mg.Spec.NonPortableClassReference = r
 }
 
 // SetReclaimPolicy of this GlobalAddress.
@@ -129,7 +129,7 @@ func (mg *GlobalAddress) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
 }
 
 // SetWriteConnectionSecretToReference of this GlobalAddress.
-func (mg *GlobalAddress) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
+func (mg *GlobalAddress) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
@@ -143,9 +143,9 @@ func (mg *Network) GetClaimReference() *corev1.ObjectReference {
 	return mg.Spec.ClaimReference
 }
 
-// GetNonPortableClassReference of this Network.
-func (mg *Network) GetNonPortableClassReference() *corev1.ObjectReference {
-	return mg.Spec.NonPortableClassReference
+// GetClassReference of this Network.
+func (mg *Network) GetClassReference() *corev1.ObjectReference {
+	return mg.Spec.ClassReference
 }
 
 // GetReclaimPolicy of this Network.
@@ -154,7 +154,7 @@ func (mg *Network) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 }
 
 // GetWriteConnectionSecretToReference of this Network.
-func (mg *Network) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
+func (mg *Network) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
@@ -168,14 +168,14 @@ func (mg *Network) SetClaimReference(r *corev1.ObjectReference) {
 	mg.Spec.ClaimReference = r
 }
 
+// SetClassReference of this Network.
+func (mg *Network) SetClassReference(r *corev1.ObjectReference) {
+	mg.Spec.ClassReference = r
+}
+
 // SetConditions of this Network.
 func (mg *Network) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
-}
-
-// SetNonPortableClassReference of this Network.
-func (mg *Network) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	mg.Spec.NonPortableClassReference = r
 }
 
 // SetReclaimPolicy of this Network.
@@ -184,7 +184,7 @@ func (mg *Network) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
 }
 
 // SetWriteConnectionSecretToReference of this Network.
-func (mg *Network) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
+func (mg *Network) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
@@ -198,9 +198,9 @@ func (mg *Subnetwork) GetClaimReference() *corev1.ObjectReference {
 	return mg.Spec.ClaimReference
 }
 
-// GetNonPortableClassReference of this Subnetwork.
-func (mg *Subnetwork) GetNonPortableClassReference() *corev1.ObjectReference {
-	return mg.Spec.NonPortableClassReference
+// GetClassReference of this Subnetwork.
+func (mg *Subnetwork) GetClassReference() *corev1.ObjectReference {
+	return mg.Spec.ClassReference
 }
 
 // GetReclaimPolicy of this Subnetwork.
@@ -209,7 +209,7 @@ func (mg *Subnetwork) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 }
 
 // GetWriteConnectionSecretToReference of this Subnetwork.
-func (mg *Subnetwork) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
+func (mg *Subnetwork) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
@@ -223,14 +223,14 @@ func (mg *Subnetwork) SetClaimReference(r *corev1.ObjectReference) {
 	mg.Spec.ClaimReference = r
 }
 
+// SetClassReference of this Subnetwork.
+func (mg *Subnetwork) SetClassReference(r *corev1.ObjectReference) {
+	mg.Spec.ClassReference = r
+}
+
 // SetConditions of this Subnetwork.
 func (mg *Subnetwork) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
-}
-
-// SetNonPortableClassReference of this Subnetwork.
-func (mg *Subnetwork) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	mg.Spec.NonPortableClassReference = r
 }
 
 // SetReclaimPolicy of this Subnetwork.
@@ -239,6 +239,6 @@ func (mg *Subnetwork) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
 }
 
 // SetWriteConnectionSecretToReference of this Subnetwork.
-func (mg *Subnetwork) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
+func (mg *Subnetwork) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }
