@@ -17,29 +17,27 @@ limitations under the License.
 package compute
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"testing"
-
-	"github.com/crossplaneio/stack-gcp/apis"
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/container/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	. "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-	. "k8s.io/client-go/testing"
 	. "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
+	"github.com/crossplaneio/stack-gcp/apis"
 	. "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/fake"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/gke"
@@ -102,8 +100,7 @@ func TestSyncClusterGetError(t *testing.T) {
 	tc := testCluster()
 
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(tc),
 	}
 
 	called := false
@@ -131,8 +128,7 @@ func TestSyncErroredCluster(t *testing.T) {
 	tc := testCluster()
 
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(tc),
 	}
 
 	errorMessage := "Something went wrong on gcloud side."
@@ -161,48 +157,19 @@ func TestSyncErroredCluster(t *testing.T) {
 	assertResource(g, r, expectedStatus)
 }
 
-func TestSyncClusterNotReady(t *testing.T) {
+func TestSyncPublishConnectionDetailsError(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	tc := testCluster()
 
+	testError := errors.New("publish-connection-details-error")
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
-	}
-
-	called := false
-
-	cl := fake.NewGKEClient()
-	cl.MockGetCluster = func(string, string) (*container.Cluster, error) {
-		called = true
-		return &container.Cluster{
-			Status: ClusterStateProvisioning,
-		}, nil
-	}
-
-	expectedStatus := runtimev1alpha1.ConditionedStatus{}
-
-	rs, err := r._sync(tc, cl)
-	g.Expect(rs).To(Equal(reconcile.Result{RequeueAfter: requeueOnWait}))
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(called).To(BeTrue())
-	assertResource(g, r, expectedStatus)
-}
-
-func TestSyncApplySecretError(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	tc := testCluster()
-
-	testError := errors.New("test-error-create-secret")
-	kc := NewSimpleClientset()
-	kc.PrependReactor("create", "secrets", func(Action) (handled bool, ret runtime.Object, err error) {
-		return true, nil, testError
-	})
-	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: kc,
+		Client: NewFakeClient(tc),
+		publisher: resource.ManagedConnectionPublisherFns{
+			PublishConnectionFn: func(_ context.Context, _ resource.Managed, _ resource.ConnectionDetails) error {
+				return testError
+			},
+		},
 	}
 
 	called := false
@@ -230,14 +197,42 @@ func TestSyncApplySecretError(t *testing.T) {
 	assertResource(g, r, expectedStatus)
 }
 
+func TestSyncClusterNotReady(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	tc := testCluster()
+
+	r := &Reconciler{
+		Client: NewFakeClient(tc),
+	}
+
+	called := false
+
+	cl := fake.NewGKEClient()
+	cl.MockGetCluster = func(string, string) (*container.Cluster, error) {
+		called = true
+		return &container.Cluster{
+			Status: ClusterStateProvisioning,
+		}, nil
+	}
+
+	expectedStatus := runtimev1alpha1.ConditionedStatus{}
+
+	rs, err := r._sync(tc, cl)
+	g.Expect(rs).To(Equal(reconcile.Result{RequeueAfter: requeueOnWait}))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(called).To(BeTrue())
+	assertResource(g, r, expectedStatus)
+}
+
 func TestSync(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	tc := testCluster()
 
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
+		Client:    NewFakeClient(tc),
+		publisher: resource.PublisherChain{},
 	}
 
 	called := false
@@ -273,8 +268,7 @@ func TestDeleteReclaimDelete(t *testing.T) {
 	tc.Spec.ReclaimPolicy = runtimev1alpha1.ReclaimDelete
 
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(tc),
 	}
 
 	called := false
@@ -302,8 +296,7 @@ func TestDeleteReclaimRetain(t *testing.T) {
 	tc.Finalizers = []string{finalizer}
 
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(tc),
 	}
 
 	called := false
@@ -334,8 +327,7 @@ func TestDeleteFailed(t *testing.T) {
 	tc.Finalizers = []string{finalizer}
 
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(tc),
 	}
 
 	testError := errors.New("test-delete-error")
@@ -379,8 +371,7 @@ func TestReconcileClientError(t *testing.T) {
 	called := false
 
 	r := &Reconciler{
-		Client:     NewFakeClient(testCluster()),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(testCluster()),
 		connect: func(*GKECluster) (gke.Client, error) {
 			called = true
 			return nil, testError
@@ -410,8 +401,7 @@ func TestReconcileDelete(t *testing.T) {
 	called := false
 
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(tc),
 		connect: func(*GKECluster) (gke.Client, error) {
 			return nil, nil
 		},
@@ -434,8 +424,7 @@ func TestReconcileCreate(t *testing.T) {
 	called := false
 
 	r := &Reconciler{
-		Client:     NewFakeClient(testCluster()),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(testCluster()),
 		connect: func(*GKECluster) (gke.Client, error) {
 			return nil, nil
 		},
@@ -461,8 +450,7 @@ func TestReconcileSync(t *testing.T) {
 	tc.Finalizers = []string{finalizer}
 
 	r := &Reconciler{
-		Client:     NewFakeClient(tc),
-		kubeclient: NewSimpleClientset(),
+		Client: NewFakeClient(tc),
 		connect: func(*GKECluster) (gke.Client, error) {
 			return nil, nil
 		},
@@ -480,4 +468,62 @@ func TestReconcileSync(t *testing.T) {
 	rc := assertResource(g, r, runtimev1alpha1.ConditionedStatus{})
 	g.Expect(rc.Finalizers).To(HaveLen(1))
 	g.Expect(rc.Finalizers).To(ContainElement(finalizer))
+}
+
+func TestConnectionDetails(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	endpoint := "endpoint"
+	username := "username"
+	password := "password"
+	clusterCA := "clusterCA"
+	clientCert := "clientCert"
+	clientKey := "clientKey"
+
+	want := resource.ConnectionDetails{
+		runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(endpoint),
+		runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(username),
+		runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(password),
+		runtimev1alpha1.ResourceCredentialsSecretCAKey:         []byte(clusterCA),
+		runtimev1alpha1.ResourceCredentialsSecretClientCertKey: []byte(clientCert),
+		runtimev1alpha1.ResourceCredentialsSecretClientKeyKey:  []byte(clientKey),
+	}
+	got, err := connectionDetails(&container.Cluster{
+		Endpoint: endpoint,
+		MasterAuth: &container.MasterAuth{
+			Username:             username,
+			Password:             password,
+			ClusterCaCertificate: base64.StdEncoding.EncodeToString([]byte(clusterCA)),
+			ClientCertificate:    base64.StdEncoding.EncodeToString([]byte(clientCert)),
+			ClientKey:            base64.StdEncoding.EncodeToString([]byte(clientKey)),
+		},
+	})
+	g.Expect(got).To(Equal(want))
+	g.Expect(err).To(BeNil())
+}
+
+func TestConnectionDetailsError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	endpoint := "endpoint"
+	username := "username"
+	password := "password"
+	clusterCA := "clusterCA"
+	clientCert := "clientCert"
+
+	got, err := connectionDetails(&container.Cluster{
+		Endpoint: endpoint,
+		MasterAuth: &container.MasterAuth{
+			Username:             username,
+			Password:             password,
+			ClusterCaCertificate: base64.StdEncoding.EncodeToString([]byte(clusterCA)),
+			ClientCertificate:    base64.StdEncoding.EncodeToString([]byte(clientCert)),
+
+			// Just testing the one key since it's the same error case for all
+			// of them.
+			ClientKey: "probably-not-base64",
+		},
+	})
+	g.Expect(got).To(BeNil())
+	g.Expect(err).To(HaveOccurred())
 }

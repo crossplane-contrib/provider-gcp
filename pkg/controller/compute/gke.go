@@ -27,9 +27,6 @@ import (
 	"google.golang.org/api/container/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -38,7 +35,6 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
 	gcpcomputev1alpha2 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
 	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
@@ -68,9 +64,7 @@ var (
 // Reconciler reconciles a Provider object
 type Reconciler struct {
 	client.Client
-	scheme     *runtime.Scheme
-	kubeclient kubernetes.Interface
-	recorder   record.EventRecorder
+	publisher resource.ManagedConnectionPublisher
 
 	connect func(*gcpcomputev1alpha2.GKECluster) (gke.Client, error)
 	create  func(*gcpcomputev1alpha2.GKECluster, gke.Client) (reconcile.Result, error)
@@ -86,10 +80,8 @@ type GKEClusterController struct{}
 // and Start it when the Manager is Started.
 func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	r := &Reconciler{
-		Client:     mgr.GetClient(),
-		scheme:     mgr.GetScheme(),
-		kubeclient: kubernetes.NewForConfigOrDie(mgr.GetConfig()),
-		recorder:   mgr.GetEventRecorderFor(controllerName),
+		Client:    mgr.GetClient(),
+		publisher: resource.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme()),
 	}
 	r.connect = r._connect
 	r.create = r._create
@@ -109,10 +101,8 @@ func (r *Reconciler) fail(instance *gcpcomputev1alpha2.GKECluster, err error) (r
 }
 
 // connectionSecret return secret object for cluster instance
-func (r *Reconciler) connectionSecret(instance *gcpcomputev1alpha2.GKECluster, cluster *container.Cluster) (*corev1.Secret, error) {
-	secret := resource.ConnectionSecretFor(instance, gcpcomputev1alpha2.GKEClusterGroupVersionKind)
-
-	secret.Data = map[string][]byte{
+func connectionDetails(cluster *container.Cluster) (resource.ConnectionDetails, error) {
+	cd := resource.ConnectionDetails{
 		runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(cluster.Endpoint),
 		runtimev1alpha1.ResourceCredentialsSecretUserKey:     []byte(cluster.MasterAuth.Username),
 		runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(cluster.MasterAuth.Password),
@@ -122,21 +112,21 @@ func (r *Reconciler) connectionSecret(instance *gcpcomputev1alpha2.GKECluster, c
 	if err != nil {
 		return nil, err
 	}
-	secret.Data[runtimev1alpha1.ResourceCredentialsSecretCAKey] = val
+	cd[runtimev1alpha1.ResourceCredentialsSecretCAKey] = val
 
 	val, err = base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
 	if err != nil {
 		return nil, err
 	}
-	secret.Data[runtimev1alpha1.ResourceCredentialsSecretClientCertKey] = val
+	cd[runtimev1alpha1.ResourceCredentialsSecretClientCertKey] = val
 
 	val, err = base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientKey)
 	if err != nil {
 		return nil, err
 	}
-	secret.Data[runtimev1alpha1.ResourceCredentialsSecretClientKeyKey] = val
+	cd[runtimev1alpha1.ResourceCredentialsSecretClientKeyKey] = val
 
-	return secret, nil
+	return cd, nil
 }
 
 func (r *Reconciler) _connect(instance *gcpcomputev1alpha2.GKECluster) (gke.Client, error) {
@@ -205,14 +195,13 @@ func (r *Reconciler) _sync(instance *gcpcomputev1alpha2.GKECluster, client gke.C
 		return reconcile.Result{RequeueAfter: requeueOnWait}, nil
 	}
 
-	// create connection secret
-	secret, err := r.connectionSecret(instance, cluster)
+	// create and publish connection details
+	cd, err := connectionDetails(cluster)
 	if err != nil {
 		return r.fail(instance, err)
 	}
 
-	// save secret
-	if _, err := util.ApplySecret(r.kubeclient, secret); err != nil {
+	if err := r.publisher.PublishConnection(ctx, instance, cd); err != nil {
 		return r.fail(instance, err)
 	}
 
