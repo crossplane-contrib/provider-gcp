@@ -28,12 +28,11 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
@@ -56,13 +55,11 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 
 	fakeErr := errors.New("i reject to work")
 	testProvider := &gcpapis.Provider{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-		},
 		Spec: gcpapis.ProviderSpec{
-			Secret: v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: "test-secret-name",
+			Secret: corev1alpha1.SecretKeySelector{
+				SecretReference: corev1alpha1.SecretReference{
+					Namespace: testNamespace,
+					Name:      "test-secret-name",
 				},
 				Key: "test-key",
 			},
@@ -84,8 +81,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 					Spec: v1alpha2.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
-								Name:      testProviderName,
-								Namespace: testNamespace,
+								Name: testProviderName,
 							},
 						},
 						SubnetworkParameters: v1alpha2.SubnetworkParameters{
@@ -99,9 +95,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 							switch o := obj.(type) {
 							case *gcpapis.Provider:
-								if diff := cmp.Diff(
-									meta.NamespacedNameOf(&v1.ObjectReference{Name: testProviderName, Namespace: testNamespace}),
-									key); diff != "" {
+								if diff := cmp.Diff(types.NamespacedName{Name: testProviderName}, key); diff != "" {
 									t.Errorf("r: -want, +got:\n%s", diff)
 								}
 								testProvider.DeepCopyInto(o)
@@ -151,8 +145,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 					Spec: v1alpha2.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
-								Name:      testProviderName,
-								Namespace: testNamespace,
+								Name: testProviderName,
 							},
 						},
 						SubnetworkParameters: v1alpha2.SubnetworkParameters{
@@ -177,8 +170,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 					Spec: v1alpha2.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
-								Name:      testProviderName,
-								Namespace: testNamespace,
+								Name: testProviderName,
 							},
 						},
 						SubnetworkParameters: v1alpha2.SubnetworkParameters{
@@ -192,9 +184,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 							switch o := obj.(type) {
 							case *gcpapis.Provider:
-								if diff := cmp.Diff(
-									meta.NamespacedNameOf(&v1.ObjectReference{Name: testProviderName, Namespace: testNamespace}),
-									key); diff != "" {
+								if diff := cmp.Diff(types.NamespacedName{Name: testProviderName}, key); diff != "" {
 									t.Errorf("r: -want, +got:\n%s", diff)
 								}
 								testProvider.DeepCopyInto(o)
@@ -215,8 +205,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 					Spec: v1alpha2.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
-								Name:      testProviderName,
-								Namespace: testNamespace,
+								Name: testProviderName,
 							},
 						},
 						SubnetworkParameters: v1alpha2.SubnetworkParameters{
@@ -230,9 +219,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 							switch o := obj.(type) {
 							case *gcpapis.Provider:
-								if diff := cmp.Diff(
-									meta.NamespacedNameOf(&v1.ObjectReference{Name: testProviderName, Namespace: testNamespace}),
-									key); diff != "" {
+								if diff := cmp.Diff(types.NamespacedName{Name: testProviderName}, key); diff != "" {
 									t.Errorf("r: -want, +got:\n%s", diff)
 								}
 								testProvider.DeepCopyInto(o)

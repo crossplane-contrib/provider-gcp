@@ -27,6 +27,7 @@ import (
 	"google.golang.org/api/container/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -132,16 +133,12 @@ func connectionDetails(cluster *container.Cluster) (resource.ConnectionDetails, 
 func (r *Reconciler) _connect(instance *gcpcomputev1alpha2.GKECluster) (gke.Client, error) {
 	// Fetch Provider
 	p := &gcpv1alpha2.Provider{}
-	err := r.Get(ctx, meta.NamespacedNameOf(instance.Spec.ProviderReference), p)
-	if err != nil {
+	if err := r.Get(ctx, meta.NamespacedNameOf(instance.Spec.ProviderReference), p); err != nil {
 		return nil, err
 	}
 	secret := &corev1.Secret{}
-	name := meta.NamespacedNameOf(&corev1.ObjectReference{
-		Name:      p.Spec.Secret.Name,
-		Namespace: p.Namespace,
-	})
-	if err := r.Client.Get(context.TODO(), name, secret); err != nil {
+	n := types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}
+	if err := r.Client.Get(ctx, n, secret); err != nil {
 		return nil, err
 	}
 	data, ok := secret.Data[p.Spec.Secret.Key]
