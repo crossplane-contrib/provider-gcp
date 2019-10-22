@@ -86,7 +86,6 @@ func withBackupConfigurationStartTime(h string) instanceModifier {
 func instance(im ...instanceModifier) *v1beta1.CloudsqlInstance {
 	i := &v1beta1.CloudsqlInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  namespace,
 			Name:       name,
 			Finalizers: []string{},
 			Annotations: map[string]string{
@@ -95,7 +94,7 @@ func instance(im ...instanceModifier) *v1beta1.CloudsqlInstance {
 		},
 		Spec: v1beta1.CloudsqlInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &corev1.ObjectReference{Namespace: namespace, Name: providerName},
+				ProviderReference: &corev1.ObjectReference{Name: providerName},
 			},
 			ForProvider: v1beta1.CloudsqlInstanceParameters{},
 		},
@@ -141,12 +140,15 @@ var _ resource.ExternalClient = &cloudsqlExternal{}
 
 func TestConnect(t *testing.T) {
 	provider := gcpv1alpha2.Provider{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerName},
+		ObjectMeta: metav1.ObjectMeta{Name: providerName},
 		Spec: gcpv1alpha2.ProviderSpec{
 			ProjectID: projectID,
-			Secret: corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: providerSecretName},
-				Key:                  providerSecretKey,
+			Secret: runtimev1alpha1.SecretKeySelector{
+				SecretReference: runtimev1alpha1.SecretReference{
+					Namespace: namespace,
+					Name:      providerSecretName,
+				},
+				Key: providerSecretKey,
 			},
 		},
 	}
@@ -172,7 +174,7 @@ func TestConnect(t *testing.T) {
 			conn: &cloudsqlConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+					case client.ObjectKey{Name: providerName}:
 						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						*obj.(*corev1.Secret) = secret
@@ -207,7 +209,7 @@ func TestConnect(t *testing.T) {
 			conn: &cloudsqlConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+					case client.ObjectKey{Name: providerName}:
 						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						return errBoom
@@ -222,7 +224,7 @@ func TestConnect(t *testing.T) {
 			conn: &cloudsqlConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+					case client.ObjectKey{Name: providerName}:
 						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						*obj.(*corev1.Secret) = secret
