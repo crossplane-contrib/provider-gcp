@@ -39,7 +39,7 @@ func TestConfigureBucket(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		cm  resource.Claim
-		cs  resource.NonPortableClass
+		cs  resource.Class
 		mg  resource.Managed
 	}
 
@@ -48,6 +48,7 @@ func TestConfigureBucket(t *testing.T) {
 		err error
 	}
 
+	namespace := "ns"
 	claimUID := types.UID("definitely-a-uuid")
 	providerName := "coolprovider"
 	bucketName := "coolbucket"
@@ -68,9 +69,10 @@ func TestConfigureBucket(t *testing.T) {
 				},
 				cs: &v1alpha2.BucketClass{
 					SpecTemplate: v1alpha2.BucketClassSpecTemplate{
-						NonPortableClassSpecTemplate: runtimev1alpha1.NonPortableClassSpecTemplate{
-							ProviderReference: &corev1.ObjectReference{Name: providerName},
-							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
+						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
+							WriteConnectionSecretsToNamespace: namespace,
+							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
+							ReclaimPolicy:                     runtimev1alpha1.ReclaimDelete,
 						},
 					},
 				},
@@ -80,9 +82,12 @@ func TestConfigureBucket(t *testing.T) {
 				mg: &v1alpha2.Bucket{
 					Spec: v1alpha2.BucketSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
-							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
-							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
-							ProviderReference:                &corev1.ObjectReference{Name: providerName},
+							ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
+							WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
+								Namespace: namespace,
+								Name:      string(claimUID),
+							},
+							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
 						BucketParameters: v1alpha2.BucketParameters{
 							NameFormat: bucketName,

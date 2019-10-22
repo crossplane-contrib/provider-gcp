@@ -130,6 +130,11 @@ const (
 )
 
 func (bh *bucketHandler) updateSecret(ctx context.Context) error {
+	if bh.Spec.WriteConnectionSecretToReference == nil {
+		// No connection secret is desired - don't publish one.
+		return nil
+	}
+
 	s := resource.ConnectionSecretFor(bh.Bucket, v1alpha2.BucketGroupVersionKind)
 	if ref := bh.Spec.ServiceAccountSecretRef; ref != nil {
 		ss := &corev1.Secret{}

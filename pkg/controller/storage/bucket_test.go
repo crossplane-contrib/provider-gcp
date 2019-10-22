@@ -125,13 +125,13 @@ func (b *bucket) withUID(uid string) *bucket {
 	return b
 }
 
-func (b *bucket) withServiceAccountSecretRef(name string) *bucket {
-	b.Spec.ServiceAccountSecretRef = &corev1.LocalObjectReference{Name: name}
+func (b *bucket) withServiceAccountSecretRef(namespace, name string) *bucket {
+	b.Spec.ServiceAccountSecretRef = &runtimev1alpha1.SecretReference{Namespace: namespace, Name: name}
 	return b
 }
 
-func (b *bucket) withWriteConnectionSecretToReference(name string) *bucket {
-	b.Spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: name}
+func (b *bucket) withWriteConnectionSecretToReference(namespace, name string) *bucket {
+	b.Spec.WriteConnectionSecretToReference = &runtimev1alpha1.SecretReference{Namespace: namespace, Name: name}
 	return b
 }
 
