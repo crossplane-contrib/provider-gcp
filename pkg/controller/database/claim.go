@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -45,19 +44,14 @@ func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) e
 		v1beta1.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind)),
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind)),
 		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
-		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
-			Portable:    databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind,
-			NonPortable: v1beta1.CloudsqlInstanceClassGroupVersionKind,
-		})))
+	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
-		resource.ClassKinds{
-			Portable:    databasev1alpha1.PostgreSQLInstanceClassGroupVersionKind,
-			NonPortable: v1beta1.CloudsqlInstanceClassGroupVersionKind,
-		},
+		resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind),
 		resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -77,7 +71,7 @@ func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) e
 // ConfigurePostgreSQLCloudsqlInstance configures the supplied instance (presumed
 // to be a CloudsqlInstance) using the supplied instance claim (presumed to be a
 // PostgreSQLInstance) and instance class.
-func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
+func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
 	pg, cmok := cm.(*databasev1alpha1.PostgreSQLInstance)
 	if !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), databasev1alpha1.PostgreSQLInstanceGroupVersionKind)
@@ -104,7 +98,10 @@ func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, c
 		spec.ForProvider.DatabaseVersion = translateVersion(pg.Spec.EngineVersion, v1beta1.PostgresqlDBVersionPrefix)
 	}
 
-	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
+	spec.WriteConnectionSecretToReference = &runtimev1alpha1.SecretReference{
+		Namespace: rs.SpecTemplate.WriteConnectionSecretsToNamespace,
+		Name:      string(cm.GetUID()),
+	}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
 	spec.ReclaimPolicy = rs.SpecTemplate.ReclaimPolicy
 
@@ -125,19 +122,14 @@ func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error 
 		v1beta1.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind)),
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind)),
 		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
-		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
-			Portable:    databasev1alpha1.MySQLInstanceClassGroupVersionKind,
-			NonPortable: v1beta1.CloudsqlInstanceClassGroupVersionKind,
-		})))
+	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
-		resource.ClassKinds{
-			Portable:    databasev1alpha1.MySQLInstanceClassGroupVersionKind,
-			NonPortable: v1beta1.CloudsqlInstanceClassGroupVersionKind,
-		},
+		resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind),
 		resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -157,7 +149,7 @@ func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error 
 // ConfigureMyCloudsqlInstance configures the supplied instance (presumed to be
 // a CloudsqlInstance) using the supplied instance claim (presumed to be a
 // MySQLInstance) and instance class.
-func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
+func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
 	my, cmok := cm.(*databasev1alpha1.MySQLInstance)
 	if !cmok {
 		return errors.Errorf("expected instance claim %s to be %s", cm.GetName(), databasev1alpha1.MySQLInstanceGroupVersionKind)
@@ -184,7 +176,10 @@ func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resour
 		spec.ForProvider.DatabaseVersion = translateVersion(my.Spec.EngineVersion, v1beta1.MysqlDBVersionPrefix)
 	}
 
-	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
+	spec.WriteConnectionSecretToReference = &runtimev1alpha1.SecretReference{
+		Namespace: rs.SpecTemplate.WriteConnectionSecretsToNamespace,
+		Name:      string(cm.GetUID()),
+	}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
 	spec.ReclaimPolicy = rs.SpecTemplate.ReclaimPolicy
 

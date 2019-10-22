@@ -37,8 +37,7 @@ const (
 	providerSecretName = "gcp-creds"
 	providerSecretKey  = "creds"
 
-	connectionSecretName = "conn-secret"
-	password             = "my_PassWord123!"
+	password = "my_PassWord123!"
 )
 
 var errBoom = errors.New("boom")
@@ -109,12 +108,9 @@ func instance(im ...instanceModifier) *v1beta1.CloudsqlInstance {
 	return i
 }
 
-func connDetails(password, privateIP, publicIP string, additions ...map[string][]byte) map[string][]byte {
-	m := map[string][]byte{
+func connDetails(privateIP, publicIP string, additions ...map[string][]byte) resource.ConnectionDetails {
+	m := resource.ConnectionDetails{
 		runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
-	}
-	if password != "" {
-		m[runtimev1alpha1.ResourceCredentialsSecretPasswordKey] = []byte(password)
 	}
 	if publicIP != "" {
 		m[v1beta1.PublicIPKey] = []byte(publicIP)
@@ -338,8 +334,9 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				obs: resource.ExternalObservation{
-					ResourceExists:   true,
-					ResourceUpToDate: true,
+					ResourceExists:    true,
+					ResourceUpToDate:  true,
+					ConnectionDetails: connDetails("", ""),
 				},
 				mg: instance(withProviderState(v1beta1.StateCreating), withConditions(runtimev1alpha1.Creating())),
 			},
@@ -360,8 +357,9 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				obs: resource.ExternalObservation{
-					ResourceExists:   true,
-					ResourceUpToDate: true,
+					ResourceExists:    true,
+					ResourceUpToDate:  true,
+					ConnectionDetails: connDetails("", ""),
 				},
 				mg: instance(withProviderState(v1beta1.StateMaintenance), withConditions(runtimev1alpha1.Unavailable())),
 			},
@@ -387,37 +385,12 @@ func TestObserve(t *testing.T) {
 				obs: resource.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
-					ConnectionDetails: connDetails("", "", ""),
+					ConnectionDetails: connDetails("", ""),
 				},
 				mg: instance(
 					withProviderState(v1beta1.StateRunnable),
 					withConditions(runtimev1alpha1.Available()),
 					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
-			},
-		},
-		"RunnableConnectionGetFailed": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusOK)
-				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
-				db.State = v1beta1.StateRunnable
-				_ = json.NewEncoder(w).Encode(db)
-			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(errBoom),
-			},
-			args: args{
-				mg: instance(),
-			},
-			want: want{
-				mg: instance(
-					withProviderState(v1beta1.StateRunnable),
-					withConditions(runtimev1alpha1.Available()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
-				err: errors.Wrap(errBoom, errConnectionNotRetrieved),
 			},
 		},
 	}
@@ -454,10 +427,7 @@ func TestObserve(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
-	secretWithPassword := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: connectionSecretName},
-		Data:       connDetails(password, "", ""),
-	}
+	wantRandom := "i-want-random-data-not-this-special-string"
 
 	type args struct {
 		ctx context.Context
@@ -476,47 +446,6 @@ func TestCreate(t *testing.T) {
 		want    want
 	}{
 		"Successful": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(nil),
-			},
-			args: args{
-				mg: instance(),
-			},
-			want: want{
-				cre: resource.ExternalCreation{ConnectionDetails: connDetails("", "", "")},
-				mg:  instance(),
-				err: nil,
-			},
-		},
-		"AlreadyExists": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusConflict)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(nil),
-			},
-			args: args{
-				mg: instance(),
-			},
-			want: want{
-				cre: resource.ExternalCreation{ConnectionDetails: connDetails("", "", "")},
-				mg:  instance(),
-			},
-		},
-		"PasswordGenerated": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
@@ -537,50 +466,31 @@ func TestCreate(t *testing.T) {
 				_ = r.Body.Close()
 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
 			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(nil),
-			},
 			args: args{
 				mg: instance(),
 			},
 			want: want{
-				cre: resource.ExternalCreation{ConnectionDetails: connDetails("", "", "")},
-				mg:  instance(),
+				mg: instance(),
+				cre: resource.ExternalCreation{ConnectionDetails: resource.ConnectionDetails{
+					runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
+				}},
+				err: nil,
 			},
 		},
-		"PasswordAlreadyExists": {
+		"AlreadyExists": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
 				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
-				i := &sqladmin.DatabaseInstance{}
-				b, err := ioutil.ReadAll(r.Body)
-				if diff := cmp.Diff(err, nil); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				err = json.Unmarshal(b, i)
-				if diff := cmp.Diff(err, nil); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				if i.RootPassword != string(secretWithPassword.Data[runtimev1alpha1.ResourceCredentialsSecretPasswordKey]) {
-					t.Errorf("r: wanted root password, got:%s", i.RootPassword)
-				}
-				w.WriteHeader(http.StatusOK)
-				_ = r.Body.Close()
+				w.WriteHeader(http.StatusConflict)
 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
 			}),
-			kube: &test.MockClient{
-				MockGet: func(_ context.Context, _ client.ObjectKey, obj runtime.Object) error {
-					secretWithPassword.DeepCopyInto(obj.(*corev1.Secret))
-					return nil
-				},
-			},
 			args: args{
 				mg: instance(),
 			},
 			want: want{
-				cre: resource.ExternalCreation{ConnectionDetails: connDetails(password, "", "")},
-				mg:  instance(),
+				mg: instance(),
 			},
 		},
 		"Failed": {
@@ -592,14 +502,10 @@ func TestCreate(t *testing.T) {
 				w.WriteHeader(http.StatusBadRequest)
 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
 			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(nil),
-			},
 			args: args{
 				mg: instance(),
 			},
 			want: want{
-				cre: resource.ExternalCreation{ConnectionDetails: connDetails("", "", "")},
 				mg:  instance(),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateFailed),
 			},
@@ -627,11 +533,26 @@ func TestCreate(t *testing.T) {
 					t.Errorf("Create(...): -want, +got:\n%s", diff)
 				}
 			}
-			if len(tc.want.cre.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretPasswordKey]) == 0 {
-				tc.want.cre.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretPasswordKey] =
-					cre.ConnectionDetails[runtimev1alpha1.ResourceCredentialsSecretPasswordKey]
-			}
-			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
+			if diff := cmp.Diff(tc.want.cre, cre, cmp.Comparer(func(a, b resource.ConnectionDetails) bool {
+				// This special comparer considers two ConnectionDetails to be
+				// equal if one has the special password value wantRandom and
+				// the other has a non-zero password string. If neither has the
+				// special password value it falls back to default compare
+				// semantics.
+
+				av := string(a[runtimev1alpha1.ResourceCredentialsSecretPasswordKey])
+				bv := string(b[runtimev1alpha1.ResourceCredentialsSecretPasswordKey])
+
+				if av == wantRandom {
+					return len(bv) > 0
+				}
+
+				if bv == wantRandom {
+					return len(av) > 0
+				}
+
+				return cmp.Equal(a, b)
+			})); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
@@ -852,7 +773,6 @@ func TestGetConnectionDetails(t *testing.T) {
 	}
 	type want struct {
 		conn resource.ConnectionDetails
-		err  error
 	}
 
 	cases := map[string]struct {
@@ -880,7 +800,7 @@ func TestGetConnectionDetails(t *testing.T) {
 				},
 			},
 			want: want{
-				conn: connDetails(password, privateIP, publicIP, map[string][]byte{
+				conn: connDetails(privateIP, publicIP, map[string][]byte{
 					v1beta1.CloudSQLSecretServerCACertificateCertKey:             []byte(cert),
 					v1beta1.CloudSQLSecretServerCACertificateCommonNameKey:       []byte(commonName),
 					v1beta1.CloudSQLSecretServerCACertificateCertSerialNumberKey: []byte(""),
@@ -891,26 +811,11 @@ func TestGetConnectionDetails(t *testing.T) {
 				}),
 			},
 		},
-		"SecretGetFailed": {
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(errBoom),
-			},
-			args: args{
-				cr: instance(),
-			},
-			want: want{
-				err: errBoom,
-			},
-		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e := cloudsqlExternal{kube: tc.kube}
-			conn, err := e.getConnectionDetails(context.TODO(), tc.args.cr, tc.args.i)
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("getConnectionDetails(...): -want, +got:\n%s", diff)
-			}
+			conn := getConnectionDetails(tc.args.cr, tc.args.i)
 			if diff := cmp.Diff(tc.want.conn, conn); diff != "" {
 				t.Errorf("getConnectionDetails(...): -want, +got:\n%s", diff)
 			}

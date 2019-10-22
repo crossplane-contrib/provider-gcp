@@ -26,7 +26,6 @@ import (
 	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -46,13 +45,13 @@ const (
 	errProviderNotRetrieved       = "provider could not be retrieved"
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
 	errManagedUpdateFailed        = "cannot update CloudsqlInstance custom resource"
-	errConnectionNotRetrieved     = "cannot get connection details"
 
-	errNewClient    = "cannot create new Sqladmin Service"
-	errCreateFailed = "cannot create new Cloudsql instance"
-	errDeleteFailed = "cannot delete the Cloudsql instance"
-	errUpdateFailed = "cannot update the Cloudsql instance"
-	errGetFailed    = "cannot get the Cloudsql instance"
+	errNewClient        = "cannot create new Sqladmin Service"
+	errCreateFailed     = "cannot create new Cloudsql instance"
+	errDeleteFailed     = "cannot delete the Cloudsql instance"
+	errUpdateFailed     = "cannot update the Cloudsql instance"
+	errGetFailed        = "cannot get the Cloudsql instance"
+	errGeneratePassword = "cannot generate root password"
 )
 
 // CloudsqlInstanceController is the controller for Cloudsql CRD.
@@ -134,15 +133,10 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 		}
 	}
-	var conn resource.ConnectionDetails
 	switch cr.Status.AtProvider.State {
 	case v1beta1.StateRunnable:
 		cr.Status.SetConditions(v1alpha1.Available())
 		resource.SetBindable(cr)
-		conn, err = c.getConnectionDetails(ctx, cr, instance)
-		if err != nil {
-			return resource.ExternalObservation{}, errors.Wrap(err, errConnectionNotRetrieved)
-		}
 	case v1beta1.StateCreating:
 		cr.Status.SetConditions(v1alpha1.Creating())
 	case v1beta1.StateCreationFailed, v1beta1.StateSuspended, v1beta1.StateMaintenance, v1beta1.StateUnknownState:
@@ -151,7 +145,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	return resource.ExternalObservation{
 		ResourceExists:    true,
 		ResourceUpToDate:  upToDate,
-		ConnectionDetails: conn,
+		ConnectionDetails: getConnectionDetails(cr, instance),
 	}, nil
 }
 
@@ -161,21 +155,23 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 		return resource.ExternalCreation{}, errors.New(errNotCloudsql)
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
-	conn, err := c.getConnectionDetails(ctx, cr, instance)
+	password, err := util.GeneratePassword(v1beta1.PasswordLength)
 	if err != nil {
-		return resource.ExternalCreation{}, err
+		return resource.ExternalCreation{}, errors.Wrap(err, errGeneratePassword)
 	}
-	password := string(conn[v1alpha1.ResourceCredentialsSecretPasswordKey])
-	if len(password) == 0 {
-		password, err = util.GeneratePassword(v1beta1.PasswordLength)
-		if err != nil {
-			return resource.ExternalCreation{}, err
-		}
-		conn[v1alpha1.ResourceCredentialsSecretPasswordKey] = []byte(password)
-	}
+
 	instance.RootPassword = password
 	_, err = c.db.Insert(c.projectID, instance).Context(ctx).Do()
-	return resource.ExternalCreation{ConnectionDetails: conn}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateFailed)
+	if err != nil {
+		// We don't want to return (and thus publish) our randomly generated
+		// password if we didn't actually successfully create a new instance.
+		return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateFailed)
+	}
+
+	cd := resource.ConnectionDetails{
+		v1alpha1.ResourceCredentialsSecretPasswordKey: []byte(password),
+	}
+	return resource.ExternalCreation{ConnectionDetails: cd}, nil
 }
 
 func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
@@ -200,18 +196,11 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	return errors.Wrap(err, errDeleteFailed)
 }
 
-func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1beta1.CloudsqlInstance, instance *sqladmin.DatabaseInstance) (resource.ConnectionDetails, error) {
-	m := map[string][]byte{
+func getConnectionDetails(cr *v1beta1.CloudsqlInstance, instance *sqladmin.DatabaseInstance) resource.ConnectionDetails {
+	m := resource.ConnectionDetails{
 		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
 	}
-	s := &v1.Secret{}
-	name := types.NamespacedName{Name: cr.Spec.WriteConnectionSecretToReference.Name, Namespace: cr.Namespace}
-	if err := c.kube.Get(ctx, name, s); resource.IgnoreNotFound(err) != nil {
-		return nil, err
-	}
-	if len(s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey]) != 0 {
-		m[v1alpha1.ResourceCredentialsSecretPasswordKey] = s.Data[v1alpha1.ResourceCredentialsSecretPasswordKey]
-	}
+
 	// TODO(muvaf): There might be cases where more than 1 private and/or public IP address has been assigned. We should
 	// somehow show all addresses that are possible to use.
 	for _, ip := range cr.Status.AtProvider.IPAddresses {
@@ -232,5 +221,6 @@ func (c *cloudsqlExternal) getConnectionDetails(ctx context.Context, cr *v1beta1
 	for k, v := range serverCACert {
 		m[k] = v
 	}
-	return m, nil
+
+	return m
 }
