@@ -28,7 +28,7 @@ spec:
     listKind: CloudsqlInstanceList
     plural: cloudsqlinstances
     singular: cloudsqlinstance
-  scope: ""
+  scope: Cluster
   subresources:
     status: {}
   validation:

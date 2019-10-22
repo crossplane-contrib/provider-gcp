@@ -12,7 +12,7 @@ spec:
     listKind: GlobalAddressList
     plural: globaladdresses
     singular: globaladdress
-  scope: ""
+  scope: Cluster
   subresources:
     status: {}
   validation:

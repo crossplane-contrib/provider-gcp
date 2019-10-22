@@ -22,7 +22,7 @@ spec:
     listKind: GKEClusterClassList
     plural: gkeclusterclasses
     singular: gkeclusterclass
-  scope: ""
+  scope: Cluster
   subresources: {}
   validation:
     openAPIV3Schema:

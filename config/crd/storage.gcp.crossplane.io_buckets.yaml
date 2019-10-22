@@ -28,7 +28,7 @@ spec:
     listKind: BucketList
     plural: buckets
     singular: bucket
-  scope: ""
+  scope: Cluster
   subresources:
     status: {}
   validation:

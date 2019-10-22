@@ -12,7 +12,7 @@ spec:
     listKind: NetworkList
     plural: networks
     singular: network
-  scope: ""
+  scope: Cluster
   subresources:
     status: {}
   validation:
