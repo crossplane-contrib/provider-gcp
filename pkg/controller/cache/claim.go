@@ -24,7 +24,6 @@ import (
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -47,19 +46,14 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 		v1beta1.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudMemorystoreInstanceClassGroupVersionKind)),
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind)),
 		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind), mgr.GetScheme()),
-		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
-			Portable:    cachev1alpha1.RedisClusterClassGroupVersionKind,
-			NonPortable: v1beta1.CloudMemorystoreInstanceClassGroupVersionKind,
-		})))
+	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(cachev1alpha1.RedisClusterGroupVersionKind),
-		resource.ClassKinds{
-			Portable:    cachev1alpha1.RedisClusterClassGroupVersionKind,
-			NonPortable: v1beta1.CloudMemorystoreInstanceClassGroupVersionKind,
-		},
+		resource.ClassKind(v1beta1.CloudMemorystoreInstanceClassGroupVersionKind),
 		resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -79,7 +73,7 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 // ConfigureCloudMemorystoreInstance configures the supplied resource (presumed
 // to be a CloudMemorystoreInstance) using the supplied resource claim (presumed
 // to be a RedisCluster) and resource class.
-func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
+func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
 	cr, cmok := cm.(*cachev1alpha1.RedisCluster)
 	if !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), cachev1alpha1.RedisClusterGroupVersionKind)
@@ -106,7 +100,10 @@ func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs 
 		spec.ForProvider.RedisVersion = gcp.LateInitializeString(spec.ForProvider.RedisVersion, toGCPFormat(cr.Spec.EngineVersion))
 	}
 
-	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
+	spec.WriteConnectionSecretToReference = &runtimev1alpha1.SecretReference{
+		Namespace: rc.SpecTemplate.WriteConnectionSecretsToNamespace,
+		Name:      string(cm.GetUID()),
+	}
 	spec.ProviderReference = rc.SpecTemplate.ProviderReference
 	spec.ReclaimPolicy = rc.SpecTemplate.ReclaimPolicy
 
