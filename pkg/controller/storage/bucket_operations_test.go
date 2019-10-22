@@ -414,14 +414,14 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 		{
 			name: "WithoutServiceAccountSecretReference",
 			fields: fields{
-				Bucket: newBucket(testNamespace, testBucketName).Bucket,
+				Bucket: newBucket(testBucketName).Bucket,
 				kube:   test.NewMockClient(),
 			},
 		},
 		{
 			name: "FailureToRetrieveSecret",
 			fields: fields{
-				Bucket: newBucket(testNamespace, testBucketName).
+				Bucket: newBucket(testBucketName).
 					withWriteConnectionSecretToReference(testNamespace, testBucketName).
 					withServiceAccountSecretRef(testNamespace, saSecretName).Bucket,
 				kube: &test.MockClient{
@@ -436,7 +436,7 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 		{
 			name: "FailureToUpdateSecret",
 			fields: fields{
-				Bucket: newBucket(testNamespace, testBucketName).
+				Bucket: newBucket(testBucketName).
 					withWriteConnectionSecretToReference(testNamespace, testBucketName).
 					withServiceAccountSecretRef(testNamespace, saSecretName).
 					withUID(bucketUID).

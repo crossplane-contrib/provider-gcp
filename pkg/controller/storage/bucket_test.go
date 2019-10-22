@@ -110,10 +110,9 @@ type bucket struct {
 	*v1alpha2.Bucket
 }
 
-func newBucket(ns, name string) *bucket {
+func newBucket(name string) *bucket {
 	return &bucket{Bucket: &v1alpha2.Bucket{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  ns,
 			Name:       name,
 			Finalizers: []string{},
 		},
@@ -145,8 +144,8 @@ func (b *bucket) withFinalizer(f string) *bucket {
 	return b
 }
 
-func (b *bucket) withProvider(ns, name string) *bucket {
-	b.Spec.ProviderReference = &corev1.ObjectReference{Namespace: ns, Name: name}
+func (b *bucket) withProvider(name string) *bucket {
+	b.Spec.ProviderReference = &corev1.ObjectReference{Name: name}
 	return b
 }
 
@@ -159,19 +158,19 @@ type provider struct {
 	*gcpv1alpha2.Provider
 }
 
-func newProvider(ns, name string) *provider {
+func newProvider(name string) *provider {
 	return &provider{Provider: &gcpv1alpha2.Provider{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
+			Name: name,
 		},
 	}}
 }
 
-func (p *provider) withSecret(name, key string) *provider {
-	p.Spec.Secret = corev1.SecretKeySelector{
-		LocalObjectReference: corev1.LocalObjectReference{
-			Name: name,
+func (p *provider) withSecret(namespace, name, key string) *provider {
+	p.Spec.Secret = runtimev1alpha1.SecretKeySelector{
+		SecretReference: runtimev1alpha1.SecretReference{
+			Namespace: namespace,
+			Name:      name,
 		},
 		Key: key,
 	}
@@ -207,9 +206,8 @@ const (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	ns := testNamespace
 	name := testBucketName
-	key := types.NamespacedName{Namespace: ns, Name: name}
+	key := types.NamespacedName{Name: name}
 	req := reconcile.Request{NamespacedName: key}
 	ctx := context.TODO()
 	rsDone := reconcile.Result{}
@@ -246,19 +244,19 @@ func TestReconciler_Reconcile(t *testing.T) {
 		{
 			name: "BucketHandlerError",
 			fields: fields{
-				client:  fake.NewFakeClient(newBucket(ns, name).withFinalizer("foo.bar").Bucket),
+				client:  fake.NewFakeClient(newBucket(name).withFinalizer("foo.bar").Bucket),
 				factory: newMockBucketFactory(nil, errors.New("handler-factory-error")),
 			},
 			wantRs:  resultRequeue,
 			wantErr: nil,
-			wantObj: newBucket(ns, name).
+			wantObj: newBucket(name).
 				withConditions(runtimev1alpha1.ReconcileError(errors.New("handler-factory-error"))).
 				withFinalizer("foo.bar").Bucket,
 		},
 		{
 			name: "ReconcileDelete",
 			fields: fields{
-				client: fake.NewFakeClient(newBucket(ns, name).
+				client: fake.NewFakeClient(newBucket(name).
 					withDeleteTimestamp(metav1.NewTime(time.Now())).Bucket),
 				factory: newMockBucketFactory(newMockBucketSyncDeleter(), nil),
 			},
@@ -268,7 +266,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		{
 			name: "ReconcileSync",
 			fields: fields{
-				client:  fake.NewFakeClient(newBucket(ns, name).Bucket),
+				client:  fake.NewFakeClient(newBucket(name).Bucket),
 				factory: newMockBucketFactory(newMockBucketSyncDeleter(), nil),
 			},
 			wantRs:  requeueOnSuccess,
@@ -333,7 +331,7 @@ func Test_bucketFactory_newHandler(t *testing.T) {
 		{
 			name:   "ErrProviderIsNotFound",
 			Client: fake.NewFakeClient(),
-			bucket: newBucket(ns, bucketName).withProvider(ns, providerName).Bucket,
+			bucket: newBucket(bucketName).withProvider(providerName).Bucket,
 			want: want{
 				err: kerrors.NewNotFound(schema.GroupResource{
 					Group:    gcpv1alpha2.Group,
@@ -342,8 +340,8 @@ func Test_bucketFactory_newHandler(t *testing.T) {
 		},
 		{
 			name:   "ProviderSecretIsNotFound",
-			Client: fake.NewFakeClient(newProvider(ns, providerName).withSecret(secretName, secretKey).Provider),
-			bucket: newBucket(ns, bucketName).withProvider(ns, providerName).Bucket,
+			Client: fake.NewFakeClient(newProvider(providerName).withSecret(ns, secretName, secretKey).Provider),
+			bucket: newBucket(bucketName).withProvider(providerName).Bucket,
 			want: want{
 				err: errors.WithStack(
 					errors.Errorf("cannot get provider's secret %s/%s: secrets \"%s\" not found", ns, secretName, secretName)),
@@ -351,10 +349,10 @@ func Test_bucketFactory_newHandler(t *testing.T) {
 		},
 		{
 			name: "InvalidCredentials",
-			Client: fake.NewFakeClient(newProvider(ns, providerName).
-				withSecret(secretName, secretKey).Provider,
+			Client: fake.NewFakeClient(newProvider(providerName).
+				withSecret(ns, secretName, secretKey).Provider,
 				newSecret(ns, secretName).Secret),
-			bucket: newBucket(ns, bucketName).withProvider(ns, providerName).Bucket,
+			bucket: newBucket(bucketName).withProvider(providerName).Bucket,
 			want: want{
 				err: errors.WithStack(
 					errors.Errorf("cannot retrieve creds from json: unexpected end of JSON input")),
@@ -362,17 +360,17 @@ func Test_bucketFactory_newHandler(t *testing.T) {
 		},
 		{
 			name: "Successful",
-			Client: fake.NewFakeClient(newProvider(ns, providerName).
-				withSecret(secretName, secretKey).Provider,
+			Client: fake.NewFakeClient(newProvider(providerName).
+				withSecret(ns, secretName, secretKey).Provider,
 				newSecret(ns, secretName).withKeyData(secretKey, secretData).Secret),
-			bucket: newBucket(ns, bucketName).withUID("test-uid").withProvider(ns, providerName).Bucket,
+			bucket: newBucket(bucketName).withUID("test-uid").withProvider(providerName).Bucket,
 			want: want{
 				// BUG(negz): This test is broken. It appears to intend to compare
 				// unexported fields, but does not. This behaviour was maintained
 				// when porting the test from https://github.com/go-test/deep to cmp.
 				sd: newBucketSyncDeleter(
 					newBucketClients(
-						newBucket(ns, bucketName).withUID("test-uid").withProvider(ns, providerName).Bucket,
+						newBucket(bucketName).withUID("test-uid").withProvider(providerName).Bucket,
 						nil, nil), ""),
 			},
 		},

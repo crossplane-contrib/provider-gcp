@@ -138,7 +138,7 @@ func (bh *bucketHandler) updateSecret(ctx context.Context) error {
 	s := resource.ConnectionSecretFor(bh.Bucket, v1alpha2.BucketGroupVersionKind)
 	if ref := bh.Spec.ServiceAccountSecretRef; ref != nil {
 		ss := &corev1.Secret{}
-		nn := types.NamespacedName{Namespace: bh.GetNamespace(), Name: ref.Name}
+		nn := types.NamespacedName{Namespace: ref.Namespace, Name: ref.Name}
 		if err := bh.kube.Get(ctx, nn, ss); err != nil {
 			return errors.Wrapf(err, "failed to retrieve storage service account secret: %s", nn)
 		}
