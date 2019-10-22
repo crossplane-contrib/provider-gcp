@@ -33,8 +33,63 @@ import (
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
-// CloudMemorystoreInstanceClaimController is responsible for adding the Cloud Memorystore
-// claim controller and its corresponding reconciler to the manager with any runtime configuration.
+// A CloudMemorystoreInstanceClaimSchedulingController reconciles RedisCluster
+// claims that include a class selector but omit their class and resource
+// references by picking a random matching CloudMemorystoreInstanceClass, if
+// any.
+type CloudMemorystoreInstanceClaimSchedulingController struct{}
+
+// SetupWithManager sets up the
+// CloudMemorystoreInstanceClaimSchedulingController using the supplied manager.
+func (c *CloudMemorystoreInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
+		cachev1alpha1.RedisClusterKind,
+		v1beta1.CloudMemorystoreInstanceKind,
+		v1beta1.Group))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&cachev1alpha1.RedisCluster{}).
+		WithEventFilter(resource.NewPredicates(resource.AllOf(
+			resource.HasClassSelector(),
+			resource.HasNoClassReference(),
+			resource.HasNoManagedResourceReference(),
+		))).
+		Complete(resource.NewClaimSchedulingReconciler(mgr,
+			resource.ClaimKind(cachev1alpha1.RedisClusterGroupVersionKind),
+			resource.ClassKind(v1beta1.CloudMemorystoreInstanceClassGroupVersionKind),
+		))
+}
+
+// A CloudMemorystoreInstanceClaimDefaultingController reconciles RedisCluster
+// claims that omit their resource ref, class ref, and class selector by
+// choosing a default CloudMemorystoreInstanceClass if one exists.
+type CloudMemorystoreInstanceClaimDefaultingController struct{}
+
+// SetupWithManager sets up the
+// CloudMemorystoreInstanceClaimDefaultingController using the supplied manager.
+func (c *CloudMemorystoreInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
+		cachev1alpha1.RedisClusterKind,
+		v1beta1.CloudMemorystoreInstanceKind,
+		v1beta1.Group))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&cachev1alpha1.RedisCluster{}).
+		WithEventFilter(resource.NewPredicates(resource.AllOf(
+			resource.HasNoClassSelector(),
+			resource.HasNoClassReference(),
+			resource.HasNoManagedResourceReference(),
+		))).
+		Complete(resource.NewClaimDefaultingReconciler(mgr,
+			resource.ClaimKind(cachev1alpha1.RedisClusterGroupVersionKind),
+			resource.ClassKind(v1beta1.CloudMemorystoreInstanceClassGroupVersionKind),
+		))
+}
+
+// A CloudMemorystoreInstanceClaimController reconciles RedisCluster claims with
+// CloudMemorystoreInstances, dynamically provisioning them if needed.
 type CloudMemorystoreInstanceClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles RedisCluster resource claims.

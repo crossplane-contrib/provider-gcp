@@ -32,8 +32,62 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha2"
 )
 
-// BucketClaimController is responsible for adding the Bucket claim controller and its
-// corresponding reconciler to the manager with any runtime configuration.
+// A BucketClaimSchedulingController reconciles Bucket claims that include a
+// class selector but omit their class and resource references by picking a
+// random matching GCS BucketClass, if any.
+type BucketClaimSchedulingController struct{}
+
+// SetupWithManager sets up the BucketClaimSchedulingController using the
+// supplied manager.
+func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
+		storagev1alpha1.BucketKind,
+		v1alpha2.BucketKind,
+		v1alpha2.Group))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&storagev1alpha1.Bucket{}).
+		WithEventFilter(resource.NewPredicates(resource.AllOf(
+			resource.HasClassSelector(),
+			resource.HasNoClassReference(),
+			resource.HasNoManagedResourceReference(),
+		))).
+		Complete(resource.NewClaimSchedulingReconciler(mgr,
+			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
+			resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
+		))
+}
+
+// A BucketClaimDefaultingController reconciles Bucket claims that omit their
+// resource ref, class ref, and class selector by choosing a default GCS
+// BucketClass if one exists.
+type BucketClaimDefaultingController struct{}
+
+// SetupWithManager sets up the BucketClaimDefaultingController using the
+// supplied manager.
+func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
+		storagev1alpha1.BucketKind,
+		v1alpha2.BucketKind,
+		v1alpha2.Group))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&storagev1alpha1.Bucket{}).
+		WithEventFilter(resource.NewPredicates(resource.AllOf(
+			resource.HasNoClassSelector(),
+			resource.HasNoClassReference(),
+			resource.HasNoManagedResourceReference(),
+		))).
+		Complete(resource.NewClaimDefaultingReconciler(mgr,
+			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
+			resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
+		))
+}
+
+// A BucketClaimController reconciles Bucket claims with GCS Buckets,
+// dynamically provisioning them if needed.
 type BucketClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles Bucket resource claims.

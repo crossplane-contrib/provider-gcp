@@ -35,17 +35,27 @@ func (c *Controllers) SetupWithManager(mgr ctrl.Manager) error {
 	controllers := []interface {
 		SetupWithManager(ctrl.Manager) error
 	}{
+		&cache.CloudMemorystoreInstanceClaimSchedulingController{},
+		&cache.CloudMemorystoreInstanceClaimDefaultingController{},
 		&cache.CloudMemorystoreInstanceClaimController{},
 		&cache.CloudMemorystoreInstanceController{},
 		&compute.GlobalAddressController{},
+		&compute.GKEClusterClaimSchedulingController{},
+		&compute.GKEClusterClaimDefaultingController{},
 		&compute.GKEClusterClaimController{},
 		&compute.GKEClusterController{},
 		&compute.NetworkController{},
 		&compute.SubnetworkController{},
+		&database.PostgreSQLInstanceClaimSchedulingController{},
+		&database.PostgreSQLInstanceClaimDefaultingController{},
 		&database.PostgreSQLInstanceClaimController{},
+		&database.MySQLInstanceClaimSchedulingController{},
+		&database.MySQLInstanceClaimDefaultingController{},
 		&database.MySQLInstanceClaimController{},
 		&database.CloudsqlInstanceController{},
 		&servicenetworking.ConnectionController{},
+		&storage.BucketClaimSchedulingController{},
+		&storage.BucketClaimDefaultingController{},
 		&storage.BucketClaimController{},
 		&storage.BucketController{},
 	}
