@@ -78,13 +78,12 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (resource.
 	}
 
 	p := &gcpv1alpha2.Provider{}
-	n := meta.NamespacedNameOf(i.Spec.ProviderReference)
-	if err := c.client.Get(ctx, n, p); err != nil {
+	if err := c.client.Get(ctx, meta.NamespacedNameOf(i.Spec.ProviderReference), p); err != nil {
 		return nil, errors.Wrap(err, errGetProvider)
 	}
 
 	s := &corev1.Secret{}
-	n = types.NamespacedName{Namespace: p.Namespace, Name: p.Spec.Secret.Name}
+	n := types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}
 	if err := c.client.Get(ctx, n, s); err != nil {
 		return nil, errors.Wrap(err, errGetProviderSecret)
 	}

@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"strings"
 
-	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
-
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -32,6 +30,7 @@ import (
 	cachev1alpha1 "github.com/crossplaneio/crossplane/apis/cache/v1alpha1"
 
 	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
 // CloudMemorystoreInstanceClaimController is responsible for adding the Cloud Memorystore
