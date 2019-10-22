@@ -112,7 +112,8 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (resource.
 		return nil, errors.Wrap(err, errGetProvider)
 	}
 	s := &v1.Secret{}
-	if err := c.client.Get(ctx, types.NamespacedName{Namespace: p.Namespace, Name: p.Spec.Secret.Name}, s); err != nil {
+	n := types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}
+	if err := c.client.Get(ctx, n, s); err != nil {
 		return nil, errors.Wrap(err, errGetProviderSecret)
 	}
 
