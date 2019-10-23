@@ -38,6 +38,11 @@ func (mg *CloudMemorystoreInstance) GetClassReference() *corev1.ObjectReference 
 	return mg.Spec.ClassReference
 }
 
+// GetCondition of this CloudMemorystoreInstance.
+func (mg *CloudMemorystoreInstance) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+	return mg.Status.GetCondition(ct)
+}
+
 // GetReclaimPolicy of this CloudMemorystoreInstance.
 func (mg *CloudMemorystoreInstance) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy

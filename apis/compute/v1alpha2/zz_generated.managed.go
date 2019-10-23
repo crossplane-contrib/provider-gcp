@@ -38,6 +38,11 @@ func (mg *GKECluster) GetClassReference() *corev1.ObjectReference {
 	return mg.Spec.ClassReference
 }
 
+// GetCondition of this GKECluster.
+func (mg *GKECluster) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+	return mg.Status.GetCondition(ct)
+}
+
 // GetReclaimPolicy of this GKECluster.
 func (mg *GKECluster) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
@@ -91,6 +96,11 @@ func (mg *GlobalAddress) GetClaimReference() *corev1.ObjectReference {
 // GetClassReference of this GlobalAddress.
 func (mg *GlobalAddress) GetClassReference() *corev1.ObjectReference {
 	return mg.Spec.ClassReference
+}
+
+// GetCondition of this GlobalAddress.
+func (mg *GlobalAddress) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+	return mg.Status.GetCondition(ct)
 }
 
 // GetReclaimPolicy of this GlobalAddress.
@@ -148,6 +158,11 @@ func (mg *Network) GetClassReference() *corev1.ObjectReference {
 	return mg.Spec.ClassReference
 }
 
+// GetCondition of this Network.
+func (mg *Network) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+	return mg.Status.GetCondition(ct)
+}
+
 // GetReclaimPolicy of this Network.
 func (mg *Network) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
@@ -201,6 +216,11 @@ func (mg *Subnetwork) GetClaimReference() *corev1.ObjectReference {
 // GetClassReference of this Subnetwork.
 func (mg *Subnetwork) GetClassReference() *corev1.ObjectReference {
 	return mg.Spec.ClassReference
+}
+
+// GetCondition of this Subnetwork.
+func (mg *Subnetwork) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+	return mg.Status.GetCondition(ct)
 }
 
 // GetReclaimPolicy of this Subnetwork.
