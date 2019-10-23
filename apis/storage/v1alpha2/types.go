@@ -22,7 +22,6 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 
 	"cloud.google.com/go/storage"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
@@ -777,7 +776,7 @@ type BucketParameters struct {
 
 	// ServiceAccountSecretRef contains GCP ServiceAccount secret that will be used
 	// for bucket connection secret credentials
-	ServiceAccountSecretRef *corev1.LocalObjectReference `json:"serviceAccountSecretRef,omitempty"`
+	ServiceAccountSecretRef *runtimev1alpha1.SecretReference `json:"serviceAccountSecretRef,omitempty"`
 }
 
 // A BucketSpec defines the desired state of a Bucket.
@@ -802,6 +801,7 @@ type BucketStatus struct {
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM_POLICY",type="string",JSONPath=".spec.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:resource:scope=Cluster
 type Bucket struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -842,17 +842,18 @@ type BucketList struct {
 // A BucketClassSpecTemplate is a template for the spec of a dynamically
 // provisioned Bucket.
 type BucketClassSpecTemplate struct {
-	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
-	BucketParameters                             `json:",inline"`
+	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
+	BucketParameters                  `json:",inline"`
 }
 
 // +kubebuilder:object:root=true
 
-// A BucketClass is a non-portable resource class. It defines the desired spec
-// of resource claims that use it to dynamically provision a managed resource.
+// A BucketClass is a resource class. It defines the desired spec of resource
+// claims that use it to dynamically provision a managed resource.
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:resource:scope=Cluster
 type BucketClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

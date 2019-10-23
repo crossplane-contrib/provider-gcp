@@ -79,7 +79,7 @@ func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (resourc
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
 	s := &v1.Secret{}
-	if err := c.client.Get(ctx, types.NamespacedName{Namespace: p.Namespace, Name: p.Spec.Secret.Name}, s); err != nil {
+	if err := c.client.Get(ctx, types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}, s); err != nil {
 		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)
 	}
 

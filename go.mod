@@ -4,13 +4,10 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.43.0
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
-	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
-	github.com/crossplaneio/crossplane v0.0.0-20190912232140-a5489468a5b1
-	github.com/crossplaneio/crossplane-runtime v0.0.0-20191016194050-7384779dc024
+	github.com/crossplaneio/crossplane v0.3.1-0.20191023221351-518648b051cd
+	github.com/crossplaneio/crossplane-runtime v0.0.0-20191023215652-0f37bea5496e
 	github.com/google/go-cmp v0.3.0
 	github.com/googleapis/gax-go v1.0.3
-	github.com/onsi/ginkgo v1.9.0 // indirect
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1
 	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect

@@ -39,7 +39,7 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		cm  resource.Claim
-		cs  resource.NonPortableClass
+		cs  resource.Class
 		mg  resource.Managed
 	}
 
@@ -66,9 +66,10 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 				},
 				cs: &v1beta1.CloudMemorystoreInstanceClass{
 					SpecTemplate: v1beta1.CloudMemorystoreInstanceClassSpecTemplate{
-						NonPortableClassSpecTemplate: runtimev1alpha1.NonPortableClassSpecTemplate{
-							ProviderReference: &corev1.ObjectReference{Name: providerName},
-							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
+						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
+							WriteConnectionSecretsToNamespace: namespace,
+							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
+							ReclaimPolicy:                     runtimev1alpha1.ReclaimDelete,
 						},
 						ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
 							Region: region,
@@ -82,9 +83,12 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 				mg: &v1beta1.CloudMemorystoreInstance{
 					Spec: v1beta1.CloudMemorystoreInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
-							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
-							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
-							ProviderReference:                &corev1.ObjectReference{Name: providerName},
+							ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
+							WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
+								Namespace: namespace,
+								Name:      string(claimUID),
+							},
+							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
 						ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
 							RedisVersion: &redisVersion,

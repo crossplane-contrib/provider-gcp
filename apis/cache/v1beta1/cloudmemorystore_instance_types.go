@@ -179,6 +179,7 @@ type CloudMemorystoreInstanceStatus struct {
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="VERSION",type="string",JSONPath=".spec.redisVersion"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:resource:scope=Cluster
 type CloudMemorystoreInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -199,18 +200,19 @@ type CloudMemorystoreInstanceList struct {
 // A CloudMemorystoreInstanceClassSpecTemplate is a template for the spec of a
 // dynamically provisioned CloudMemorystoreInstance.
 type CloudMemorystoreInstanceClassSpecTemplate struct {
-	runtimev1alpha1.NonPortableClassSpecTemplate `json:",inline"`
-	ForProvider                                  CloudMemorystoreInstanceParameters `json:"forProvider,omitempty"`
+	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
+	ForProvider                       CloudMemorystoreInstanceParameters `json:"forProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// A CloudMemorystoreInstanceClass is a non-portable resource class. It defines
-// the desired spec of resource claims that use it to dynamically provision a
-// managed resource.
+// A CloudMemorystoreInstanceClass is a resource class. It defines the desired
+// spec of resource claims that use it to dynamically provision a managed
+// resource.
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:resource:scope=Cluster
 type CloudMemorystoreInstanceClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

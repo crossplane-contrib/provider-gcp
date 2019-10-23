@@ -39,7 +39,7 @@ func TestConfigureGKECluster(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		cm  resource.Claim
-		cs  resource.NonPortableClass
+		cs  resource.Class
 		mg  resource.Managed
 	}
 
@@ -60,9 +60,10 @@ func TestConfigureGKECluster(t *testing.T) {
 				cm: &computev1alpha1.KubernetesCluster{ObjectMeta: metav1.ObjectMeta{UID: claimUID}},
 				cs: &v1alpha2.GKEClusterClass{
 					SpecTemplate: v1alpha2.GKEClusterClassSpecTemplate{
-						NonPortableClassSpecTemplate: runtimev1alpha1.NonPortableClassSpecTemplate{
-							ProviderReference: &corev1.ObjectReference{Name: providerName},
-							ReclaimPolicy:     runtimev1alpha1.ReclaimDelete,
+						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
+							WriteConnectionSecretsToNamespace: namespace,
+							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
+							ReclaimPolicy:                     runtimev1alpha1.ReclaimDelete,
 						},
 					},
 				},
@@ -72,9 +73,12 @@ func TestConfigureGKECluster(t *testing.T) {
 				mg: &v1alpha2.GKECluster{
 					Spec: v1alpha2.GKEClusterSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
-							ReclaimPolicy:                    runtimev1alpha1.ReclaimDelete,
-							WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: string(claimUID)},
-							ProviderReference:                &corev1.ObjectReference{Name: providerName},
+							ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
+							WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
+								Namespace: namespace,
+								Name:      string(claimUID),
+							},
+							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
 						GKEClusterParameters: v1alpha2.GKEClusterParameters{
 							NumNodes: 1,

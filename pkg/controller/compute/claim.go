@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -33,8 +32,62 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
 )
 
-// GKEClusterClaimController is responsible for adding the GKECluster
-// claim controller and its corresponding reconciler to the manager with any runtime configuration.
+// A GKEClusterClaimSchedulingController reconciles KubernetesCluster claims
+// that include a class selector but omit their class and resource references by
+// picking a random matching GKEClusterClass, if any.
+type GKEClusterClaimSchedulingController struct{}
+
+// SetupWithManager sets up the GKEClusterClaimSchedulingController using the
+// supplied manager.
+func (c *GKEClusterClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
+		computev1alpha1.KubernetesClusterKind,
+		v1alpha2.GKEClusterKind,
+		v1alpha2.Group))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&computev1alpha1.KubernetesCluster{}).
+		WithEventFilter(resource.NewPredicates(resource.AllOf(
+			resource.HasClassSelector(),
+			resource.HasNoClassReference(),
+			resource.HasNoManagedResourceReference(),
+		))).
+		Complete(resource.NewClaimSchedulingReconciler(mgr,
+			resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
+			resource.ClassKind(v1alpha2.GKEClusterClassGroupVersionKind),
+		))
+}
+
+// A GKEClusterClaimDefaultingController reconciles KubernetesCluster claims
+// that omit their resource ref, class ref, and class selector by choosing a
+// default GKEClusterClass if one exists.
+type GKEClusterClaimDefaultingController struct{}
+
+// SetupWithManager sets up the GKEClusterClaimDefaultingController using the
+// supplied manager.
+func (c *GKEClusterClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
+		computev1alpha1.KubernetesClusterKind,
+		v1alpha2.GKEClusterKind,
+		v1alpha2.Group))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&computev1alpha1.KubernetesCluster{}).
+		WithEventFilter(resource.NewPredicates(resource.AllOf(
+			resource.HasNoClassSelector(),
+			resource.HasNoClassReference(),
+			resource.HasNoManagedResourceReference(),
+		))).
+		Complete(resource.NewClaimDefaultingReconciler(mgr,
+			resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
+			resource.ClassKind(v1alpha2.GKEClusterClassGroupVersionKind),
+		))
+}
+
+// A GKEClusterClaimController reconciles KubernetesCluster claims with
+// GKEClusters, dynamically provisioning them if needed.
 type GKEClusterClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles KubernetesCluster resource claims.
@@ -45,19 +98,14 @@ func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		v1alpha2.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.GKEClusterClassGroupVersionKind)),
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind)),
 		resource.IsManagedKind(resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind), mgr.GetScheme()),
-		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
-			Portable:    computev1alpha1.KubernetesClusterClassGroupVersionKind,
-			NonPortable: v1alpha2.GKEClusterClassGroupVersionKind,
-		})))
+	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
-		resource.ClassKinds{
-			Portable:    computev1alpha1.KubernetesClusterClassGroupVersionKind,
-			NonPortable: v1alpha2.GKEClusterClassGroupVersionKind,
-		},
+		resource.ClassKind(v1alpha2.GKEClusterClassGroupVersionKind),
 		resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureGKECluster),
@@ -75,7 +123,7 @@ func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
 // ConfigureGKECluster configures the supplied resource (presumed to be a
 // GKECluster) using the supplied resource claim (presumed to be a
 // KubernetesCluster) and resource class.
-func ConfigureGKECluster(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
+func ConfigureGKECluster(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
 	if _, cmok := cm.(*computev1alpha1.KubernetesCluster); !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), computev1alpha1.KubernetesClusterGroupVersionKind)
 	}
@@ -108,7 +156,10 @@ func ConfigureGKECluster(_ context.Context, cm resource.Claim, cs resource.NonPo
 		spec.Scopes = []string{}
 	}
 
-	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
+	spec.WriteConnectionSecretToReference = &runtimev1alpha1.SecretReference{
+		Namespace: rs.SpecTemplate.WriteConnectionSecretsToNamespace,
+		Name:      string(cm.GetUID()),
+	}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
 	spec.ReclaimPolicy = rs.SpecTemplate.ReclaimPolicy
 

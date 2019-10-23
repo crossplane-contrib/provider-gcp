@@ -25,6 +25,7 @@ import (
 	googlecompute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -89,16 +90,12 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (re
 	}
 
 	provider := &apisv1alpha2.Provider{}
-	n := meta.NamespacedNameOf(cr.Spec.ProviderReference)
-	if err := c.kube.Get(ctx, n, provider); err != nil {
+	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), provider); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
 	secret := &v1.Secret{}
-	name := meta.NamespacedNameOf(&v1.ObjectReference{
-		Name:      provider.Spec.Secret.Name,
-		Namespace: provider.Namespace,
-	})
-	if err := c.kube.Get(ctx, name, secret); err != nil {
+	n := types.NamespacedName{Namespace: provider.Spec.Secret.Namespace, Name: provider.Spec.Secret.Name}
+	if err := c.kube.Get(ctx, n, secret); err != nil {
 		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)
 	}
 

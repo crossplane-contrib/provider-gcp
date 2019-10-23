@@ -136,6 +136,7 @@ type GlobalAddressStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 
 // A GlobalAddress is a managed resource that represents a Google Compute Engine
 // Global Address.

@@ -389,6 +389,7 @@ func Test_bucketHandler_getSecret(t *testing.T) {
 func Test_bucketHandler_updateSecret(t *testing.T) {
 	ctx := context.TODO()
 	testError := errors.New("test-error")
+	testNamespace := "test-sa-namespace"
 	bucketUID := "test-uid"
 	saSecretName := "test-sa-secret"
 	saSecretUser := "test-user"
@@ -413,14 +414,16 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 		{
 			name: "WithoutServiceAccountSecretReference",
 			fields: fields{
-				Bucket: newBucket(testNamespace, testBucketName).Bucket,
+				Bucket: newBucket(testBucketName).Bucket,
 				kube:   test.NewMockClient(),
 			},
 		},
 		{
 			name: "FailureToRetrieveSecret",
 			fields: fields{
-				Bucket: newBucket(testNamespace, testBucketName).withServiceAccountSecretRef(saSecretName).Bucket,
+				Bucket: newBucket(testBucketName).
+					withWriteConnectionSecretToReference(testNamespace, testBucketName).
+					withServiceAccountSecretRef(testNamespace, saSecretName).Bucket,
 				kube: &test.MockClient{
 					MockGet: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 						return testError
@@ -433,9 +436,9 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 		{
 			name: "FailureToUpdateSecret",
 			fields: fields{
-				Bucket: newBucket(testNamespace, testBucketName).
-					withWriteConnectionSecretToReference(testBucketName).
-					withServiceAccountSecretRef(saSecretName).
+				Bucket: newBucket(testBucketName).
+					withWriteConnectionSecretToReference(testNamespace, testBucketName).
+					withServiceAccountSecretRef(testNamespace, saSecretName).
 					withUID(bucketUID).
 					Bucket,
 				kube: &test.MockClient{

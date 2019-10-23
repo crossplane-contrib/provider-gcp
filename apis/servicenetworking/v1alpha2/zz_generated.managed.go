@@ -33,9 +33,14 @@ func (mg *Connection) GetClaimReference() *corev1.ObjectReference {
 	return mg.Spec.ClaimReference
 }
 
-// GetNonPortableClassReference of this Connection.
-func (mg *Connection) GetNonPortableClassReference() *corev1.ObjectReference {
-	return mg.Spec.NonPortableClassReference
+// GetClassReference of this Connection.
+func (mg *Connection) GetClassReference() *corev1.ObjectReference {
+	return mg.Spec.ClassReference
+}
+
+// GetCondition of this Connection.
+func (mg *Connection) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+	return mg.Status.GetCondition(ct)
 }
 
 // GetReclaimPolicy of this Connection.
@@ -44,7 +49,7 @@ func (mg *Connection) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 }
 
 // GetWriteConnectionSecretToReference of this Connection.
-func (mg *Connection) GetWriteConnectionSecretToReference() corev1.LocalObjectReference {
+func (mg *Connection) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
@@ -58,14 +63,14 @@ func (mg *Connection) SetClaimReference(r *corev1.ObjectReference) {
 	mg.Spec.ClaimReference = r
 }
 
+// SetClassReference of this Connection.
+func (mg *Connection) SetClassReference(r *corev1.ObjectReference) {
+	mg.Spec.ClassReference = r
+}
+
 // SetConditions of this Connection.
 func (mg *Connection) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
-}
-
-// SetNonPortableClassReference of this Connection.
-func (mg *Connection) SetNonPortableClassReference(r *corev1.ObjectReference) {
-	mg.Spec.NonPortableClassReference = r
 }
 
 // SetReclaimPolicy of this Connection.
@@ -74,6 +79,6 @@ func (mg *Connection) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
 }
 
 // SetWriteConnectionSecretToReference of this Connection.
-func (mg *Connection) SetWriteConnectionSecretToReference(r corev1.LocalObjectReference) {
+func (mg *Connection) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }

@@ -39,6 +39,7 @@ type NetworkStatus struct {
 // A Network is a managed resource that represents a Google Compute Engine VPC
 // Network.
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 type Network struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

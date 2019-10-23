@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -33,8 +32,62 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha2"
 )
 
-// BucketClaimController is responsible for adding the Bucket claim controller and its
-// corresponding reconciler to the manager with any runtime configuration.
+// A BucketClaimSchedulingController reconciles Bucket claims that include a
+// class selector but omit their class and resource references by picking a
+// random matching GCS BucketClass, if any.
+type BucketClaimSchedulingController struct{}
+
+// SetupWithManager sets up the BucketClaimSchedulingController using the
+// supplied manager.
+func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
+		storagev1alpha1.BucketKind,
+		v1alpha2.BucketKind,
+		v1alpha2.Group))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&storagev1alpha1.Bucket{}).
+		WithEventFilter(resource.NewPredicates(resource.AllOf(
+			resource.HasClassSelector(),
+			resource.HasNoClassReference(),
+			resource.HasNoManagedResourceReference(),
+		))).
+		Complete(resource.NewClaimSchedulingReconciler(mgr,
+			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
+			resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
+		))
+}
+
+// A BucketClaimDefaultingController reconciles Bucket claims that omit their
+// resource ref, class ref, and class selector by choosing a default GCS
+// BucketClass if one exists.
+type BucketClaimDefaultingController struct{}
+
+// SetupWithManager sets up the BucketClaimDefaultingController using the
+// supplied manager.
+func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
+	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
+		storagev1alpha1.BucketKind,
+		v1alpha2.BucketKind,
+		v1alpha2.Group))
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&storagev1alpha1.Bucket{}).
+		WithEventFilter(resource.NewPredicates(resource.AllOf(
+			resource.HasNoClassSelector(),
+			resource.HasNoClassReference(),
+			resource.HasNoManagedResourceReference(),
+		))).
+		Complete(resource.NewClaimDefaultingReconciler(mgr,
+			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
+			resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
+		))
+}
+
+// A BucketClaimController reconciles Bucket claims with GCS Buckets,
+// dynamically provisioning them if needed.
 type BucketClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles Bucket resource claims.
@@ -45,19 +98,14 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		v1alpha2.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
+		resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.BucketClassGroupVersionKind)),
 		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.BucketGroupVersionKind)),
 		resource.IsManagedKind(resource.ManagedKind(v1alpha2.BucketGroupVersionKind), mgr.GetScheme()),
-		resource.HasIndirectClassReferenceKind(mgr.GetClient(), mgr.GetScheme(), resource.ClassKinds{
-			Portable:    storagev1alpha1.BucketClassGroupVersionKind,
-			NonPortable: v1alpha2.BucketClassGroupVersionKind,
-		})))
+	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
-		resource.ClassKinds{
-			Portable:    storagev1alpha1.BucketClassGroupVersionKind,
-			NonPortable: v1alpha2.BucketClassGroupVersionKind,
-		},
+		resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
 		resource.ManagedKind(v1alpha2.BucketGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
@@ -77,7 +125,7 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 // ConfigureBucket configures the supplied resource (presumed
 // to be a Bucket) using the supplied resource claim (presumed
 // to be a Bucket) and resource class.
-func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.NonPortableClass, mg resource.Managed) error {
+func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
 	bcm, cmok := cm.(*storagev1alpha1.Bucket)
 	if !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), storagev1alpha1.BucketGroupVersionKind)
@@ -111,7 +159,10 @@ func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.NonPortab
 		spec.PredefinedACL = string(*bcm.Spec.PredefinedACL)
 	}
 
-	spec.WriteConnectionSecretToReference = corev1.LocalObjectReference{Name: string(cm.GetUID())}
+	spec.WriteConnectionSecretToReference = &runtimev1alpha1.SecretReference{
+		Namespace: rs.SpecTemplate.WriteConnectionSecretsToNamespace,
+		Name:      string(cm.GetUID()),
+	}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
 	spec.ReclaimPolicy = rs.SpecTemplate.ReclaimPolicy
 

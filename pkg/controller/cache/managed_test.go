@@ -105,7 +105,6 @@ func withTier(tier string) instanceModifier {
 func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
 	i := &v1beta1.CloudMemorystoreInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  namespace,
 			Name:       instanceName,
 			Finalizers: []string{},
 			Annotations: map[string]string{
@@ -114,8 +113,11 @@ func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
 		},
 		Spec: v1beta1.CloudMemorystoreInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference:                &corev1.ObjectReference{Namespace: namespace, Name: providerName},
-				WriteConnectionSecretToReference: corev1.LocalObjectReference{Name: connectionSecretName},
+				ProviderReference: &corev1.ObjectReference{Name: providerName},
+				WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
+					Namespace: namespace,
+					Name:      connectionSecretName,
+				},
 			},
 			ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
 				MemorySizeGB:      memorySizeGB,
@@ -137,12 +139,15 @@ var _ resource.ExternalConnecter = &connecter{}
 
 func TestConnect(t *testing.T) {
 	provider := gcpv1alpha2.Provider{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerName},
+		ObjectMeta: metav1.ObjectMeta{Name: providerName},
 		Spec: gcpv1alpha2.ProviderSpec{
 			ProjectID: project,
-			Secret: corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: providerSecretName},
-				Key:                  providerSecretKey,
+			Secret: runtimev1alpha1.SecretKeySelector{
+				SecretReference: runtimev1alpha1.SecretReference{
+					Namespace: namespace,
+					Name:      providerSecretName,
+				},
+				Key: providerSecretKey,
 			},
 		},
 	}
@@ -173,7 +178,7 @@ func TestConnect(t *testing.T) {
 			conn: &connecter{
 				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+					case client.ObjectKey{Name: providerName}:
 						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						*obj.(*corev1.Secret) = secret
@@ -208,7 +213,7 @@ func TestConnect(t *testing.T) {
 			conn: &connecter{
 				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+					case client.ObjectKey{Name: providerName}:
 						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						return errorBoom
@@ -223,7 +228,7 @@ func TestConnect(t *testing.T) {
 			conn: &connecter{
 				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
-					case client.ObjectKey{Namespace: namespace, Name: providerName}:
+					case client.ObjectKey{Name: providerName}:
 						*obj.(*gcpv1alpha2.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						*obj.(*corev1.Secret) = secret
