@@ -492,7 +492,8 @@ func TestCreate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg: instance(),
+				mg:  instance(),
+				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateFailed),
 			},
 		},
 		"Failed": {

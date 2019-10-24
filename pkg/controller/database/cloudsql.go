@@ -158,11 +158,10 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 	}
 
 	instance.RootPassword = password
-	_, err = c.db.Insert(c.projectID, instance).Context(ctx).Do()
-	if err != nil {
+	if _, err := c.db.Insert(c.projectID, instance).Context(ctx).Do(); err != nil {
 		// We don't want to return (and thus publish) our randomly generated
 		// password if we didn't actually successfully create a new instance.
-		return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateFailed)
+		return resource.ExternalCreation{}, errors.Wrap(err, errCreateFailed)
 	}
 
 	cd := resource.ConnectionDetails{
