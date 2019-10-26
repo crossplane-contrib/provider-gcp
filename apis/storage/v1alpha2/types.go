@@ -789,7 +789,7 @@ type BucketSpec struct {
 type BucketStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
 
-	BucketOutputAttrs `json:"attributes"`
+	BucketOutputAttrs `json:"attributes,omitempty"`
 }
 
 // +kubebuilder:object:root=true
