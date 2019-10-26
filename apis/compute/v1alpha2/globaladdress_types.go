@@ -17,10 +17,34 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 )
+
+// Error strings
+const (
+	errResourceIsNotGlobalAddress = "The managed resource is not a GlobalAddress"
+)
+
+// NetworkURIReferencerForGlobalAddress is an attribute referencer that resolves
+// network uri from a referenced Network and assigns it to a global address object
+type NetworkURIReferencerForGlobalAddress struct {
+	NetworkURIReferencer `json:",inline"`
+}
+
+// Assign assigns the retrieved network uri to a global address object
+func (v *NetworkURIReferencerForGlobalAddress) Assign(res resource.CanReference, value string) error {
+	ga, ok := res.(*GlobalAddress)
+	if !ok {
+		return errors.New(errResourceIsNotGlobalAddress)
+	}
+
+	ga.Spec.Network = &value
+	return nil
+}
 
 // A GlobalAddressSpec defines the desired state of a GlobalAddress.
 type GlobalAddressSpec struct {
@@ -73,6 +97,9 @@ type GlobalAddressParameters struct {
 	// purpose.
 	// +optional
 	Network *string `json:"network,omitempty"`
+
+	// NetworkRef references to a Network and retrieves its URI
+	NetworkRef *NetworkURIReferencerForGlobalAddress `json:"networkRef,omitempty" resource:"attributereferencer"`
 
 	// PrefixLength: The prefix length if the resource represents an IP
 	// range.
