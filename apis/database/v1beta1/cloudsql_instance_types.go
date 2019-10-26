@@ -17,9 +17,14 @@ limitations under the License.
 package v1beta1
 
 import (
+	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+
+	computev1alpha1 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
 )
 
 // CloudSQL instance states
@@ -57,6 +62,32 @@ const (
 	PrivateIPKey = "privateIP"
 	PublicIPKey  = "publicIP"
 )
+
+// Error strings
+const (
+	errResourceIsNotCloudSQLInstance = "The managed resource is not a CloudSQLInstance"
+)
+
+// NetworkURIReferencerForCloudSQLInstance is an attribute referencer that resolves
+// network uri from a referenced Network and assigns it to a CloudSQLInstance
+type NetworkURIReferencerForCloudSQLInstance struct {
+	computev1alpha1.NetworkURIReferencer `json:",inline"`
+}
+
+// Assign assigns the retrieved network uri to a CloudSQLInstance
+func (v *NetworkURIReferencerForCloudSQLInstance) Assign(res resource.CanReference, value string) error {
+	sql, ok := res.(*CloudsqlInstance)
+	if !ok {
+		return errors.New(errResourceIsNotCloudSQLInstance)
+	}
+
+	if sql.Spec.ForProvider.Settings.IPConfiguration == nil {
+		sql.Spec.ForProvider.Settings.IPConfiguration = &IPConfiguration{}
+	}
+
+	sql.Spec.ForProvider.Settings.IPConfiguration.PrivateNetwork = &value
+	return nil
+}
 
 // CloudsqlInstanceObservation is used to show the observed state of the Cloud SQL resource on GCP.
 type CloudsqlInstanceObservation struct {
@@ -428,6 +459,9 @@ type IPConfiguration struct {
 	// updated, but it cannot be removed after it is set.
 	// +optional
 	PrivateNetwork *string `json:"privateNetwork,omitempty"`
+
+	// PrivateNetworkRef references to a Network and retrieves its URI
+	PrivateNetworkRef *NetworkURIReferencerForCloudSQLInstance `json:"privateNetworkRef,omitempty" resource:"attributereferencer"`
 
 	// RequireSsl: Whether SSL connections over IP should be enforced or
 	// not.
