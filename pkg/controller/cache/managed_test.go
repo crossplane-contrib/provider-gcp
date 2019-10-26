@@ -18,6 +18,7 @@ package cache
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	redisv1 "cloud.google.com/go/redis/apiv1"
@@ -300,6 +301,7 @@ func TestObserve(t *testing.T) {
 					ResourceExists: true,
 					ConnectionDetails: resource.ConnectionDetails{
 						runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(host),
+						runtimev1alpha1.ResourceCredentialsSecretPortKey:     []byte(strconv.Itoa(port)),
 					},
 				},
 			},

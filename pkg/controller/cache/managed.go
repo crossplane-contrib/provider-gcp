@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -128,6 +129,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 	case cloudmemorystore.StateReady:
 		cr.Status.SetConditions(runtimev1alpha1.Available())
 		conn[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(cr.Status.AtProvider.Host)
+		conn[runtimev1alpha1.ResourceCredentialsSecretPortKey] = []byte(strconv.Itoa(int(cr.Status.AtProvider.Port)))
 		resource.SetBindable(cr)
 	case cloudmemorystore.StateCreating:
 		cr.Status.SetConditions(runtimev1alpha1.Creating())
