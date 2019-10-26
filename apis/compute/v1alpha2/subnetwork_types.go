@@ -19,10 +19,35 @@ package v1alpha2
 import (
 	"sort"
 
+	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 )
+
+// Error strings
+const (
+	errResourceIsNotSubnetwork = "The managed resource is not a Subnetwork"
+)
+
+// NetworkURIReferencerForSubnetwork is an attribute referencer that resolves
+// network uri from a referenced Network and assigns it to a subnetwork
+type NetworkURIReferencerForSubnetwork struct {
+	NetworkURIReferencer `json:",inline"`
+}
+
+// Assign assigns the retrieved network uri to a subnetwork object
+func (v *NetworkURIReferencerForSubnetwork) Assign(res resource.CanReference, value string) error {
+	subnetwork, ok := res.(*Subnetwork)
+	if !ok {
+		return errors.New(errResourceIsNotSubnetwork)
+	}
+
+	subnetwork.Spec.Network = value
+	return nil
+}
 
 // A SubnetworkSpec defines the desired state of a Subnetwork.
 type SubnetworkSpec struct {
@@ -86,7 +111,10 @@ type SubnetworkParameters struct {
 	// provided by the client when initially creating the subnetwork. Only
 	// networks that are in the distributed mode can have subnetworks. This
 	// field can be set only at resource creation time.
-	Network string `json:"network"`
+	Network string `json:"network,omitempty"`
+
+	// NetworkRef references to a Network and retrieves its URI
+	NetworkRef *NetworkURIReferencerForSubnetwork `json:"networkRef,omitempty" resource:"attributereferencer"`
 
 	// PrivateIPGoogleAccess: Whether the VMs in this subnet can access
 	// Google services without assigned external IP addresses. This field

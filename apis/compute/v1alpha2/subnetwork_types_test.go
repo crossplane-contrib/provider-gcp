@@ -20,6 +20,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
+
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 )
 
 func TestSubnetworkParameters_IsSameAs(t *testing.T) {
@@ -165,5 +169,34 @@ func TestSubnetworkParameters_IsSameAs(t *testing.T) {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
 		})
+	}
+}
+
+var _ resource.AttributeReferencer = (*NetworkURIReferencerForSubnetwork)(nil)
+
+func TestNetworkURIReferencerForSubnetwork_AssignInvalidType_ReturnsErr(t *testing.T) {
+
+	r := &NetworkURIReferencerForSubnetwork{}
+	expectedErr := errors.New(errResourceIsNotSubnetwork)
+
+	err := r.Assign(nil, "mockValue")
+	if diff := cmp.Diff(expectedErr, err, test.EquateErrors()); diff != "" {
+		t.Errorf("Assign(...): -want error, +got error:\n%s", diff)
+	}
+}
+
+func TestNetworkURIReferencerForSubnetwork_AssignValidType_ReturnsExpected(t *testing.T) {
+
+	r := &NetworkURIReferencerForSubnetwork{}
+	res := &Subnetwork{}
+	var expectedErr error
+
+	err := r.Assign(res, "mockValue")
+	if diff := cmp.Diff(expectedErr, err, test.EquateErrors()); diff != "" {
+		t.Errorf("Assign(...): -want error, +got error:\n%s", diff)
+	}
+
+	if diff := cmp.Diff(res.Spec.Network, "mockValue"); diff != "" {
+		t.Errorf("Assign(...): -want value, +got value:\n%s", diff)
 	}
 }
