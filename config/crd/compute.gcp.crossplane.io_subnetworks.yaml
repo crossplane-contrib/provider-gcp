@@ -145,6 +145,14 @@ spec:
                 Only networks that are in the distributed mode can have subnetworks.
                 This field can be set only at resource creation time.'
               type: string
+            networkRef:
+              description: NetworkRef references to a Network and retrieves its URI
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
             privateIpGoogleAccess:
               description: 'PrivateIPGoogleAccess: Whether the VMs in this subnet
                 can access Google services without assigned external IP addresses.
@@ -248,7 +256,6 @@ spec:
           required:
           - ipCidrRange
           - name
-          - network
           - providerRef
           type: object
         status:

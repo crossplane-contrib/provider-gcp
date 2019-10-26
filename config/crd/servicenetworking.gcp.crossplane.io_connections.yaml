@@ -120,6 +120,14 @@ spec:
                 VPC network. `{network}` is the name of the service consumer''s VPC
                 network.'
               type: string
+            networkRef:
+              description: NetworkRef references to a Network and retrieves its URI
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
             parent:
               description: 'Parent: The service that is managing peering connectivity
                 for a service producer''s organization. For Google services that support
@@ -170,6 +178,20 @@ spec:
                 uses of the ReclaimPolicy concept within the Kubernetes ecosystem
                 per https://github.com/crossplaneio/crossplane-runtime/issues/21
               type: string
+            reservedPeeringRangeRefs:
+              description: ReservedPeeringRangeRefs is a set of references to GlobalAddress
+                objects
+              items:
+                description: GlobalAddressNameReferencerForConnection is an attribute
+                  referencer that resolves name from a referenced GlobalAddress and
+                  assigns it to a Connection
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+              type: array
             reservedPeeringRanges:
               description: 'ReservedPeeringRanges: The name of one or more allocated
                 IP address ranges for this service producer of type `PEERING`.'
@@ -194,7 +216,6 @@ spec:
               - namespace
               type: object
           required:
-          - network
           - parent
           - providerRef
           type: object

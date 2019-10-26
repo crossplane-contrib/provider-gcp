@@ -577,8 +577,6 @@ spec:
                 - type
                 type: object
               type: array
-          required:
-          - attributes
           type: object
       type: object
   version: v1alpha2
