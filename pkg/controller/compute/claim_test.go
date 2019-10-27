@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	computev1alpha1 "github.com/crossplaneio/crossplane/apis/compute/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureGKECluster)
@@ -58,8 +58,8 @@ func TestConfigureGKECluster(t *testing.T) {
 		"Successful": {
 			args: args{
 				cm: &computev1alpha1.KubernetesCluster{ObjectMeta: metav1.ObjectMeta{UID: claimUID}},
-				cs: &v1alpha2.GKEClusterClass{
-					SpecTemplate: v1alpha2.GKEClusterClassSpecTemplate{
+				cs: &v1alpha3.GKEClusterClass{
+					SpecTemplate: v1alpha3.GKEClusterClassSpecTemplate{
 						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
 							WriteConnectionSecretsToNamespace: namespace,
 							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
@@ -67,11 +67,11 @@ func TestConfigureGKECluster(t *testing.T) {
 						},
 					},
 				},
-				mg: &v1alpha2.GKECluster{},
+				mg: &v1alpha3.GKECluster{},
 			},
 			want: want{
-				mg: &v1alpha2.GKECluster{
-					Spec: v1alpha2.GKEClusterSpec{
+				mg: &v1alpha3.GKECluster{
+					Spec: v1alpha3.GKEClusterSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
@@ -80,7 +80,7 @@ func TestConfigureGKECluster(t *testing.T) {
 							},
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
-						GKEClusterParameters: v1alpha2.GKEClusterParameters{
+						GKEClusterParameters: v1alpha3.GKEClusterParameters{
 							NumNodes: 1,
 							Scopes:   []string{},
 							Labels:   map[string]string{},

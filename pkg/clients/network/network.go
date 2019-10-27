@@ -19,13 +19,13 @@ package network
 import (
 	googlecompute "google.golang.org/api/compute/v1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 // GenerateNetwork takes a *NetworkParameters and returns *googlecompute.Network.
 // It assigns only the fields that are writable, i.e. not labelled as [Output Only]
 // in Google's reference.
-func GenerateNetwork(in v1alpha2.NetworkParameters) *googlecompute.Network {
+func GenerateNetwork(in v1alpha3.NetworkParameters) *googlecompute.Network {
 	n := &googlecompute.Network{}
 	n.IPv4Range = in.IPv4Range
 	if in.AutoCreateSubnetworks != nil {
@@ -46,8 +46,8 @@ func GenerateNetwork(in v1alpha2.NetworkParameters) *googlecompute.Network {
 
 // GenerateGCPNetworkStatus takes a googlecompute.Network and returns *GCPNetworkStatus
 // It assings all the fields.
-func GenerateGCPNetworkStatus(in googlecompute.Network) v1alpha2.GCPNetworkStatus {
-	gn := v1alpha2.GCPNetworkStatus{
+func GenerateGCPNetworkStatus(in googlecompute.Network) v1alpha3.GCPNetworkStatus {
+	gn := v1alpha3.GCPNetworkStatus{
 		IPv4Range:             in.IPv4Range,
 		AutoCreateSubnetworks: in.AutoCreateSubnetworks,
 		CreationTimestamp:     in.CreationTimestamp,
@@ -58,12 +58,12 @@ func GenerateGCPNetworkStatus(in googlecompute.Network) v1alpha2.GCPNetworkStatu
 		Subnetworks:           in.Subnetworks,
 	}
 	if in.RoutingConfig != nil {
-		gn.RoutingConfig = &v1alpha2.GCPNetworkRoutingConfig{
+		gn.RoutingConfig = &v1alpha3.GCPNetworkRoutingConfig{
 			RoutingMode: in.RoutingConfig.RoutingMode,
 		}
 	}
 	for _, p := range in.Peerings {
-		gp := &v1alpha2.GCPNetworkPeering{
+		gp := &v1alpha3.GCPNetworkPeering{
 			Name:                 p.Name,
 			Network:              p.Network,
 			State:                p.State,

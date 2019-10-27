@@ -6,4 +6,4 @@ overviewShort: "A Provider configures a GCP 'provider', i.e. a connection to a p
 overview: |
  "A Provider configures a GCP 'provider', i.e. a connection to a particular GCP project using a particular GCP service account"
 readme: |
- Full documentation can be found in the Crossplane [API Reference docs](https://crossplane.io/docs/master/api/crossplaneio/stack-gcp/gcp-crossplane-io-v1alpha2.html).
+ Full documentation can be found in the Crossplane [API Reference docs](https://crossplane.io/docs/master/api/crossplaneio/stack-gcp/gcp-crossplane-io-v1alpha3.html).

@@ -23,7 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/api/compute/v1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 const (
@@ -35,15 +35,15 @@ const (
 )
 
 var equateSubnetworkSecondaryRange = func(i, j *compute.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
-var equateGCPSubnetworkSecondaryRange = func(i, j *v1alpha2.GCPSubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
+var equateGCPSubnetworkSecondaryRange = func(i, j *v1alpha3.GCPSubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
 
 func TestSubnetworkParameters_GenerateSubnetwork(t *testing.T) {
 	cases := map[string]struct {
-		in  v1alpha2.SubnetworkParameters
+		in  v1alpha3.SubnetworkParameters
 		out *compute.Subnetwork
 	}{
 		"FilledGeneration": {
-			in: v1alpha2.SubnetworkParameters{
+			in: v1alpha3.SubnetworkParameters{
 				Description:           testDescription,
 				Name:                  testName,
 				EnableFlowLogs:        true,
@@ -51,7 +51,7 @@ func TestSubnetworkParameters_GenerateSubnetwork(t *testing.T) {
 				Network:               testNetwork,
 				PrivateIPGoogleAccess: true,
 				Region:                testRegion,
-				SecondaryIPRanges: []*v1alpha2.GCPSubnetworkSecondaryRange{
+				SecondaryIPRanges: []*v1alpha3.GCPSubnetworkSecondaryRange{
 					{
 						RangeName:   "zzaa",
 						IPCidrRange: "10.1.0.0/9",
@@ -97,10 +97,10 @@ func TestSubnetworkParameters_GenerateSubnetwork(t *testing.T) {
 func Test_GenerateSubnetwork(t *testing.T) {
 	cases := map[string]struct {
 		in  *compute.Subnetwork
-		out v1alpha2.GCPSubnetworkStatus
+		out v1alpha3.GCPSubnetworkStatus
 	}{
 		"FilledGeneration": {
-			out: v1alpha2.GCPSubnetworkStatus{
+			out: v1alpha3.GCPSubnetworkStatus{
 				Description:           testDescription,
 				Name:                  testName,
 				EnableFlowLogs:        true,
@@ -108,7 +108,7 @@ func Test_GenerateSubnetwork(t *testing.T) {
 				Network:               testNetwork,
 				PrivateIPGoogleAccess: true,
 				Region:                testRegion,
-				SecondaryIPRanges: []*v1alpha2.GCPSubnetworkSecondaryRange{
+				SecondaryIPRanges: []*v1alpha3.GCPSubnetworkSecondaryRange{
 					{
 						RangeName:   "zzaa",
 						IPCidrRange: "10.2.0.0/9",

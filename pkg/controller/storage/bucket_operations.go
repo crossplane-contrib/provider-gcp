@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
-	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
 	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/storage"
 )
 
@@ -39,7 +39,7 @@ type operations interface {
 	addFinalizer()
 	removeFinalizer()
 	isReclaimDelete() bool
-	getSpecAttrs() v1alpha2.BucketUpdatableAttrs
+	getSpecAttrs() v1alpha3.BucketUpdatableAttrs
 	setSpecAttrs(*storage.BucketAttrs)
 	setStatusAttrs(*storage.BucketAttrs)
 	setStatusConditions(c ...runtimev1alpha1.Condition)
@@ -58,14 +58,14 @@ type operations interface {
 }
 
 type bucketHandler struct {
-	*v1alpha2.Bucket
+	*v1alpha3.Bucket
 	kube client.Client
 	gcp  gcpstorage.Client
 }
 
 var _ operations = &bucketHandler{}
 
-func newBucketClients(bucket *v1alpha2.Bucket, kube client.Client, gcp gcpstorage.Client) *bucketHandler {
+func newBucketClients(bucket *v1alpha3.Bucket, kube client.Client, gcp gcpstorage.Client) *bucketHandler {
 	return &bucketHandler{
 		Bucket: bucket,
 		kube:   kube,
@@ -88,16 +88,16 @@ func (bh *bucketHandler) isReclaimDelete() bool {
 	return bh.Spec.ReclaimPolicy == runtimev1alpha1.ReclaimDelete
 }
 
-func (bh *bucketHandler) getSpecAttrs() v1alpha2.BucketUpdatableAttrs {
+func (bh *bucketHandler) getSpecAttrs() v1alpha3.BucketUpdatableAttrs {
 	return bh.Spec.BucketUpdatableAttrs
 }
 
 func (bh *bucketHandler) setSpecAttrs(attrs *storage.BucketAttrs) {
-	bh.Spec.BucketSpecAttrs = v1alpha2.NewBucketSpecAttrs(attrs)
+	bh.Spec.BucketSpecAttrs = v1alpha3.NewBucketSpecAttrs(attrs)
 }
 
 func (bh *bucketHandler) setStatusAttrs(attrs *storage.BucketAttrs) {
-	bh.Status.BucketOutputAttrs = v1alpha2.NewBucketOutputAttrs(attrs)
+	bh.Status.BucketOutputAttrs = v1alpha3.NewBucketOutputAttrs(attrs)
 }
 
 func (bh *bucketHandler) setStatusConditions(c ...runtimev1alpha1.Condition) {
@@ -135,7 +135,7 @@ func (bh *bucketHandler) updateSecret(ctx context.Context) error {
 		return nil
 	}
 
-	s := resource.ConnectionSecretFor(bh.Bucket, v1alpha2.BucketGroupVersionKind)
+	s := resource.ConnectionSecretFor(bh.Bucket, v1alpha3.BucketGroupVersionKind)
 	if ref := bh.Spec.ServiceAccountSecretRef; ref != nil {
 		ss := &corev1.Secret{}
 		nn := types.NamespacedName{Namespace: ref.Namespace, Name: ref.Name}
@@ -154,7 +154,7 @@ func (bh *bucketHandler) updateSecret(ctx context.Context) error {
 // GCP Storage Bucket operations
 //
 func (bh *bucketHandler) createBucket(ctx context.Context, projectID string) error {
-	return bh.gcp.Create(ctx, projectID, v1alpha2.CopyBucketSpecAttrs(&bh.Spec.BucketSpecAttrs))
+	return bh.gcp.Create(ctx, projectID, v1alpha3.CopyBucketSpecAttrs(&bh.Spec.BucketSpecAttrs))
 }
 
 func (bh *bucketHandler) deleteBucket(ctx context.Context) error {
@@ -162,7 +162,7 @@ func (bh *bucketHandler) deleteBucket(ctx context.Context) error {
 }
 
 func (bh *bucketHandler) updateBucket(ctx context.Context, labels map[string]string) (*storage.BucketAttrs, error) {
-	return bh.gcp.Update(ctx, v1alpha2.CopyToBucketUpdateAttrs(bh.Spec.BucketUpdatableAttrs, labels))
+	return bh.gcp.Update(ctx, v1alpha3.CopyToBucketUpdateAttrs(bh.Spec.BucketUpdatableAttrs, labels))
 }
 
 func (bh *bucketHandler) getAttributes(ctx context.Context) (*storage.BucketAttrs, error) {

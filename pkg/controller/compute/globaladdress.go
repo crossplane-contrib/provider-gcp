@@ -33,8 +33,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
-	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/globaladdress"
 )
@@ -55,10 +55,10 @@ type GlobalAddressController struct{}
 // and Start it when the Manager is Started.
 func (c *GlobalAddressController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha2.GlobalAddressKindAPIVersion, v1alpha2.Group))).
-		For(&v1alpha2.GlobalAddress{}).
+		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.GlobalAddressKindAPIVersion, v1alpha3.Group))).
+		For(&v1alpha3.GlobalAddress{}).
 		Complete(resource.NewManagedReconciler(mgr,
-			resource.ManagedKind(v1alpha2.GlobalAddressGroupVersionKind),
+			resource.ManagedKind(v1alpha3.GlobalAddressGroupVersionKind),
 			resource.WithExternalConnecter(&gaConnector{client: mgr.GetClient(), newCompute: compute.NewService}),
 			resource.WithManagedConnectionPublishers()))
 }
@@ -69,12 +69,12 @@ type gaConnector struct {
 }
 
 func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
-	ga, ok := mg.(*v1alpha2.GlobalAddress)
+	ga, ok := mg.(*v1alpha3.GlobalAddress)
 	if !ok {
 		return nil, errors.New(errNotGlobalAddress)
 	}
 
-	p := &gcpv1alpha2.Provider{}
+	p := &gcpv1alpha3.Provider{}
 	if err := c.client.Get(ctx, meta.NamespacedNameOf(ga.Spec.ProviderReference), p); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
@@ -96,7 +96,7 @@ type gaExternal struct {
 }
 
 func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
-	ga, ok := mg.(*v1alpha2.GlobalAddress)
+	ga, ok := mg.(*v1alpha3.GlobalAddress)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotGlobalAddress)
 	}
@@ -123,7 +123,7 @@ func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (resource
 }
 
 func (e *gaExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
-	ga, ok := mg.(*v1alpha2.GlobalAddress)
+	ga, ok := mg.(*v1alpha3.GlobalAddress)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotGlobalAddress)
 	}
@@ -140,7 +140,7 @@ func (e *gaExternal) Update(_ context.Context, _ resource.Managed) (resource.Ext
 }
 
 func (e *gaExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	ga, ok := mg.(*v1alpha2.GlobalAddress)
+	ga, ok := mg.(*v1alpha3.GlobalAddress)
 	if !ok {
 		return errors.New(errNotGlobalAddress)
 	}

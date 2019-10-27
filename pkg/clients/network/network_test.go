@@ -22,7 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/compute/v1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 const (
@@ -43,16 +43,16 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 	trueVal := true
 	falseVal := false
 	cases := map[string]struct {
-		in   v1alpha2.NetworkParameters
+		in   v1alpha3.NetworkParameters
 		out  *compute.Network
 		fail bool
 	}{
 		"AutoCreateSubnetworksNil": {
-			in: v1alpha2.NetworkParameters{
+			in: v1alpha3.NetworkParameters{
 				IPv4Range:   testIPv4Range,
 				Description: testDescription,
 				Name:        testName,
-				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
+				RoutingConfig: &v1alpha3.GCPNetworkRoutingConfig{
 					RoutingMode: testRoutingMode,
 				},
 			},
@@ -67,12 +67,12 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 			},
 		},
 		"AutoCreateSubnetworksFalse": {
-			in: v1alpha2.NetworkParameters{
+			in: v1alpha3.NetworkParameters{
 				IPv4Range:             testIPv4Range,
 				Description:           testDescription,
 				AutoCreateSubnetworks: &falseVal,
 				Name:                  testName,
-				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
+				RoutingConfig: &v1alpha3.GCPNetworkRoutingConfig{
 					RoutingMode: testRoutingMode,
 				},
 			},
@@ -88,12 +88,12 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 			},
 		},
 		"AutoCreateSubnetworksTrue": {
-			in: v1alpha2.NetworkParameters{
+			in: v1alpha3.NetworkParameters{
 				IPv4Range:             testIPv4Range,
 				Description:           testDescription,
 				AutoCreateSubnetworks: &trueVal,
 				Name:                  testName,
-				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
+				RoutingConfig: &v1alpha3.GCPNetworkRoutingConfig{
 					RoutingMode: testRoutingMode,
 				},
 			},
@@ -108,12 +108,12 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 			},
 		},
 		"AutoCreateSubnetworksTrueFail": {
-			in: v1alpha2.NetworkParameters{
+			in: v1alpha3.NetworkParameters{
 				IPv4Range:             testIPv4Range,
 				Description:           testDescription,
 				AutoCreateSubnetworks: &trueVal,
 				Name:                  testName,
-				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
+				RoutingConfig: &v1alpha3.GCPNetworkRoutingConfig{
 					RoutingMode: testRoutingMode,
 				},
 			},
@@ -143,7 +143,7 @@ func TestNetworkParameters_GenerateNetwork(t *testing.T) {
 func TestGenerateGCPNetworkStatus(t *testing.T) {
 	cases := map[string]struct {
 		in   compute.Network
-		out  v1alpha2.GCPNetworkStatus
+		out  v1alpha3.GCPNetworkStatus
 		fail bool
 	}{
 		"AllFilled": {
@@ -171,13 +171,13 @@ func TestGenerateGCPNetworkStatus(t *testing.T) {
 					RoutingMode: testRoutingMode,
 				},
 			},
-			out: v1alpha2.GCPNetworkStatus{
+			out: v1alpha3.GCPNetworkStatus{
 				IPv4Range:         testIPv4Range,
 				Description:       testDescription,
 				CreationTimestamp: testCreationTimestamp,
 				GatewayIPv4:       testGatewayIPv4,
 				ID:                2029819203,
-				Peerings: []*v1alpha2.GCPNetworkPeering{
+				Peerings: []*v1alpha3.GCPNetworkPeering{
 					{
 						AutoCreateRoutes:     true,
 						ExchangeSubnetRoutes: true,
@@ -190,7 +190,7 @@ func TestGenerateGCPNetworkStatus(t *testing.T) {
 				Subnetworks: []string{
 					"my-subnetwork",
 				},
-				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
+				RoutingConfig: &v1alpha3.GCPNetworkRoutingConfig{
 					RoutingMode: testRoutingMode,
 				},
 			},
@@ -220,13 +220,13 @@ func TestGenerateGCPNetworkStatus(t *testing.T) {
 					RoutingMode: testRoutingMode,
 				},
 			},
-			out: v1alpha2.GCPNetworkStatus{
+			out: v1alpha3.GCPNetworkStatus{
 				IPv4Range:         testIPv4Range,
 				Description:       testDescription,
 				CreationTimestamp: testCreationTimestamp,
 				GatewayIPv4:       testGatewayIPv4,
 				ID:                2029819223103,
-				Peerings: []*v1alpha2.GCPNetworkPeering{
+				Peerings: []*v1alpha3.GCPNetworkPeering{
 					{
 						AutoCreateRoutes:     true,
 						ExchangeSubnetRoutes: true,
@@ -239,7 +239,7 @@ func TestGenerateGCPNetworkStatus(t *testing.T) {
 				Subnetworks: []string{
 					"my-subnetwork",
 				},
-				RoutingConfig: &v1alpha2.GCPNetworkRoutingConfig{
+				RoutingConfig: &v1alpha3.GCPNetworkRoutingConfig{
 					RoutingMode: testRoutingMode,
 				},
 			},

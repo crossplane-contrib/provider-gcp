@@ -19,18 +19,18 @@ package fake
 import (
 	"google.golang.org/api/container/v1"
 
-	computev1alpha2 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
+	computev1alpha3 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 // GKEClient for mocking.
 type GKEClient struct {
-	MockCreateCluster func(string, computev1alpha2.GKEClusterSpec) (*container.Cluster, error)
+	MockCreateCluster func(string, computev1alpha3.GKEClusterSpec) (*container.Cluster, error)
 	MockGetCluster    func(string, string) (*container.Cluster, error)
 	MockDeleteCluster func(string, string) error
 }
 
 // CreateCluster calls the underlying MockCreateCluster method.
-func (f *GKEClient) CreateCluster(name string, spec computev1alpha2.GKEClusterSpec) (*container.Cluster, error) {
+func (f *GKEClient) CreateCluster(name string, spec computev1alpha3.GKEClusterSpec) (*container.Cluster, error) {
 	return f.MockCreateCluster(name, spec)
 }
 

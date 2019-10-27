@@ -29,7 +29,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	computev1alpha1 "github.com/crossplaneio/crossplane/apis/compute/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 // A GKEClusterClaimSchedulingController reconciles KubernetesCluster claims
@@ -42,8 +42,8 @@ type GKEClusterClaimSchedulingController struct{}
 func (c *GKEClusterClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
 		computev1alpha1.KubernetesClusterKind,
-		v1alpha2.GKEClusterKind,
-		v1alpha2.Group))
+		v1alpha3.GKEClusterKind,
+		v1alpha3.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -55,7 +55,7 @@ func (c *GKEClusterClaimSchedulingController) SetupWithManager(mgr ctrl.Manager)
 		))).
 		Complete(resource.NewClaimSchedulingReconciler(mgr,
 			resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
-			resource.ClassKind(v1alpha2.GKEClusterClassGroupVersionKind),
+			resource.ClassKind(v1alpha3.GKEClusterClassGroupVersionKind),
 		))
 }
 
@@ -69,8 +69,8 @@ type GKEClusterClaimDefaultingController struct{}
 func (c *GKEClusterClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
 		computev1alpha1.KubernetesClusterKind,
-		v1alpha2.GKEClusterKind,
-		v1alpha2.Group))
+		v1alpha3.GKEClusterKind,
+		v1alpha3.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -82,7 +82,7 @@ func (c *GKEClusterClaimDefaultingController) SetupWithManager(mgr ctrl.Manager)
 		))).
 		Complete(resource.NewClaimDefaultingReconciler(mgr,
 			resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
-			resource.ClassKind(v1alpha2.GKEClusterClassGroupVersionKind),
+			resource.ClassKind(v1alpha3.GKEClusterClassGroupVersionKind),
 		))
 }
 
@@ -94,19 +94,19 @@ type GKEClusterClaimController struct{}
 func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		computev1alpha1.KubernetesClusterKind,
-		v1alpha2.GKEClusterClassKind,
-		v1alpha2.Group))
+		v1alpha3.GKEClusterClassKind,
+		v1alpha3.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
-		resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.GKEClusterClassGroupVersionKind)),
-		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind)),
-		resource.IsManagedKind(resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind), mgr.GetScheme()),
+		resource.HasClassReferenceKind(resource.ClassKind(v1alpha3.GKEClusterClassGroupVersionKind)),
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha3.GKEClusterGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1alpha3.GKEClusterGroupVersionKind), mgr.GetScheme()),
 	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
-		resource.ClassKind(v1alpha2.GKEClusterClassGroupVersionKind),
-		resource.ManagedKind(v1alpha2.GKEClusterGroupVersionKind),
+		resource.ClassKind(v1alpha3.GKEClusterClassGroupVersionKind),
+		resource.ManagedKind(v1alpha3.GKEClusterGroupVersionKind),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureGKECluster),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
@@ -114,7 +114,7 @@ func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1alpha2.GKECluster{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1alpha3.GKECluster{}}, &resource.EnqueueRequestForClaim{}).
 		For(&computev1alpha1.KubernetesCluster{}).
 		WithEventFilter(p).
 		Complete(r)
@@ -128,19 +128,19 @@ func ConfigureGKECluster(_ context.Context, cm resource.Claim, cs resource.Class
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), computev1alpha1.KubernetesClusterGroupVersionKind)
 	}
 
-	rs, csok := cs.(*v1alpha2.GKEClusterClass)
+	rs, csok := cs.(*v1alpha3.GKEClusterClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha2.GKEClusterClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha3.GKEClusterClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1alpha2.GKECluster)
+	i, mgok := mg.(*v1alpha3.GKECluster)
 	if !mgok {
-		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha2.GKEClusterGroupVersionKind)
+		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha3.GKEClusterGroupVersionKind)
 	}
 
-	spec := &v1alpha2.GKEClusterSpec{
+	spec := &v1alpha3.GKEClusterSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
-			ReclaimPolicy: v1alpha2.DefaultReclaimPolicy,
+			ReclaimPolicy: v1alpha3.DefaultReclaimPolicy,
 		},
 		GKEClusterParameters: rs.SpecTemplate.GKEClusterParameters,
 	}
@@ -150,7 +150,7 @@ func ConfigureGKECluster(_ context.Context, cm resource.Claim, cs resource.Class
 		spec.Labels = map[string]string{}
 	}
 	if spec.NumNodes == 0 {
-		spec.NumNodes = v1alpha2.DefaultNumberOfNodes
+		spec.NumNodes = v1alpha3.DefaultNumberOfNodes
 	}
 	if spec.Scopes == nil {
 		spec.Scopes = []string{}

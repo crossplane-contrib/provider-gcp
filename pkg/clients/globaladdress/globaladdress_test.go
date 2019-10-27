@@ -25,7 +25,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 func TestFromParameters(t *testing.T) {
@@ -39,11 +39,11 @@ func TestFromParameters(t *testing.T) {
 	var prefixLength int64 = 3001
 
 	cases := map[string]struct {
-		p    v1alpha2.GlobalAddressParameters
+		p    v1alpha3.GlobalAddressParameters
 		want *compute.Address
 	}{
 		"OptionalFieldsSet": {
-			p: v1alpha2.GlobalAddressParameters{
+			p: v1alpha3.GlobalAddressParameters{
 				Address:      &address,
 				AddressType:  &addressType,
 				IPVersion:    &ipVersion,
@@ -65,7 +65,7 @@ func TestFromParameters(t *testing.T) {
 			},
 		},
 		"OptionalFieldsUnset": {
-			p:    v1alpha2.GlobalAddressParameters{Name: name},
+			p:    v1alpha3.GlobalAddressParameters{Name: name},
 			want: &compute.Address{Name: name},
 		},
 	}
@@ -93,12 +93,12 @@ func TestUpdateParameters(t *testing.T) {
 	diff := "coolDiff"
 
 	cases := map[string]struct {
-		p        *v1alpha2.GlobalAddressParameters
+		p        *v1alpha3.GlobalAddressParameters
 		observed *compute.Address
-		want     *v1alpha2.GlobalAddressParameters
+		want     *v1alpha3.GlobalAddressParameters
 	}{
 		"OptionalFieldsSet": {
-			p: &v1alpha2.GlobalAddressParameters{
+			p: &v1alpha3.GlobalAddressParameters{
 				Address:      &address,
 				AddressType:  &addressType,
 				IPVersion:    &ipVersion,
@@ -118,7 +118,7 @@ func TestUpdateParameters(t *testing.T) {
 				Purpose:      purpose + diff,
 				Subnetwork:   subnetwork + diff,
 			},
-			want: &v1alpha2.GlobalAddressParameters{
+			want: &v1alpha3.GlobalAddressParameters{
 				Address:      &address,
 				AddressType:  &addressType,
 				IPVersion:    &ipVersion,
@@ -130,7 +130,7 @@ func TestUpdateParameters(t *testing.T) {
 			},
 		},
 		"OptionalFieldsUnset": {
-			p: &v1alpha2.GlobalAddressParameters{Name: name},
+			p: &v1alpha3.GlobalAddressParameters{Name: name},
 			observed: &compute.Address{
 				Address:      address,
 				AddressType:  addressType,
@@ -141,7 +141,7 @@ func TestUpdateParameters(t *testing.T) {
 				Purpose:      purpose,
 				Subnetwork:   subnetwork,
 			},
-			want: &v1alpha2.GlobalAddressParameters{
+			want: &v1alpha3.GlobalAddressParameters{
 				Address:      &address,
 				AddressType:  &addressType,
 				IPVersion:    &ipVersion,
@@ -153,9 +153,9 @@ func TestUpdateParameters(t *testing.T) {
 			},
 		},
 		"ObservedFieldsUnset": {
-			p:        &v1alpha2.GlobalAddressParameters{Name: name},
+			p:        &v1alpha3.GlobalAddressParameters{Name: name},
 			observed: &compute.Address{Name: name},
-			want:     &v1alpha2.GlobalAddressParameters{Name: name},
+			want:     &v1alpha3.GlobalAddressParameters{Name: name},
 		},
 	}
 
@@ -176,12 +176,12 @@ func TestUpdateStatus(t *testing.T) {
 	var id uint64 = 3001
 
 	cases := map[string]struct {
-		s        *v1alpha2.GlobalAddressStatus
+		s        *v1alpha3.GlobalAddressStatus
 		observed *compute.Address
-		want     *v1alpha2.GlobalAddressStatus
+		want     *v1alpha3.GlobalAddressStatus
 	}{
 		"Reserving": {
-			s: &v1alpha2.GlobalAddressStatus{},
+			s: &v1alpha3.GlobalAddressStatus{},
 			observed: &compute.Address{
 				Status:            StatusReserving,
 				CreationTimestamp: timestamp,
@@ -189,7 +189,7 @@ func TestUpdateStatus(t *testing.T) {
 				SelfLink:          link,
 				Users:             users,
 			},
-			want: &v1alpha2.GlobalAddressStatus{
+			want: &v1alpha3.GlobalAddressStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Creating()},
@@ -203,11 +203,11 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		},
 		"Reserved": {
-			s: &v1alpha2.GlobalAddressStatus{},
+			s: &v1alpha3.GlobalAddressStatus{},
 			observed: &compute.Address{
 				Status: StatusReserved,
 			},
-			want: &v1alpha2.GlobalAddressStatus{
+			want: &v1alpha3.GlobalAddressStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Available()},
@@ -217,11 +217,11 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		},
 		"InUse": {
-			s: &v1alpha2.GlobalAddressStatus{},
+			s: &v1alpha3.GlobalAddressStatus{},
 			observed: &compute.Address{
 				Status: StatusInUse,
 			},
-			want: &v1alpha2.GlobalAddressStatus{
+			want: &v1alpha3.GlobalAddressStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Available()},

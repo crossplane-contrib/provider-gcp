@@ -34,7 +34,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
-	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
+	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/cloudmemorystore"
 )
 
@@ -78,7 +78,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (resource.
 		return nil, errors.New(errNotInstance)
 	}
 
-	p := &gcpv1alpha2.Provider{}
+	p := &gcpv1alpha3.Provider{}
 	if err := c.client.Get(ctx, meta.NamespacedNameOf(i.Spec.ProviderReference), p); err != nil {
 		return nil, errors.Wrap(err, errGetProvider)
 	}
