@@ -29,7 +29,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	storagev1alpha1 "github.com/crossplaneio/crossplane/apis/storage/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
 )
 
 // A BucketClaimSchedulingController reconciles Bucket claims that include a
@@ -42,8 +42,8 @@ type BucketClaimSchedulingController struct{}
 func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
 		storagev1alpha1.BucketKind,
-		v1alpha2.BucketKind,
-		v1alpha2.Group))
+		v1alpha3.BucketKind,
+		v1alpha3.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -55,7 +55,7 @@ func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) err
 		))).
 		Complete(resource.NewClaimSchedulingReconciler(mgr,
 			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
-			resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
+			resource.ClassKind(v1alpha3.BucketClassGroupVersionKind),
 		))
 }
 
@@ -69,8 +69,8 @@ type BucketClaimDefaultingController struct{}
 func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
 		storagev1alpha1.BucketKind,
-		v1alpha2.BucketKind,
-		v1alpha2.Group))
+		v1alpha3.BucketKind,
+		v1alpha3.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -82,7 +82,7 @@ func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) err
 		))).
 		Complete(resource.NewClaimDefaultingReconciler(mgr,
 			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
-			resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
+			resource.ClassKind(v1alpha3.BucketClassGroupVersionKind),
 		))
 }
 
@@ -94,19 +94,19 @@ type BucketClaimController struct{}
 func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		storagev1alpha1.BucketKind,
-		v1alpha2.BucketKind,
-		v1alpha2.Group))
+		v1alpha3.BucketKind,
+		v1alpha3.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
-		resource.HasClassReferenceKind(resource.ClassKind(v1alpha2.BucketClassGroupVersionKind)),
-		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha2.BucketGroupVersionKind)),
-		resource.IsManagedKind(resource.ManagedKind(v1alpha2.BucketGroupVersionKind), mgr.GetScheme()),
+		resource.HasClassReferenceKind(resource.ClassKind(v1alpha3.BucketClassGroupVersionKind)),
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1alpha3.BucketGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1alpha3.BucketGroupVersionKind), mgr.GetScheme()),
 	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
-		resource.ClassKind(v1alpha2.BucketClassGroupVersionKind),
-		resource.ManagedKind(v1alpha2.BucketGroupVersionKind),
+		resource.ClassKind(v1alpha3.BucketClassGroupVersionKind),
+		resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient(), mgr.GetScheme())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
@@ -116,7 +116,7 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1alpha2.Bucket{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1alpha3.Bucket{}}, &resource.EnqueueRequestForClaim{}).
 		For(&storagev1alpha1.Bucket{}).
 		WithEventFilter(p).
 		Complete(r)
@@ -131,17 +131,17 @@ func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.Class, mg
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), storagev1alpha1.BucketGroupVersionKind)
 	}
 
-	rs, csok := cs.(*v1alpha2.BucketClass)
+	rs, csok := cs.(*v1alpha3.BucketClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha2.BucketClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1alpha3.BucketClassGroupVersionKind)
 	}
 
-	bmg, mgok := mg.(*v1alpha2.Bucket)
+	bmg, mgok := mg.(*v1alpha3.Bucket)
 	if !mgok {
-		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha2.BucketGroupVersionKind)
+		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1alpha3.BucketGroupVersionKind)
 	}
 
-	spec := &v1alpha2.BucketSpec{
+	spec := &v1alpha3.BucketSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},

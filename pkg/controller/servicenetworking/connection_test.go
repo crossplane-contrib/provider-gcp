@@ -37,8 +37,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha2"
-	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
+	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 )
 
 var (
@@ -52,12 +52,12 @@ var (
 	unexpected resource.Managed
 )
 
-func conn() *v1alpha2.Connection {
-	return &v1alpha2.Connection{
-		Spec: v1alpha2.ConnectionSpec{
+func conn() *v1alpha3.Connection {
+	return &v1alpha3.Connection{
+		Spec: v1alpha3.ConnectionSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{}},
 		},
-		Status: v1alpha2.ConnectionStatus{Peering: peeringName},
+		Status: v1alpha3.ConnectionStatus{Peering: peeringName},
 	}
 }
 
@@ -87,7 +87,7 @@ func TestConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha2.Provider:
+						case *gcpv1alpha3.Provider:
 							return errBoom
 						case *corev1.Secret:
 						default:
@@ -108,7 +108,7 @@ func TestConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha2.Provider:
+						case *gcpv1alpha3.Provider:
 						case *corev1.Secret:
 							return errBoom
 						default:
@@ -129,7 +129,7 @@ func TestConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha2.Provider:
+						case *gcpv1alpha3.Provider:
 						case *corev1.Secret:
 						default:
 							return errors.New("unexpected resource kind")
@@ -150,7 +150,7 @@ func TestConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha2.Provider:
+						case *gcpv1alpha3.Provider:
 						case *corev1.Secret:
 						default:
 							return errors.New("unexpected resource kind")
@@ -174,7 +174,7 @@ func TestConnect(t *testing.T) {
 				client: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
 						switch obj.(type) {
-						case *gcpv1alpha2.Provider:
+						case *gcpv1alpha3.Provider:
 						case *corev1.Secret:
 						default:
 							return errors.Errorf("unexpected resource kind %T", obj)

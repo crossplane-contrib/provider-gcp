@@ -33,8 +33,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
-	gcpapis "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	gcpapis "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	clients "github.com/crossplaneio/stack-gcp/pkg/clients"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/subnetwork"
 )
@@ -56,15 +56,15 @@ type SubnetworkController struct{}
 // and Start it when the Manager is Started.
 func (c *SubnetworkController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewManagedReconciler(mgr,
-		resource.ManagedKind(v1alpha2.SubnetworkGroupVersionKind),
+		resource.ManagedKind(v1alpha3.SubnetworkGroupVersionKind),
 		resource.WithExternalConnecter(&subnetworkConnector{kube: mgr.GetClient()}),
 		resource.WithManagedConnectionPublishers())
 
-	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha2.SubnetworkKindAPIVersion, v1alpha2.Group))
+	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.SubnetworkKindAPIVersion, v1alpha3.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&v1alpha2.Subnetwork{}).
+		For(&v1alpha3.Subnetwork{}).
 		Complete(r)
 }
 
@@ -74,7 +74,7 @@ type subnetworkConnector struct {
 }
 
 func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
-	cr, ok := mg.(*v1alpha2.Subnetwork)
+	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
 		return nil, errors.New(errNotSubnetwork)
 	}
@@ -114,7 +114,7 @@ type subnetworkExternal struct {
 }
 
 func (c *subnetworkExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha2.Subnetwork)
+	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotSubnetwork)
 	}
@@ -135,7 +135,7 @@ func (c *subnetworkExternal) Observe(ctx context.Context, mg resource.Managed) (
 }
 
 func (c *subnetworkExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha2.Subnetwork)
+	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotSubnetwork)
 	}
@@ -150,7 +150,7 @@ func (c *subnetworkExternal) Create(ctx context.Context, mg resource.Managed) (r
 }
 
 func (c *subnetworkExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha2.Subnetwork)
+	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotSubnetwork)
 	}
@@ -168,7 +168,7 @@ func (c *subnetworkExternal) Update(ctx context.Context, mg resource.Managed) (r
 }
 
 func (c *subnetworkExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha2.Subnetwork)
+	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
 		return errors.New(errNotSubnetwork)
 	}

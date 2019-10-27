@@ -24,7 +24,7 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
 )
 
 // VPC Network peering states.
@@ -35,7 +35,7 @@ const (
 
 // FromParameters converts the supplied ConnectionParameters into an
 // Address suitable for use with the Google Compute API.
-func FromParameters(p v1alpha2.ConnectionParameters) *servicenetworking.Connection {
+func FromParameters(p v1alpha3.ConnectionParameters) *servicenetworking.Connection {
 	// Kubernetes API conventions dictate that optional, unspecified fields must
 	// be nil. GCP API clients omit any field set to its zero value, using
 	// NullFields and ForceSendFields to handle edge cases around unsetting
@@ -51,7 +51,7 @@ func FromParameters(p v1alpha2.ConnectionParameters) *servicenetworking.Connecti
 
 // UpToDate returns true if the observed Connection is up to date with the
 // supplied ConnectionParameters.
-func UpToDate(p v1alpha2.ConnectionParameters, observed *servicenetworking.Connection) bool {
+func UpToDate(p v1alpha3.ConnectionParameters, observed *servicenetworking.Connection) bool {
 	if len(p.ReservedPeeringRanges) != len(observed.ReservedPeeringRanges) {
 		return false
 	}
@@ -78,7 +78,7 @@ type Observation struct {
 
 // UpdateStatus updates any fields of the supplied ConnectionStatus to
 // reflect the state of the supplied Address.
-func UpdateStatus(s *v1alpha2.ConnectionStatus, o Observation) {
+func UpdateStatus(s *v1alpha3.ConnectionStatus, o Observation) {
 	s.Peering = o.Connection.Peering
 	s.Service = o.Connection.Service
 

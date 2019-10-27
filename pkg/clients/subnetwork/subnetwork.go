@@ -19,11 +19,11 @@ package subnetwork
 import (
 	"google.golang.org/api/compute/v1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 // GenerateSubnetwork creates a *googlecompute.Subnetwork object using SubnetworkParameters.
-func GenerateSubnetwork(s v1alpha2.SubnetworkParameters) *compute.Subnetwork {
+func GenerateSubnetwork(s v1alpha3.SubnetworkParameters) *compute.Subnetwork {
 	sn := &compute.Subnetwork{}
 	sn.Name = s.Name
 	sn.Description = s.Description
@@ -43,8 +43,8 @@ func GenerateSubnetwork(s v1alpha2.SubnetworkParameters) *compute.Subnetwork {
 }
 
 // GenerateGCPSubnetworkStatus creates a GCPSubnetworkStatus object using *googlecompute.Subnetwork.
-func GenerateGCPSubnetworkStatus(in *compute.Subnetwork) v1alpha2.GCPSubnetworkStatus {
-	s := v1alpha2.GCPSubnetworkStatus{}
+func GenerateGCPSubnetworkStatus(in *compute.Subnetwork) v1alpha3.GCPSubnetworkStatus {
+	s := v1alpha3.GCPSubnetworkStatus{}
 	s.Name = in.Name
 	s.Description = in.Description
 	s.EnableFlowLogs = in.EnableFlowLogs
@@ -54,7 +54,7 @@ func GenerateGCPSubnetworkStatus(in *compute.Subnetwork) v1alpha2.GCPSubnetworkS
 	s.PrivateIPGoogleAccess = in.PrivateIpGoogleAccess
 	s.Region = in.Region
 	for _, val := range in.SecondaryIpRanges {
-		obj := &v1alpha2.GCPSubnetworkSecondaryRange{
+		obj := &v1alpha3.GCPSubnetworkSecondaryRange{
 			IPCidrRange: val.IpCidrRange,
 			RangeName:   val.RangeName,
 		}

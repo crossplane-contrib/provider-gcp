@@ -24,7 +24,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
-	gcpv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
+	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/cloudsql"
 )
 
@@ -139,9 +139,9 @@ var _ resource.ExternalConnecter = &cloudsqlConnector{}
 var _ resource.ExternalClient = &cloudsqlExternal{}
 
 func TestConnect(t *testing.T) {
-	provider := gcpv1alpha2.Provider{
+	provider := gcpv1alpha3.Provider{
 		ObjectMeta: metav1.ObjectMeta{Name: providerName},
-		Spec: gcpv1alpha2.ProviderSpec{
+		Spec: gcpv1alpha3.ProviderSpec{
 			ProjectID: projectID,
 			Secret: runtimev1alpha1.SecretKeySelector{
 				SecretReference: runtimev1alpha1.SecretReference{
@@ -175,7 +175,7 @@ func TestConnect(t *testing.T) {
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha2.Provider) = provider
+						*obj.(*gcpv1alpha3.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						*obj.(*corev1.Secret) = secret
 					}
@@ -210,7 +210,7 @@ func TestConnect(t *testing.T) {
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha2.Provider) = provider
+						*obj.(*gcpv1alpha3.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						return errBoom
 					}
@@ -225,7 +225,7 @@ func TestConnect(t *testing.T) {
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha2.Provider) = provider
+						*obj.(*gcpv1alpha3.Provider) = provider
 					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
 						*obj.(*corev1.Secret) = secret
 					}

@@ -36,7 +36,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
-	apisv1alpha2 "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
+	apisv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/cloudsql"
 )
@@ -84,7 +84,7 @@ func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (r
 		return nil, errors.New(errNotCloudSQL)
 	}
 
-	provider := &apisv1alpha2.Provider{}
+	provider := &apisv1alpha3.Provider{}
 	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), provider); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}

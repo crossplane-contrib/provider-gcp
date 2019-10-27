@@ -36,8 +36,8 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
-	gcpapis "github.com/crossplaneio/stack-gcp/apis/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	gcpapis "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 )
 
 const (
@@ -77,14 +77,14 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 	}{
 		"Successful": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name: testProviderName,
 							},
 						},
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name:   testSubnetworkName,
 							Region: testSubnetworkRegion,
 						},
@@ -115,9 +115,9 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 		},
 		"SubnetworkResourceWithNoName": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Region: testSubnetworkRegion,
 						},
 					},
@@ -128,9 +128,9 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 		},
 		"SubnetworkResourceWithNoRegion": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name: testSubnetworkName,
 						},
 					},
@@ -141,14 +141,14 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 		},
 		"ProviderRetrievalFailed": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name: testProviderName,
 							},
 						},
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name:   testSubnetworkName,
 							Region: testSubnetworkRegion,
 						},
@@ -166,14 +166,14 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 		},
 		"CredFromSecretRetrievalFailed": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name: testProviderName,
 							},
 						},
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name:   testSubnetworkName,
 							Region: testSubnetworkRegion,
 						},
@@ -201,14 +201,14 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 		},
 		"NewServiceFailed": {
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
 						ResourceSpec: corev1alpha1.ResourceSpec{
 							ProviderReference: &v1.ObjectReference{
 								Name: testProviderName,
 							},
 						},
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name:   testSubnetworkName,
 							Region: testSubnetworkRegion,
 						},
@@ -240,7 +240,7 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha3.Network{},
 				c:  &subnetworkConnector{},
 			},
 			err: errors.New(errNotSubnetwork),
@@ -279,9 +279,9 @@ func TestSubsubnetworkExternal_Observe(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name: testSubnetworkName,
 						},
 					},
@@ -299,9 +299,9 @@ func TestSubsubnetworkExternal_Observe(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name: testSubnetworkName,
 						},
 					},
@@ -318,13 +318,13 @@ func TestSubsubnetworkExternal_Observe(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha3.Subnetwork{},
 			},
 			error: true,
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha3.Network{},
 			},
 			error: true,
 		},
@@ -370,9 +370,9 @@ func TestSubsubnetworkExternal_Create(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name:        testSubnetworkName,
 							Description: testSubnetworkDescription,
 						},
@@ -390,7 +390,7 @@ func TestSubsubnetworkExternal_Create(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha3.Subnetwork{},
 			},
 			error: true,
 		},
@@ -404,12 +404,12 @@ func TestSubsubnetworkExternal_Create(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha3.Subnetwork{},
 			},
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha3.Network{},
 			},
 			error: true,
 		},
@@ -452,9 +452,9 @@ func TestSubsubnetworkExternal_Update(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name:        testSubnetworkName,
 							Description: testSubnetworkDescription,
 						},
@@ -472,15 +472,15 @@ func TestSubsubnetworkExternal_Update(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name:        testSubnetworkName,
 							Description: testSubnetworkDescription,
 						},
 					},
-					Status: v1alpha2.SubnetworkStatus{
-						GCPSubnetworkStatus: v1alpha2.GCPSubnetworkStatus{
+					Status: v1alpha3.SubnetworkStatus{
+						GCPSubnetworkStatus: v1alpha3.GCPSubnetworkStatus{
 							Name:        testSubnetworkName,
 							Description: "changed description!",
 						},
@@ -491,7 +491,7 @@ func TestSubsubnetworkExternal_Update(t *testing.T) {
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha3.Network{},
 			},
 			error: true,
 		},
@@ -514,7 +514,7 @@ func TestSubsubnetworkExternal_Update(t *testing.T) {
 	}
 	// Type test
 	e := subnetworkExternal{}
-	_, err := e.Update(context.Background(), &v1alpha2.Network{})
+	_, err := e.Update(context.Background(), &v1alpha3.Network{})
 	if diff := cmp.Diff(errors.New(errNotSubnetwork).Error(), err.Error()); diff != "" {
 		t.Errorf("r: -want, +got:\n%s", diff)
 	}
@@ -540,9 +540,9 @@ func TestSubsubnetworkExternal_Delete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{
-					Spec: v1alpha2.SubnetworkSpec{
-						SubnetworkParameters: v1alpha2.SubnetworkParameters{
+				cr: &v1alpha3.Subnetwork{
+					Spec: v1alpha3.SubnetworkSpec{
+						SubnetworkParameters: v1alpha3.SubnetworkParameters{
 							Name:        testSubnetworkName,
 							Description: testSubnetworkDescription,
 						},
@@ -560,7 +560,7 @@ func TestSubsubnetworkExternal_Delete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha3.Subnetwork{},
 			},
 			error: true,
 		},
@@ -574,12 +574,12 @@ func TestSubsubnetworkExternal_Delete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha2.Subnetwork{},
+				cr: &v1alpha3.Subnetwork{},
 			},
 		},
 		"DifferentType": {
 			args: args{
-				cr: &v1alpha2.Network{},
+				cr: &v1alpha3.Network{},
 			},
 			error: true,
 		},

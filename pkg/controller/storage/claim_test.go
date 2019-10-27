@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	storagev1alpha1 "github.com/crossplaneio/crossplane/apis/storage/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha2"
+	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
 )
 
 var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureBucket)
@@ -67,8 +67,8 @@ func TestConfigureBucket(t *testing.T) {
 						PredefinedACL: &bucketPrivate,
 					},
 				},
-				cs: &v1alpha2.BucketClass{
-					SpecTemplate: v1alpha2.BucketClassSpecTemplate{
+				cs: &v1alpha3.BucketClass{
+					SpecTemplate: v1alpha3.BucketClassSpecTemplate{
 						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
 							WriteConnectionSecretsToNamespace: namespace,
 							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
@@ -76,11 +76,11 @@ func TestConfigureBucket(t *testing.T) {
 						},
 					},
 				},
-				mg: &v1alpha2.Bucket{},
+				mg: &v1alpha3.Bucket{},
 			},
 			want: want{
-				mg: &v1alpha2.Bucket{
-					Spec: v1alpha2.BucketSpec{
+				mg: &v1alpha3.Bucket{
+					Spec: v1alpha3.BucketSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
@@ -89,10 +89,10 @@ func TestConfigureBucket(t *testing.T) {
 							},
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
-						BucketParameters: v1alpha2.BucketParameters{
+						BucketParameters: v1alpha3.BucketParameters{
 							NameFormat: bucketName,
-							BucketSpecAttrs: v1alpha2.BucketSpecAttrs{
-								BucketUpdatableAttrs: v1alpha2.BucketUpdatableAttrs{
+							BucketSpecAttrs: v1alpha3.BucketSpecAttrs{
+								BucketUpdatableAttrs: v1alpha3.BucketUpdatableAttrs{
 									PredefinedACL: string(bucketPrivate),
 								},
 							},
