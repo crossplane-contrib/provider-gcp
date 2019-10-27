@@ -55,6 +55,16 @@ const (
 	erroredClusterErrorMessageFormat = "gke cluster is in %s state with message: %s"
 )
 
+// Amounts of time we wait before requeuing a reconcile.
+const (
+	aLongWait = 60 * time.Second
+)
+
+// Error strings
+const (
+	errUpdateManagedStatus = "cannot update managed resource status"
+)
+
 var (
 	log           = logging.Logger.WithName("controller." + controllerName)
 	ctx           = context.Background()
@@ -66,6 +76,7 @@ var (
 type Reconciler struct {
 	client.Client
 	publisher resource.ManagedConnectionPublisher
+	resolver  resource.ManagedReferenceResolver
 
 	connect func(*gcpcomputev1alpha2.GKECluster) (gke.Client, error)
 	create  func(*gcpcomputev1alpha2.GKECluster, gke.Client) (reconcile.Result, error)
@@ -83,6 +94,7 @@ func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	r := &Reconciler{
 		Client:    mgr.GetClient(),
 		publisher: resource.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme()),
+		resolver:  resource.NewAPIManagedReferenceResolver(mgr.GetClient()),
 	}
 	r.connect = r._connect
 	r.create = r._create
@@ -243,6 +255,21 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	gkeClient, err := r.connect(instance)
 	if err != nil {
 		return r.fail(instance, err)
+	}
+
+	if !resource.IsConditionTrue(instance.GetCondition(runtimev1alpha1.TypeReferencesResolved)) {
+		if err := r.resolver.ResolveReferences(ctx, instance); err != nil {
+			condition := runtimev1alpha1.ReconcileError(err)
+			if resource.IsReferencesAccessError(err) {
+				condition = runtimev1alpha1.ReferenceResolutionBlocked(err)
+			}
+
+			instance.Status.SetConditions(condition)
+			return reconcile.Result{RequeueAfter: aLongWait}, errors.Wrap(r.Update(ctx, instance), errUpdateManagedStatus)
+		}
+
+		// Add ReferenceResolutionSuccess to the conditions
+		instance.Status.SetConditions(runtimev1alpha1.ReferenceResolutionSuccess())
 	}
 
 	// Check for deletion

@@ -350,6 +350,15 @@ spec:
                             This setting can be updated, but it cannot be removed
                             after it is set.'
                           type: string
+                        privateNetworkRef:
+                          description: PrivateNetworkRef references to a Network and
+                            retrieves its URI
+                          properties:
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                          type: object
                         requireSsl:
                           description: 'RequireSsl: Whether SSL connections over IP
                             should be enforced or not.'

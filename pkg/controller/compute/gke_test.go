@@ -92,13 +92,20 @@ func assertResource(g *GomegaWithT, r *Reconciler, s runtimev1alpha1.Conditioned
 	return rc
 }
 
+type mockReferenceResolver struct{}
+
+func (*mockReferenceResolver) ResolveReferences(ctx context.Context, res resource.CanReference) (err error) {
+	return nil
+}
+
 func TestSyncClusterGetError(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	tc := testCluster()
 
 	r := &Reconciler{
-		Client: NewFakeClient(tc),
+		Client:   NewFakeClient(tc),
+		resolver: &mockReferenceResolver{},
 	}
 
 	called := false
@@ -266,7 +273,8 @@ func TestDeleteReclaimDelete(t *testing.T) {
 	tc.Spec.ReclaimPolicy = runtimev1alpha1.ReclaimDelete
 
 	r := &Reconciler{
-		Client: NewFakeClient(tc),
+		Client:   NewFakeClient(tc),
+		resolver: &mockReferenceResolver{},
 	}
 
 	called := false
@@ -294,7 +302,8 @@ func TestDeleteReclaimRetain(t *testing.T) {
 	tc.Finalizers = []string{finalizer}
 
 	r := &Reconciler{
-		Client: NewFakeClient(tc),
+		Client:   NewFakeClient(tc),
+		resolver: &mockReferenceResolver{},
 	}
 
 	called := false
@@ -407,6 +416,7 @@ func TestReconcileDelete(t *testing.T) {
 			called = true
 			return result, nil
 		},
+		resolver: &mockReferenceResolver{},
 	}
 
 	rs, err := r.Reconcile(request)
@@ -430,6 +440,7 @@ func TestReconcileCreate(t *testing.T) {
 			called = true
 			return resultRequeue, nil
 		},
+		resolver: &mockReferenceResolver{},
 	}
 
 	rs, err := r.Reconcile(request)
@@ -456,6 +467,7 @@ func TestReconcileSync(t *testing.T) {
 			called = true
 			return resultRequeue, nil
 		},
+		resolver: &mockReferenceResolver{},
 	}
 
 	rs, err := r.Reconcile(request)

@@ -17,15 +17,59 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+
+	computev1alpha1 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha2"
 )
 
 // A ConnectionSpec defines the desired state of a Connection.
 type ConnectionSpec struct {
 	v1alpha1.ResourceSpec `json:",inline"`
 	ConnectionParameters  `json:",inline"`
+}
+
+// Error strings
+const (
+	errResourceIsNotConnection = "The managed resource is not a Connection"
+)
+
+// NetworkURIReferencerForConnection is an attribute referencer that resolves
+// network uri from a referenced Network and assigns it to a connection
+type NetworkURIReferencerForConnection struct {
+	computev1alpha1.NetworkURIReferencer `json:",inline"`
+}
+
+// Assign assigns the retrieved network uri to a connection
+func (v *NetworkURIReferencerForConnection) Assign(res resource.CanReference, value string) error {
+	conn, ok := res.(*Connection)
+	if !ok {
+		return errors.New(errResourceIsNotConnection)
+	}
+
+	conn.Spec.Network = value
+	return nil
+}
+
+// GlobalAddressNameReferencerForConnection is an attribute referencer that resolves
+// name from a referenced GlobalAddress and assigns it to a Connection
+type GlobalAddressNameReferencerForConnection struct {
+	computev1alpha1.GlobalAddressNameReferencer `json:",inline"`
+}
+
+// Assign assigns the retrieved global address name to a connection
+func (v *GlobalAddressNameReferencerForConnection) Assign(res resource.CanReference, value string) error {
+	conn, ok := res.(*Connection)
+	if !ok {
+		return errors.New(errResourceIsNotConnection)
+	}
+
+	conn.Spec.ReservedPeeringRanges = append(conn.Spec.ReservedPeeringRanges, value)
+	return nil
 }
 
 // ConnectionParameters define the desired state of a Google Cloud Service
@@ -43,12 +87,18 @@ type ConnectionParameters struct {
 	// `{project}` is a project number, such as in `12345` that includes
 	// the VPC service consumer's VPC network. `{network}` is the name of
 	// the service consumer's VPC network.
-	Network string `json:"network"`
+	Network string `json:"network,omitempty"`
+
+	// NetworkRef references to a Network and retrieves its URI
+	NetworkRef *NetworkURIReferencerForConnection `json:"networkRef,omitempty" resource:"attributereferencer"`
 
 	// ReservedPeeringRanges: The name of one or more allocated IP address
 	// ranges for this service producer of type `PEERING`.
 	// +optional
-	ReservedPeeringRanges []string `json:"reservedPeeringRanges"`
+	ReservedPeeringRanges []string `json:"reservedPeeringRanges,omitempty"`
+
+	// ReservedPeeringRangeRefs is a set of references to GlobalAddress objects
+	ReservedPeeringRangeRefs []*GlobalAddressNameReferencerForConnection `json:"reservedPeeringRangeRefs,omitempty" resource:"attributereferencer"`
 }
 
 // A ConnectionStatus represents the observed state of a Connection.

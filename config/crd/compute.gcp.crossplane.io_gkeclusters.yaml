@@ -180,6 +180,14 @@ spec:
                 to which the cluster is connected. If left unspecified, the default
                 network will be used.
               type: string
+            networkRef:
+              description: NetworkRef references to a Network and retrieves its URI
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
             nodeIPV4CIDR:
               description: NodeIPV4CIDR specifies the IP address range of the instance
                 IPs in this cluster. This is applicable only if CreateSubnetwork is
@@ -262,6 +270,15 @@ spec:
               description: Subnetwork is the name of the Google Compute Engine subnetwork
                 to which the cluster is connected.
               type: string
+            subnetworkRef:
+              description: SubnetworkRef references to a Subnetwork and retrieves
+                its URI
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
             writeConnectionSecretToRef:
               description: WriteConnectionSecretToReference specifies the namespace
                 and name of a Secret to which any connection details for this managed
@@ -344,9 +361,6 @@ spec:
             state:
               description: State of this GKE cluster.
               type: string
-          required:
-          - clusterName
-          - endpoint
           type: object
       type: object
   version: v1alpha2
