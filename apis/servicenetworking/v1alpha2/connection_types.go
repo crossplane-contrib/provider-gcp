@@ -35,7 +35,7 @@ type ConnectionSpec struct {
 
 // Error strings
 const (
-	errResourceIsNotConnection = "The managed resource is not a Connection"
+	errResourceIsNotConnection = "the managed resource is not a Connection"
 )
 
 // NetworkURIReferencerForConnection is an attribute referencer that resolves

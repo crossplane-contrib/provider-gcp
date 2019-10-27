@@ -39,7 +39,7 @@ const (
 
 // Error strings
 const (
-	errResourceIsNotGKECluster = "The managed resource is not a GKECluster"
+	errResourceIsNotGKECluster = "the managed resource is not a GKECluster"
 )
 
 // NetworkURIReferencerForGKECluster is an attribute referencer that resolves
