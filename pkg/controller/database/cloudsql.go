@@ -124,8 +124,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	cloudsql.LateInitializeSpec(&cr.Spec.ForProvider, *instance)
 	// TODO(muvaf): reflection in production code might cause performance bottlenecks. Generating comparison
 	// methods would make more sense.
-	upToDate := reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider)
-	if !upToDate {
+	if !reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider) {
 		if err := c.kube.Update(ctx, cr); err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 		}
@@ -141,7 +140,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	}
 	return resource.ExternalObservation{
 		ResourceExists:    true,
-		ResourceUpToDate:  upToDate,
+		ResourceUpToDate:  cloudsql.IsUpToDate(&cr.Spec.ForProvider, *instance),
 		ConnectionDetails: getConnectionDetails(cr, instance),
 	}, nil
 }

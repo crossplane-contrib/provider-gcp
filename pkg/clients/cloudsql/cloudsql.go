@@ -17,6 +17,7 @@ limitations under the License.
 package cloudsql
 
 import (
+	"reflect"
 	"strings"
 
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
@@ -275,6 +276,14 @@ func LateInitializeSpec(spec *v1beta1.CloudsqlInstanceParameters, in sqladmin.Da
 			}
 		}
 	}
+}
+
+// IsUpToDate checks whether current state is up-to-date compared to the given
+// set of parameters.
+func IsUpToDate(in *v1beta1.CloudsqlInstanceParameters, currentState sqladmin.DatabaseInstance) bool {
+	currentParams := &v1beta1.CloudsqlInstanceParameters{}
+	LateInitializeSpec(currentParams, currentState)
+	return reflect.DeepEqual(in, currentParams)
 }
 
 // DatabaseUserName returns default database user name base on database version
