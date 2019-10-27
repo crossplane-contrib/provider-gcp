@@ -34,7 +34,7 @@ import (
 
 // A PostgreSQLInstanceClaimSchedulingController reconciles PostgreSQLInstance
 // claims that include a class selector but omit their class and resource
-// references by picking a random matching CloudsqlInstanceClass, if any.
+// references by picking a random matching CloudSQLInstanceClass, if any.
 type PostgreSQLInstanceClaimSchedulingController struct{}
 
 // SetupWithManager sets up the
@@ -42,7 +42,7 @@ type PostgreSQLInstanceClaimSchedulingController struct{}
 func (c *PostgreSQLInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
 		databasev1alpha1.PostgreSQLInstanceKind,
-		v1beta1.CloudsqlInstanceKind,
+		v1beta1.CloudSQLInstanceKind,
 		v1beta1.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -55,13 +55,13 @@ func (c *PostgreSQLInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.
 		))).
 		Complete(resource.NewClaimSchedulingReconciler(mgr,
 			resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
-			resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind),
+			resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind),
 		))
 }
 
 // A PostgreSQLInstanceClaimDefaultingController reconciles PostgreSQLInstance
 // claims that omit their resource ref, class ref, and class selector by
-// choosing a default CloudsqlInstanceClass if one exists.
+// choosing a default CloudSQLInstanceClass if one exists.
 type PostgreSQLInstanceClaimDefaultingController struct{}
 
 // SetupWithManager sets up the PostgreSQLInstanceClaimDefaultingController
@@ -69,7 +69,7 @@ type PostgreSQLInstanceClaimDefaultingController struct{}
 func (c *PostgreSQLInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
 		databasev1alpha1.PostgreSQLInstanceKind,
-		v1beta1.CloudsqlInstanceKind,
+		v1beta1.CloudSQLInstanceKind,
 		v1beta1.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -82,66 +82,66 @@ func (c *PostgreSQLInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.
 		))).
 		Complete(resource.NewClaimDefaultingReconciler(mgr,
 			resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
-			resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind),
+			resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind),
 		))
 }
 
 // A PostgreSQLInstanceClaimController reconciles PostgreSQLInstance claims with
-// CloudsqlInstances, dynamically provisioning them if needed.
+// CloudSQLInstances, dynamically provisioning them if needed.
 type PostgreSQLInstanceClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles PostgreSQLInstance instance claims.
 func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		databasev1alpha1.PostgreSQLInstanceKind,
-		v1beta1.CloudsqlInstanceKind,
+		v1beta1.CloudSQLInstanceKind,
 		v1beta1.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
-		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind)),
-		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind)),
-		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
+		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind)),
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind), mgr.GetScheme()),
 	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
-		resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind),
-		resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind),
+		resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind),
+		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient(), mgr.GetScheme())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
-			resource.ManagedConfiguratorFn(ConfigurePostgreSQLCloudsqlInstance),
+			resource.ManagedConfiguratorFn(ConfigurePostgreSQLCloudSQLInstance),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
 		))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1beta1.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1beta1.CloudSQLInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.PostgreSQLInstance{}).
 		WithEventFilter(p).
 		Complete(r)
 }
 
-// ConfigurePostgreSQLCloudsqlInstance configures the supplied instance (presumed
-// to be a CloudsqlInstance) using the supplied instance claim (presumed to be a
+// ConfigurePostgreSQLCloudSQLInstance configures the supplied instance (presumed
+// to be a CloudSQLInstance) using the supplied instance claim (presumed to be a
 // PostgreSQLInstance) and instance class.
-func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
+func ConfigurePostgreSQLCloudSQLInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
 	pg, cmok := cm.(*databasev1alpha1.PostgreSQLInstance)
 	if !cmok {
 		return errors.Errorf("expected resource claim %s to be %s", cm.GetName(), databasev1alpha1.PostgreSQLInstanceGroupVersionKind)
 	}
 
-	rs, csok := cs.(*v1beta1.CloudsqlInstanceClass)
+	rs, csok := cs.(*v1beta1.CloudSQLInstanceClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1beta1.CloudsqlInstanceClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1beta1.CloudSQLInstanceClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1beta1.CloudsqlInstance)
+	i, mgok := mg.(*v1beta1.CloudSQLInstance)
 	if !mgok {
-		return errors.Errorf("expected managed instance %s to be %s", mg.GetName(), v1beta1.CloudsqlInstanceGroupVersionKind)
+		return errors.Errorf("expected managed instance %s to be %s", mg.GetName(), v1beta1.CloudSQLInstanceGroupVersionKind)
 	}
 
-	spec := &v1beta1.CloudsqlInstanceSpec{
+	spec := &v1beta1.CloudSQLInstanceSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
@@ -166,7 +166,7 @@ func ConfigurePostgreSQLCloudsqlInstance(_ context.Context, cm resource.Claim, c
 
 // A MySQLInstanceClaimSchedulingController reconciles MySQLInstance claims that
 // include a class selector but omit their class and resource references by
-// picking a random matching CloudsqlInstanceClass, if any.
+// picking a random matching CloudSQLInstanceClass, if any.
 type MySQLInstanceClaimSchedulingController struct{}
 
 // SetupWithManager sets up the MySQLInstanceClaimSchedulingController using the
@@ -174,7 +174,7 @@ type MySQLInstanceClaimSchedulingController struct{}
 func (c *MySQLInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
 		databasev1alpha1.MySQLInstanceKind,
-		v1beta1.CloudsqlInstanceKind,
+		v1beta1.CloudSQLInstanceKind,
 		v1beta1.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -187,13 +187,13 @@ func (c *MySQLInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.Manag
 		))).
 		Complete(resource.NewClaimSchedulingReconciler(mgr,
 			resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
-			resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind),
+			resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind),
 		))
 }
 
 // A MySQLInstanceClaimDefaultingController reconciles MySQLInstance claims that
 // omit their resource ref, class ref, and class selector by choosing a default
-// CloudsqlInstanceClass if one exists.
+// CloudSQLInstanceClass if one exists.
 type MySQLInstanceClaimDefaultingController struct{}
 
 // SetupWithManager sets up the MySQLInstanceClaimDefaultingController
@@ -201,7 +201,7 @@ type MySQLInstanceClaimDefaultingController struct{}
 func (c *MySQLInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
 		databasev1alpha1.MySQLInstanceKind,
-		v1beta1.CloudsqlInstanceKind,
+		v1beta1.CloudSQLInstanceKind,
 		v1beta1.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -214,66 +214,66 @@ func (c *MySQLInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.Manag
 		))).
 		Complete(resource.NewClaimDefaultingReconciler(mgr,
 			resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
-			resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind),
+			resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind),
 		))
 }
 
 // A MySQLInstanceClaimController reconciles MySQLInstance claims with
-// CloudsqlInstances, dynamically provisioning them if needed.
+// CloudSQLInstances, dynamically provisioning them if needed.
 type MySQLInstanceClaimController struct{}
 
 // SetupWithManager adds a controller that reconciles MySQLInstance instance claims.
 func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		databasev1alpha1.MySQLInstanceKind,
-		v1beta1.CloudsqlInstanceKind,
+		v1beta1.CloudSQLInstanceKind,
 		v1beta1.Group))
 
 	p := resource.NewPredicates(resource.AnyOf(
-		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind)),
-		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind)),
-		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind), mgr.GetScheme()),
+		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind)),
+		resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind)),
+		resource.IsManagedKind(resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind), mgr.GetScheme()),
 	))
 
 	r := resource.NewClaimReconciler(mgr,
 		resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
-		resource.ClassKind(v1beta1.CloudsqlInstanceClassGroupVersionKind),
-		resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind),
+		resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind),
+		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
 		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient(), mgr.GetScheme())),
 		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
-			resource.ManagedConfiguratorFn(ConfigureMyCloudsqlInstance),
+			resource.ManagedConfiguratorFn(ConfigureMyCloudSQLInstance),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
 		))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		Watches(&source.Kind{Type: &v1beta1.CloudsqlInstance{}}, &resource.EnqueueRequestForClaim{}).
+		Watches(&source.Kind{Type: &v1beta1.CloudSQLInstance{}}, &resource.EnqueueRequestForClaim{}).
 		For(&databasev1alpha1.MySQLInstance{}).
 		WithEventFilter(p).
 		Complete(r)
 }
 
-// ConfigureMyCloudsqlInstance configures the supplied instance (presumed to be
-// a CloudsqlInstance) using the supplied instance claim (presumed to be a
+// ConfigureMyCloudSQLInstance configures the supplied instance (presumed to be
+// a CloudSQLInstance) using the supplied instance claim (presumed to be a
 // MySQLInstance) and instance class.
-func ConfigureMyCloudsqlInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
+func ConfigureMyCloudSQLInstance(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
 	my, cmok := cm.(*databasev1alpha1.MySQLInstance)
 	if !cmok {
 		return errors.Errorf("expected instance claim %s to be %s", cm.GetName(), databasev1alpha1.MySQLInstanceGroupVersionKind)
 	}
 
-	rs, csok := cs.(*v1beta1.CloudsqlInstanceClass)
+	rs, csok := cs.(*v1beta1.CloudSQLInstanceClass)
 	if !csok {
-		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1beta1.CloudsqlInstanceClassGroupVersionKind)
+		return errors.Errorf("expected resource class %s to be %s", cs.GetName(), v1beta1.CloudSQLInstanceClassGroupVersionKind)
 	}
 
-	i, mgok := mg.(*v1beta1.CloudsqlInstance)
+	i, mgok := mg.(*v1beta1.CloudSQLInstance)
 	if !mgok {
-		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1beta1.CloudsqlInstanceGroupVersionKind)
+		return errors.Errorf("expected managed resource %s to be %s", mg.GetName(), v1beta1.CloudSQLInstanceGroupVersionKind)
 	}
 
-	spec := &v1beta1.CloudsqlInstanceSpec{
+	spec := &v1beta1.CloudSQLInstanceSpec{
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},

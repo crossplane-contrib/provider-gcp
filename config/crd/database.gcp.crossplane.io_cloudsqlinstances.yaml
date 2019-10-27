@@ -24,8 +24,8 @@ spec:
     type: date
   group: database.gcp.crossplane.io
   names:
-    kind: CloudsqlInstance
-    listKind: CloudsqlInstanceList
+    kind: CloudSQLInstance
+    listKind: CloudSQLInstanceList
     plural: cloudsqlinstances
     singular: cloudsqlinstance
   scope: Cluster
@@ -33,7 +33,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: A CloudsqlInstance is a managed resource that represents a Google
+      description: A CloudSQLInstance is a managed resource that represents a Google
         CloudSQL instance.
       properties:
         apiVersion:
@@ -49,7 +49,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: A CloudsqlInstanceSpec defines the desired state of a CloudsqlInstance.
+          description: A CloudSQLInstanceSpec defines the desired state of a CloudSQLInstance.
           properties:
             claimRef:
               description: ClaimReference specifies the resource claim to which this
@@ -129,7 +129,7 @@ spec:
                   type: string
               type: object
             forProvider:
-              description: CloudsqlInstanceParameters define the desired state of
+              description: CloudSQLInstanceParameters define the desired state of
                 a Google CloudSQL instance.
               properties:
                 databaseVersion:
@@ -513,11 +513,11 @@ spec:
           - providerRef
           type: object
         status:
-          description: A CloudsqlInstanceStatus represents the observed state of a
-            CloudsqlInstance.
+          description: A CloudSQLInstanceStatus represents the observed state of a
+            CloudSQLInstance.
           properties:
             atProvider:
-              description: CloudsqlInstanceObservation is used to show the observed
+              description: CloudSQLInstanceObservation is used to show the observed
                 state of the Cloud SQL resource on GCP.
               properties:
                 backendType:

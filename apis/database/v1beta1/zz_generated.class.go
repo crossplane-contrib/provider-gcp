@@ -20,12 +20,12 @@ package v1beta1
 
 import runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 
-// GetReclaimPolicy of this CloudsqlInstanceClass.
-func (cs *CloudsqlInstanceClass) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
+// GetReclaimPolicy of this CloudSQLInstanceClass.
+func (cs *CloudSQLInstanceClass) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return cs.SpecTemplate.ReclaimPolicy
 }
 
-// SetReclaimPolicy of this CloudsqlInstanceClass.
-func (cs *CloudsqlInstanceClass) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
+// SetReclaimPolicy of this CloudSQLInstanceClass.
+func (cs *CloudSQLInstanceClass) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
 	cs.SpecTemplate.ReclaimPolicy = r
 }

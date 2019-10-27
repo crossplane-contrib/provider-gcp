@@ -76,7 +76,7 @@ type NetworkURIReferencerForCloudSQLInstance struct {
 
 // Assign assigns the retrieved network uri to a CloudSQLInstance
 func (v *NetworkURIReferencerForCloudSQLInstance) Assign(res resource.CanReference, value string) error {
-	sql, ok := res.(*CloudsqlInstance)
+	sql, ok := res.(*CloudSQLInstance)
 	if !ok {
 		return errors.New(errResourceIsNotCloudSQLInstance)
 	}
@@ -89,8 +89,8 @@ func (v *NetworkURIReferencerForCloudSQLInstance) Assign(res resource.CanReferen
 	return nil
 }
 
-// CloudsqlInstanceObservation is used to show the observed state of the Cloud SQL resource on GCP.
-type CloudsqlInstanceObservation struct {
+// CloudSQLInstanceObservation is used to show the observed state of the Cloud SQL resource on GCP.
+type CloudSQLInstanceObservation struct {
 	// BackendType: FIRST_GEN: First Generation instance. MySQL
 	// only.
 	// SECOND_GEN: Second Generation instance or PostgreSQL
@@ -165,9 +165,9 @@ type CloudsqlInstanceObservation struct {
 	SettingsVersion int64 `json:"settingsVersion,omitempty"`
 }
 
-// CloudsqlInstanceParameters define the desired state of a Google CloudSQL
+// CloudSQLInstanceParameters define the desired state of a Google CloudSQL
 // instance.
-type CloudsqlInstanceParameters struct {
+type CloudSQLInstanceParameters struct {
 	// Region: The geographical region. Can be us-central (FIRST_GEN
 	// instances only), us-central1 (SECOND_GEN instances only), asia-east1
 	// or europe-west1. Defaults to us-central or us-central1 depending on
@@ -542,21 +542,21 @@ type DatabaseInstanceFailoverReplicaStatus struct {
 	Available bool `json:"available"`
 }
 
-// A CloudsqlInstanceSpec defines the desired state of a CloudsqlInstance.
-type CloudsqlInstanceSpec struct {
+// A CloudSQLInstanceSpec defines the desired state of a CloudSQLInstance.
+type CloudSQLInstanceSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  CloudsqlInstanceParameters `json:"forProvider,omitempty"`
+	ForProvider                  CloudSQLInstanceParameters `json:"forProvider,omitempty"`
 }
 
-// A CloudsqlInstanceStatus represents the observed state of a CloudsqlInstance.
-type CloudsqlInstanceStatus struct {
+// A CloudSQLInstanceStatus represents the observed state of a CloudSQLInstance.
+type CloudSQLInstanceStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     CloudsqlInstanceObservation `json:"atProvider,omitempty"`
+	AtProvider                     CloudSQLInstanceObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// A CloudsqlInstance is a managed resource that represents a Google CloudSQL
+// A CloudSQLInstance is a managed resource that represents a Google CloudSQL
 // instance.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
@@ -565,52 +565,52 @@ type CloudsqlInstanceStatus struct {
 // +kubebuilder:printcolumn:name="VERSION",type="string",JSONPath=".spec.databaseVersion"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster
-type CloudsqlInstance struct {
+type CloudSQLInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CloudsqlInstanceSpec   `json:"spec,omitempty"`
-	Status CloudsqlInstanceStatus `json:"status,omitempty"`
+	Spec   CloudSQLInstanceSpec   `json:"spec,omitempty"`
+	Status CloudSQLInstanceStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// CloudsqlInstanceList contains a list of CloudsqlInstance
-type CloudsqlInstanceList struct {
+// CloudSQLInstanceList contains a list of CloudSQLInstance
+type CloudSQLInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CloudsqlInstance `json:"items"`
+	Items           []CloudSQLInstance `json:"items"`
 }
 
-// A CloudsqlInstanceClassSpecTemplate is a template for the spec of a
-// dynamically provisioned CloudsqlInstance.
-type CloudsqlInstanceClassSpecTemplate struct {
+// A CloudSQLInstanceClassSpecTemplate is a template for the spec of a
+// dynamically provisioned CloudSQLInstance.
+type CloudSQLInstanceClassSpecTemplate struct {
 	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
-	ForProvider                       CloudsqlInstanceParameters `json:"forProvider,omitempty"`
+	ForProvider                       CloudSQLInstanceParameters `json:"forProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// A CloudsqlInstanceClass is a resource class. It defines the desired spec of
+// A CloudSQLInstanceClass is a resource class. It defines the desired spec of
 // resource claims that use it to dynamically provision a managed resource.
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster
-type CloudsqlInstanceClass struct {
+type CloudSQLInstanceClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// SpecTemplate is a template for the spec of a dynamically provisioned
-	// CloudsqlInstance.
-	SpecTemplate CloudsqlInstanceClassSpecTemplate `json:"specTemplate"`
+	// CloudSQLInstance.
+	SpecTemplate CloudSQLInstanceClassSpecTemplate `json:"specTemplate"`
 }
 
 // +kubebuilder:object:root=true
 
-// CloudsqlInstanceClassList contains a list of cloud memorystore resource classes.
-type CloudsqlInstanceClassList struct {
+// CloudSQLInstanceClassList contains a list of cloud memorystore resource classes.
+type CloudSQLInstanceClassList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CloudsqlInstanceClass `json:"items"`
+	Items           []CloudSQLInstanceClass `json:"items"`
 }

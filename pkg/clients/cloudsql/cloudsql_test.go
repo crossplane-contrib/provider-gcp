@@ -13,8 +13,8 @@ const (
 	name = "test-sql"
 )
 
-func params(m ...func(*v1beta1.CloudsqlInstanceParameters)) *v1beta1.CloudsqlInstanceParameters {
-	p := &v1beta1.CloudsqlInstanceParameters{
+func params(m ...func(*v1beta1.CloudSQLInstanceParameters)) *v1beta1.CloudSQLInstanceParameters {
+	p := &v1beta1.CloudSQLInstanceParameters{
 		Region: "us-west2",
 		Settings: v1beta1.Settings{
 			Tier:                        "best-one-available",
@@ -87,8 +87,8 @@ func params(m ...func(*v1beta1.CloudsqlInstanceParameters)) *v1beta1.CloudsqlIns
 	return p
 }
 
-func observation(m ...func(*v1beta1.CloudsqlInstanceObservation)) *v1beta1.CloudsqlInstanceObservation {
-	o := &v1beta1.CloudsqlInstanceObservation{
+func observation(m ...func(*v1beta1.CloudSQLInstanceObservation)) *v1beta1.CloudSQLInstanceObservation {
+	o := &v1beta1.CloudSQLInstanceObservation{
 		BackendType:     "SECOND_GEN",
 		CurrentDiskSize: 2000000,
 		ConnectionName:  "special-conn",
@@ -229,7 +229,7 @@ func getBool(b bool) *bool       { return &b }
 func TestGenerateDatabaseInstance(t *testing.T) {
 	type args struct {
 		name   string
-		params v1beta1.CloudsqlInstanceParameters
+		params v1beta1.CloudSQLInstanceParameters
 	}
 	type want struct {
 		db *sqladmin.DatabaseInstance
@@ -245,7 +245,7 @@ func TestGenerateDatabaseInstance(t *testing.T) {
 		"MissingFields": {
 			args: args{
 				name: name,
-				params: *params(func(p *v1beta1.CloudsqlInstanceParameters) {
+				params: *params(func(p *v1beta1.CloudSQLInstanceParameters) {
 					p.MasterInstanceName = nil
 					p.GceZone = nil
 				})},
@@ -268,10 +268,10 @@ func TestGenerateDatabaseInstance(t *testing.T) {
 func TestLateInitializeSpec(t *testing.T) {
 	type args struct {
 		db     *sqladmin.DatabaseInstance
-		params *v1beta1.CloudsqlInstanceParameters
+		params *v1beta1.CloudSQLInstanceParameters
 	}
 	type want struct {
-		params *v1beta1.CloudsqlInstanceParameters
+		params *v1beta1.CloudSQLInstanceParameters
 	}
 	cases := map[string]struct {
 		args args
@@ -279,7 +279,7 @@ func TestLateInitializeSpec(t *testing.T) {
 	}{
 		"SomeFields": {
 			args: args{
-				params: params(func(p *v1beta1.CloudsqlInstanceParameters) {
+				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
 					p.GceZone = nil
 				}),
 				db: db(func(db *sqladmin.DatabaseInstance) {
@@ -287,7 +287,7 @@ func TestLateInitializeSpec(t *testing.T) {
 					db.MasterInstanceName = "not-what-you-expect"
 				}),
 			},
-			want: want{params: params(func(p *v1beta1.CloudsqlInstanceParameters) {
+			want: want{params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
 				p.GceZone = getString("us-different-2")
 			})},
 		},
@@ -316,7 +316,7 @@ func TestGenerateObservation(t *testing.T) {
 		db *sqladmin.DatabaseInstance
 	}
 	type want struct {
-		obs v1beta1.CloudsqlInstanceObservation
+		obs v1beta1.CloudSQLInstanceObservation
 	}
 	cases := map[string]struct {
 		args args
@@ -340,7 +340,7 @@ func TestGenerateObservation(t *testing.T) {
 }
 
 func TestDatabaseUserName(t *testing.T) {
-	p := v1beta1.CloudsqlInstanceParameters{
+	p := v1beta1.CloudSQLInstanceParameters{
 		DatabaseVersion: getString("POSTGRES_3.2"),
 	}
 	if diff := cmp.Diff(v1beta1.PostgresqlDefaultUser, DatabaseUserName(p)); diff != "" {

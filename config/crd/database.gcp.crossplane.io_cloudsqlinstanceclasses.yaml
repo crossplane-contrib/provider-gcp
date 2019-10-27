@@ -18,15 +18,15 @@ spec:
     type: date
   group: database.gcp.crossplane.io
   names:
-    kind: CloudsqlInstanceClass
-    listKind: CloudsqlInstanceClassList
+    kind: CloudSQLInstanceClass
+    listKind: CloudSQLInstanceClassList
     plural: cloudsqlinstanceclasses
     singular: cloudsqlinstanceclass
   scope: Cluster
   subresources: {}
   validation:
     openAPIV3Schema:
-      description: A CloudsqlInstanceClass is a resource class. It defines the desired
+      description: A CloudSQLInstanceClass is a resource class. It defines the desired
         spec of resource claims that use it to dynamically provision a managed resource.
       properties:
         apiVersion:
@@ -43,10 +43,10 @@ spec:
           type: object
         specTemplate:
           description: SpecTemplate is a template for the spec of a dynamically provisioned
-            CloudsqlInstance.
+            CloudSQLInstance.
           properties:
             forProvider:
-              description: CloudsqlInstanceParameters define the desired state of
+              description: CloudSQLInstanceParameters define the desired state of
                 a Google CloudSQL instance.
               properties:
                 databaseVersion:
