@@ -42,34 +42,34 @@ import (
 )
 
 const (
-	errNotCloudsql                = "managed resource is not a CloudsqlInstance custom resource"
+	errNotCloudSQL                = "managed resource is not a CloudSQLInstance custom resource"
 	errProviderNotRetrieved       = "provider could not be retrieved"
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
-	errManagedUpdateFailed        = "cannot update CloudsqlInstance custom resource"
+	errManagedUpdateFailed        = "cannot update CloudSQLInstance custom resource"
 
 	errNewClient        = "cannot create new Sqladmin Service"
-	errCreateFailed     = "cannot create new Cloudsql instance"
-	errDeleteFailed     = "cannot delete the Cloudsql instance"
-	errUpdateFailed     = "cannot update the Cloudsql instance"
-	errGetFailed        = "cannot get the Cloudsql instance"
+	errCreateFailed     = "cannot create new CloudSQL instance"
+	errDeleteFailed     = "cannot delete the CloudSQL instance"
+	errUpdateFailed     = "cannot update the CloudSQL instance"
+	errGetFailed        = "cannot get the CloudSQL instance"
 	errGeneratePassword = "cannot generate root password"
 )
 
-// CloudsqlInstanceController is the controller for Cloudsql CRD.
-type CloudsqlInstanceController struct{}
+// CloudSQLInstanceController is the controller for CloudSQL CRD.
+type CloudSQLInstanceController struct{}
 
 // SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields
 // on the Controller and Start it when the Manager is Started.
-func (c *CloudsqlInstanceController) SetupWithManager(mgr ctrl.Manager) error {
+func (c *CloudSQLInstanceController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewManagedReconciler(mgr,
-		resource.ManagedKind(v1beta1.CloudsqlInstanceGroupVersionKind),
+		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
 		resource.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}))
 
-	name := strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.CloudsqlInstanceKindAPIVersion, v1beta1.Group))
+	name := strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.CloudSQLInstanceKindAPIVersion, v1beta1.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&v1beta1.CloudsqlInstance{}).
+		For(&v1beta1.CloudSQLInstance{}).
 		Complete(r)
 }
 
@@ -79,9 +79,9 @@ type cloudsqlConnector struct {
 }
 
 func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
-	cr, ok := mg.(*v1beta1.CloudsqlInstance)
+	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
-		return nil, errors.New(errNotCloudsql)
+		return nil, errors.New(errNotCloudSQL)
 	}
 
 	provider := &apisv1alpha2.Provider{}
@@ -111,9 +111,9 @@ type cloudsqlExternal struct {
 }
 
 func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
-	cr, ok := mg.(*v1beta1.CloudsqlInstance)
+	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
-		return resource.ExternalObservation{}, errors.New(errNotCloudsql)
+		return resource.ExternalObservation{}, errors.New(errNotCloudSQL)
 	}
 	instance, err := c.db.Get(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
@@ -146,9 +146,9 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 }
 
 func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
-	cr, ok := mg.(*v1beta1.CloudsqlInstance)
+	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
-		return resource.ExternalCreation{}, errors.New(errNotCloudsql)
+		return resource.ExternalCreation{}, errors.New(errNotCloudSQL)
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	password, err := util.GeneratePassword(v1beta1.PasswordLength)
@@ -170,9 +170,9 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 }
 
 func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
-	cr, ok := mg.(*v1beta1.CloudsqlInstance)
+	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
-		return resource.ExternalUpdate{}, errors.New(errNotCloudsql)
+		return resource.ExternalUpdate{}, errors.New(errNotCloudSQL)
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	_, err := c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
@@ -180,9 +180,9 @@ func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (res
 }
 
 func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1beta1.CloudsqlInstance)
+	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
-		return errors.New(errNotCloudsql)
+		return errors.New(errNotCloudSQL)
 	}
 	_, err := c.db.Delete(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if gcp.IsErrorNotFound(err) {
@@ -191,7 +191,7 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	return errors.Wrap(err, errDeleteFailed)
 }
 
-func getConnectionDetails(cr *v1beta1.CloudsqlInstance, instance *sqladmin.DatabaseInstance) resource.ConnectionDetails {
+func getConnectionDetails(cr *v1beta1.CloudSQLInstance, instance *sqladmin.DatabaseInstance) resource.ConnectionDetails {
 	m := resource.ConnectionDetails{
 		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
 	}

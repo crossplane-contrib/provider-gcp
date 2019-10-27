@@ -31,8 +31,8 @@ import (
 // real logic. But every if statement increases the cyclomatic
 // complexity rate.
 
-// GenerateDatabaseInstance generates *sqladmin.DatabaseInstance instance from CloudsqlInstanceParameters.
-func GenerateDatabaseInstance(in v1beta1.CloudsqlInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
+// GenerateDatabaseInstance generates *sqladmin.DatabaseInstance instance from CloudSQLInstanceParameters.
+func GenerateDatabaseInstance(in v1beta1.CloudSQLInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
 	db := &sqladmin.DatabaseInstance{
 		DatabaseVersion:    gcp.StringValue(in.DatabaseVersion),
 		GceZone:            gcp.StringValue(in.GceZone),
@@ -121,9 +121,9 @@ func GenerateDatabaseInstance(in v1beta1.CloudsqlInstanceParameters, name string
 	return db
 }
 
-// GenerateObservation produces CloudsqlInstanceObservation object from *sqladmin.DatabaseInstance object.
-func GenerateObservation(in sqladmin.DatabaseInstance) v1beta1.CloudsqlInstanceObservation { // nolint:gocyclo
-	o := v1beta1.CloudsqlInstanceObservation{
+// GenerateObservation produces CloudSQLInstanceObservation object from *sqladmin.DatabaseInstance object.
+func GenerateObservation(in sqladmin.DatabaseInstance) v1beta1.CloudSQLInstanceObservation { // nolint:gocyclo
+	o := v1beta1.CloudSQLInstanceObservation{
 		BackendType:                in.BackendType,
 		CurrentDiskSize:            in.CurrentDiskSize,
 		ConnectionName:             in.ConnectionName,
@@ -156,7 +156,7 @@ func GenerateObservation(in sqladmin.DatabaseInstance) v1beta1.CloudsqlInstanceO
 }
 
 // LateInitializeSpec fills unassigned fields with the values in sqladmin.DatabaseInstance object.
-func LateInitializeSpec(spec *v1beta1.CloudsqlInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
+func LateInitializeSpec(spec *v1beta1.CloudSQLInstanceParameters, in sqladmin.DatabaseInstance) { // nolint:gocyclo
 
 	// TODO(muvaf): One can marshall both objects into json and compare them as dictionaries since
 	//  they both have the same key names but this may create performance problems as it'll happen in each
@@ -280,14 +280,14 @@ func LateInitializeSpec(spec *v1beta1.CloudsqlInstanceParameters, in sqladmin.Da
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(in *v1beta1.CloudsqlInstanceParameters, currentState sqladmin.DatabaseInstance) bool {
-	currentParams := &v1beta1.CloudsqlInstanceParameters{}
+func IsUpToDate(in *v1beta1.CloudSQLInstanceParameters, currentState sqladmin.DatabaseInstance) bool {
+	currentParams := &v1beta1.CloudSQLInstanceParameters{}
 	LateInitializeSpec(currentParams, currentState)
 	return reflect.DeepEqual(in, currentParams)
 }
 
 // DatabaseUserName returns default database user name base on database version
-func DatabaseUserName(p v1beta1.CloudsqlInstanceParameters) string {
+func DatabaseUserName(p v1beta1.CloudSQLInstanceParameters) string {
 	if strings.HasPrefix(gcp.StringValue(p.DatabaseVersion), v1beta1.PostgresqlDBVersionPrefix) {
 		return v1beta1.PostgresqlDefaultUser
 	}

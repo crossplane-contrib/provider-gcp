@@ -23,62 +23,62 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// GetBindingPhase of this CloudsqlInstance.
-func (mg *CloudsqlInstance) GetBindingPhase() runtimev1alpha1.BindingPhase {
+// GetBindingPhase of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetBindingPhase() runtimev1alpha1.BindingPhase {
 	return mg.Status.GetBindingPhase()
 }
 
-// GetClaimReference of this CloudsqlInstance.
-func (mg *CloudsqlInstance) GetClaimReference() *corev1.ObjectReference {
+// GetClaimReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetClaimReference() *corev1.ObjectReference {
 	return mg.Spec.ClaimReference
 }
 
-// GetClassReference of this CloudsqlInstance.
-func (mg *CloudsqlInstance) GetClassReference() *corev1.ObjectReference {
+// GetClassReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetClassReference() *corev1.ObjectReference {
 	return mg.Spec.ClassReference
 }
 
-// GetCondition of this CloudsqlInstance.
-func (mg *CloudsqlInstance) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+// GetCondition of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
-// GetReclaimPolicy of this CloudsqlInstance.
-func (mg *CloudsqlInstance) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
+// GetReclaimPolicy of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
 }
 
-// GetWriteConnectionSecretToReference of this CloudsqlInstance.
-func (mg *CloudsqlInstance) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
+// GetWriteConnectionSecretToReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
-// SetBindingPhase of this CloudsqlInstance.
-func (mg *CloudsqlInstance) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
+// SetBindingPhase of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
 	mg.Status.SetBindingPhase(p)
 }
 
-// SetClaimReference of this CloudsqlInstance.
-func (mg *CloudsqlInstance) SetClaimReference(r *corev1.ObjectReference) {
+// SetClaimReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetClaimReference(r *corev1.ObjectReference) {
 	mg.Spec.ClaimReference = r
 }
 
-// SetClassReference of this CloudsqlInstance.
-func (mg *CloudsqlInstance) SetClassReference(r *corev1.ObjectReference) {
+// SetClassReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetClassReference(r *corev1.ObjectReference) {
 	mg.Spec.ClassReference = r
 }
 
-// SetConditions of this CloudsqlInstance.
-func (mg *CloudsqlInstance) SetConditions(c ...runtimev1alpha1.Condition) {
+// SetConditions of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
-// SetReclaimPolicy of this CloudsqlInstance.
-func (mg *CloudsqlInstance) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
+// SetReclaimPolicy of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
 	mg.Spec.ReclaimPolicy = r
 }
 
-// SetWriteConnectionSecretToReference of this CloudsqlInstance.
-func (mg *CloudsqlInstance) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
+// SetWriteConnectionSecretToReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }

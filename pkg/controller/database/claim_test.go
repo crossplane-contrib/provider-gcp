@@ -34,13 +34,13 @@ import (
 )
 
 var (
-	_ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigurePostgreSQLCloudsqlInstance)
-	_ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureMyCloudsqlInstance)
+	_ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigurePostgreSQLCloudSQLInstance)
+	_ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureMyCloudSQLInstance)
 )
 
 func getString(s string) *string { return &s }
 
-func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
+func TestConfigurePostgreCloudSQLInstance(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		cm  resource.Claim
@@ -66,8 +66,8 @@ func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec:       databasev1alpha1.PostgreSQLInstanceSpec{EngineVersion: "9.6"},
 				},
-				cs: &v1beta1.CloudsqlInstanceClass{
-					SpecTemplate: v1beta1.CloudsqlInstanceClassSpecTemplate{
+				cs: &v1beta1.CloudSQLInstanceClass{
+					SpecTemplate: v1beta1.CloudSQLInstanceClassSpecTemplate{
 						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
 							WriteConnectionSecretsToNamespace: namespace,
 							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
@@ -75,11 +75,11 @@ func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
 						},
 					},
 				},
-				mg: &v1beta1.CloudsqlInstance{},
+				mg: &v1beta1.CloudSQLInstance{},
 			},
 			want: want{
-				mg: &v1beta1.CloudsqlInstance{
-					Spec: v1beta1.CloudsqlInstanceSpec{
+				mg: &v1beta1.CloudSQLInstance{
+					Spec: v1beta1.CloudSQLInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
@@ -88,7 +88,7 @@ func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
 							},
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
-						ForProvider: v1beta1.CloudsqlInstanceParameters{
+						ForProvider: v1beta1.CloudSQLInstanceParameters{
 							DatabaseVersion: getString("POSTGRES_9_6"),
 						},
 					},
@@ -100,18 +100,18 @@ func TestConfigurePostgreCloudsqlInstance(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			err := ConfigurePostgreSQLCloudsqlInstance(tc.args.ctx, tc.args.cm, tc.args.cs, tc.args.mg)
+			err := ConfigurePostgreSQLCloudSQLInstance(tc.args.ctx, tc.args.cm, tc.args.cs, tc.args.mg)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("ConfigurePostgreSQLCloudsqlInstance(...) Error  -want, +got: %s", diff)
+				t.Errorf("ConfigurePostgreSQLCloudSQLInstance(...) Error  -want, +got: %s", diff)
 			}
 			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
-				t.Errorf("ConfigurePostgreSQLCloudsqlInstance(...) Managed -want, +got:\n%s", diff)
+				t.Errorf("ConfigurePostgreSQLCloudSQLInstance(...) Managed -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestConfigureMyCloudsqlInstance(t *testing.T) {
+func TestConfigureMyCloudSQLInstance(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		cm  resource.Claim
@@ -137,8 +137,8 @@ func TestConfigureMyCloudsqlInstance(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec:       databasev1alpha1.MySQLInstanceSpec{EngineVersion: "5.6"},
 				},
-				cs: &v1beta1.CloudsqlInstanceClass{
-					SpecTemplate: v1beta1.CloudsqlInstanceClassSpecTemplate{
+				cs: &v1beta1.CloudSQLInstanceClass{
+					SpecTemplate: v1beta1.CloudSQLInstanceClassSpecTemplate{
 						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
 							WriteConnectionSecretsToNamespace: namespace,
 							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
@@ -146,11 +146,11 @@ func TestConfigureMyCloudsqlInstance(t *testing.T) {
 						},
 					},
 				},
-				mg: &v1beta1.CloudsqlInstance{},
+				mg: &v1beta1.CloudSQLInstance{},
 			},
 			want: want{
-				mg: &v1beta1.CloudsqlInstance{
-					Spec: v1beta1.CloudsqlInstanceSpec{
+				mg: &v1beta1.CloudSQLInstance{
+					Spec: v1beta1.CloudSQLInstanceSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
@@ -159,7 +159,7 @@ func TestConfigureMyCloudsqlInstance(t *testing.T) {
 							},
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
-						ForProvider: v1beta1.CloudsqlInstanceParameters{
+						ForProvider: v1beta1.CloudSQLInstanceParameters{
 							DatabaseVersion: getString("MYSQL_5_6"),
 						},
 					},
@@ -171,12 +171,12 @@ func TestConfigureMyCloudsqlInstance(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			err := ConfigureMyCloudsqlInstance(tc.args.ctx, tc.args.cm, tc.args.cs, tc.args.mg)
+			err := ConfigureMyCloudSQLInstance(tc.args.ctx, tc.args.cm, tc.args.cs, tc.args.mg)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("ConfigureMyCloudsqlInstance(...) Error -want, +got: %s", diff)
+				t.Errorf("ConfigureMyCloudSQLInstance(...) Error -want, +got: %s", diff)
 			}
 			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
-				t.Errorf("ConfigureMyCloudsqlInstance(...) Managed: -want, +got:\n%s", diff)
+				t.Errorf("ConfigureMyCloudSQLInstance(...) Managed: -want, +got:\n%s", diff)
 			}
 		})
 	}

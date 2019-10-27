@@ -42,22 +42,22 @@ const (
 
 var errBoom = errors.New("boom")
 
-type instanceModifier func(*v1beta1.CloudsqlInstance)
+type instanceModifier func(*v1beta1.CloudSQLInstance)
 
 func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
-	return func(i *v1beta1.CloudsqlInstance) { i.Status.SetConditions(c...) }
+	return func(i *v1beta1.CloudSQLInstance) { i.Status.SetConditions(c...) }
 }
 
 func withProviderState(s string) instanceModifier {
-	return func(i *v1beta1.CloudsqlInstance) { i.Status.AtProvider.State = s }
+	return func(i *v1beta1.CloudSQLInstance) { i.Status.AtProvider.State = s }
 }
 
 func withBindingPhase(p runtimev1alpha1.BindingPhase) instanceModifier {
-	return func(i *v1beta1.CloudsqlInstance) { i.Status.SetBindingPhase(p) }
+	return func(i *v1beta1.CloudSQLInstance) { i.Status.SetBindingPhase(p) }
 }
 
 func withPublicIP(ip string) instanceModifier {
-	return func(i *v1beta1.CloudsqlInstance) {
+	return func(i *v1beta1.CloudSQLInstance) {
 		i.Status.AtProvider.IPAddresses = append(i.Status.AtProvider.IPAddresses, &v1beta1.IPMapping{
 			IPAddress: ip,
 			Type:      v1beta1.PublicIPType,
@@ -66,7 +66,7 @@ func withPublicIP(ip string) instanceModifier {
 }
 
 func withPrivateIP(ip string) instanceModifier {
-	return func(i *v1beta1.CloudsqlInstance) {
+	return func(i *v1beta1.CloudSQLInstance) {
 		i.Status.AtProvider.IPAddresses = append(i.Status.AtProvider.IPAddresses, &v1beta1.IPMapping{
 			IPAddress: ip,
 			Type:      v1beta1.PrivateIPType,
@@ -76,15 +76,15 @@ func withPrivateIP(ip string) instanceModifier {
 
 // Mostly used for making a spec drift.
 func withBackupConfigurationStartTime(h string) instanceModifier {
-	return func(i *v1beta1.CloudsqlInstance) {
+	return func(i *v1beta1.CloudSQLInstance) {
 		i.Spec.ForProvider.Settings.BackupConfiguration = &v1beta1.BackupConfiguration{
 			StartTime: &h,
 		}
 	}
 }
 
-func instance(im ...instanceModifier) *v1beta1.CloudsqlInstance {
-	i := &v1beta1.CloudsqlInstance{
+func instance(im ...instanceModifier) *v1beta1.CloudSQLInstance {
+	i := &v1beta1.CloudSQLInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Finalizers: []string{},
@@ -92,11 +92,11 @@ func instance(im ...instanceModifier) *v1beta1.CloudsqlInstance {
 				meta.ExternalNameAnnotationKey: name,
 			},
 		},
-		Spec: v1beta1.CloudsqlInstanceSpec{
+		Spec: v1beta1.CloudSQLInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
 				ProviderReference: &corev1.ObjectReference{Name: providerName},
 			},
-			ForProvider: v1beta1.CloudsqlInstanceParameters{},
+			ForProvider: v1beta1.CloudSQLInstanceParameters{},
 		},
 	}
 
@@ -220,7 +220,7 @@ func TestConnect(t *testing.T) {
 			args: args{mg: instance()},
 			want: want{err: errors.Wrap(errBoom, errProviderSecretNotRetrieved)},
 		},
-		"FailedToCreateCloudsqlInstanceClient": {
+		"FailedToCreateCloudSQLInstanceClient": {
 			conn: &cloudsqlConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
@@ -771,7 +771,7 @@ func TestGetConnectionDetails(t *testing.T) {
 	}
 
 	type args struct {
-		cr *v1beta1.CloudsqlInstance
+		cr *v1beta1.CloudSQLInstance
 		i  *sqladmin.DatabaseInstance
 	}
 	type want struct {

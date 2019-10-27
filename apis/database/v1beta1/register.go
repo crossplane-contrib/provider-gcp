@@ -37,21 +37,21 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// CloudsqlInstance type metadata.
+// CloudSQLInstance type metadata.
 var (
-	CloudsqlInstanceKind             = reflect.TypeOf(CloudsqlInstance{}).Name()
-	CloudsqlInstanceKindAPIVersion   = CloudsqlInstanceKind + "." + SchemeGroupVersion.String()
-	CloudsqlInstanceGroupVersionKind = SchemeGroupVersion.WithKind(CloudsqlInstanceKind)
+	CloudSQLInstanceKind             = reflect.TypeOf(CloudSQLInstance{}).Name()
+	CloudSQLInstanceKindAPIVersion   = CloudSQLInstanceKind + "." + SchemeGroupVersion.String()
+	CloudSQLInstanceGroupVersionKind = SchemeGroupVersion.WithKind(CloudSQLInstanceKind)
 )
 
-// CloudsqlInstanceClass type metadata.
+// CloudSQLInstanceClass type metadata.
 var (
-	CloudsqlInstanceClassKind             = reflect.TypeOf(CloudsqlInstanceClass{}).Name()
-	CloudsqlInstanceClassKindAPIVersion   = CloudsqlInstanceClassKind + "." + SchemeGroupVersion.String()
-	CloudsqlInstanceClassGroupVersionKind = SchemeGroupVersion.WithKind(CloudsqlInstanceClassKind)
+	CloudSQLInstanceClassKind             = reflect.TypeOf(CloudSQLInstanceClass{}).Name()
+	CloudSQLInstanceClassKindAPIVersion   = CloudSQLInstanceClassKind + "." + SchemeGroupVersion.String()
+	CloudSQLInstanceClassGroupVersionKind = SchemeGroupVersion.WithKind(CloudSQLInstanceClassKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&CloudsqlInstance{}, &CloudsqlInstanceList{})
-	SchemeBuilder.Register(&CloudsqlInstanceClass{}, &CloudsqlInstanceClassList{})
+	SchemeBuilder.Register(&CloudSQLInstance{}, &CloudSQLInstanceList{})
+	SchemeBuilder.Register(&CloudSQLInstanceClass{}, &CloudSQLInstanceClassList{})
 }

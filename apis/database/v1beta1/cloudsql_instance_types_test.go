@@ -42,7 +42,7 @@ func TestNetworkURIReferencerForCloudSQLInstance_AssignInvalidType_ReturnsErr(t 
 func TestNetworkURIReferencerForCloudSQLInstance_AssignValidType_ReturnsExpected(t *testing.T) {
 
 	r := &NetworkURIReferencerForCloudSQLInstance{}
-	res := &CloudsqlInstance{}
+	res := &CloudSQLInstance{}
 	var expectedErr error
 
 	mockValue := "mockValue"

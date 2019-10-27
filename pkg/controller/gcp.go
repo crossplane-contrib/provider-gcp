@@ -52,7 +52,7 @@ func (c *Controllers) SetupWithManager(mgr ctrl.Manager) error {
 		&database.MySQLInstanceClaimSchedulingController{},
 		&database.MySQLInstanceClaimDefaultingController{},
 		&database.MySQLInstanceClaimController{},
-		&database.CloudsqlInstanceController{},
+		&database.CloudSQLInstanceController{},
 		&servicenetworking.ConnectionController{},
 		&storage.BucketClaimSchedulingController{},
 		&storage.BucketClaimDefaultingController{},
