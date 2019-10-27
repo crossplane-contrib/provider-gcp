@@ -65,7 +65,7 @@ const (
 
 // Error strings
 const (
-	errResourceIsNotCloudSQLInstance = "The managed resource is not a CloudSQLInstance"
+	errResourceIsNotCloudSQLInstance = "the managed resource is not a CloudSQLInstance"
 )
 
 // NetworkURIReferencerForCloudSQLInstance is an attribute referencer that resolves

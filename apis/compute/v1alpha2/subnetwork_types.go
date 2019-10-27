@@ -29,7 +29,7 @@ import (
 
 // Error strings
 const (
-	errResourceIsNotSubnetwork = "The managed resource is not a Subnetwork"
+	errResourceIsNotSubnetwork = "the managed resource is not a Subnetwork"
 )
 
 // NetworkURIReferencerForSubnetwork is an attribute referencer that resolves

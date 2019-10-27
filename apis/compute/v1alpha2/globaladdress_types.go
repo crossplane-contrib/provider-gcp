@@ -26,7 +26,7 @@ import (
 
 // Error strings
 const (
-	errResourceIsNotGlobalAddress = "The managed resource is not a GlobalAddress"
+	errResourceIsNotGlobalAddress = "the managed resource is not a GlobalAddress"
 )
 
 // NetworkURIReferencerForGlobalAddress is an attribute referencer that resolves
