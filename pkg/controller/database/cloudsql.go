@@ -150,6 +150,7 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotCloudSQL)
 	}
+	cr.SetConditions(v1alpha1.Creating())
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	password, err := util.GeneratePassword(v1beta1.PasswordLength)
 	if err != nil {
@@ -184,6 +185,7 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	if !ok {
 		return errors.New(errNotCloudSQL)
 	}
+	cr.SetConditions(v1alpha1.Deleting())
 	_, err := c.db.Delete(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if gcp.IsErrorNotFound(err) {
 		return nil
