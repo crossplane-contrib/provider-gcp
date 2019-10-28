@@ -7,13 +7,16 @@ metadata:
   name: cloudmemorystoreinstances.cache.gcp.crossplane.io
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.state
+  - JSONPath: .status.bindingPhase
     name: STATUS
+    type: string
+  - JSONPath: .status.atProvider.state
+    name: STATE
     type: string
   - JSONPath: .spec.classRef.name
     name: CLASS
     type: string
-  - JSONPath: .spec.redisVersion
+  - JSONPath: .spec.forProvider.redisVersion
     name: VERSION
     type: string
   - JSONPath: .metadata.creationTimestamp
