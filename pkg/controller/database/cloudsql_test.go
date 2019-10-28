@@ -472,7 +472,7 @@ func TestCreate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg: instance(),
+				mg: instance(withConditions(runtimev1alpha1.Creating())),
 				cre: resource.ExternalCreation{ConnectionDetails: resource.ConnectionDetails{
 					runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
 				}},
@@ -492,7 +492,7 @@ func TestCreate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(),
+				mg:  instance(withConditions(runtimev1alpha1.Creating())),
 				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateFailed),
 			},
 		},
@@ -509,7 +509,7 @@ func TestCreate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(),
+				mg:  instance(withConditions(runtimev1alpha1.Creating())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateFailed),
 			},
 		},
@@ -593,7 +593,7 @@ func TestDelete(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(),
+				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -610,7 +610,7 @@ func TestDelete(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(),
+				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -627,7 +627,7 @@ func TestDelete(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(),
+				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteFailed),
 			},
 		},
