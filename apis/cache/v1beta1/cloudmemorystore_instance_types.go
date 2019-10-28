@@ -175,9 +175,9 @@ type CloudMemorystoreInstanceStatus struct {
 // A CloudMemorystoreInstance is a managed resource that represents a Google
 // Cloud Memorystore instance.
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.state"
+// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
-// +kubebuilder:printcolumn:name="VERSION",type="string",JSONPath=".spec.redisVersion"
+// +kubebuilder:printcolumn:name="VERSION",type="string",JSONPath=".spec.forProvider.redisVersion"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster
 type CloudMemorystoreInstance struct {
