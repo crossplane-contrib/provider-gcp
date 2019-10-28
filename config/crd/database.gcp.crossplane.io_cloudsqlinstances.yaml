@@ -10,13 +10,13 @@ spec:
   - JSONPath: .status.bindingPhase
     name: STATUS
     type: string
-  - JSONPath: .status.state
+  - JSONPath: .status.atProvider.state
     name: STATE
     type: string
   - JSONPath: .spec.classRef.name
     name: CLASS
     type: string
-  - JSONPath: .spec.databaseVersion
+  - JSONPath: .spec.forProvider.databaseVersion
     name: VERSION
     type: string
   - JSONPath: .metadata.creationTimestamp
