@@ -5,7 +5,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	corev1 "k8s.io/api/core/v1"
 
+	computev1alpha1 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 )
 
@@ -402,6 +404,88 @@ func TestGetServerCACertificate(t *testing.T) {
 			m := GetServerCACertificate(tc.args.db)
 			if diff := cmp.Diff(tc.want.r, m); diff != "" {
 				t.Errorf("GetServerCACertificate(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestIsUpToDate(t *testing.T) {
+	privateNetworkName := "a-cool-network"
+
+	type args struct {
+		params *v1beta1.CloudSQLInstanceParameters
+		db     sqladmin.DatabaseInstance
+	}
+	cases := map[string]struct {
+		args args
+		want bool
+	}{
+		"IsUpToDate": {
+			args: args{
+				params: params(),
+				db:     *db(),
+			},
+			want: true,
+		},
+		"IsUpToDateIgnoreReferences": {
+			args: args{
+				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
+					p.Settings.IPConfiguration = &v1beta1.IPConfiguration{
+						PrivateNetwork: &privateNetworkName,
+						PrivateNetworkRef: &v1beta1.NetworkURIReferencerForCloudSQLInstance{
+							NetworkURIReferencer: computev1alpha1.NetworkURIReferencer{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "network-ref-exists",
+								},
+							},
+						},
+					}
+				}),
+				db: *db(func(db *sqladmin.DatabaseInstance) {
+					db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
+						PrivateNetwork: privateNetworkName,
+					}
+				}),
+			},
+			want: true,
+		},
+		"NeedsUpdate": {
+			args: args{
+				params: params(),
+				db: *db(func(db *sqladmin.DatabaseInstance) {
+					db.MasterInstanceName = ""
+				}),
+			},
+			want: false,
+		},
+		"NeedsUpdateBadRef": {
+			args: args{
+				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
+					p.Settings.IPConfiguration = &v1beta1.IPConfiguration{
+						PrivateNetwork: &privateNetworkName,
+						PrivateNetworkRef: &v1beta1.NetworkURIReferencerForCloudSQLInstance{
+							NetworkURIReferencer: computev1alpha1.NetworkURIReferencer{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "network-ref-exists",
+								},
+							},
+						},
+					}
+				}),
+				db: *db(func(db *sqladmin.DatabaseInstance) {
+					db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
+						PrivateNetwork: "unexpected-network",
+					}
+				}),
+			},
+			want: false,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			r := IsUpToDate(tc.args.params, tc.args.db)
+			if diff := cmp.Diff(tc.want, r); diff != "" {
+				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
