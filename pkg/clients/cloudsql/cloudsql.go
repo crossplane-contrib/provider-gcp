@@ -17,10 +17,13 @@ limitations under the License.
 package cloudsql
 
 import (
-	"reflect"
 	"strings"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
@@ -283,7 +286,7 @@ func LateInitializeSpec(spec *v1beta1.CloudSQLInstanceParameters, in sqladmin.Da
 func IsUpToDate(in *v1beta1.CloudSQLInstanceParameters, currentState sqladmin.DatabaseInstance) bool {
 	currentParams := &v1beta1.CloudSQLInstanceParameters{}
 	LateInitializeSpec(currentParams, currentState)
-	return reflect.DeepEqual(in, currentParams)
+	return cmp.Equal(in, currentParams, cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}))
 }
 
 // DatabaseUserName returns default database user name base on database version
