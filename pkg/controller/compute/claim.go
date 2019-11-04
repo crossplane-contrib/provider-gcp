@@ -107,6 +107,7 @@ func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
 		resource.ClassKind(v1alpha3.GKEClusterClassGroupVersionKind),
 		resource.ManagedKind(v1alpha3.GKEClusterGroupVersionKind),
+		resource.WithBinder(resource.NewAPIBinder(mgr.GetClient(), mgr.GetScheme())),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureGKECluster),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
