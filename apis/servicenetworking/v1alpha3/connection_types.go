@@ -68,6 +68,12 @@ func (v *GlobalAddressNameReferencerForConnection) Assign(res resource.CanRefere
 		return errors.New(errResourceIsNotConnection)
 	}
 
+	for _, r := range conn.Spec.ReservedPeeringRanges {
+		if r == value {
+			return nil
+		}
+	}
+
 	conn.Spec.ReservedPeeringRanges = append(conn.Spec.ReservedPeeringRanges, value)
 	return nil
 }

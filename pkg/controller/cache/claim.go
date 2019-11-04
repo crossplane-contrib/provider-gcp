@@ -109,8 +109,6 @@ func (c *CloudMemorystoreInstanceClaimController) SetupWithManager(mgr ctrl.Mana
 		resource.ClaimKind(cachev1alpha1.RedisClusterGroupVersionKind),
 		resource.ClassKind(v1beta1.CloudMemorystoreInstanceClassGroupVersionKind),
 		resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
-		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient(), mgr.GetScheme())),
-		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
