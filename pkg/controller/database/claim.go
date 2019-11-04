@@ -107,8 +107,6 @@ func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) e
 		resource.ClaimKind(databasev1alpha1.PostgreSQLInstanceGroupVersionKind),
 		resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind),
 		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
-		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient(), mgr.GetScheme())),
-		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigurePostgreSQLCloudSQLInstance),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
@@ -239,8 +237,6 @@ func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error 
 		resource.ClaimKind(databasev1alpha1.MySQLInstanceGroupVersionKind),
 		resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind),
 		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
-		resource.WithManagedBinder(resource.NewAPIManagedStatusBinder(mgr.GetClient(), mgr.GetScheme())),
-		resource.WithManagedFinalizer(resource.NewAPIManagedStatusUnbinder(mgr.GetClient())),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureMyCloudSQLInstance),
 			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
