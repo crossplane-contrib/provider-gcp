@@ -20,9 +20,9 @@ github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+Ce
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
-github.com/crossplaneio/crossplane v0.3.1-0.20191023221351-518648b051cd h1:jd68c2O2AN//+yqI09pjSgpn72R4yknS7tqh0ZjYRiE=
-github.com/crossplaneio/crossplane v0.3.1-0.20191023221351-518648b051cd/go.mod h1:r/iuuYYKmZ2cTE5DbIfMDQ9GF6xN2PrNXjnxGJUXTMI=
-github.com/crossplaneio/crossplane-runtime v0.0.0-20191023215652-0f37bea5496e/go.mod h1:FMlJ6k7pUZdxQrjh0B33D2b79iBac+xcMEHTWiruXao=
+github.com/crossplaneio/crossplane v0.4.0 h1:YbRZX21XhMbwUnzkrNCjrXmGgNC8HMZK17AwfX4/4JA=
+github.com/crossplaneio/crossplane v0.4.0/go.mod h1:xy802FxcCs6eCO6jd5KLruS1JnFroCFYFDqWQLBGzpc=
+github.com/crossplaneio/crossplane-runtime v0.1.0/go.mod h1:FMlJ6k7pUZdxQrjh0B33D2b79iBac+xcMEHTWiruXao=
 github.com/crossplaneio/crossplane-runtime v0.2.1 h1:9PI6sZmOC+BIWrNx5enRKr2Uw0kFhvVgFQcPb9nL0ag=
 github.com/crossplaneio/crossplane-runtime v0.2.1/go.mod h1:FMlJ6k7pUZdxQrjh0B33D2b79iBac+xcMEHTWiruXao=
 github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
