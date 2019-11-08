@@ -73,7 +73,6 @@ const (
 // peering (to a different VPC network) named 'cloudsql-mysql-googleapis-com'. I
 // presume this is dark Google magic that is not exposed to API callers.
 // https://cloud.google.com/service-infrastructure/docs/service-networking/reference/rest/v1/services.connections/list
-const peeringName = "servicenetworking-googleapis-com"
 
 // ConnectionController is the controller for Connection CRD.
 type ConnectionController struct{}
@@ -167,7 +166,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 
 func findConnection(conns []*servicenetworking.Connection) *servicenetworking.Connection {
 	for _, c := range conns {
-		if c.Peering == peeringName {
+		if c.Peering == connection.PeeringName {
 			return c
 		}
 	}
@@ -192,7 +191,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.Ex
 		return resource.ExternalUpdate{}, errors.New(errNotConnection)
 	}
 
-	name := fmt.Sprintf("%s/connections/%s", cn.Spec.Parent, peeringName)
+	name := fmt.Sprintf("%s/connections/%s", cn.Spec.Parent, connection.PeeringName)
 	conn := connection.FromParameters(cn.Spec.ConnectionParameters)
 	_, err := e.sn.Services.Connections.Patch(name, conn).Context(ctx).Do()
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateConnection)

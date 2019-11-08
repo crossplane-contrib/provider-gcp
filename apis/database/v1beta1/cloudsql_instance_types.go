@@ -17,14 +17,21 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/pkg/errors"
+	"context"
+	"strings"
 
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	computev1alpha1 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	computev1alpha3 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/connection"
 )
 
 // CloudSQL instance states
@@ -65,16 +72,58 @@ const (
 
 // Error strings
 const (
+	errGetNetwork                    = "cannot get referenced Network"
 	errResourceIsNotCloudSQLInstance = "the managed resource is not a CloudSQLInstance"
 )
 
-// NetworkURIReferencerForCloudSQLInstance is an attribute referencer that resolves
-// network uri from a referenced Network and assigns it to a CloudSQLInstance
+// NetworkURIReferencerForCloudSQLInstance resolves references from a
+// CloudSQLInstance to a Network by returning the referenced Network's
+// resource link, e.g. /projects/example/global/networks/example.
 type NetworkURIReferencerForCloudSQLInstance struct {
-	computev1alpha1.NetworkURIReferencer `json:",inline"`
+	corev1.LocalObjectReference `json:",inline"`
 }
 
-// Assign assigns the retrieved network uri to a CloudSQLInstance
+// GetStatus reports whether the referenced Network should be considered Ready;
+// reconciliation of the CloudSQLInstance will block until such time. The
+// Network is considered Ready when its Ready condition is true, and it has an
+// active service networking connection peering.
+func (v *NetworkURIReferencerForCloudSQLInstance) GetStatus(ctx context.Context, _ resource.CanReference, c client.Reader) ([]resource.ReferenceStatus, error) {
+	network := computev1alpha3.Network{}
+	nn := types.NamespacedName{Name: v.Name}
+	if err := c.Get(ctx, nn, &network); err != nil {
+		if kerrors.IsNotFound(err) {
+			return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotFound}}, nil
+		}
+
+		return nil, errors.Wrap(err, errGetNetwork)
+	}
+
+	if !resource.IsConditionTrue(network.GetCondition(runtimev1alpha1.TypeReady)) {
+		return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotReady}}, nil
+	}
+
+	for _, p := range network.Status.GCPNetworkStatus.Peerings {
+		if p.Name == connection.PeeringName && p.State == connection.PeeringStateActive {
+			return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceReady}}, nil
+		}
+	}
+
+	return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotReady}}, nil
+}
+
+// Build the resource link for the referenced network.
+func (v *NetworkURIReferencerForCloudSQLInstance) Build(ctx context.Context, _ resource.CanReference, c client.Reader) (string, error) {
+	network := computev1alpha3.Network{}
+	nn := types.NamespacedName{Name: v.Name}
+	if err := c.Get(ctx, nn, &network); err != nil {
+		return "", errors.Wrap(err, errGetNetwork)
+	}
+
+	return strings.TrimPrefix(network.Status.SelfLink, computev1alpha3.URIPrefix), nil
+}
+
+// Assign the PrivateNetwork field of the supplied resource.CanReference,
+// assumed to be a CloudSQLInstance.
 func (v *NetworkURIReferencerForCloudSQLInstance) Assign(res resource.CanReference, value string) error {
 	sql, ok := res.(*CloudSQLInstance)
 	if !ok {
@@ -460,7 +509,11 @@ type IPConfiguration struct {
 	// +optional
 	PrivateNetwork *string `json:"privateNetwork,omitempty"`
 
-	// PrivateNetworkRef references to a Network and retrieves its URI
+	// PrivateNetworkRef sets the PrivateNetwork field by resolving the resource
+	// link of the referenced Crossplane Network managed resource. The Network
+	// must have an active Service Networking connection peering before
+	// resolution will proceed.
+	// https://cloud.google.com/vpc/docs/configure-private-services-access
 	PrivateNetworkRef *NetworkURIReferencerForCloudSQLInstance `json:"privateNetworkRef,omitempty" resource:"attributereferencer"`
 
 	// RequireSsl: Whether SSL connections over IP should be enforced or

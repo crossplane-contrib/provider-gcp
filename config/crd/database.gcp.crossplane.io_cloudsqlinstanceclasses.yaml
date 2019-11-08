@@ -268,8 +268,11 @@ spec:
                             after it is set.'
                           type: string
                         privateNetworkRef:
-                          description: PrivateNetworkRef references to a Network and
-                            retrieves its URI
+                          description: PrivateNetworkRef sets the PrivateNetwork field
+                            by resolving the resource link of the referenced Crossplane
+                            Network managed resource. The Network must have an active
+                            Service Networking connection peering before resolution
+                            will proceed. https://cloud.google.com/vpc/docs/configure-private-services-access
                           properties:
                             name:
                               description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
