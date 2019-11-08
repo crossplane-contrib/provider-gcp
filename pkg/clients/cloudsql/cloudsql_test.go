@@ -7,7 +7,6 @@ import (
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	corev1 "k8s.io/api/core/v1"
 
-	computev1alpha1 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 )
 
@@ -433,10 +432,8 @@ func TestIsUpToDate(t *testing.T) {
 					p.Settings.IPConfiguration = &v1beta1.IPConfiguration{
 						PrivateNetwork: &privateNetworkName,
 						PrivateNetworkRef: &v1beta1.NetworkURIReferencerForCloudSQLInstance{
-							NetworkURIReferencer: computev1alpha1.NetworkURIReferencer{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "network-ref-exists",
-								},
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "network-ref-exists",
 							},
 						},
 					}
@@ -464,10 +461,8 @@ func TestIsUpToDate(t *testing.T) {
 					p.Settings.IPConfiguration = &v1beta1.IPConfiguration{
 						PrivateNetwork: &privateNetworkName,
 						PrivateNetworkRef: &v1beta1.NetworkURIReferencerForCloudSQLInstance{
-							NetworkURIReferencer: computev1alpha1.NetworkURIReferencer{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "network-ref-exists",
-								},
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "network-ref-exists",
 							},
 						},
 					}

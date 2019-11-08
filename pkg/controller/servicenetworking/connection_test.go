@@ -39,6 +39,7 @@ import (
 
 	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/connection"
 )
 
 var (
@@ -57,7 +58,7 @@ func conn() *v1alpha3.Connection {
 		Spec: v1alpha3.ConnectionSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{}},
 		},
-		Status: v1alpha3.ConnectionStatus{Peering: peeringName},
+		Status: v1alpha3.ConnectionStatus{Peering: connection.PeeringName},
 	}
 }
 
@@ -248,7 +249,7 @@ func TestObserve(t *testing.T) {
 				sn: FakeServiceNetworkingService{
 					WantMethod: http.MethodGet,
 					Return: &servicenetworking.ListConnectionsResponse{Connections: []*servicenetworking.Connection{
-						{Peering: peeringName + "-diff"},
+						{Peering: connection.PeeringName + "-diff"},
 					}},
 				}.Serve(t),
 			},
@@ -267,7 +268,7 @@ func TestObserve(t *testing.T) {
 				sn: FakeServiceNetworkingService{
 					WantMethod: http.MethodGet,
 					Return: &servicenetworking.ListConnectionsResponse{Connections: []*servicenetworking.Connection{
-						{Peering: peeringName},
+						{Peering: connection.PeeringName},
 					}},
 				}.Serve(t),
 				compute: FakeComputeService{WantMethod: http.MethodGet, ReturnError: errGoogleNotFound}.Serve(t),
@@ -285,7 +286,7 @@ func TestObserve(t *testing.T) {
 				sn: FakeServiceNetworkingService{
 					WantMethod: http.MethodGet,
 					Return: &servicenetworking.ListConnectionsResponse{Connections: []*servicenetworking.Connection{
-						{Peering: peeringName},
+						{Peering: connection.PeeringName},
 					}},
 				}.Serve(t),
 				compute: FakeComputeService{WantMethod: http.MethodGet}.Serve(t),

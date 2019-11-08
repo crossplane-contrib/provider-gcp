@@ -27,6 +27,10 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
 )
 
+// PeeringName of the peering created when a service networking connection is
+// added to a VPC network.
+const PeeringName = "servicenetworking-googleapis-com"
+
 // VPC Network peering states.
 const (
 	PeeringStateActive   = "ACTIVE"
