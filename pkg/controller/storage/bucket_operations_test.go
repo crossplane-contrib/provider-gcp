@@ -467,7 +467,7 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretEndpointKey, bucketUID)
 						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretUserKey, saSecretUser)
 						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretPasswordKey, saSecretPass)
-						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsTokenKey, saSecretCreds)
+						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretTokenKey, saSecretCreds)
 						return testError
 					},
 				},

@@ -18,9 +18,10 @@ package compute
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"time"
+
+	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/google"
@@ -115,30 +116,23 @@ func (r *Reconciler) fail(instance *gcpcomputev1alpha3.GKECluster, err error) (r
 
 // connectionSecret return secret object for cluster instance
 func connectionDetails(cluster *container.Cluster) (resource.ConnectionDetails, error) {
+	config, err := gke.GenerateClientConfig(cluster)
+	if err != nil {
+		return nil, err
+	}
+	rawConfig, err := clientcmd.Write(config)
+	if err != nil {
+		return nil, err
+	}
 	cd := resource.ConnectionDetails{
-		runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(cluster.Endpoint),
-		runtimev1alpha1.ResourceCredentialsSecretUserKey:     []byte(cluster.MasterAuth.Username),
-		runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(cluster.MasterAuth.Password),
+		runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(config.Clusters[cluster.Name].Server),
+		runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(config.AuthInfos[cluster.Name].Username),
+		runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(config.AuthInfos[cluster.Name].Password),
+		runtimev1alpha1.ResourceCredentialsSecretCAKey:         config.Clusters[cluster.Name].CertificateAuthorityData,
+		runtimev1alpha1.ResourceCredentialsSecretClientCertKey: config.AuthInfos[cluster.Name].ClientCertificateData,
+		runtimev1alpha1.ResourceCredentialsSecretClientKeyKey:  config.AuthInfos[cluster.Name].ClientKeyData,
+		runtimev1alpha1.ResourceCredentialsSecretKubeconfigKey: rawConfig,
 	}
-
-	val, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClusterCaCertificate)
-	if err != nil {
-		return nil, err
-	}
-	cd[runtimev1alpha1.ResourceCredentialsSecretCAKey] = val
-
-	val, err = base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
-	if err != nil {
-		return nil, err
-	}
-	cd[runtimev1alpha1.ResourceCredentialsSecretClientCertKey] = val
-
-	val, err = base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientKey)
-	if err != nil {
-		return nil, err
-	}
-	cd[runtimev1alpha1.ResourceCredentialsSecretClientKeyKey] = val
-
 	return cd, nil
 }
 

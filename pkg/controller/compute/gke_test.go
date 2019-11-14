@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"testing"
 
+	"k8s.io/client-go/tools/clientcmd"
+
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/container/v1"
@@ -490,15 +492,7 @@ func TestConnectionDetails(t *testing.T) {
 	clientCert := "clientCert"
 	clientKey := "clientKey"
 
-	want := resource.ConnectionDetails{
-		runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(endpoint),
-		runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(username),
-		runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(password),
-		runtimev1alpha1.ResourceCredentialsSecretCAKey:         []byte(clusterCA),
-		runtimev1alpha1.ResourceCredentialsSecretClientCertKey: []byte(clientCert),
-		runtimev1alpha1.ResourceCredentialsSecretClientKeyKey:  []byte(clientKey),
-	}
-	got, err := connectionDetails(&container.Cluster{
+	cluster := &container.Cluster{
 		Endpoint: endpoint,
 		MasterAuth: &container.MasterAuth{
 			Username:             username,
@@ -507,7 +501,20 @@ func TestConnectionDetails(t *testing.T) {
 			ClientCertificate:    base64.StdEncoding.EncodeToString([]byte(clientCert)),
 			ClientKey:            base64.StdEncoding.EncodeToString([]byte(clientKey)),
 		},
-	})
+	}
+	config, _ := gke.GenerateClientConfig(cluster)
+	kubeconfig, _ := clientcmd.Write(config)
+
+	want := resource.ConnectionDetails{
+		runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(fmt.Sprintf("https://%s", endpoint)),
+		runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(username),
+		runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(password),
+		runtimev1alpha1.ResourceCredentialsSecretCAKey:         []byte(clusterCA),
+		runtimev1alpha1.ResourceCredentialsSecretClientCertKey: []byte(clientCert),
+		runtimev1alpha1.ResourceCredentialsSecretClientKeyKey:  []byte(clientKey),
+		runtimev1alpha1.ResourceCredentialsSecretKubeconfigKey: kubeconfig,
+	}
+	got, err := connectionDetails(cluster)
 	g.Expect(got).To(Equal(want))
 	g.Expect(err).To(BeNil())
 }
