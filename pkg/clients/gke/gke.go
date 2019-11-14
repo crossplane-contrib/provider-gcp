@@ -18,11 +18,14 @@ package gke
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/container/v1"
 	"google.golang.org/api/option"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	computev1alpha3 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
@@ -135,4 +138,49 @@ func (c *ClusterClient) DefaultKubernetesVersion(zone string) (string, error) {
 	}
 
 	return sc.DefaultClusterVersion, nil
+}
+
+// GenerateClientConfig generates a clientcmdapi.Config that can be used by any
+// kubernetes client.
+func GenerateClientConfig(cluster *container.Cluster) (clientcmdapi.Config, error) {
+	c := clientcmdapi.Config{
+		Clusters: map[string]*clientcmdapi.Cluster{
+			cluster.Name: {
+				Server: fmt.Sprintf("https://%s", cluster.Endpoint),
+			},
+		},
+		Contexts: map[string]*clientcmdapi.Context{
+			cluster.Name: {
+				Cluster:  cluster.Name,
+				AuthInfo: cluster.Name,
+			},
+		},
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{
+			cluster.Name: {
+				Username: cluster.MasterAuth.Username,
+				Password: cluster.MasterAuth.Password,
+			},
+		},
+		CurrentContext: cluster.Name,
+	}
+
+	val, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClusterCaCertificate)
+	if err != nil {
+		return clientcmdapi.Config{}, err
+	}
+	c.Clusters[cluster.Name].CertificateAuthorityData = val
+
+	val, err = base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
+	if err != nil {
+		return clientcmdapi.Config{}, err
+	}
+	c.AuthInfos[cluster.Name].ClientCertificateData = val
+
+	val, err = base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientKey)
+	if err != nil {
+		return clientcmdapi.Config{}, err
+	}
+	c.AuthInfos[cluster.Name].ClientKeyData = val
+
+	return c, nil
 }
