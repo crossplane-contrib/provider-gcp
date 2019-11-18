@@ -55,7 +55,7 @@ func (in *Connection) DeepCopyObject() runtime.Object {
 func (in *ConnectionList) DeepCopyInto(out *ConnectionList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Connection, len(*in))
