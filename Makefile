@@ -29,6 +29,8 @@ NPROCS ?= 1
 # to half the number of CPU cores.
 GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 
+GO_INTEGRATION_TESTS_SUBDIRS = test
+
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/stack
 GO_LDFLAGS += -X $(GO_PROJECT)/pkg/version.Version=$(VERSION)
 GO_SUBDIRS += cmd pkg apis
@@ -93,6 +95,9 @@ test-integration: $(KIND) $(KUBECTL)
 	@$(ROOT_DIR)/cluster/local/integration_tests.sh || $(FAIL)
 	@$(OK) integration tests passed
 
+go-integration: 
+	GO_TEST_FLAGS=-v $(MAKE) go.test.integration
+
 # Update the submodules, such as the common build scripts.
 submodules:
 	@git submodule sync
@@ -142,7 +147,7 @@ clean-stack-package:
 manifests:
 	@$(INFO) Deprecated. Run make generate instead.
 
-.PHONY: cobertura reviewable submodules fallthrough test-integration run clean-stack-package build-stack-package manifests
+.PHONY: cobertura reviewable submodules fallthrough test-integration run clean-stack-package build-stack-package manifests go-integration
 
 # ====================================================================================
 # Special Targets
