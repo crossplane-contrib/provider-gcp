@@ -22,13 +22,14 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
 	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/storage"
@@ -130,6 +131,7 @@ const (
 )
 
 func (bh *bucketHandler) updateSecret(ctx context.Context) error {
+
 	if bh.Spec.WriteConnectionSecretToReference == nil {
 		// No connection secret is desired - don't publish one.
 		return nil
@@ -147,7 +149,16 @@ func (bh *bucketHandler) updateSecret(ctx context.Context) error {
 		s.Data[runtimev1alpha1.ResourceCredentialsSecretTokenKey] = ss.Data[saSecretKeyCredentials]
 	}
 	s.Data[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(bh.GetBucketName())
-	return errors.Wrapf(util.Apply(ctx, bh.kube, s), "failed to apply connection secret: %s/%s", s.Namespace, s.Name)
+
+	return errors.Wrapf(apply(ctx, bh.kube, s), "failed to apply connection secret: %s/%s", s.Namespace, s.Name)
+}
+
+func apply(ctx context.Context, kube client.Client, o runtime.Object) error {
+	err := kube.Create(ctx, o)
+	if err != nil && kerrors.IsAlreadyExists(err) {
+		return kube.Update(ctx, o)
+	}
+	return err
 }
 
 //
