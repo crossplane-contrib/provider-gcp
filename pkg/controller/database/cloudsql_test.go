@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -493,7 +494,7 @@ func TestCreate(t *testing.T) {
 			},
 			want: want{
 				mg:  instance(withConditions(runtimev1alpha1.Creating())),
-				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateFailed),
+				err: errors.Wrap(gError(http.StatusConflict, ""), fmt.Sprintf(errNameInUse, instance().Name)),
 			},
 		},
 		"Failed": {
