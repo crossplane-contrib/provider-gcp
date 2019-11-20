@@ -109,7 +109,8 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureBucket),
-			resource.NewObjectMetaConfigurator(mgr.GetScheme()),
+			resource.ManagedConfiguratorFn(resource.ConfigureReclaimPolicy),
+			resource.ManagedConfiguratorFn(resource.ConfigureNames),
 		))
 
 	return ctrl.NewControllerManagedBy(mgr).
