@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -494,7 +493,7 @@ func TestCreate(t *testing.T) {
 			},
 			want: want{
 				mg:  instance(withConditions(runtimev1alpha1.Creating())),
-				err: errors.Wrap(gError(http.StatusConflict, ""), fmt.Sprintf(errNameInUse, instance().Name)),
+				err: errors.Wrap(gError(http.StatusConflict, ""), errNameInUse),
 			},
 		},
 		"Failed": {
@@ -552,6 +551,7 @@ func TestCreate(t *testing.T) {
 				}
 
 				if bv == wantRandom {
+					return len(av) > 0
 					return len(av) > 0
 				}
 

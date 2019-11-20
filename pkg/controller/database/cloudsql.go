@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	googleapi "google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	v1 "k8s.io/api/core/v1"
@@ -50,7 +49,7 @@ const (
 
 	errNewClient        = "cannot create new Sqladmin Service"
 	errCreateFailed     = "cannot create new CloudSQL instance"
-	errNameInUse        = "cannot create new CloudSQL instance, the name %s is unavailable because it is in use or was used recently"
+	errNameInUse        = "cannot create new CloudSQL instance, resource name is unavailable because it is in use or was used recently"
 	errDeleteFailed     = "cannot delete the CloudSQL instance"
 	errUpdateFailed     = "cannot update the CloudSQL instance"
 	errGetFailed        = "cannot get the CloudSQL instance"
@@ -163,8 +162,8 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 	if _, err := c.db.Insert(c.projectID, instance).Context(ctx).Do(); err != nil {
 		// We don't want to return (and thus publish) our randomly generated
 		// password if we didn't actually successfully create a new instance.
-		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 409 {
-			return resource.ExternalCreation{}, errors.Wrapf(err, errNameInUse, instance.Name)
+		if gcp.IsErrorAlreadyExists(err) {
+			return resource.ExternalCreation{}, errors.Wrap(err, errNameInUse)
 		}
 		return resource.ExternalCreation{}, errors.Wrap(err, errCreateFailed)
 	}
