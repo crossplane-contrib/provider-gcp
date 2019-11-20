@@ -552,7 +552,6 @@ func TestCreate(t *testing.T) {
 
 				if bv == wantRandom {
 					return len(av) > 0
-					return len(av) > 0
 				}
 
 				return cmp.Equal(a, b)
