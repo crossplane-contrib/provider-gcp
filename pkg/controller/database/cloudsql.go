@@ -49,6 +49,7 @@ const (
 
 	errNewClient        = "cannot create new Sqladmin Service"
 	errCreateFailed     = "cannot create new CloudSQL instance"
+	errNameInUse        = "cannot create new CloudSQL instance, resource name is unavailable because it is in use or was used recently"
 	errDeleteFailed     = "cannot delete the CloudSQL instance"
 	errUpdateFailed     = "cannot update the CloudSQL instance"
 	errGetFailed        = "cannot get the CloudSQL instance"
@@ -161,6 +162,9 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 	if _, err := c.db.Insert(c.projectID, instance).Context(ctx).Do(); err != nil {
 		// We don't want to return (and thus publish) our randomly generated
 		// password if we didn't actually successfully create a new instance.
+		if gcp.IsErrorAlreadyExists(err) {
+			return resource.ExternalCreation{}, errors.Wrap(err, errNameInUse)
+		}
 		return resource.ExternalCreation{}, errors.Wrap(err, errCreateFailed)
 	}
 
