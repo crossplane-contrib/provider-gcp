@@ -30,15 +30,6 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-const (
-	// DefaultScope used by the GKE API.
-	DefaultScope = container.CloudPlatformScope
-
-	// TODO(negz): Is this username special? I can't see any ClusterRoleBindings
-	// that bind it to a role.
-	adminUser = "admin"
-)
-
 // GenerateCluster generates *container.Cluster instance from GKEClusterParameters.
 func GenerateCluster(in v1beta1.GKEClusterParameters) *container.Cluster { // nolint:gocyclo
 	cluster := &container.Cluster{
@@ -856,6 +847,7 @@ func NewWorkloadIdentityConfigUpdate(name string, in *v1beta1.WorkloadIdentityCo
 func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateFn) {
 	currentParams := &v1beta1.GKEClusterParameters{}
 	LateInitializeSpec(currentParams, currentState)
+	// TODO(hasheddan): fix "fullname" params below
 	if !cmp.Equal(in.AddonsConfig, currentParams.AddonsConfig) {
 		return false, NewAddonsConfigUpdate("fullname", in.AddonsConfig)
 	}
