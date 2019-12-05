@@ -20,7 +20,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/crossplaneio/stack-gcp/pkg/controller/cache"
-	"github.com/crossplaneio/stack-gcp/pkg/controller/compute"
+	computev1alpha3 "github.com/crossplaneio/stack-gcp/pkg/controller/compute/v1alpha3"
+	computev1beta1 "github.com/crossplaneio/stack-gcp/pkg/controller/compute/v1beta1"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/database"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/storage"
@@ -39,13 +40,17 @@ func (c *Controllers) SetupWithManager(mgr ctrl.Manager) error {
 		&cache.CloudMemorystoreInstanceClaimDefaultingController{},
 		&cache.CloudMemorystoreInstanceClaimController{},
 		&cache.CloudMemorystoreInstanceController{},
-		&compute.GlobalAddressController{},
-		&compute.GKEClusterClaimSchedulingController{},
-		&compute.GKEClusterClaimDefaultingController{},
-		&compute.GKEClusterClaimController{},
-		&compute.GKEClusterController{},
-		&compute.NetworkController{},
-		&compute.SubnetworkController{},
+		&computev1beta1.GKEClusterClaimSchedulingController{},
+		&computev1beta1.GKEClusterClaimDefaultingController{},
+		&computev1beta1.GKEClusterClaimController{},
+		&computev1beta1.GKEClusterController{},
+		&computev1alpha3.GlobalAddressController{},
+		&computev1alpha3.GKEClusterClaimSchedulingController{},
+		&computev1alpha3.GKEClusterClaimDefaultingController{},
+		&computev1alpha3.GKEClusterClaimController{},
+		&computev1alpha3.GKEClusterController{},
+		&computev1alpha3.NetworkController{},
+		&computev1alpha3.SubnetworkController{},
 		&database.PostgreSQLInstanceClaimSchedulingController{},
 		&database.PostgreSQLInstanceClaimDefaultingController{},
 		&database.PostgreSQLInstanceClaimController{},
