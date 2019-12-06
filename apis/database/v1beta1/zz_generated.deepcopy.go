@@ -151,7 +151,7 @@ func (in *CloudSQLInstanceClass) DeepCopyObject() runtime.Object {
 func (in *CloudSQLInstanceClassList) DeepCopyInto(out *CloudSQLInstanceClassList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]CloudSQLInstanceClass, len(*in))
@@ -200,7 +200,7 @@ func (in *CloudSQLInstanceClassSpecTemplate) DeepCopy() *CloudSQLInstanceClassSp
 func (in *CloudSQLInstanceList) DeepCopyInto(out *CloudSQLInstanceList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]CloudSQLInstance, len(*in))

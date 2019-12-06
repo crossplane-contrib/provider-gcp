@@ -81,7 +81,7 @@ func (in *CloudMemorystoreInstanceClass) DeepCopyObject() runtime.Object {
 func (in *CloudMemorystoreInstanceClassList) DeepCopyInto(out *CloudMemorystoreInstanceClassList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]CloudMemorystoreInstanceClass, len(*in))
@@ -130,7 +130,7 @@ func (in *CloudMemorystoreInstanceClassSpecTemplate) DeepCopy() *CloudMemorystor
 func (in *CloudMemorystoreInstanceList) DeepCopyInto(out *CloudMemorystoreInstanceList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]CloudMemorystoreInstance, len(*in))
