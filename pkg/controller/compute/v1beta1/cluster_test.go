@@ -16,4 +16,8 @@ limitations under the License.
 
 package v1beta1
 
+import "github.com/crossplaneio/crossplane-runtime/pkg/resource"
+
 // TODO(hasheddan): implement managed reconciler tests
+var _ resource.ExternalConnecter = &clusterConnector{}
+var _ resource.ExternalClient = &clusterExternal{}

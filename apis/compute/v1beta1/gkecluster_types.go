@@ -135,11 +135,7 @@ type GKEClusterObservation struct {
 	// [region](/compute/docs/regions-zones/regions-zones#available) in
 	// which
 	// the cluster resides.
-	Location string `json:"location,omitempty"`
-
-	// NetworkConfig: Configuration for cluster networking.
-	// NOTE(hasheddan): included in status because all embedded fields are output only
-	NetworkConfig *NetworkConfig `json:"networkConfig,omitempty"`
+	Location string `json:"location"`
 
 	// NodeIpv4CidrSize: [Output only] The size of the address space on each
 	// node for hosting
@@ -149,6 +145,16 @@ type GKEClusterObservation struct {
 	// network
 	// mode.
 	NodeIpv4CidrSize int64 `json:"nodeIpv4CidrSize,omitempty"`
+
+	// NodePools: The node pools associated with this cluster.
+	// This field should not be set if "node_config" or "initial_node_count"
+	// are
+	// specified.
+	// NOTE(hasheddan): node pools are modelled in status only because
+	// management of node pools is handled by the stack-gcp NodePool object.
+	// TODO(hasheddan): determine if we want to reflect node pools in the
+	// cluster status.
+	// NodePools []*NodePoolClusterStatus `json:"nodePools,omitempty"`
 
 	// SelfLink: [Output only] Server-defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
@@ -315,6 +321,21 @@ type GKEClusterParameters struct {
 	// +optional
 	LegacyAbac *LegacyAbac `json:"legacyAbac,omitempty"`
 
+	// Location: [Output only] The name of the Google Compute
+	// Engine
+	// [zone](/compute/docs/regions-zones/regions-zones#available)
+	// or
+	// [region](/compute/docs/regions-zones/regions-zones#available) in
+	// which
+	// the cluster resides.
+	// NOTE(hasheddan): this is labelled as Output Only by GCP but is required
+	// to create a cluster. It is not included in the actual cluster object
+	// itself, but is instead passed to the create call. If a region is given
+	// the cluster will be Regional, if a zone is given the cluster will be
+	// Zonal.
+	// +immutable
+	Location string `json:"location"`
+
 	// Locations: The list of Google Compute
 	// Engine
 	// [zones](/compute/docs/zones#available) in which the cluster's
@@ -397,6 +418,12 @@ type GKEClusterParameters struct {
 	// +optional
 	// +immutable
 	NetworkRef *NetworkURIReferencerForGKECluster `json:"networkRef,omitempty" resource:"attributereferencer"`
+
+	// NetworkConfig: Configuration for cluster networking.
+	// NOTE(hasheddan): only intranode visibility can be updated here
+	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/ClusterUpdate?authuser=1#IntraNodeVisibilityConfig
+	// +optional
+	NetworkConfig *NetworkConfig `json:"networkConfig,omitempty"`
 
 	// NetworkPolicy: Configuration options for the NetworkPolicy feature.
 	// NOTE(hasheddan): this can only be updated via setNetworkPolicy
@@ -971,6 +998,7 @@ type MasterAuthorizedNetworksConfig struct {
 	// CidrBlocks: cidr_blocks define up to 50 external networks that could
 	// access
 	// Kubernetes master through HTTPS.
+	// +optional
 	CidrBlocks []*CidrBlock `json:"cidrBlocks,omitempty"`
 
 	// Enabled: Whether or not master authorized networks is enabled.
@@ -992,12 +1020,18 @@ type CidrBlock struct {
 // NetworkConfig reports the relative names of network &
 // subnetwork.
 type NetworkConfig struct {
+	// EnableIntraNodeVisibility: Whether Intra-node visibility is enabled
+	// for this cluster.
+	// This makes same node pod to pod traffic visible for VPC network.
+	EnableIntraNodeVisibility bool `json:"enableIntraNodeVisibility"`
+
 	// Network: Output only. The relative name of the Google Compute
 	// Engine
 	// network(/compute/docs/networks-and-firewalls#networks) to which
 	// the cluster is connected.
 	// Example: projects/my-project/global/networks/my-network
-	Network string `json:"network,omitempty"`
+	// Network string `json:"network,omitempty"`
+	// TODO(hasheddan): move to status
 
 	// Subnetwork: Output only. The relative name of the Google Compute
 	// Engine
@@ -1005,7 +1039,8 @@ type NetworkConfig struct {
 	// connected.
 	// Example:
 	// projects/my-project/regions/us-central1/subnetworks/my-subnet
-	Subnetwork string `json:"subnetwork,omitempty"`
+	// Subnetwork string `json:"subnetwork,omitempty"`
+	// TODO(hasheddan): move to status
 }
 
 // NetworkPolicy is configuration options for the NetworkPolicy

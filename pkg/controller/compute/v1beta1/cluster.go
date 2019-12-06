@@ -60,21 +60,24 @@ const (
 
 // Error strings.
 const (
-	errGetProvider         = "cannot get Provider"
-	errGetProviderSecret   = "cannot get Provider Secret"
-	errNewClient           = "cannot create new GKE cluster client"
-	errManagedUpdateFailed = "cannot update GKECluster custom resource"
-	errNotCluster          = "managed resource is not a GKECluster"
-	errUpdateCR            = "cannot update GKECluster custom resource"
-	errGetCluster          = "cannot get GKE cluster"
-	errCreateCluster       = "cannot create GKE cluster"
-	errUpdateCluster       = "cannot update GKE cluster"
-	errDeleteCluster       = "cannot delete GKE cluster"
+	errGetProvider             = "cannot get Provider"
+	errGetProviderSecret       = "cannot get Provider Secret"
+	errNewClient               = "cannot create new GKE cluster client"
+	errManagedUpdateFailed     = "cannot update GKECluster custom resource"
+	errNotCluster              = "managed resource is not a GKECluster"
+	errUpdateCR                = "cannot update GKECluster custom resource"
+	errGetCluster              = "cannot get GKE cluster"
+	errCreateCluster           = "cannot create GKE cluster"
+	errUpdateCluster           = "cannot update GKE cluster"
+	errDeleteCluster           = "cannot delete GKE cluster"
+	errDeleteBootstrapNodePool = "cannot delete bootstrap node pool"
 )
 
 // Amounts of time we wait before requeuing a reconcile.
 const (
-	aLongWait = 60 * time.Second
+	aLongWait         = 60 * time.Second
+	parentFormat      = "projects/%s/locations/%s"
+	clusterNameFormat = "projects/%s/locations/%s/clusters/%s"
 )
 
 // Error strings
@@ -98,7 +101,8 @@ type GKEClusterController struct{}
 func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewManagedReconciler(mgr,
 		resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind),
-		resource.WithExternalConnecter(&gkeConnecter{kube: mgr.GetClient(), newServiceFn: container.NewService}))
+		resource.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}),
+		resource.WithManagedInitializers())
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.GKEClusterKindAPIVersion, v1beta1.Group))
 
@@ -108,12 +112,12 @@ func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-type gkeConnecter struct {
+type clusterConnector struct {
 	kube         client.Client
 	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*container.Service, error)
 }
 
-func (c *gkeConnecter) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
 	i, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return nil, errors.New(errNotCluster)
@@ -133,16 +137,16 @@ func (c *gkeConnecter) Connect(ctx context.Context, mg resource.Managed) (resour
 	gke, err := c.newServiceFn(ctx,
 		option.WithCredentialsJSON(s.Data[p.Spec.Secret.Key]),
 		option.WithScopes(container.CloudPlatformScope))
-	return &external{cluster: *gke, projectID: p.Spec.ProjectID, kube: c.kube}, errors.Wrap(err, errNewClient)
+	return &clusterExternal{cluster: *gke, projectID: p.Spec.ProjectID, kube: c.kube}, errors.Wrap(err, errNewClient)
 }
 
-type external struct {
+type clusterExternal struct {
 	kube      client.Client
 	cluster   container.Service
 	projectID string
 }
 
-func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
 	cr, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotCluster)
@@ -161,6 +165,22 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 		}
 	}
+
+	// If boostrap node pool is present then we want to delete it.
+	for _, pool := range existing.NodePools {
+		if pool != nil {
+			if pool.Name == gke.BootstrapNodePoolName {
+				boostrapNP := strings.Join([]string{meta.GetExternalName(mg), gke.BootstrapNodePoolName}, "/")
+				_, err = e.cluster.Projects.Locations.Clusters.NodePools.Delete(boostrapNP).Context(ctx).Do()
+				if err != nil {
+					// If we fail to delete bootstrap node pool we will be requeued implicitly.
+					return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteBootstrapNodePool)
+				}
+				break
+			}
+		}
+	}
+
 	switch cr.Status.AtProvider.Status {
 	case v1beta1.ClusterStateRunning:
 		cr.Status.SetConditions(v1alpha1.Available())
@@ -180,25 +200,36 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 	}, nil
 }
 
-func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
 	i, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotCluster)
 	}
 
+	// Generate GKE cluster from resource spec.
 	cluster := gke.GenerateCluster(i.Spec.ForProvider)
+
+	// Insert default node pool for bootstrapping cluster.
+	gke.GenerateNodePoolForCreate(cluster)
+
 	create := &container.CreateClusterRequest{
 		Cluster: cluster,
 	}
-	if _, err := e.cluster.Projects.Locations.Clusters.Create("TODO", create).Context(ctx).Do(); err != nil {
+
+	parent := fmt.Sprintf(parentFormat, e.projectID, i.Spec.ForProvider.Location)
+
+	if _, err := e.cluster.Projects.Locations.Clusters.Create(parent, create).Context(ctx).Do(); err != nil {
 		return resource.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
 	}
+
+	clusterName := fmt.Sprintf(clusterNameFormat, e.projectID, i.Spec.ForProvider.Location, i.Spec.ForProvider.Name)
+	meta.SetExternalName(i, clusterName)
 
 	// TODO(hasheddan): go ahead and propagate username / password here if set in spec?
 	return resource.ExternalCreation{}, nil
 }
 
-func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
 	i, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotCluster)
@@ -215,11 +246,11 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.Ex
 		return resource.ExternalUpdate{}, nil
 	}
 
-	_, err = updateFn(e.cluster, ctx)
+	_, err = updateFn(e.cluster, ctx, meta.GetExternalName(mg))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateCluster)
 }
 
-func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error {
 	i, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return errors.New(errNotCluster)
