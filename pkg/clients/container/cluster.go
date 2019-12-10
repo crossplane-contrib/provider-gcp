@@ -22,12 +22,12 @@ import (
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
+	container "google.golang.org/api/container/v1beta1"
 	gke "google.golang.org/api/container/v1beta1"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
-	container "google.golang.org/api/container/v1beta1"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -39,12 +39,11 @@ const (
 // GenerateNodePoolForCreate inserts the default node pool into
 // *container.Cluster so that it can be provisioned successfully.
 func GenerateNodePoolForCreate(in *container.Cluster) {
-	in.NodePools = []*container.NodePool{
-		&container.NodePool{
-			Name:             BootstrapNodePoolName,
-			InitialNodeCount: 0,
-		},
+	pool := &container.NodePool{
+		Name:             BootstrapNodePoolName,
+		InitialNodeCount: 0,
 	}
+	in.NodePools = []*container.NodePool{pool}
 }
 
 // GenerateCluster generates *container.Cluster instance from GKEClusterParameters.
@@ -235,7 +234,7 @@ func GenerateLegacyAbac(in *v1beta1.LegacyAbac, cluster *container.Cluster) {
 }
 
 // GenerateMaintenancePolicy generates *container.MaintenancePolicy from *MaintenancePolicy.
-func GenerateMaintenancePolicy(in *v1beta1.MaintenancePolicy, cluster *container.Cluster) {
+func GenerateMaintenancePolicy(in *v1beta1.MaintenancePolicySpec, cluster *container.Cluster) {
 	if in != nil {
 		out := &container.MaintenancePolicy{
 			Window: &container.MaintenanceWindow{
@@ -288,7 +287,7 @@ func GenerateMasterAuthorizedNetworksConfig(in *v1beta1.MasterAuthorizedNetworks
 }
 
 // GenerateNetworkConfig generates *container.NetworkConfig from *NetworkConfig.
-func GenerateNetworkConfig(in *v1beta1.NetworkConfig, cluster *container.Cluster) {
+func GenerateNetworkConfig(in *v1beta1.NetworkConfigSpec, cluster *container.Cluster) {
 	if in != nil {
 		out := &container.NetworkConfig{
 			EnableIntraNodeVisibility: in.EnableIntraNodeVisibility,
@@ -322,7 +321,7 @@ func GeneratePodSecurityPolicyConfig(in *v1beta1.PodSecurityPolicyConfig, cluste
 }
 
 // GeneratePrivateClusterConfig generates *container.PrivateClusterConfig from *PrivateClusterConfig.
-func GeneratePrivateClusterConfig(in *v1beta1.PrivateClusterConfig, cluster *container.Cluster) {
+func GeneratePrivateClusterConfig(in *v1beta1.PrivateClusterConfigSpec, cluster *container.Cluster) {
 	if in != nil {
 		out := &container.PrivateClusterConfig{
 			EnablePeeringRouteSharing: gcp.BoolValue(in.EnablePeeringRouteSharing),
@@ -408,6 +407,34 @@ func GenerateObservation(in container.Cluster) v1beta1.GKEClusterObservation { /
 		StatusMessage:        in.StatusMessage,
 		TpuIpv4CidrBlock:     in.TpuIpv4CidrBlock,
 		Zone:                 in.Zone,
+	}
+
+	if in.MaintenancePolicy != nil {
+		if in.MaintenancePolicy.Window != nil {
+			if in.MaintenancePolicy.Window.DailyMaintenanceWindow != nil {
+				o.MaintenancePolicy = &v1beta1.MaintenancePolicyStatus{
+					Window: v1beta1.MaintenanceWindowStatus{
+						DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindowStatus{
+							Duration: in.MaintenancePolicy.Window.DailyMaintenanceWindow.Duration,
+						},
+					},
+				}
+			}
+		}
+	}
+
+	if in.NetworkConfig != nil {
+		o.NetworkConfig = &v1beta1.NetworkConfigStatus{
+			Network:    in.NetworkConfig.Network,
+			Subnetwork: in.NetworkConfig.Subnetwork,
+		}
+	}
+
+	if in.PrivateClusterConfig != nil {
+		o.PrivateClusterConfig = &v1beta1.PrivateClusterConfigStatus{
+			PrivateEndpoint: in.PrivateClusterConfig.PrivateEndpoint,
+			PublicEndpoint:  in.PrivateClusterConfig.PublicEndpoint,
+		}
 	}
 
 	for _, condition := range in.Conditions {
@@ -554,9 +581,9 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 	if spec.MaintenancePolicy == nil && in.MaintenancePolicy != nil {
 		if in.MaintenancePolicy.Window != nil {
 			if in.MaintenancePolicy.Window.DailyMaintenanceWindow != nil {
-				spec.MaintenancePolicy = &v1beta1.MaintenancePolicy{
-					Window: v1beta1.MaintenanceWindow{
-						DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindow{
+				spec.MaintenancePolicy = &v1beta1.MaintenancePolicySpec{
+					Window: v1beta1.MaintenanceWindowSpec{
+						DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindowSpec{
 							StartTime: in.MaintenancePolicy.Window.DailyMaintenanceWindow.StartTime,
 						},
 					},
@@ -598,7 +625,7 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 	spec.Network = gcp.LateInitializeString(spec.Network, in.Network)
 
 	if spec.NetworkConfig == nil && in.NetworkConfig != nil {
-		spec.NetworkConfig = &v1beta1.NetworkConfig{
+		spec.NetworkConfig = &v1beta1.NetworkConfigSpec{
 			EnableIntraNodeVisibility: in.NetworkConfig.EnableIntraNodeVisibility,
 		}
 	}
@@ -619,7 +646,7 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 
 	if in.PrivateClusterConfig != nil {
 		if spec.PrivateClusterConfig == nil {
-			spec.PrivateClusterConfig = &v1beta1.PrivateClusterConfig{}
+			spec.PrivateClusterConfig = &v1beta1.PrivateClusterConfigSpec{}
 		}
 		spec.PrivateClusterConfig.EnablePeeringRouteSharing = gcp.LateInitializeBool(spec.PrivateClusterConfig.EnablePeeringRouteSharing, in.PrivateClusterConfig.EnablePeeringRouteSharing)
 		spec.PrivateClusterConfig.EnablePrivateEndpoint = gcp.LateInitializeBool(spec.PrivateClusterConfig.EnablePrivateEndpoint, in.PrivateClusterConfig.EnablePrivateEndpoint)
@@ -764,7 +791,7 @@ func NewLoggingServiceUpdate(in *string) UpdateFn {
 }
 
 // NewMaintenancePolicyUpdate returns a function that updates the MaintenancePolicy of a cluster.
-func NewMaintenancePolicyUpdate(in *v1beta1.MaintenancePolicy) UpdateFn {
+func NewMaintenancePolicyUpdate(in *v1beta1.MaintenancePolicySpec) UpdateFn {
 	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateMaintenancePolicy(in, out)
@@ -814,7 +841,7 @@ func NewMonitoringServiceUpdate(in *string) UpdateFn {
 }
 
 // NewNetworkConfigUpdate returns a function that updates the NetworkConfig of a cluster.
-func NewNetworkConfigUpdate(in *v1beta1.NetworkConfig) UpdateFn {
+func NewNetworkConfigUpdate(in *v1beta1.NetworkConfigSpec) UpdateFn {
 	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateNetworkConfig(in, out)
@@ -856,7 +883,7 @@ func NewPodSecurityPolicyConfigUpdate(in *v1beta1.PodSecurityPolicyConfig) Updat
 }
 
 // NewPrivateClusterConfigUpdate returns a function that updates the PrivateClusterConfig of a cluster.
-func NewPrivateClusterConfigUpdate(in *v1beta1.PrivateClusterConfig) UpdateFn {
+func NewPrivateClusterConfigUpdate(in *v1beta1.PrivateClusterConfigSpec) UpdateFn {
 	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GeneratePrivateClusterConfig(in, out)
@@ -922,8 +949,8 @@ func NewWorkloadIdentityConfigUpdate(in *v1beta1.WorkloadIdentityConfig) UpdateF
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
-// set of parameters.
-func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateFn) {
+// set of parameters
+func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateFn) { // nolint:gocyclo
 	currentParams := &v1beta1.GKEClusterParameters{}
 	LateInitializeSpec(currentParams, currentState)
 	if !cmp.Equal(in.AddonsConfig, currentParams.AddonsConfig) {

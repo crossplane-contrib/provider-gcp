@@ -19,10 +19,10 @@ package v1beta1
 import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 	"github.com/pkg/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
 
 // Cluster states.
@@ -137,6 +137,12 @@ type GKEClusterObservation struct {
 	// the cluster resides.
 	Location string `json:"location"`
 
+	// MaintenancePolicy: Configure the maintenance policy for this cluster.
+	MaintenancePolicy *MaintenancePolicyStatus `json:"maintenancePolicy,omitempty"`
+
+	// NetworkConfig: Configuration for cluster networking.
+	NetworkConfig *NetworkConfigStatus `json:"networkConfig,omitempty"`
+
 	// NodeIpv4CidrSize: [Output only] The size of the address space on each
 	// node for hosting
 	// containers. This is provisioned from within the
@@ -145,6 +151,9 @@ type GKEClusterObservation struct {
 	// network
 	// mode.
 	NodeIpv4CidrSize int64 `json:"nodeIpv4CidrSize,omitempty"`
+
+	// PrivateClusterConfig: Configuration for private cluster.
+	PrivateClusterConfig *PrivateClusterConfigStatus `json:"privateClusterConfig,omitempty"`
 
 	// NodePools: The node pools associated with this cluster.
 	// This field should not be set if "node_config" or "initial_node_count"
@@ -361,7 +370,7 @@ type GKEClusterParameters struct {
 	// NOTE(hasheddan): this can only be updated via setMaintenancePolicy
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters/setMaintenancePolicy
 	// +optional
-	MaintenancePolicy *MaintenancePolicy `json:"maintenancePolicy,omitempty"`
+	MaintenancePolicy *MaintenancePolicySpec `json:"maintenancePolicy,omitempty"`
 
 	// MasterAuth: The authentication information for accessing the master
 	// endpoint.
@@ -423,7 +432,7 @@ type GKEClusterParameters struct {
 	// NOTE(hasheddan): only intranode visibility can be updated here
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/ClusterUpdate?authuser=1#IntraNodeVisibilityConfig
 	// +optional
-	NetworkConfig *NetworkConfig `json:"networkConfig,omitempty"`
+	NetworkConfig *NetworkConfigSpec `json:"networkConfig,omitempty"`
 
 	// NetworkPolicy: Configuration options for the NetworkPolicy feature.
 	// NOTE(hasheddan): this can only be updated via setNetworkPolicy
@@ -438,7 +447,7 @@ type GKEClusterParameters struct {
 
 	// PrivateClusterConfig: Configuration for private cluster.
 	// +optional
-	PrivateClusterConfig *PrivateClusterConfig `json:"privateClusterConfig,omitempty"`
+	PrivateClusterConfig *PrivateClusterConfigSpec `json:"privateClusterConfig,omitempty"`
 
 	// ResourceLabels: The resource labels for the cluster to use to
 	// annotate any related
@@ -895,34 +904,25 @@ type LegacyAbac struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-// MaintenancePolicy defines the maintenance policy
+// MaintenancePolicySpec defines the maintenance policy
 // to be used for the cluster.
-type MaintenancePolicy struct {
+type MaintenancePolicySpec struct {
 	// Window: Specifies the maintenance window in which maintenance may be
 	// performed.
-	Window MaintenanceWindow `json:"window"`
+	Window MaintenanceWindowSpec `json:"window"`
 }
 
-// MaintenanceWindow defines the maintenance window
+// MaintenanceWindowSpec defines the maintenance window
 // to be used for the cluster.
-type MaintenanceWindow struct {
+type MaintenanceWindowSpec struct {
 	// DailyMaintenanceWindow: DailyMaintenanceWindow specifies a daily
 	// maintenance operation window.
-	DailyMaintenanceWindow DailyMaintenanceWindow `json:"dailyMaintenanceWindow"`
+	DailyMaintenanceWindow DailyMaintenanceWindowSpec `json:"dailyMaintenanceWindow"`
 }
 
-// DailyMaintenanceWindow is the time window specified for daily maintenance
+// DailyMaintenanceWindowSpec is the time window specified for daily maintenance
 // operations.
-type DailyMaintenanceWindow struct {
-	// Duration: [Output only] Duration of the time window, automatically
-	// chosen to be
-	// smallest possible in the given scenario.
-	// Duration will be in
-	// [RFC3339](https://www.ietf.org/rfc/rfc3339.txt)
-	// format "PTnHnMnS".
-	// Duration string `json:"duration,omitempty"`
-	// TODO(hasheddan): move to status
-
+type DailyMaintenanceWindowSpec struct {
 	// StartTime: Time within the maintenance window to start the
 	// maintenance operations.
 	// Time format should be in
@@ -931,16 +931,41 @@ type DailyMaintenanceWindow struct {
 	StartTime string `json:"startTime"`
 }
 
+// MaintenancePolicyStatus defines the maintenance policy
+// to be used for the cluster.
+type MaintenancePolicyStatus struct {
+	// Window: Specifies the maintenance window in which maintenance may be
+	// performed.
+	Window MaintenanceWindowStatus `json:"window"`
+}
+
+// MaintenanceWindowStatus defines the maintenance window
+// to be used for the cluster.
+type MaintenanceWindowStatus struct {
+	// DailyMaintenanceWindow: DailyMaintenanceWindow specifies a daily
+	// maintenance operation window.
+	DailyMaintenanceWindow DailyMaintenanceWindowStatus `json:"dailyMaintenanceWindow"`
+}
+
+// DailyMaintenanceWindowStatus is the observed time window for daily
+// maintenance operations.
+type DailyMaintenanceWindowStatus struct {
+	// Duration: [Output only] Duration of the time window, automatically
+	// chosen to be
+	// smallest possible in the given scenario.
+	// Duration will be in
+	// [RFC3339](https://www.ietf.org/rfc/rfc3339.txt)
+	// format "PTnHnMnS".
+	Duration string `json:"duration,omitempty"`
+}
+
 // MasterAuth is the authentication information for accessing the master endpoint.
 // Authentication can be done using HTTP basic auth or using client
 // certificates.
+// NOTE(hasheddan): cluster auth information that is not configurable is not
+// reflected in the observed status of a GKECluster, but is used to generate its
+// connection secret.
 type MasterAuth struct {
-	// ClientCertificate: [Output only] Base64-encoded public certificate
-	// used by clients to
-	// authenticate to the cluster endpoint.
-	// ClientCertificate string `json:"clientCertificate,omitempty"`
-	// TODO(hasheddan): move to status
-
 	// ClientCertificateConfig: Configuration for client certificate
 	// authentication on the cluster. For
 	// clusters before v1.12, if no configuration is specified, a
@@ -948,18 +973,6 @@ type MasterAuth struct {
 	// certificate is issued.
 	// +optional
 	ClientCertificateConfig *ClientCertificateConfig `json:"clientCertificateConfig,omitempty"`
-
-	// ClientKey: [Output only] Base64-encoded private key used by clients
-	// to authenticate
-	// to the cluster endpoint.
-	// ClientKey string `json:"clientKey,omitempty"`
-	// TODO(hasheddan): move to status
-
-	// ClusterCaCertificate: [Output only] Base64-encoded public certificate
-	// that is the root of
-	// trust for the cluster.
-	// ClusterCaCertificate string `json:"clusterCaCertificate,omitempty"`
-	// TODO(hasheddan): move to status
 
 	// Password: The password to use for HTTP basic authentication to the
 	// master endpoint.
@@ -1017,21 +1030,24 @@ type CidrBlock struct {
 	DisplayName *string `json:"displayName,omitempty"`
 }
 
-// NetworkConfig reports the relative names of network &
+// NetworkConfigSpec reports the relative names of network &
 // subnetwork.
-type NetworkConfig struct {
+type NetworkConfigSpec struct {
 	// EnableIntraNodeVisibility: Whether Intra-node visibility is enabled
 	// for this cluster.
 	// This makes same node pod to pod traffic visible for VPC network.
 	EnableIntraNodeVisibility bool `json:"enableIntraNodeVisibility"`
+}
 
+// NetworkConfigStatus reports the relative names of network &
+// subnetwork.
+type NetworkConfigStatus struct {
 	// Network: Output only. The relative name of the Google Compute
 	// Engine
 	// network(/compute/docs/networks-and-firewalls#networks) to which
 	// the cluster is connected.
 	// Example: projects/my-project/global/networks/my-network
-	// Network string `json:"network,omitempty"`
-	// TODO(hasheddan): move to status
+	Network string `json:"network,omitempty"`
 
 	// Subnetwork: Output only. The relative name of the Google Compute
 	// Engine
@@ -1039,8 +1055,7 @@ type NetworkConfig struct {
 	// connected.
 	// Example:
 	// projects/my-project/regions/us-central1/subnetworks/my-subnet
-	// Subnetwork string `json:"subnetwork,omitempty"`
-	// TODO(hasheddan): move to status
+	Subnetwork string `json:"subnetwork,omitempty"`
 }
 
 // NetworkPolicy is configuration options for the NetworkPolicy
@@ -1070,8 +1085,8 @@ type PodSecurityPolicyConfig struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-// PrivateClusterConfig is configuration options for private clusters.
-type PrivateClusterConfig struct {
+// PrivateClusterConfigSpec is configuration options for private clusters.
+type PrivateClusterConfigSpec struct {
 	// EnablePeeringRouteSharing: Whether to enable route sharing over the
 	// network peering.
 	EnablePeeringRouteSharing *bool `json:"enablePeeringRouteSharing,omitempty"`
@@ -1098,16 +1113,17 @@ type PrivateClusterConfig struct {
 	// any other ranges in use within the cluster's network.
 	// +optional
 	MasterIpv4CidrBlock *string `json:"masterIpv4CidrBlock,omitempty"`
+}
 
+// PrivateClusterConfigStatus is configuration options for private clusters.
+type PrivateClusterConfigStatus struct {
 	// PrivateEndpoint: Output only. The internal IP address of this
 	// cluster's master endpoint.
-	// PrivateEndpoint string `json:"privateEndpoint,omitempty"`
-	// TODO(hasheddan): move to status
+	PrivateEndpoint string `json:"privateEndpoint,omitempty"`
 
 	// PublicEndpoint: Output only. The external IP address of this
 	// cluster's master endpoint.
-	// PublicEndpoint string `json:"publicEndpoint,omitempty"`
-	// TODO(hasheddan): move to status
+	PublicEndpoint string `json:"publicEndpoint,omitempty"`
 }
 
 // ResourceUsageExportConfig is configuration for exporting cluster

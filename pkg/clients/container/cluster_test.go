@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	container "google.golang.org/api/container/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
@@ -109,6 +109,24 @@ func observation(m ...func(*v1beta1.GKEClusterObservation)) *v1beta1.GKEClusterO
 		StatusMessage:        "I am running.",
 		TpuIpv4CidrBlock:     "0.0.0.0/0",
 		Zone:                 "us-central1-a",
+
+		MaintenancePolicy: &v1beta1.MaintenancePolicyStatus{
+			Window: v1beta1.MaintenanceWindowStatus{
+				DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindowStatus{
+					Duration: "1h",
+				},
+			},
+		},
+
+		NetworkConfig: &v1beta1.NetworkConfigStatus{
+			Network:    "my-cool-network",
+			Subnetwork: "my-cool-subnetwork",
+		},
+
+		PrivateClusterConfig: &v1beta1.PrivateClusterConfigStatus{
+			PrivateEndpoint: "12.12.12.12",
+			PublicEndpoint:  "12.12.12.12",
+		},
 	}
 
 	for _, f := range m {
@@ -138,6 +156,24 @@ func addOutputFields(c *container.Cluster) {
 	c.StatusMessage = "I am running."
 	c.TpuIpv4CidrBlock = "0.0.0.0/0"
 	c.Zone = "us-central1-a"
+
+	c.MaintenancePolicy = &container.MaintenancePolicy{
+		Window: &container.MaintenanceWindow{
+			DailyMaintenanceWindow: &container.DailyMaintenanceWindow{
+				Duration: "1h",
+			},
+		},
+	}
+
+	c.NetworkConfig = &container.NetworkConfig{
+		Network:    "my-cool-network",
+		Subnetwork: "my-cool-subnetwork",
+	}
+
+	c.PrivateClusterConfig = &container.PrivateClusterConfig{
+		PrivateEndpoint: "12.12.12.12",
+		PublicEndpoint:  "12.12.12.12",
+	}
 }
 
 func TestGenerateObservation(t *testing.T) {
@@ -227,6 +263,10 @@ func TestGenerateCluster(t *testing.T) {
 }
 
 func TestGenerateNodePoolForCreate(t *testing.T) {
+	pool := &container.NodePool{
+		Name:             BootstrapNodePoolName,
+		InitialNodeCount: 0,
+	}
 	tests := []struct {
 		name string
 		args *container.Cluster
@@ -236,12 +276,7 @@ func TestGenerateNodePoolForCreate(t *testing.T) {
 			name: "Successful",
 			args: cluster(),
 			want: cluster(func(c *container.Cluster) {
-				c.NodePools = []*container.NodePool{
-					&container.NodePool{
-						Name:             BootstrapNodePoolName,
-						InitialNodeCount: 0,
-					},
-				}
+				c.NodePools = []*container.NodePool{pool}
 			}),
 		},
 	}
@@ -701,9 +736,9 @@ func TestGenerateMaintenancePolicy(t *testing.T) {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.MaintenancePolicy = &v1beta1.MaintenancePolicy{
-						Window: v1beta1.MaintenanceWindow{
-							DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindow{
+					p.MaintenancePolicy = &v1beta1.MaintenancePolicySpec{
+						Window: v1beta1.MaintenanceWindowSpec{
+							DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindowSpec{
 								StartTime: "13:13",
 							},
 						},
@@ -888,7 +923,7 @@ func TestGenerateNetworkConfig(t *testing.T) {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.NetworkConfig = &v1beta1.NetworkConfig{
+					p.NetworkConfig = &v1beta1.NetworkConfigSpec{
 						EnableIntraNodeVisibility: true,
 					}
 				}),
@@ -1028,7 +1063,7 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.PrivateClusterConfig = &v1beta1.PrivateClusterConfig{
+					p.PrivateClusterConfig = &v1beta1.PrivateClusterConfigSpec{
 						EnablePeeringRouteSharing: gcp.BoolPtr(true),
 						EnablePrivateEndpoint:     gcp.BoolPtr(true),
 						EnablePrivateNodes:        gcp.BoolPtr(true),
@@ -1050,7 +1085,7 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.PrivateClusterConfig = &v1beta1.PrivateClusterConfig{
+					p.PrivateClusterConfig = &v1beta1.PrivateClusterConfigSpec{
 						EnablePeeringRouteSharing: gcp.BoolPtr(true),
 						MasterIpv4CidrBlock:       gcp.StringPtr("0.0.0.0/0"),
 					}

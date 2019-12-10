@@ -146,7 +146,7 @@ type clusterExternal struct {
 	projectID string
 }
 
-func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) { // nolint:gocyclo
 	cr, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotCluster)
