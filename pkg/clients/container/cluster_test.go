@@ -181,21 +181,19 @@ func TestGenerateObservation(t *testing.T) {
 		cluster *container.Cluster
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *v1beta1.GKEClusterObservation
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(addOutputFields),
 			},
 			want: observation(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			observation := GenerateObservation(*tc.args.cluster)
 			if diff := cmp.Diff(*tc.want, observation); diff != "" {
 				t.Errorf("GenerateObservation(...): -want, +got:\n%s", diff)
@@ -210,13 +208,11 @@ func TestGenerateCluster(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -243,8 +239,7 @@ func TestGenerateCluster(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -252,8 +247,8 @@ func TestGenerateCluster(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			cluster := GenerateCluster(*tc.args.params)
 			if diff := cmp.Diff(tc.want, cluster); diff != "" {
 				t.Errorf("GenerateCluster(...): -want, +got:\n%s", diff)
@@ -267,21 +262,19 @@ func TestGenerateNodePoolForCreate(t *testing.T) {
 		Name:             BootstrapNodePoolName,
 		InitialNodeCount: 0,
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args *container.Cluster
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: cluster(),
 			want: cluster(func(c *container.Cluster) {
 				c.NodePools = []*container.NodePool{pool}
 			}),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateNodePoolForCreate(tc.args)
 			if diff := cmp.Diff(tc.want, tc.args); diff != "" {
 				t.Errorf("GenerateNodePoolsForCreate(...): -want, +got:\n%s", diff)
@@ -296,13 +289,11 @@ func TestGenerateAddonsConfig(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: &container.Cluster{},
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -321,8 +312,7 @@ func TestGenerateAddonsConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: &container.Cluster{},
 				params:  params(),
@@ -330,8 +320,8 @@ func TestGenerateAddonsConfig(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateAddonsConfig(tc.args.params.AddonsConfig, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.AddonsConfig, tc.args.cluster.AddonsConfig); diff != "" {
 				t.Errorf("GenerateAddonsConfig(...): -want, +got:\n%s", diff)
@@ -346,13 +336,11 @@ func TestGenerateAuthenticatorGroupsConfig(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -369,8 +357,7 @@ func TestGenerateAuthenticatorGroupsConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -378,8 +365,8 @@ func TestGenerateAuthenticatorGroupsConfig(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateAuthenticatorGroupsConfig(tc.args.params.AuthenticatorGroupsConfig, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.AuthenticatorGroupsConfig, tc.args.cluster.AuthenticatorGroupsConfig); diff != "" {
 				t.Errorf("GenerateAuthenticatorGroupsConfig(...): -want, +got:\n%s", diff)
@@ -394,13 +381,11 @@ func TestGenerateAutoscaling(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -417,8 +402,7 @@ func TestGenerateAutoscaling(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulWithResourceLimits",
+		"SuccessfulWithResourceLimits": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -448,8 +432,7 @@ func TestGenerateAutoscaling(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -457,8 +440,8 @@ func TestGenerateAutoscaling(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateAutoscaling(tc.args.params.Autoscaling, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.Autoscaling, tc.args.cluster.Autoscaling); diff != "" {
 				t.Errorf("GenerateAutoscaling(...): -want, +got:\n%s", diff)
@@ -473,13 +456,11 @@ func TestGenerateBinaryAuthorization(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -494,8 +475,7 @@ func TestGenerateBinaryAuthorization(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -503,8 +483,8 @@ func TestGenerateBinaryAuthorization(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateBinaryAuthorization(tc.args.params.BinaryAuthorization, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.BinaryAuthorization, tc.args.cluster.BinaryAuthorization); diff != "" {
 				t.Errorf("GenerateBinaryAuthorization(...): -want, +got:\n%s", diff)
@@ -519,13 +499,11 @@ func TestGenerateDatabaseEncryption(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -542,8 +520,7 @@ func TestGenerateDatabaseEncryption(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulPartial",
+		"SuccessfulPartial": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -559,8 +536,7 @@ func TestGenerateDatabaseEncryption(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -568,8 +544,8 @@ func TestGenerateDatabaseEncryption(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateDatabaseEncryption(tc.args.params.DatabaseEncryption, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.DatabaseEncryption, tc.args.cluster.DatabaseEncryption); diff != "" {
 				t.Errorf("GenerateDatabaseEncryption(...): -want, +got:\n%s", diff)
@@ -584,13 +560,11 @@ func TestGenerateDefaultMaxPodsConstraint(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -605,8 +579,7 @@ func TestGenerateDefaultMaxPodsConstraint(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -614,8 +587,8 @@ func TestGenerateDefaultMaxPodsConstraint(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateDefaultMaxPodsConstraint(tc.args.params.DefaultMaxPodsConstraint, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.DefaultMaxPodsConstraint, tc.args.cluster.DefaultMaxPodsConstraint); diff != "" {
 				t.Errorf("GenerateDefaultMaxPodsConstraint(...): -want, +got:\n%s", diff)
@@ -630,13 +603,11 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -655,8 +626,7 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -664,8 +634,8 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateIpAllocationPolicy(tc.args.params.IpAllocationPolicy, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.IpAllocationPolicy, tc.args.cluster.IpAllocationPolicy); diff != "" {
 				t.Errorf("GenerateIpAllocationPolicy(...): -want, +got:\n%s", diff)
@@ -680,13 +650,11 @@ func TestGenerateLegacyAbac(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -701,8 +669,7 @@ func TestGenerateLegacyAbac(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -710,8 +677,8 @@ func TestGenerateLegacyAbac(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateLegacyAbac(tc.args.params.LegacyAbac, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.LegacyAbac, tc.args.cluster.LegacyAbac); diff != "" {
 				t.Errorf("GenerateLegacyAbac(...): -want, +got:\n%s", diff)
@@ -726,13 +693,11 @@ func TestGenerateMaintenancePolicy(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -755,8 +720,7 @@ func TestGenerateMaintenancePolicy(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -764,8 +728,8 @@ func TestGenerateMaintenancePolicy(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateMaintenancePolicy(tc.args.params.MaintenancePolicy, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.MaintenancePolicy, tc.args.cluster.MaintenancePolicy); diff != "" {
 				t.Errorf("GenerateMaintenancePolicy(...): -want, +got:\n%s", diff)
@@ -780,13 +744,11 @@ func TestGenerateMasterAuth(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -809,8 +771,7 @@ func TestGenerateMasterAuth(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulPartial",
+		"SuccessfulPartial": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -832,8 +793,7 @@ func TestGenerateMasterAuth(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -841,8 +801,8 @@ func TestGenerateMasterAuth(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateMasterAuth(tc.args.params.MasterAuth, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.MasterAuth, tc.args.cluster.MasterAuth); diff != "" {
 				t.Errorf("GenerateMasterAuth(...): -want, +got:\n%s", diff)
@@ -857,13 +817,11 @@ func TestGenerateMasterAuthorizedNetworksConfig(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -888,8 +846,7 @@ func TestGenerateMasterAuthorizedNetworksConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -897,8 +854,8 @@ func TestGenerateMasterAuthorizedNetworksConfig(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateMasterAuthorizedNetworksConfig(tc.args.params.MasterAuthorizedNetworksConfig, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.MasterAuthorizedNetworksConfig, tc.args.cluster.MasterAuthorizedNetworksConfig); diff != "" {
 				t.Errorf("GenerateMasterAuthorizedNetworksConfig(...): -want, +got:\n%s", diff)
@@ -913,13 +870,11 @@ func TestGenerateNetworkConfig(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -934,8 +889,7 @@ func TestGenerateNetworkConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -943,8 +897,8 @@ func TestGenerateNetworkConfig(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateNetworkConfig(tc.args.params.NetworkConfig, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.NetworkConfig, tc.args.cluster.NetworkConfig); diff != "" {
 				t.Errorf("GenerateNetworkConfig(...): -want, +got:\n%s", diff)
@@ -959,13 +913,11 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -982,8 +934,7 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -991,8 +942,8 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateNetworkPolicy(tc.args.params.NetworkPolicy, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.NetworkPolicy, tc.args.cluster.NetworkPolicy); diff != "" {
 				t.Errorf("GenerateNetworkPolicy(...): -want, +got:\n%s", diff)
@@ -1007,13 +958,11 @@ func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -1028,8 +977,7 @@ func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1037,8 +985,8 @@ func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GeneratePodSecurityPolicyConfig(tc.args.params.PodSecurityPolicyConfig, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.PodSecurityPolicyConfig, tc.args.cluster.PodSecurityPolicyConfig); diff != "" {
 				t.Errorf("GeneratePodSecurityPolicyConfig(...): -want, +got:\n%s", diff)
@@ -1053,13 +1001,11 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -1080,8 +1026,7 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulPartial",
+		"SuccessfulPartial": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -1100,8 +1045,7 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1109,8 +1053,8 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GeneratePrivateClusterConfig(tc.args.params.PrivateClusterConfig, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.PrivateClusterConfig, tc.args.cluster.PrivateClusterConfig); diff != "" {
 				t.Errorf("GeneratePrivateClusterConfig(...): -want, +got:\n%s", diff)
@@ -1125,13 +1069,11 @@ func TestGenerateResourceUsageExportConfig(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -1158,8 +1100,7 @@ func TestGenerateResourceUsageExportConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1167,8 +1108,8 @@ func TestGenerateResourceUsageExportConfig(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateResourceUsageExportConfig(tc.args.params.ResourceUsageExportConfig, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.ResourceUsageExportConfig, tc.args.cluster.ResourceUsageExportConfig); diff != "" {
 				t.Errorf("GenerateResourceUsageExportConfig(...): -want, +got:\n%s", diff)
@@ -1183,13 +1124,11 @@ func TestGenerateTierSettings(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -1204,8 +1143,7 @@ func TestGenerateTierSettings(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1213,8 +1151,8 @@ func TestGenerateTierSettings(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateTierSettings(tc.args.params.TierSettings, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.TierSettings, tc.args.cluster.TierSettings); diff != "" {
 				t.Errorf("GenerateTierSettings(...): -want, +got:\n%s", diff)
@@ -1229,13 +1167,11 @@ func TestGenerateVerticalPodAutoscaling(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -1250,8 +1186,7 @@ func TestGenerateVerticalPodAutoscaling(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1259,8 +1194,8 @@ func TestGenerateVerticalPodAutoscaling(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateVerticalPodAutoscaling(tc.args.params.VerticalPodAutoscaling, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.VerticalPodAutoscaling, tc.args.cluster.VerticalPodAutoscaling); diff != "" {
 				t.Errorf("GenerateVerticalPodAutoscaling(...): -want, +got:\n%s", diff)
@@ -1275,13 +1210,11 @@ func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 		params  *v1beta1.GKEClusterParameters
 	}
 
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *container.Cluster
 	}{
-		{
-			name: "Successful",
+		"Successful": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -1296,8 +1229,7 @@ func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 				}
 			}),
 		},
-		{
-			name: "SuccessfulNil",
+		"SuccessfulNil": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1305,8 +1237,8 @@ func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 			want: cluster(),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			GenerateWorkloadIdentityConfig(tc.args.params.WorkloadIdentityConfig, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.WorkloadIdentityConfig, tc.args.cluster.WorkloadIdentityConfig); diff != "" {
 				t.Errorf("GenerateWorkloadIdentityConfig(...): -want, +got:\n%s", diff)
@@ -1323,13 +1255,11 @@ func TestLateInitializeSpec(t *testing.T) {
 	type want struct {
 		params *v1beta1.GKEClusterParameters
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want want
 	}{
-		{
-			name: "SomeFilled",
+		"SomeFilled": {
 			args: args{
 				cluster: cluster(func(c *container.Cluster) {
 					c.AddonsConfig = &container.AddonsConfig{
@@ -1356,8 +1286,7 @@ func TestLateInitializeSpec(t *testing.T) {
 				}),
 			},
 		},
-		{
-			name: "AllFilled",
+		"AllFilled": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1367,8 +1296,8 @@ func TestLateInitializeSpec(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			LateInitializeSpec(tc.args.params, *tc.args.cluster)
 			if diff := cmp.Diff(tc.want.params, tc.args.params); diff != "" {
 				t.Errorf("LateInitializeSpec(...): -want, +got:\n%s", diff)
@@ -1385,13 +1314,11 @@ func TestIsUpToDate(t *testing.T) {
 	type want struct {
 		upToDate bool
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want want
 	}{
-		{
-			name: "UpToDate",
+		"UpToDate": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1400,8 +1327,7 @@ func TestIsUpToDate(t *testing.T) {
 				upToDate: true,
 			},
 		},
-		{
-			name: "UpToDateIgnoreRefs",
+		"UpToDateIgnoreRefs": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
@@ -1418,8 +1344,7 @@ func TestIsUpToDate(t *testing.T) {
 				upToDate: true,
 			},
 		},
-		{
-			name: "NeedsUpdate",
+		"NeedsUpdate": {
 			args: args{
 				cluster: cluster(func(c *container.Cluster) {
 					c.AddonsConfig = &container.AddonsConfig{
@@ -1438,8 +1363,8 @@ func TestIsUpToDate(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			r, fn := IsUpToDate(tc.args.params, *tc.args.cluster)
 			if r == true && fn != nil {
 				t.Errorf("IsUpToDate(...) returned update function %v when up to date.", fn)
