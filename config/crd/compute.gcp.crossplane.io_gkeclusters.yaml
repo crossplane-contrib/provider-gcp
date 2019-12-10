@@ -377,7 +377,7 @@ spec:
   versions:
   - name: v1alpha3
     served: true
-    storage: true
+    storage: false
   - name: v1beta1
     served: true
     storage: true

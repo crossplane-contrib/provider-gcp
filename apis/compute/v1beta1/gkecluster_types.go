@@ -1214,6 +1214,7 @@ type GKEClusterStatus struct {
 
 // A GKECluster is a managed resource that represents a Google Kubernetes Engine
 // cluster.
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.state"
 // +kubebuilder:printcolumn:name="CLUSTER-NAME",type="string",JSONPath=".status.clusterName"
@@ -1253,6 +1254,7 @@ type GKEClusterClassSpecTemplate struct {
 // A GKEClusterClass is a resource class. It defines the desired spec of
 // resource claims that use it to dynamically provision a managed
 // resource.
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
