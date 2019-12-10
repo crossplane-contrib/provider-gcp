@@ -76,6 +76,15 @@ func BoolValue(v *bool) bool {
 	return *v
 }
 
+// StringPtr converts the supplied string to a pointer to that string.
+func StringPtr(p string) *string { return &p }
+
+// Int64Ptr converts the supplied int64 to a pointer to that int64.
+func Int64Ptr(p int64) *int64 { return &p }
+
+// BoolPtr converts the supplied bool to a pointer to that bool
+func BoolPtr(p bool) *bool { return &p }
+
 // LateInitialize functions initialize s(first argument), presumed to be an
 // optional field of a Kubernetes API object's spec per Kubernetes
 // "late initialization" semantics. s is returned unchanged if it is non-nil
