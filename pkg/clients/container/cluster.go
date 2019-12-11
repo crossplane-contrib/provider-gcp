@@ -23,7 +23,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	container "google.golang.org/api/container/v1beta1"
-	gke "google.golang.org/api/container/v1beta1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
@@ -34,6 +33,15 @@ const (
 	// BootstrapNodePoolName is the name of the node pool that is used to
 	// boostrap GKE cluster creation.
 	BootstrapNodePoolName = "crossplane-bootstrap"
+
+	// BNPNameFormat is the format for the fully qualified name of the bootstrap node pool.
+	BNPNameFormat = "%s/nodePools/%s"
+
+	// ParentFormat is the format for the fully qualified name of a cluster parent.
+	ParentFormat = "projects/%s/locations/%s"
+
+	// ClusterNameFormat is the format for the fully qualified name of a cluster.
+	ClusterNameFormat = "projects/%s/locations/%s/clusters/%s"
 )
 
 // GenerateNodePoolForCreate inserts the default node pool into
@@ -70,7 +78,7 @@ func GenerateCluster(in v1beta1.GKEClusterParameters) *container.Cluster { // no
 	GenerateBinaryAuthorization(in.BinaryAuthorization, cluster)
 	GenerateDatabaseEncryption(in.DatabaseEncryption, cluster)
 	GenerateDefaultMaxPodsConstraint(in.DefaultMaxPodsConstraint, cluster)
-	GenerateIpAllocationPolicy(in.IpAllocationPolicy, cluster)
+	GenerateIPAllocationPolicy(in.IPAllocationPolicy, cluster)
 	GenerateLegacyAbac(in.LegacyAbac, cluster)
 	GenerateMaintenancePolicy(in.MaintenancePolicy, cluster)
 	GenerateMasterAuth(in.MasterAuth, cluster)
@@ -101,9 +109,9 @@ func GenerateAddonsConfig(in *v1beta1.AddonsConfig, cluster *container.Cluster) 
 				Disabled: in.HorizontalPodAutoscaling.Disabled,
 			}
 		}
-		if in.HttpLoadBalancing != nil {
+		if in.HTTPLoadBalancing != nil {
 			out.HttpLoadBalancing = &container.HttpLoadBalancing{
-				Disabled: in.HttpLoadBalancing.Disabled,
+				Disabled: in.HTTPLoadBalancing.Disabled,
 			}
 		}
 		if in.IstioConfig != nil {
@@ -202,8 +210,8 @@ func GenerateDefaultMaxPodsConstraint(in *v1beta1.MaxPodsConstraint, cluster *co
 	}
 }
 
-// GenerateIpAllocationPolicy generates *container.MaxPodsConstraint from *IpAllocationPolicy.
-func GenerateIpAllocationPolicy(in *v1beta1.IPAllocationPolicy, cluster *container.Cluster) {
+// GenerateIPAllocationPolicy generates *container.MaxPodsConstraint from *IpAllocationPolicy.
+func GenerateIPAllocationPolicy(in *v1beta1.IPAllocationPolicy, cluster *container.Cluster) {
 	if in != nil {
 		out := &container.IPAllocationPolicy{
 			AllowRouteOverlap:          gcp.BoolValue(in.AllowRouteOverlap),
@@ -215,7 +223,7 @@ func GenerateIpAllocationPolicy(in *v1beta1.IPAllocationPolicy, cluster *contain
 			ServicesSecondaryRangeName: gcp.StringValue(in.DeepCopy().ServicesSecondaryRangeName),
 			SubnetworkName:             gcp.StringValue(in.SubnetworkName),
 			TpuIpv4CidrBlock:           gcp.StringValue(in.TpuIpv4CidrBlock),
-			UseIpAliases:               gcp.BoolValue(in.UseIpAliases),
+			UseIpAliases:               gcp.BoolValue(in.UseIPAliases),
 		}
 
 		cluster.IpAllocationPolicy = out
@@ -343,7 +351,7 @@ func GenerateResourceUsageExportConfig(in *v1beta1.ResourceUsageExportConfig, cl
 
 		if in.BigqueryDestination != nil {
 			out.BigqueryDestination = &container.BigQueryDestination{
-				DatasetId: in.BigqueryDestination.DatasetId,
+				DatasetId: in.BigqueryDestination.DatasetID,
 			}
 		}
 
@@ -446,6 +454,30 @@ func GenerateObservation(in container.Cluster) v1beta1.GKEClusterObservation { /
 		}
 	}
 
+	for _, nodePool := range in.NodePools {
+		if nodePool != nil {
+			conditions := []*v1beta1.StatusCondition{}
+			for _, condition := range nodePool.Conditions {
+				if condition != nil {
+					conditions = append(conditions, &v1beta1.StatusCondition{
+						Code:    condition.Code,
+						Message: condition.Message,
+					})
+				}
+			}
+			o.NodePools = append(o.NodePools, &v1beta1.NodePoolClusterStatus{
+				Conditions:        conditions,
+				InstanceGroupUrls: nodePool.InstanceGroupUrls,
+				Name:              nodePool.Name,
+				PodIpv4CidrSize:   nodePool.PodIpv4CidrSize,
+				SelfLink:          nodePool.SelfLink,
+				Status:            nodePool.Status,
+				StatusMessage:     nodePool.StatusMessage,
+				Version:           nodePool.Version,
+			})
+		}
+	}
+
 	return o
 }
 
@@ -465,8 +497,8 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 				Disabled: in.AddonsConfig.HorizontalPodAutoscaling.Disabled,
 			}
 		}
-		if spec.AddonsConfig.HttpLoadBalancing == nil && in.AddonsConfig.HttpLoadBalancing != nil {
-			spec.AddonsConfig.HttpLoadBalancing = &v1beta1.HttpLoadBalancing{
+		if spec.AddonsConfig.HTTPLoadBalancing == nil && in.AddonsConfig.HttpLoadBalancing != nil {
+			spec.AddonsConfig.HTTPLoadBalancing = &v1beta1.HTTPLoadBalancing{
 				Disabled: in.AddonsConfig.HttpLoadBalancing.Disabled,
 			}
 		}
@@ -553,18 +585,18 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 	spec.InitialClusterVersion = gcp.LateInitializeString(spec.InitialClusterVersion, in.InitialClusterVersion)
 
 	if in.IpAllocationPolicy != nil {
-		if spec.IpAllocationPolicy == nil {
-			spec.IpAllocationPolicy = &v1beta1.IPAllocationPolicy{}
+		if spec.IPAllocationPolicy == nil {
+			spec.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{}
 		}
-		spec.IpAllocationPolicy.AllowRouteOverlap = gcp.LateInitializeBool(spec.IpAllocationPolicy.AllowRouteOverlap, in.IpAllocationPolicy.AllowRouteOverlap)
-		spec.IpAllocationPolicy.ClusterIpv4CidrBlock = gcp.LateInitializeString(spec.IpAllocationPolicy.ClusterIpv4CidrBlock, in.IpAllocationPolicy.ClusterIpv4CidrBlock)
-		spec.IpAllocationPolicy.ClusterSecondaryRangeName = gcp.LateInitializeString(spec.IpAllocationPolicy.ClusterSecondaryRangeName, in.IpAllocationPolicy.ClusterSecondaryRangeName)
-		spec.IpAllocationPolicy.CreateSubnetwork = gcp.LateInitializeBool(spec.IpAllocationPolicy.CreateSubnetwork, in.IpAllocationPolicy.CreateSubnetwork)
-		spec.IpAllocationPolicy.NodeIpv4CidrBlock = gcp.LateInitializeString(spec.IpAllocationPolicy.NodeIpv4CidrBlock, in.IpAllocationPolicy.NodeIpv4CidrBlock)
-		spec.IpAllocationPolicy.ServicesIpv4CidrBlock = gcp.LateInitializeString(spec.IpAllocationPolicy.ServicesIpv4CidrBlock, in.IpAllocationPolicy.ServicesIpv4CidrBlock)
-		spec.IpAllocationPolicy.SubnetworkName = gcp.LateInitializeString(spec.IpAllocationPolicy.SubnetworkName, in.IpAllocationPolicy.SubnetworkName)
-		spec.IpAllocationPolicy.TpuIpv4CidrBlock = gcp.LateInitializeString(spec.IpAllocationPolicy.TpuIpv4CidrBlock, in.IpAllocationPolicy.TpuIpv4CidrBlock)
-		spec.IpAllocationPolicy.UseIpAliases = gcp.LateInitializeBool(spec.IpAllocationPolicy.UseIpAliases, in.IpAllocationPolicy.UseIpAliases)
+		spec.IPAllocationPolicy.AllowRouteOverlap = gcp.LateInitializeBool(spec.IPAllocationPolicy.AllowRouteOverlap, in.IpAllocationPolicy.AllowRouteOverlap)
+		spec.IPAllocationPolicy.ClusterIpv4CidrBlock = gcp.LateInitializeString(spec.IPAllocationPolicy.ClusterIpv4CidrBlock, in.IpAllocationPolicy.ClusterIpv4CidrBlock)
+		spec.IPAllocationPolicy.ClusterSecondaryRangeName = gcp.LateInitializeString(spec.IPAllocationPolicy.ClusterSecondaryRangeName, in.IpAllocationPolicy.ClusterSecondaryRangeName)
+		spec.IPAllocationPolicy.CreateSubnetwork = gcp.LateInitializeBool(spec.IPAllocationPolicy.CreateSubnetwork, in.IpAllocationPolicy.CreateSubnetwork)
+		spec.IPAllocationPolicy.NodeIpv4CidrBlock = gcp.LateInitializeString(spec.IPAllocationPolicy.NodeIpv4CidrBlock, in.IpAllocationPolicy.NodeIpv4CidrBlock)
+		spec.IPAllocationPolicy.ServicesIpv4CidrBlock = gcp.LateInitializeString(spec.IPAllocationPolicy.ServicesIpv4CidrBlock, in.IpAllocationPolicy.ServicesIpv4CidrBlock)
+		spec.IPAllocationPolicy.SubnetworkName = gcp.LateInitializeString(spec.IPAllocationPolicy.SubnetworkName, in.IpAllocationPolicy.SubnetworkName)
+		spec.IPAllocationPolicy.TpuIpv4CidrBlock = gcp.LateInitializeString(spec.IPAllocationPolicy.TpuIpv4CidrBlock, in.IpAllocationPolicy.TpuIpv4CidrBlock)
+		spec.IPAllocationPolicy.UseIPAliases = gcp.LateInitializeBool(spec.IPAllocationPolicy.UseIPAliases, in.IpAllocationPolicy.UseIpAliases)
 	}
 
 	spec.LabelFingerprint = gcp.LateInitializeString(spec.LabelFingerprint, in.LabelFingerprint)
@@ -662,7 +694,7 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 		}
 		if spec.ResourceUsageExportConfig.BigqueryDestination == nil && in.ResourceUsageExportConfig.BigqueryDestination != nil {
 			spec.ResourceUsageExportConfig.BigqueryDestination = &v1beta1.BigQueryDestination{
-				DatasetId: in.ResourceUsageExportConfig.BigqueryDestination.DatasetId,
+				DatasetID: in.ResourceUsageExportConfig.BigqueryDestination.DatasetId,
 			}
 		}
 		if spec.ResourceUsageExportConfig.ConsumptionMeteringConfig == nil && in.ResourceUsageExportConfig.ConsumptionMeteringConfig != nil {
@@ -696,11 +728,11 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 }
 
 // UpdateFn returns a function that updates a cluster.
-type UpdateFn func(gke.Service, context.Context, string) (*container.Operation, error)
+type UpdateFn func(container.Service, context.Context, string) (*container.Operation, error)
 
 // NewAddonsConfigUpdate returns a function that updates the AddonsConfig of a cluster.
 func NewAddonsConfigUpdate(in *v1beta1.AddonsConfig) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateAddonsConfig(in, out)
 		update := &container.UpdateClusterRequest{
@@ -714,7 +746,7 @@ func NewAddonsConfigUpdate(in *v1beta1.AddonsConfig) UpdateFn {
 
 // NewAutoscalingUpdate returns a function that updates the Autoscaling of a cluster.
 func NewAutoscalingUpdate(in *v1beta1.ClusterAutoscaling) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateAutoscaling(in, out)
 		update := &container.UpdateClusterRequest{
@@ -728,7 +760,7 @@ func NewAutoscalingUpdate(in *v1beta1.ClusterAutoscaling) UpdateFn {
 
 // NewBinaryAuthorizationUpdate returns a function that updates the BinaryAuthorization of a cluster.
 func NewBinaryAuthorizationUpdate(in *v1beta1.BinaryAuthorization) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateBinaryAuthorization(in, out)
 		update := &container.UpdateClusterRequest{
@@ -742,7 +774,7 @@ func NewBinaryAuthorizationUpdate(in *v1beta1.BinaryAuthorization) UpdateFn {
 
 // NewDatabaseEncryptionUpdate returns a function that updates the DatabaseEncryption of a cluster.
 func NewDatabaseEncryptionUpdate(in *v1beta1.DatabaseEncryption) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateDatabaseEncryption(in, out)
 		update := &container.UpdateClusterRequest{
@@ -756,7 +788,7 @@ func NewDatabaseEncryptionUpdate(in *v1beta1.DatabaseEncryption) UpdateFn {
 
 // NewLegacyAbacUpdate returns a function that updates the LegacyAbac of a cluster.
 func NewLegacyAbacUpdate(in *v1beta1.LegacyAbac) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateLegacyAbac(in, out)
 		update := &container.SetLegacyAbacRequest{
@@ -768,7 +800,7 @@ func NewLegacyAbacUpdate(in *v1beta1.LegacyAbac) UpdateFn {
 
 // NewLocationsUpdate returns a function that updates the Locations of a cluster.
 func NewLocationsUpdate(in []string) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
 				DesiredLocations: in,
@@ -780,7 +812,7 @@ func NewLocationsUpdate(in []string) UpdateFn {
 
 // NewLoggingServiceUpdate returns a function that updates the LoggingService of a cluster.
 func NewLoggingServiceUpdate(in *string) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
 				DesiredLoggingService: gcp.StringValue(in),
@@ -792,7 +824,7 @@ func NewLoggingServiceUpdate(in *string) UpdateFn {
 
 // NewMaintenancePolicyUpdate returns a function that updates the MaintenancePolicy of a cluster.
 func NewMaintenancePolicyUpdate(in *v1beta1.MaintenancePolicySpec) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateMaintenancePolicy(in, out)
 		update := &container.SetMaintenancePolicyRequest{
@@ -804,7 +836,7 @@ func NewMaintenancePolicyUpdate(in *v1beta1.MaintenancePolicySpec) UpdateFn {
 
 // NewMasterAuthUpdate returns a function that updates the MasterAuth of a cluster.
 func NewMasterAuthUpdate(in *v1beta1.MasterAuth) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateMasterAuth(in, out)
 		update := &container.SetMasterAuthRequest{
@@ -817,7 +849,7 @@ func NewMasterAuthUpdate(in *v1beta1.MasterAuth) UpdateFn {
 
 // NewMasterAuthorizedNetworksConfigUpdate returns a function that updates the MasterAuthorizedNetworksConfig of a cluster.
 func NewMasterAuthorizedNetworksConfigUpdate(in *v1beta1.MasterAuthorizedNetworksConfig) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
@@ -830,7 +862,7 @@ func NewMasterAuthorizedNetworksConfigUpdate(in *v1beta1.MasterAuthorizedNetwork
 
 // NewMonitoringServiceUpdate returns a function that updates the MonitoringService of a cluster.
 func NewMonitoringServiceUpdate(in *string) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
 				DesiredMonitoringService: gcp.StringValue(in),
@@ -842,7 +874,7 @@ func NewMonitoringServiceUpdate(in *string) UpdateFn {
 
 // NewNetworkConfigUpdate returns a function that updates the NetworkConfig of a cluster.
 func NewNetworkConfigUpdate(in *v1beta1.NetworkConfigSpec) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateNetworkConfig(in, out)
 		update := &container.UpdateClusterRequest{
@@ -858,7 +890,7 @@ func NewNetworkConfigUpdate(in *v1beta1.NetworkConfigSpec) UpdateFn {
 
 // NewNetworkPolicyUpdate returns a function that updates the NetworkPolicy of a cluster.
 func NewNetworkPolicyUpdate(in *v1beta1.NetworkPolicy) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateNetworkPolicy(in, out)
 		update := &container.SetNetworkPolicyRequest{
@@ -870,7 +902,7 @@ func NewNetworkPolicyUpdate(in *v1beta1.NetworkPolicy) UpdateFn {
 
 // NewPodSecurityPolicyConfigUpdate returns a function that updates the PodSecurityPolicyConfig of a cluster.
 func NewPodSecurityPolicyConfigUpdate(in *v1beta1.PodSecurityPolicyConfig) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GeneratePodSecurityPolicyConfig(in, out)
 		update := &container.UpdateClusterRequest{
@@ -884,7 +916,7 @@ func NewPodSecurityPolicyConfigUpdate(in *v1beta1.PodSecurityPolicyConfig) Updat
 
 // NewPrivateClusterConfigUpdate returns a function that updates the PrivateClusterConfig of a cluster.
 func NewPrivateClusterConfigUpdate(in *v1beta1.PrivateClusterConfigSpec) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GeneratePrivateClusterConfig(in, out)
 		update := &container.UpdateClusterRequest{
@@ -898,7 +930,7 @@ func NewPrivateClusterConfigUpdate(in *v1beta1.PrivateClusterConfigSpec) UpdateF
 
 // NewResourceLabelsUpdate returns a function that updates the ResourceLabels of a cluster.
 func NewResourceLabelsUpdate(in map[string]string) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		update := &container.SetLabelsRequest{
 			ResourceLabels: in,
 		}
@@ -908,7 +940,7 @@ func NewResourceLabelsUpdate(in map[string]string) UpdateFn {
 
 // NewResourceUsageExportConfigUpdate returns a function that updates the ResourceUsageExportConfig of a cluster.
 func NewResourceUsageExportConfigUpdate(in *v1beta1.ResourceUsageExportConfig) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateResourceUsageExportConfig(in, out)
 		update := &container.UpdateClusterRequest{
@@ -922,7 +954,7 @@ func NewResourceUsageExportConfigUpdate(in *v1beta1.ResourceUsageExportConfig) U
 
 // NewVerticalPodAutoscalingUpdate returns a function that updates the VerticalPodAutoscaling of a cluster.
 func NewVerticalPodAutoscalingUpdate(in *v1beta1.VerticalPodAutoscaling) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateVerticalPodAutoscaling(in, out)
 		update := &container.UpdateClusterRequest{
@@ -936,7 +968,7 @@ func NewVerticalPodAutoscalingUpdate(in *v1beta1.VerticalPodAutoscaling) UpdateF
 
 // NewWorkloadIdentityConfigUpdate returns a function that updates the WorkloadIdentityConfig of a cluster.
 func NewWorkloadIdentityConfigUpdate(in *v1beta1.WorkloadIdentityConfig) UpdateFn {
-	return func(s gke.Service, ctx context.Context, name string) (*container.Operation, error) {
+	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
 		GenerateWorkloadIdentityConfig(in, out)
 		update := &container.UpdateClusterRequest{
@@ -948,11 +980,31 @@ func NewWorkloadIdentityConfigUpdate(in *v1beta1.WorkloadIdentityConfig) UpdateF
 	}
 }
 
+// CheckForBootstrapNodePool checks if the bootstrap node pool exists for the
+// cluster and returns a function to delete it if so.
+func CheckForBootstrapNodePool(c container.Cluster) UpdateFn {
+	for _, pool := range c.NodePools {
+		if pool == nil || pool.Name != BootstrapNodePoolName {
+			continue
+		}
+		return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
+			return s.Projects.Locations.Clusters.NodePools.Delete(GetFullyQualifiedBNP(name)).Context(ctx).Do()
+		}
+	}
+	return nil
+}
+
 // IsUpToDate checks whether current state is up-to-date compared to the given
-// set of parameters
+// set of parameters.
+// NOTE(hasheddan): This function is significantly above our cyclomatic
+// complexity limit, but is necessary due to the fact that the GKE API only
+// allows for update of one field at a time.
 func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateFn) { // nolint:gocyclo
 	currentParams := &v1beta1.GKEClusterParameters{}
 	LateInitializeSpec(currentParams, currentState)
+	if fn := CheckForBootstrapNodePool(currentState); fn != nil {
+		return false, fn
+	}
 	if !cmp.Equal(in.AddonsConfig, currentParams.AddonsConfig) {
 		return false, NewAddonsConfigUpdate(in.AddonsConfig)
 	}
@@ -1011,6 +1063,23 @@ func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster
 		return false, NewWorkloadIdentityConfigUpdate(in.WorkloadIdentityConfig)
 	}
 	return true, nil
+}
+
+// GetFullyQualifiedParent builds the fully qualified name of the cluster
+// parent.
+func GetFullyQualifiedParent(project string, p v1beta1.GKEClusterParameters) string {
+	return fmt.Sprintf(ParentFormat, project, p.Location)
+}
+
+// GetFullyQualifiedName builds the fully qualified name of the cluster.
+func GetFullyQualifiedName(project string, p v1beta1.GKEClusterParameters) string {
+	return fmt.Sprintf(ClusterNameFormat, project, p.Location, p.Name)
+}
+
+// GetFullyQualifiedBNP build the fully qualified name of the bootstrap node
+// pool.
+func GetFullyQualifiedBNP(clusterName string) string {
+	return fmt.Sprintf(BNPNameFormat, clusterName, BootstrapNodePoolName)
 }
 
 // GenerateClientConfig generates a clientcmdapi.Config that can be used by any

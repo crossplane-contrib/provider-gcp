@@ -21,22 +21,18 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
-
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
 	"google.golang.org/api/option"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
@@ -44,18 +40,6 @@ import (
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	gke "github.com/crossplaneio/stack-gcp/pkg/clients/container"
-)
-
-const (
-	controllerName    = "gke.compute.gcp.crossplane.io"
-	finalizer         = "finalizer." + controllerName
-	clusterNamePrefix = "gke-"
-
-	requeueOnWait   = 30 * time.Second
-	requeueOnSucces = 2 * time.Minute
-
-	updateErrorMessageFormat         = "failed to update cluster object: %s"
-	erroredClusterErrorMessageFormat = "gke cluster is in %s state with message: %s"
 )
 
 // Error strings.
@@ -73,25 +57,6 @@ const (
 	errDeleteBootstrapNodePool = "cannot delete bootstrap node pool"
 )
 
-// Amounts of time we wait before requeuing a reconcile.
-const (
-	aLongWait         = 60 * time.Second
-	parentFormat      = "projects/%s/locations/%s"
-	clusterNameFormat = "projects/%s/locations/%s/clusters/%s"
-)
-
-// Error strings
-const (
-	errUpdateManagedStatus = "cannot update managed resource status"
-)
-
-var (
-	log           = logging.Logger.WithName("controller." + controllerName)
-	ctx           = context.Background()
-	result        = reconcile.Result{}
-	resultRequeue = reconcile.Result{Requeue: true}
-)
-
 // GKEClusterController is responsible for adding the GKECluster
 // controller and its corresponding reconciler to the manager with any runtime configuration.
 type GKEClusterController struct{}
@@ -101,8 +66,7 @@ type GKEClusterController struct{}
 func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewManagedReconciler(mgr,
 		resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind),
-		resource.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}),
-		resource.WithManagedInitializers())
+		resource.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}))
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.GKEClusterKindAPIVersion, v1beta1.Group))
 
@@ -152,7 +116,7 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (res
 		return resource.ExternalObservation{}, errors.New(errNotCluster)
 	}
 
-	existing, err := e.cluster.Projects.Locations.Clusters.Get(meta.GetExternalName(mg)).Context(ctx).Do()
+	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider)).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetCluster)
 	}
@@ -163,21 +127,6 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (res
 	if !reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.kube.Update(ctx, cr); err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
-		}
-	}
-
-	// If boostrap node pool is present then we want to delete it.
-	for _, pool := range existing.NodePools {
-		if pool != nil {
-			if pool.Name == gke.BootstrapNodePoolName {
-				boostrapNP := strings.Join([]string{meta.GetExternalName(mg), gke.BootstrapNodePoolName}, "/")
-				_, err = e.cluster.Projects.Locations.Clusters.NodePools.Delete(boostrapNP).Context(ctx).Do()
-				if err != nil {
-					// If we fail to delete bootstrap node pool we will be requeued implicitly.
-					return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteBootstrapNodePool)
-				}
-				break
-			}
 		}
 	}
 
@@ -201,67 +150,62 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (res
 }
 
 func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
-	i, ok := mg.(*v1beta1.GKECluster)
+	cr, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotCluster)
 	}
 
 	// Generate GKE cluster from resource spec.
-	cluster := gke.GenerateCluster(i.Spec.ForProvider)
+	cluster := gke.GenerateCluster(cr.Spec.ForProvider)
 
-	// Insert default node pool for bootstrapping cluster.
+	// Insert default node pool for bootstrapping cluster. This is required to
+	// create a GKE cluster. After successful creation we delete the bootstrap
+	// node pool immediately and provision any subsequent node pools using the
+	// NodePool resource type.
 	gke.GenerateNodePoolForCreate(cluster)
 
 	create := &container.CreateClusterRequest{
 		Cluster: cluster,
 	}
 
-	parent := fmt.Sprintf(parentFormat, e.projectID, i.Spec.ForProvider.Location)
-
-	if _, err := e.cluster.Projects.Locations.Clusters.Create(parent, create).Context(ctx).Do(); err != nil {
+	if _, err := e.cluster.Projects.Locations.Clusters.Create(gke.GetFullyQualifiedParent(e.projectID, cr.Spec.ForProvider), create).Context(ctx).Do(); err != nil {
 		return resource.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
 	}
-
-	clusterName := fmt.Sprintf(clusterNameFormat, e.projectID, i.Spec.ForProvider.Location, i.Spec.ForProvider.Name)
-	meta.SetExternalName(i, clusterName)
 
 	// TODO(hasheddan): go ahead and propagate username / password here if set in spec?
 	return resource.ExternalCreation{}, nil
 }
 
 func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
-	i, ok := mg.(*v1beta1.GKECluster)
+	cr, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotCluster)
 	}
 
-	// We have to get the cluster again here
-	existing, err := e.cluster.Projects.Locations.Clusters.Get(meta.GetExternalName(mg)).Context(ctx).Do()
+	// We have to get the cluster again here to determine how to update.
+	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider)).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalUpdate{}, errors.Wrap(err, errGetCluster)
 	}
 
-	upToDate, updateFn := gke.IsUpToDate(&i.Spec.ForProvider, *existing)
-	if upToDate {
+	u, fn := gke.IsUpToDate(&cr.Spec.ForProvider, *existing)
+	if u {
 		return resource.ExternalUpdate{}, nil
 	}
 
-	_, err = updateFn(e.cluster, ctx, meta.GetExternalName(mg))
+	_, err = fn(e.cluster, ctx, gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateCluster)
 }
 
 func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	i, ok := mg.(*v1beta1.GKECluster)
+	cr, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return errors.New(errNotCluster)
 	}
-	i.SetConditions(runtimev1alpha1.Deleting())
+	cr.SetConditions(runtimev1alpha1.Deleting())
 
-	_, err := e.cluster.Projects.Locations.Clusters.Delete(meta.GetExternalName(mg)).Context(ctx).Do()
-	if gcp.IsErrorNotFound(err) {
-		return nil
-	}
-	return errors.Wrap(err, errDeleteCluster)
+	_, err := e.cluster.Projects.Locations.Clusters.Delete(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider)).Context(ctx).Do()
+	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteCluster)
 }
 
 // connectionSecret return secret object for cluster instance

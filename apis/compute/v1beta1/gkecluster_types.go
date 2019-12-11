@@ -155,15 +155,14 @@ type GKEClusterObservation struct {
 	// PrivateClusterConfig: Configuration for private cluster.
 	PrivateClusterConfig *PrivateClusterConfigStatus `json:"privateClusterConfig,omitempty"`
 
+	// NOTE(hasheddan): node pools are modelled in status only because
+	// management of node pools is handled by the stack-gcp NodePool object.
+
 	// NodePools: The node pools associated with this cluster.
 	// This field should not be set if "node_config" or "initial_node_count"
 	// are
 	// specified.
-	// NOTE(hasheddan): node pools are modelled in status only because
-	// management of node pools is handled by the stack-gcp NodePool object.
-	// TODO(hasheddan): determine if we want to reflect node pools in the
-	// cluster status.
-	// NodePools []*NodePoolClusterStatus `json:"nodePools,omitempty"`
+	NodePools []*NodePoolClusterStatus `json:"nodePools,omitempty"`
 
 	// SelfLink: [Output only] Server-defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
@@ -313,10 +312,10 @@ type GKEClusterParameters struct {
 	// +immutable
 	InitialClusterVersion *string `json:"initialClusterVersion,omitempty"`
 
-	// IpAllocationPolicy: Configuration for cluster IP allocation.
+	// IPAllocationPolicy: Configuration for cluster IP allocation.
 	// +optional
 	// +immutable
-	IpAllocationPolicy *IPAllocationPolicy `json:"ipAllocationPolicy,omitempty"`
+	IPAllocationPolicy *IPAllocationPolicy `json:"ipAllocationPolicy,omitempty"`
 
 	// LabelFingerprint: The fingerprint of the set of labels for this
 	// cluster.
@@ -324,11 +323,18 @@ type GKEClusterParameters struct {
 	// +immutable
 	LabelFingerprint *string `json:"labelFingerprint,omitempty"`
 
-	// LegacyAbac: Configuration for the legacy ABAC authorization mode.
-	// NOTE(hasheddan): this can only be updated via setLegacyAbac
+	// NOTE(hasheddan): LegacyAbac can only be updated via setLegacyAbac
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters/setLegacyAbac
+
+	// LegacyAbac: Configuration for the legacy ABAC authorization mode.
 	// +optional
 	LegacyAbac *LegacyAbac `json:"legacyAbac,omitempty"`
+
+	// NOTE(hasheddan): Location is labelled as Output Only by GCP but is required
+	// to create a cluster. It is not included in the actual cluster object
+	// itself, but is instead passed to the create call. If a region is given
+	// the cluster will be Regional, if a zone is given the cluster will be
+	// Zonal.
 
 	// Location: [Output only] The name of the Google Compute
 	// Engine
@@ -337,11 +343,6 @@ type GKEClusterParameters struct {
 	// [region](/compute/docs/regions-zones/regions-zones#available) in
 	// which
 	// the cluster resides.
-	// NOTE(hasheddan): this is labelled as Output Only by GCP but is required
-	// to create a cluster. It is not included in the actual cluster object
-	// itself, but is instead passed to the create call. If a region is given
-	// the cluster will be Regional, if a zone is given the cluster will be
-	// Zonal.
 	// +immutable
 	Location string `json:"location"`
 
@@ -366,11 +367,16 @@ type GKEClusterParameters struct {
 	// +optional
 	LoggingService *string `json:"loggingService,omitempty"`
 
-	// MaintenancePolicy: Configure the maintenance policy for this cluster.
-	// NOTE(hasheddan): this can only be updated via setMaintenancePolicy
+	// NOTE(hasheddan): MaintenancePolciy can only be updated via
+	// setMaintenancePolicy
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters/setMaintenancePolicy
+
+	// MaintenancePolicy: Configure the maintenance policy for this cluster.
 	// +optional
 	MaintenancePolicy *MaintenancePolicySpec `json:"maintenancePolicy,omitempty"`
+
+	// NOTE(hasheddan): MasterAuth can only be updated via setMasterAuth
+	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters/setMasterAuth
 
 	// MasterAuth: The authentication information for accessing the master
 	// endpoint.
@@ -380,8 +386,6 @@ type GKEClusterParameters struct {
 	// be set to "admin", a random password will be generated, and a
 	// client
 	// certificate will be issued.
-	// NOTE(hasheddan): this can only be updated via setMasterAuth
-	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters/setMasterAuth
 	// +optional
 	MasterAuth *MasterAuth `json:"masterAuth,omitempty"`
 
@@ -428,15 +432,18 @@ type GKEClusterParameters struct {
 	// +immutable
 	NetworkRef *NetworkURIReferencerForGKECluster `json:"networkRef,omitempty" resource:"attributereferencer"`
 
-	// NetworkConfig: Configuration for cluster networking.
-	// NOTE(hasheddan): only intranode visibility can be updated here
+	// NOTE(hasheddan): only intradnode visibility can be updated in
+	// NetworkConfig
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/ClusterUpdate?authuser=1#IntraNodeVisibilityConfig
+
+	// NetworkConfig: Configuration for cluster networking.
 	// +optional
 	NetworkConfig *NetworkConfigSpec `json:"networkConfig,omitempty"`
 
-	// NetworkPolicy: Configuration options for the NetworkPolicy feature.
-	// NOTE(hasheddan): this can only be updated via setNetworkPolicy
+	// NOTE(hasheddan): NetworkPolicy can only be updated via setNetworkPolicy
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters/setNetworkPolicy
+
+	// NetworkPolicy: Configuration options for the NetworkPolicy feature.
 	// +optional
 	NetworkPolicy *NetworkPolicy `json:"networkPolicy,omitempty"`
 
@@ -449,11 +456,12 @@ type GKEClusterParameters struct {
 	// +optional
 	PrivateClusterConfig *PrivateClusterConfigSpec `json:"privateClusterConfig,omitempty"`
 
+	// NOTE(hasheddan): ResourceLabels can only be updated via setResourceLabels
+	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters/setResourceLabels
+
 	// ResourceLabels: The resource labels for the cluster to use to
 	// annotate any related
 	// Google Compute Engine resources.
-	// NOTE(hasheddan): this can only be updated via setResourceLabels
-	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters/setResourceLabels
 	// +optional
 	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
 
@@ -511,11 +519,11 @@ type AddonsConfig struct {
 	// has based on the resource usage of the existing pods.
 	HorizontalPodAutoscaling *HorizontalPodAutoscaling `json:"horizontalPodAutoscaling,omitempty"`
 
-	// HttpLoadBalancing: Configuration for the HTTP (L7) load balancing
+	// HTTpLoadBalancing: Configuration for the HTTP (L7) load balancing
 	// controller addon, which
 	// makes it easy to set up HTTP load balancers for services in a
 	// cluster.
-	HttpLoadBalancing *HttpLoadBalancing `json:"httpLoadBalancing,omitempty"`
+	HTTPLoadBalancing *HTTPLoadBalancing `json:"httpLoadBalancing,omitempty"`
 
 	// IstioConfig: Configuration for Istio, an open platform to connect,
 	// manage, and secure
@@ -561,11 +569,11 @@ type HorizontalPodAutoscaling struct {
 	Disabled bool `json:"disabled"`
 }
 
-// HttpLoadBalancing is configuration options for the HTTP (L7) load
+// HTTPLoadBalancing is configuration options for the HTTP (L7) load
 // balancing controller addon,
 // which makes it easy to set up HTTP load balancers for services in a
 // cluster.
-type HttpLoadBalancing struct {
+type HTTPLoadBalancing struct {
 	// Disabled: Whether the HTTP Load Balancing controller is enabled in
 	// the cluster.
 	// When enabled, it runs a small pod in the cluster that manages the
@@ -884,10 +892,10 @@ type IPAllocationPolicy struct {
 	// +optional
 	TpuIpv4CidrBlock *string `json:"tpuIpv4CidrBlock,omitempty"`
 
-	// UseIpAliases: Whether alias IPs will be used for pod IPs in the
+	// UseIPAliases: Whether alias IPs will be used for pod IPs in the
 	// cluster.
 	// +optional
-	UseIpAliases *bool `json:"useIpAliases,omitempty"`
+	UseIPAliases *bool `json:"useIpAliases,omitempty"`
 }
 
 // LegacyAbac is configuration for the legacy Attribute Based Access
@@ -959,12 +967,13 @@ type DailyMaintenanceWindowStatus struct {
 	Duration string `json:"duration,omitempty"`
 }
 
-// MasterAuth is the authentication information for accessing the master endpoint.
-// Authentication can be done using HTTP basic auth or using client
-// certificates.
 // NOTE(hasheddan): cluster auth information that is not configurable is not
 // reflected in the observed status of a GKECluster, but is used to generate its
 // connection secret.
+
+// MasterAuth is the authentication information for accessing the master endpoint.
+// Authentication can be done using HTTP basic auth or using client
+// certificates.
 type MasterAuth struct {
 	// ClientCertificateConfig: Configuration for client certificate
 	// authentication on the cluster. For
@@ -1151,7 +1160,7 @@ type ResourceUsageExportConfig struct {
 // of resource usage export.
 type BigQueryDestination struct {
 	// DatasetId: The ID of a BigQuery Dataset.
-	DatasetId string `json:"datasetId,omitempty"`
+	DatasetID string `json:"datasetId,omitempty"`
 }
 
 // ConsumptionMeteringConfig is parameters for controlling consumption
@@ -1197,6 +1206,65 @@ type WorkloadIdentityConfig struct {
 	IdentityNamespace string `json:"identityNamespace,omitempty"`
 }
 
+// NodePoolClusterStatus is a subset of information about NodePools associated
+// with a GKE cluster.
+type NodePoolClusterStatus struct {
+	// Conditions: Which conditions caused the current node pool state.
+	Conditions []*StatusCondition `json:"conditions,omitempty"`
+
+	// InstanceGroupUrls: The resource URLs of the [managed
+	// instance
+	// groups](/compute/docs/instance-groups/creating-groups-of-mana
+	// ged-instances)
+	// associated with this node pool.
+	InstanceGroupUrls []string `json:"instanceGroupUrls,omitempty"`
+
+	// Name: The name of the node pool.
+	Name string `json:"name,omitempty"`
+
+	// PodIpv4CidrSize: The pod CIDR block size per node in
+	// this node pool.
+	PodIpv4CidrSize int64 `json:"podIpv4CidrSize,omitempty"`
+
+	// SelfLink: Server-defined URL for the resource.
+	SelfLink string `json:"selfLink,omitempty"`
+
+	// Status: The status of the nodes in this pool instance.
+	//
+	// Possible values:
+	//   "STATUS_UNSPECIFIED" - Not set.
+	//   "PROVISIONING" - The PROVISIONING state indicates the node pool is
+	// being created.
+	//   "RUNNING" - The RUNNING state indicates the node pool has been
+	// created
+	// and is fully usable.
+	//   "RUNNING_WITH_ERROR" - The RUNNING_WITH_ERROR state indicates the
+	// node pool has been created
+	// and is partially usable. Some error state has occurred and
+	// some
+	// functionality may be impaired. Customer may need to reissue a
+	// request
+	// or trigger a new update.
+	//   "RECONCILING" - The RECONCILING state indicates that some work is
+	// actively being done on
+	// the node pool, such as upgrading node software. Details can
+	// be found in the `statusMessage` field.
+	//   "STOPPING" - The STOPPING state indicates the node pool is being
+	// deleted.
+	//   "ERROR" - The ERROR state indicates the node pool may be unusable.
+	// Details
+	// can be found in the `statusMessage` field.
+	Status string `json:"status,omitempty"`
+
+	// StatusMessage: Additional information about the current
+	// status of this
+	// node pool instance, if available.
+	StatusMessage string `json:"statusMessage,omitempty"`
+
+	// Version: The version of the Kubernetes of this node.
+	Version string `json:"version,omitempty"`
+}
+
 // A GKEClusterSpec defines the desired state of a GKECluster.
 type GKEClusterSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
@@ -1217,10 +1285,10 @@ type GKEClusterStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.state"
-// +kubebuilder:printcolumn:name="CLUSTER-NAME",type="string",JSONPath=".status.clusterName"
-// +kubebuilder:printcolumn:name="ENDPOINT",type="string",JSONPath=".status.endpoint"
+// +kubebuilder:printcolumn:name="CLUSTER-NAME",type="string",JSONPath=".spec.forProvider.clusterName"
+// +kubebuilder:printcolumn:name="ENDPOINT",type="string",JSONPath=".status.atProvider.endpoint"
 // +kubebuilder:printcolumn:name="CLUSTER-CLASS",type="string",JSONPath=".spec.classRef.name"
-// +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.zone"
+// +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".spec.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster

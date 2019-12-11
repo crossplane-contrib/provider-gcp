@@ -33,7 +33,9 @@ import (
 )
 
 const (
-	name = "my-cool-cluster"
+	name     = "my-cool-cluster"
+	location = "cool-location"
+	project  = "cool-project"
 )
 
 var (
@@ -75,7 +77,7 @@ func params(m ...func(*v1beta1.GKEClusterParameters)) *v1beta1.GKEClusterParamet
 		LoggingService:        gcp.StringPtr("logging.googleapis.com"),
 		MonitoringService:     gcp.StringPtr("monitoring.googleapis.com"),
 		Name:                  name,
-		Location:              "us-central1",
+		Location:              location,
 		Network:               gcp.StringPtr("default"),
 		ResourceLabels:        resourceLabels,
 		Subnetwork:            gcp.StringPtr("default"),
@@ -190,6 +192,36 @@ func TestGenerateObservation(t *testing.T) {
 				cluster: cluster(addOutputFields),
 			},
 			want: observation(),
+		},
+		"SuccessfulWithNodePool": {
+			args: args{
+				cluster(addOutputFields, func(c *container.Cluster) {
+					c.NodePools = []*container.NodePool{
+						&container.NodePool{
+							Conditions: []*container.StatusCondition{
+								&container.StatusCondition{
+									Code:    "cool-code",
+									Message: "cool-message",
+								},
+							},
+							Name: "cool-node-pool",
+						},
+					}
+				}),
+			},
+			want: observation(func(p *v1beta1.GKEClusterObservation) {
+				p.NodePools = []*v1beta1.NodePoolClusterStatus{
+					&v1beta1.NodePoolClusterStatus{
+						Conditions: []*v1beta1.StatusCondition{
+							&v1beta1.StatusCondition{
+								Code:    "cool-code",
+								Message: "cool-message",
+							},
+						},
+						Name: "cool-node-pool",
+					},
+				}
+			}),
 		},
 	}
 	for name, tc := range tests {
@@ -611,10 +643,10 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.IpAllocationPolicy = &v1beta1.IPAllocationPolicy{
+					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
 						AllowRouteOverlap:    gcp.BoolPtr(true),
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
-						UseIpAliases:         gcp.BoolPtr(true),
+						UseIPAliases:         gcp.BoolPtr(true),
 					}
 				}),
 			},
@@ -636,7 +668,7 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			GenerateIpAllocationPolicy(tc.args.params.IpAllocationPolicy, tc.args.cluster)
+			GenerateIPAllocationPolicy(tc.args.params.IPAllocationPolicy, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.IpAllocationPolicy, tc.args.cluster.IpAllocationPolicy); diff != "" {
 				t.Errorf("GenerateIpAllocationPolicy(...): -want, +got:\n%s", diff)
 			}
@@ -1080,7 +1112,7 @@ func TestGenerateResourceUsageExportConfig(t *testing.T) {
 					p.ResourceUsageExportConfig = &v1beta1.ResourceUsageExportConfig{
 						EnableNetworkEgressMetering: gcp.BoolPtr(true),
 						BigqueryDestination: &v1beta1.BigQueryDestination{
-							DatasetId: "cool-id",
+							DatasetID: "cool-id",
 						},
 						ConsumptionMeteringConfig: &v1beta1.ConsumptionMeteringConfig{
 							Enabled: true,
@@ -1276,11 +1308,11 @@ func TestLateInitializeSpec(t *testing.T) {
 			want: want{
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
-						HttpLoadBalancing: &v1beta1.HttpLoadBalancing{
+						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
 							Disabled: true,
 						},
 					}
-					p.IpAllocationPolicy = &v1beta1.IPAllocationPolicy{
+					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
 					}
 				}),
@@ -1362,6 +1394,48 @@ func TestIsUpToDate(t *testing.T) {
 				upToDate: false,
 			},
 		},
+		"NoUpdateNotBootstrapNodePool": {
+			args: args{
+				cluster: cluster(func(c *container.Cluster) {
+					c.NodePools = []*container.NodePool{
+						&container.NodePool{
+							Conditions: []*container.StatusCondition{
+								&container.StatusCondition{
+									Code:    "cool-code",
+									Message: "cool-message",
+								},
+							},
+							Name: "cool-node-pool",
+						},
+					}
+				}),
+				params: params(),
+			},
+			want: want{
+				upToDate: true,
+			},
+		},
+		"NeedsUpdateBootstrapNodePool": {
+			args: args{
+				cluster: cluster(func(c *container.Cluster) {
+					c.NodePools = []*container.NodePool{
+						&container.NodePool{
+							Conditions: []*container.StatusCondition{
+								&container.StatusCondition{
+									Code:    "cool-code",
+									Message: "cool-message",
+								},
+							},
+							Name: BootstrapNodePoolName,
+						},
+					}
+				}),
+				params: params(),
+			},
+			want: want{
+				upToDate: false,
+			},
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -1371,6 +1445,81 @@ func TestIsUpToDate(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
 				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGetFullyQualifiedParent(t *testing.T) {
+	type args struct {
+		project string
+		params  v1beta1.GKEClusterParameters
+	}
+	tests := map[string]struct {
+		args args
+		want string
+	}{
+		"Successful": {
+			args: args{
+				project: project,
+				params:  *params(),
+			},
+			want: fmt.Sprintf(ParentFormat, project, location),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := GetFullyQualifiedParent(tc.args.project, tc.args.params)
+			if diff := cmp.Diff(tc.want, s); diff != "" {
+				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGetFullyQualifiedName(t *testing.T) {
+	type args struct {
+		project string
+		params  v1beta1.GKEClusterParameters
+	}
+	tests := map[string]struct {
+		args args
+		want string
+	}{
+		"Successful": {
+			args: args{
+				project: project,
+				params:  *params(),
+			},
+			want: fmt.Sprintf(ClusterNameFormat, project, location, name),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := GetFullyQualifiedName(tc.args.project, tc.args.params)
+			if diff := cmp.Diff(tc.want, s); diff != "" {
+				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGetFullyQualifiedBNP(t *testing.T) {
+	clusterName := fmt.Sprintf(ClusterNameFormat, project, location, name)
+	tests := map[string]struct {
+		name string
+		want string
+	}{
+		"Successful": {
+			name: clusterName,
+			want: fmt.Sprintf(BNPNameFormat, clusterName, BootstrapNodePoolName),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := GetFullyQualifiedBNP(tc.name)
+			if diff := cmp.Diff(tc.want, s); diff != "" {
+				t.Errorf("GetFullyQualifiedBNP(...): -want, +got:\n%s", diff)
 			}
 		})
 	}

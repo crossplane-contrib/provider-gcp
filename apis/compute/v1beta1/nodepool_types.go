@@ -228,7 +228,7 @@ type NodeConfig struct {
 	// CPU
 	// platform](https://cloud.google.com/compute/docs/instances/specify-
 	// min-cpu-platform)
-	MinCpuPlatform string `json:"minCpuPlatform,omitempty"`
+	MinCPUPlatform string `json:"minCpuPlatform,omitempty"`
 
 	// OauthScopes: The set of Google API scopes to be made available on all
 	// of the
