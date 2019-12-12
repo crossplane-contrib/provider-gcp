@@ -188,7 +188,7 @@ func (in *GKEClusterClass) DeepCopyObject() runtime.Object {
 func (in *GKEClusterClassList) DeepCopyInto(out *GKEClusterClassList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]GKEClusterClass, len(*in))
@@ -237,7 +237,7 @@ func (in *GKEClusterClassSpecTemplate) DeepCopy() *GKEClusterClassSpecTemplate {
 func (in *GKEClusterList) DeepCopyInto(out *GKEClusterList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]GKECluster, len(*in))
@@ -366,7 +366,7 @@ func (in *GlobalAddress) DeepCopyObject() runtime.Object {
 func (in *GlobalAddressList) DeepCopyInto(out *GlobalAddressList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]GlobalAddress, len(*in))
@@ -539,7 +539,7 @@ func (in *Network) DeepCopyObject() runtime.Object {
 func (in *NetworkList) DeepCopyInto(out *NetworkList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Network, len(*in))
@@ -721,7 +721,7 @@ func (in *Subnetwork) DeepCopyObject() runtime.Object {
 func (in *SubnetworkList) DeepCopyInto(out *SubnetworkList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Subnetwork, len(*in))

@@ -301,6 +301,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 				if err := r.Get(ctx, key, b); err != nil {
 					t.Errorf("Reconciler.Reconcile() bucket error: %s", err)
 				}
+				// NOTE(muvaf): Get call fills TypeMeta and ObjectMeta.ResourceVersion
+				// but these are not our concern in these tests.
+				tt.wantObj.TypeMeta = b.TypeMeta
+				tt.wantObj.ResourceVersion = b.ResourceVersion
+
 				if diff := cmp.Diff(tt.wantObj, b, test.EquateConditions()); diff != "" {
 					t.Errorf("Reconciler.Reconcile() -want bucket, +got bucket:\n%s", diff)
 				}
