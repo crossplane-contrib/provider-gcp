@@ -8,31 +8,6 @@ metadata:
   creationTimestamp: null
   name: gkeclusters.compute.gcp.crossplane.io
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .status.bindingPhase
-    name: STATUS
-    type: string
-  - JSONPath: .status.state
-    name: STATE
-    type: string
-  - JSONPath: .status.clusterName
-    name: CLUSTER-NAME
-    type: string
-  - JSONPath: .status.endpoint
-    name: ENDPOINT
-    type: string
-  - JSONPath: .spec.classRef.name
-    name: CLUSTER-CLASS
-    type: string
-  - JSONPath: .spec.zone
-    name: LOCATION
-    type: string
-  - JSONPath: .spec.reclaimPolicy
-    name: RECLAIM-POLICY
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    name: AGE
-    type: date
   group: compute.gcp.crossplane.io
   names:
     kind: GKECluster

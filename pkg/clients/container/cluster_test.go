@@ -204,6 +204,13 @@ func TestGenerateObservation(t *testing.T) {
 									Message: "cool-message",
 								},
 							},
+							Config: &container.NodeConfig{
+								Accelerators: []*container.AcceleratorConfig{
+									&container.AcceleratorConfig{
+										AcceleratorCount: 5,
+									},
+								},
+							},
 							Name: "cool-node-pool",
 						},
 					}
@@ -216,6 +223,13 @@ func TestGenerateObservation(t *testing.T) {
 							&v1beta1.StatusCondition{
 								Code:    "cool-code",
 								Message: "cool-message",
+							},
+						},
+						Config: &v1beta1.NodeConfigClusterStatus{
+							Accelerators: []*v1beta1.AcceleratorConfigClusterStatus{
+								&v1beta1.AcceleratorConfigClusterStatus{
+									AcceleratorCount: 5,
+								},
 							},
 						},
 						Name: "cool-node-pool",

@@ -17,7 +17,6 @@ limitations under the License.
 package container
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 
@@ -456,17 +455,7 @@ func GenerateObservation(in container.Cluster) v1beta1.GKEClusterObservation { /
 
 	for _, nodePool := range in.NodePools {
 		if nodePool != nil {
-			conditions := []*v1beta1.StatusCondition{}
-			for _, condition := range nodePool.Conditions {
-				if condition != nil {
-					conditions = append(conditions, &v1beta1.StatusCondition{
-						Code:    condition.Code,
-						Message: condition.Message,
-					})
-				}
-			}
-			o.NodePools = append(o.NodePools, &v1beta1.NodePoolClusterStatus{
-				Conditions:        conditions,
+			np := &v1beta1.NodePoolClusterStatus{
 				InstanceGroupUrls: nodePool.InstanceGroupUrls,
 				Name:              nodePool.Name,
 				PodIpv4CidrSize:   nodePool.PodIpv4CidrSize,
@@ -474,7 +463,73 @@ func GenerateObservation(in container.Cluster) v1beta1.GKEClusterObservation { /
 				Status:            nodePool.Status,
 				StatusMessage:     nodePool.StatusMessage,
 				Version:           nodePool.Version,
-			})
+			}
+			if nodePool.Autoscaling != nil {
+				np.Autoscaling = &v1beta1.NodePoolAutoscalingClusterStatus{
+					Autoprovisioned: nodePool.Autoscaling.Autoprovisioned,
+					Enabled:         nodePool.Autoscaling.Enabled,
+					MaxNodeCount:    nodePool.Autoscaling.MaxNodeCount,
+					MinNodeCount:    nodePool.Autoscaling.MinNodeCount,
+				}
+			}
+			if nodePool.Config != nil {
+				np.Config = &v1beta1.NodeConfigClusterStatus{
+					DiskSizeGb:     nodePool.Config.DiskSizeGb,
+					DiskType:       nodePool.Config.DiskType,
+					ImageType:      nodePool.Config.ImageType,
+					Labels:         nodePool.Config.Labels,
+					LocalSsdCount:  nodePool.Config.LocalSsdCount,
+					MachineType:    nodePool.Config.MachineType,
+					Metadata:       nodePool.Config.Metadata,
+					MinCPUPlatform: nodePool.Config.MinCpuPlatform,
+					OauthScopes:    nodePool.Config.OauthScopes,
+					Preemptible:    nodePool.Config.Preemptible,
+					ServiceAccount: nodePool.Config.ServiceAccount,
+					Tags:           nodePool.Config.Tags,
+				}
+				for _, a := range nodePool.Config.Accelerators {
+					if a != nil {
+						np.Config.Accelerators = append(np.Config.Accelerators, &v1beta1.AcceleratorConfigClusterStatus{
+							AcceleratorCount: a.AcceleratorCount,
+							AcceleratorType:  a.AcceleratorType,
+						})
+					}
+				}
+				if nodePool.Config.SandboxConfig != nil {
+					np.Config.SandboxConfig = &v1beta1.SandboxConfigClusterStatus{
+						SandboxType: nodePool.Config.SandboxConfig.SandboxType,
+					}
+				}
+				if nodePool.Config.ShieldedInstanceConfig != nil {
+					np.Config.ShieldedInstanceConfig = &v1beta1.ShieldedInstanceConfigClusterStatus{
+						EnableIntegrityMonitoring: nodePool.Config.ShieldedInstanceConfig.EnableIntegrityMonitoring,
+						EnableSecureBoot:          nodePool.Config.ShieldedInstanceConfig.EnableSecureBoot,
+					}
+				}
+				for _, t := range nodePool.Config.Taints {
+					if t != nil {
+						np.Config.Taints = append(np.Config.Taints, &v1beta1.NodeTaintClusterStatus{
+							Effect: t.Effect,
+							Key:    t.Key,
+							Value:  t.Value,
+						})
+					}
+				}
+				if nodePool.Config.WorkloadMetadataConfig != nil {
+					np.Config.WorkloadMetadataConfig = &v1beta1.WorkloadMetadataConfigClusterStatus{
+						NodeMetadata: nodePool.Config.WorkloadMetadataConfig.NodeMetadata,
+					}
+				}
+			}
+			for _, c := range nodePool.Conditions {
+				if c != nil {
+					np.Conditions = append(np.Conditions, &v1beta1.StatusCondition{
+						Code:    c.Code,
+						Message: c.Message,
+					})
+				}
+			}
+			o.NodePools = append(o.NodePools, np)
 		}
 	}
 
@@ -727,271 +782,34 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 
 }
 
-// UpdateFn returns a function that updates a cluster.
-type UpdateFn func(container.Service, context.Context, string) (*container.Operation, error)
-
-// NewAddonsConfigUpdate returns a function that updates the AddonsConfig of a cluster.
-func NewAddonsConfigUpdate(in *v1beta1.AddonsConfig) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateAddonsConfig(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredAddonsConfig: out.AddonsConfig,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewAutoscalingUpdate returns a function that updates the Autoscaling of a cluster.
-func NewAutoscalingUpdate(in *v1beta1.ClusterAutoscaling) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateAutoscaling(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredClusterAutoscaling: out.Autoscaling,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewBinaryAuthorizationUpdate returns a function that updates the BinaryAuthorization of a cluster.
-func NewBinaryAuthorizationUpdate(in *v1beta1.BinaryAuthorization) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateBinaryAuthorization(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredBinaryAuthorization: out.BinaryAuthorization,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewDatabaseEncryptionUpdate returns a function that updates the DatabaseEncryption of a cluster.
-func NewDatabaseEncryptionUpdate(in *v1beta1.DatabaseEncryption) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateDatabaseEncryption(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredDatabaseEncryption: out.DatabaseEncryption,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewLegacyAbacUpdate returns a function that updates the LegacyAbac of a cluster.
-func NewLegacyAbacUpdate(in *v1beta1.LegacyAbac) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateLegacyAbac(in, out)
-		update := &container.SetLegacyAbacRequest{
-			Enabled: out.LegacyAbac.Enabled,
-		}
-		return s.Projects.Locations.Clusters.SetLegacyAbac(name, update).Context(ctx).Do()
-	}
-}
-
-// NewLocationsUpdate returns a function that updates the Locations of a cluster.
-func NewLocationsUpdate(in []string) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredLocations: in,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewLoggingServiceUpdate returns a function that updates the LoggingService of a cluster.
-func NewLoggingServiceUpdate(in *string) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredLoggingService: gcp.StringValue(in),
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewMaintenancePolicyUpdate returns a function that updates the MaintenancePolicy of a cluster.
-func NewMaintenancePolicyUpdate(in *v1beta1.MaintenancePolicySpec) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateMaintenancePolicy(in, out)
-		update := &container.SetMaintenancePolicyRequest{
-			MaintenancePolicy: out.MaintenancePolicy,
-		}
-		return s.Projects.Locations.Clusters.SetMaintenancePolicy(name, update).Context(ctx).Do()
-	}
-}
-
-// NewMasterAuthUpdate returns a function that updates the MasterAuth of a cluster.
-func NewMasterAuthUpdate(in *v1beta1.MasterAuth) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateMasterAuth(in, out)
-		update := &container.SetMasterAuthRequest{
-			// TODO(hasheddan): need to set Action here?
-			Update: out.MasterAuth,
-		}
-		return s.Projects.Locations.Clusters.SetMasterAuth(name, update).Context(ctx).Do()
-	}
-}
-
-// NewMasterAuthorizedNetworksConfigUpdate returns a function that updates the MasterAuthorizedNetworksConfig of a cluster.
-func NewMasterAuthorizedNetworksConfigUpdate(in *v1beta1.MasterAuthorizedNetworksConfig) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredMasterAuthorizedNetworksConfig: out.MasterAuthorizedNetworksConfig,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewMonitoringServiceUpdate returns a function that updates the MonitoringService of a cluster.
-func NewMonitoringServiceUpdate(in *string) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredMonitoringService: gcp.StringValue(in),
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewNetworkConfigUpdate returns a function that updates the NetworkConfig of a cluster.
-func NewNetworkConfigUpdate(in *v1beta1.NetworkConfigSpec) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateNetworkConfig(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredIntraNodeVisibilityConfig: &container.IntraNodeVisibilityConfig{
-					Enabled: out.NetworkConfig.EnableIntraNodeVisibility,
-				},
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewNetworkPolicyUpdate returns a function that updates the NetworkPolicy of a cluster.
-func NewNetworkPolicyUpdate(in *v1beta1.NetworkPolicy) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateNetworkPolicy(in, out)
-		update := &container.SetNetworkPolicyRequest{
-			NetworkPolicy: out.NetworkPolicy,
-		}
-		return s.Projects.Locations.Clusters.SetNetworkPolicy(name, update).Context(ctx).Do()
-	}
-}
-
-// NewPodSecurityPolicyConfigUpdate returns a function that updates the PodSecurityPolicyConfig of a cluster.
-func NewPodSecurityPolicyConfigUpdate(in *v1beta1.PodSecurityPolicyConfig) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GeneratePodSecurityPolicyConfig(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredPodSecurityPolicyConfig: out.PodSecurityPolicyConfig,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewPrivateClusterConfigUpdate returns a function that updates the PrivateClusterConfig of a cluster.
-func NewPrivateClusterConfigUpdate(in *v1beta1.PrivateClusterConfigSpec) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GeneratePrivateClusterConfig(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredPrivateClusterConfig: out.PrivateClusterConfig,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewResourceLabelsUpdate returns a function that updates the ResourceLabels of a cluster.
-func NewResourceLabelsUpdate(in map[string]string) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		update := &container.SetLabelsRequest{
-			ResourceLabels: in,
-		}
-		return s.Projects.Locations.Clusters.SetResourceLabels(name, update).Context(ctx).Do()
-	}
-}
-
-// NewResourceUsageExportConfigUpdate returns a function that updates the ResourceUsageExportConfig of a cluster.
-func NewResourceUsageExportConfigUpdate(in *v1beta1.ResourceUsageExportConfig) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateResourceUsageExportConfig(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredResourceUsageExportConfig: out.ResourceUsageExportConfig,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewVerticalPodAutoscalingUpdate returns a function that updates the VerticalPodAutoscaling of a cluster.
-func NewVerticalPodAutoscalingUpdate(in *v1beta1.VerticalPodAutoscaling) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateVerticalPodAutoscaling(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredVerticalPodAutoscaling: out.VerticalPodAutoscaling,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// NewWorkloadIdentityConfigUpdate returns a function that updates the WorkloadIdentityConfig of a cluster.
-func NewWorkloadIdentityConfigUpdate(in *v1beta1.WorkloadIdentityConfig) UpdateFn {
-	return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateWorkloadIdentityConfig(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredWorkloadIdentityConfig: out.WorkloadIdentityConfig,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
-// CheckForBootstrapNodePool checks if the bootstrap node pool exists for the
-// cluster and returns a function to delete it if so.
-func CheckForBootstrapNodePool(c container.Cluster) UpdateFn {
+// checkForBootstrapNodePool checks if the bootstrap node pool exists for the
+// cluster.
+func checkForBootstrapNodePool(c container.Cluster) bool {
 	for _, pool := range c.NodePools {
 		if pool == nil || pool.Name != BootstrapNodePoolName {
 			continue
 		}
-		return func(s container.Service, ctx context.Context, name string) (*container.Operation, error) {
-			return s.Projects.Locations.Clusters.NodePools.Delete(GetFullyQualifiedBNP(name)).Context(ctx).Do()
-		}
+		return true
 	}
-	return nil
+	return false
+}
+
+// BootstrapNodePoolDeletion indicates the bootstrap node pool should be deleted.
+type BootstrapNodePoolDeletion struct{}
+
+// WrappedLocations wraps Locations for type assertion.
+type WrappedLocations struct {
+	Locations []string
+}
+
+// WrappedLoggingService wraps LoggingService for type assertion.
+type WrappedLoggingService struct {
+	LoggingService *string
+}
+
+// WrappedMonitoringService wraps MonitoringService for type assertion.
+type WrappedMonitoringService struct {
+	MonitoringService *string
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
@@ -999,68 +817,98 @@ func CheckForBootstrapNodePool(c container.Cluster) UpdateFn {
 // NOTE(hasheddan): This function is significantly above our cyclomatic
 // complexity limit, but is necessary due to the fact that the GKE API only
 // allows for update of one field at a time.
-func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateFn) { // nolint:gocyclo
+func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, interface{}) { // nolint:gocyclo
 	currentParams := &v1beta1.GKEClusterParameters{}
 	LateInitializeSpec(currentParams, currentState)
-	if fn := CheckForBootstrapNodePool(currentState); fn != nil {
-		return false, fn
+	if checkForBootstrapNodePool(currentState) {
+		return false, &BootstrapNodePoolDeletion{}
 	}
 	if !cmp.Equal(in.AddonsConfig, currentParams.AddonsConfig) {
-		return false, NewAddonsConfigUpdate(in.AddonsConfig)
+		out := &container.Cluster{}
+		GenerateAddonsConfig(in.AddonsConfig, out)
+		return false, out.AddonsConfig
 	}
 	if !cmp.Equal(in.Autoscaling, currentParams.Autoscaling) {
-		return false, NewAutoscalingUpdate(in.Autoscaling)
+		out := &container.Cluster{}
+		GenerateAutoscaling(in.Autoscaling, out)
+		return false, out.Autoscaling
 	}
 	if !cmp.Equal(in.BinaryAuthorization, currentParams.BinaryAuthorization) {
-		return false, NewBinaryAuthorizationUpdate(in.BinaryAuthorization)
+		out := &container.Cluster{}
+		GenerateBinaryAuthorization(in.BinaryAuthorization, out)
+		return false, out.BinaryAuthorization
 	}
 	if !cmp.Equal(in.DatabaseEncryption, currentParams.DatabaseEncryption) {
-		return false, NewDatabaseEncryptionUpdate(in.DatabaseEncryption)
+		out := &container.Cluster{}
+		GenerateDatabaseEncryption(in.DatabaseEncryption, out)
+		return false, out.DatabaseEncryption
 	}
 	if !cmp.Equal(in.LegacyAbac, currentParams.LegacyAbac) {
-		return false, NewLegacyAbacUpdate(in.LegacyAbac)
+		out := &container.Cluster{}
+		GenerateLegacyAbac(in.LegacyAbac, out)
+		return false, out.LegacyAbac
 	}
 	if !cmp.Equal(in.Locations, currentParams.Locations) {
-		return false, NewLocationsUpdate(in.Locations)
+		return false, &WrappedLocations{in.Locations}
 	}
 	if !cmp.Equal(in.LoggingService, currentParams.LoggingService) {
-		return false, NewLoggingServiceUpdate(in.LoggingService)
+		return false, &WrappedLoggingService{in.LoggingService}
 	}
 	if !cmp.Equal(in.MaintenancePolicy, currentParams.MaintenancePolicy) {
-		return false, NewMaintenancePolicyUpdate(in.MaintenancePolicy)
+		out := &container.Cluster{}
+		GenerateMaintenancePolicy(in.MaintenancePolicy, out)
+		return false, out.MaintenancePolicy
 	}
 	if !cmp.Equal(in.MasterAuth, currentParams.MasterAuth) {
-		return false, NewMasterAuthUpdate(in.MasterAuth)
+		out := &container.Cluster{}
+		GenerateMasterAuth(in.MasterAuth, out)
+		return false, out.MasterAuth
 	}
 	if !cmp.Equal(in.MasterAuthorizedNetworksConfig, currentParams.MasterAuthorizedNetworksConfig) {
-		return false, NewMasterAuthorizedNetworksConfigUpdate(in.MasterAuthorizedNetworksConfig)
+		out := &container.Cluster{}
+		GenerateMasterAuthorizedNetworksConfig(in.MasterAuthorizedNetworksConfig, out)
+		return false, out.MasterAuthorizedNetworksConfig
 	}
 	if !cmp.Equal(in.MonitoringService, currentParams.MonitoringService) {
-		return false, NewMonitoringServiceUpdate(in.MonitoringService)
+		return false, &WrappedMonitoringService{in.MonitoringService}
 	}
 	if !cmp.Equal(in.NetworkConfig, currentParams.NetworkConfig) {
-		return false, NewNetworkConfigUpdate(in.NetworkConfig)
+		out := &container.Cluster{}
+		GenerateNetworkConfig(in.NetworkConfig, out)
+		return false, out.NetworkConfig
 	}
 	if !cmp.Equal(in.NetworkPolicy, currentParams.NetworkPolicy) {
-		return false, NewNetworkPolicyUpdate(in.NetworkPolicy)
+		out := &container.Cluster{}
+		GenerateNetworkPolicy(in.NetworkPolicy, out)
+		return false, out.NetworkPolicy
 	}
 	if !cmp.Equal(in.PodSecurityPolicyConfig, currentParams.PodSecurityPolicyConfig) {
-		return false, NewPodSecurityPolicyConfigUpdate(in.PodSecurityPolicyConfig)
+		out := &container.Cluster{}
+		GeneratePodSecurityPolicyConfig(in.PodSecurityPolicyConfig, out)
+		return false, out.PodSecurityPolicyConfig
 	}
 	if !cmp.Equal(in.PrivateClusterConfig, currentParams.PrivateClusterConfig) {
-		return false, NewPrivateClusterConfigUpdate(in.PrivateClusterConfig)
+		out := &container.Cluster{}
+		GeneratePrivateClusterConfig(in.PrivateClusterConfig, out)
+		return false, out.PrivateClusterConfig
 	}
 	if !cmp.Equal(in.ResourceLabels, currentParams.ResourceLabels) {
-		return false, NewResourceLabelsUpdate(in.ResourceLabels)
+		return false, in.ResourceLabels
 	}
 	if !cmp.Equal(in.ResourceUsageExportConfig, currentParams.ResourceUsageExportConfig) {
-		return false, NewResourceUsageExportConfigUpdate(in.ResourceUsageExportConfig)
+		out := &container.Cluster{}
+		GenerateResourceUsageExportConfig(in.ResourceUsageExportConfig, out)
+		return false, out.ResourceUsageExportConfig
 	}
 	if !cmp.Equal(in.VerticalPodAutoscaling, currentParams.VerticalPodAutoscaling) {
-		return false, NewVerticalPodAutoscalingUpdate(in.VerticalPodAutoscaling)
+		out := &container.Cluster{}
+		GenerateVerticalPodAutoscaling(in.VerticalPodAutoscaling, out)
+		return false, out.VerticalPodAutoscaling
 	}
 	if !cmp.Equal(in.WorkloadIdentityConfig, currentParams.WorkloadIdentityConfig) {
-		return false, NewWorkloadIdentityConfigUpdate(in.WorkloadIdentityConfig)
+		out := &container.Cluster{}
+		GenerateWorkloadIdentityConfig(in.WorkloadIdentityConfig, out)
+		return false, out.WorkloadIdentityConfig
 	}
 	return true, nil
 }

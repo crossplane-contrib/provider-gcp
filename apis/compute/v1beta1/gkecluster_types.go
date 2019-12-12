@@ -86,21 +86,21 @@ type GKEClusterObservation struct {
 	// Conditions: Which conditions caused the current cluster state.
 	Conditions []*StatusCondition `json:"conditions,omitempty"`
 
-	// CreateTime: [Output only] The time the cluster was created,
+	// CreateTime: The time the cluster was created,
 	// in
 	// [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text format.
 	CreateTime string `json:"createTime,omitempty"`
 
-	// CurrentMasterVersion: [Output only] The current software version of
+	// CurrentMasterVersion: The current software version of
 	// the master endpoint.
 	CurrentMasterVersion string `json:"currentMasterVersion,omitempty"`
 
-	// CurrentNodeCount: [Output only]  The number of nodes currently in the
+	// CurrentNodeCount:  The number of nodes currently in the
 	// cluster. Deprecated.
 	// Call Kubernetes API directly to retrieve node information.
 	CurrentNodeCount int64 `json:"currentNodeCount,omitempty"`
 
-	// CurrentNodeVersion: [Output only] Deprecated,
+	// CurrentNodeVersion: Deprecated,
 	// use
 	// [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/proj
 	// ects.zones.clusters.nodePools)
@@ -111,7 +111,7 @@ type GKEClusterObservation struct {
 	// upgraded, this reflects the minimum version of all nodes.
 	CurrentNodeVersion string `json:"currentNodeVersion,omitempty"`
 
-	// Endpoint: [Output only] The IP address of this cluster's master
+	// Endpoint: The IP address of this cluster's master
 	// endpoint.
 	// The endpoint can be accessed from the internet
 	// at
@@ -122,13 +122,13 @@ type GKEClusterObservation struct {
 	// password information.
 	Endpoint string `json:"endpoint,omitempty"`
 
-	// ExpireTime: [Output only] The time the cluster will be
+	// ExpireTime: The time the cluster will be
 	// automatically
 	// deleted in [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text
 	// format.
 	ExpireTime string `json:"expireTime,omitempty"`
 
-	// Location: [Output only] The name of the Google Compute
+	// Location: The name of the Google Compute
 	// Engine
 	// [zone](/compute/docs/regions-zones/regions-zones#available)
 	// or
@@ -143,7 +143,7 @@ type GKEClusterObservation struct {
 	// NetworkConfig: Configuration for cluster networking.
 	NetworkConfig *NetworkConfigStatus `json:"networkConfig,omitempty"`
 
-	// NodeIpv4CidrSize: [Output only] The size of the address space on each
+	// NodeIpv4CidrSize: The size of the address space on each
 	// node for hosting
 	// containers. This is provisioned from within the
 	// `container_ipv4_cidr`
@@ -164,10 +164,10 @@ type GKEClusterObservation struct {
 	// specified.
 	NodePools []*NodePoolClusterStatus `json:"nodePools,omitempty"`
 
-	// SelfLink: [Output only] Server-defined URL for the resource.
+	// SelfLink: Server-defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// ServicesIpv4Cidr: [Output only] The IP address range of the
+	// ServicesIpv4Cidr: The IP address range of the
 	// Kubernetes services in
 	// this cluster,
 	// in
@@ -177,7 +177,7 @@ type GKEClusterObservation struct {
 	// typically put in the last `/16` from the container CIDR.
 	ServicesIpv4Cidr string `json:"servicesIpv4Cidr,omitempty"`
 
-	// Status: [Output only] The current status of this cluster.
+	// Status: The current status of this cluster.
 	//
 	// Possible values:
 	//   "STATUS_UNSPECIFIED" - Not set.
@@ -202,12 +202,12 @@ type GKEClusterObservation struct {
 	// field.
 	Status string `json:"status,omitempty"`
 
-	// StatusMessage: [Output only] Additional information about the current
+	// StatusMessage: Additional information about the current
 	// status of this
 	// cluster, if available.
 	StatusMessage string `json:"statusMessage,omitempty"`
 
-	// TpuIpv4CidrBlock: [Output only] The IP address range of the Cloud
+	// TpuIpv4CidrBlock: The IP address range of the Cloud
 	// TPUs in this cluster,
 	// in
 	// [CIDR](http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
@@ -215,7 +215,7 @@ type GKEClusterObservation struct {
 	// notation (e.g. `1.2.3.4/29`).
 	TpuIpv4CidrBlock string `json:"tpuIpv4CidrBlock,omitempty"`
 
-	// Zone: [Output only] The name of the Google Compute
+	// Zone: The name of the Google Compute
 	// Engine
 	// [zone](/compute/docs/zones#available) in which the
 	// cluster
@@ -336,7 +336,7 @@ type GKEClusterParameters struct {
 	// the cluster will be Regional, if a zone is given the cluster will be
 	// Zonal.
 
-	// Location: [Output only] The name of the Google Compute
+	// Location: The name of the Google Compute
 	// Engine
 	// [zone](/compute/docs/regions-zones/regions-zones#available)
 	// or
@@ -628,8 +628,6 @@ type AuthenticatorGroupsConfig struct {
 	// if enabled = true.
 	// +optional
 	SecurityGroup *string `json:"securityGroup,omitempty"`
-
-	// TODO(hasheddan): add security group ref
 }
 
 // ClusterAutoscaling contains global, per-cluster
@@ -673,8 +671,6 @@ type AutoprovisioningNodePoolDefaults struct {
 	// service_account is specified, scopes should be empty.
 	// +optional
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
-
-	// TODO(hasheddan): add service account ref
 }
 
 // ResourceLimit contains information about amount of some resource in
@@ -808,7 +804,6 @@ type IPAllocationPolicy struct {
 	// automatically for the cluster.
 	//
 	// This field is only applicable when `use_ip_aliases` is true.
-	// TODO(hasheddan): should this be removed?
 	// +optional
 	CreateSubnetwork *bool `json:"createSubnetwork,omitempty"`
 
@@ -828,7 +823,6 @@ type IPAllocationPolicy struct {
 	// notation (e.g. `10.96.0.0/14`) from the RFC-1918 private networks (e.g.
 	// `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) to pick a specific range
 	// to use.
-	// TODO(hasheddan): should this be removed?
 	// +optional
 	NodeIpv4CidrBlock *string `json:"nodeIpv4CidrBlock,omitempty"`
 
@@ -869,7 +863,7 @@ type IPAllocationPolicy struct {
 	// this field is empty, then an automatic name will be chosen for the
 	// new
 	// subnetwork.
-	// TODO(hasheddan): should this be removed?
+	// +optional
 	SubnetworkName *string `json:"subnetworkName,omitempty"`
 
 	// TpuIpv4CidrBlock: The IP address range of the Cloud TPUs in this cluster.
@@ -958,7 +952,7 @@ type MaintenanceWindowStatus struct {
 // DailyMaintenanceWindowStatus is the observed time window for daily
 // maintenance operations.
 type DailyMaintenanceWindowStatus struct {
-	// Duration: [Output only] Duration of the time window, automatically
+	// Duration: Duration of the time window, automatically
 	// chosen to be
 	// smallest possible in the given scenario.
 	// Duration will be in
@@ -1051,14 +1045,14 @@ type NetworkConfigSpec struct {
 // NetworkConfigStatus reports the relative names of network &
 // subnetwork.
 type NetworkConfigStatus struct {
-	// Network: Output only. The relative name of the Google Compute
+	// Network: The relative name of the Google Compute
 	// Engine
 	// network(/compute/docs/networks-and-firewalls#networks) to which
 	// the cluster is connected.
 	// Example: projects/my-project/global/networks/my-network
 	Network string `json:"network,omitempty"`
 
-	// Subnetwork: Output only. The relative name of the Google Compute
+	// Subnetwork: The relative name of the Google Compute
 	// Engine
 	// [subnetwork](/compute/docs/vpc) to which the cluster is
 	// connected.
@@ -1126,11 +1120,11 @@ type PrivateClusterConfigSpec struct {
 
 // PrivateClusterConfigStatus is configuration options for private clusters.
 type PrivateClusterConfigStatus struct {
-	// PrivateEndpoint: Output only. The internal IP address of this
+	// PrivateEndpoint: The internal IP address of this
 	// cluster's master endpoint.
 	PrivateEndpoint string `json:"privateEndpoint,omitempty"`
 
-	// PublicEndpoint: Output only. The external IP address of this
+	// PublicEndpoint: The external IP address of this
 	// cluster's master endpoint.
 	PublicEndpoint string `json:"publicEndpoint,omitempty"`
 }
@@ -1206,11 +1200,32 @@ type WorkloadIdentityConfig struct {
 	IdentityNamespace string `json:"identityNamespace,omitempty"`
 }
 
+// NOTE(hasheddan): the following structs are meant to be utilized to model Node
+// Pools in the status of GKECluster objects. They are not to be used to define
+// configurable fields for NodePool objects.
+
 // NodePoolClusterStatus is a subset of information about NodePools associated
 // with a GKE cluster.
 type NodePoolClusterStatus struct {
+	// Autoscaling: Autoscaler configuration for this NodePool. Autoscaler
+	// is enabled
+	// only if a valid configuration is present.
+	Autoscaling *NodePoolAutoscalingClusterStatus `json:"autoscaling,omitempty"`
+
 	// Conditions: Which conditions caused the current node pool state.
 	Conditions []*StatusCondition `json:"conditions,omitempty"`
+
+	// Config: The node configuration of the pool.
+	Config *NodeConfigClusterStatus `json:"config,omitempty"`
+
+	// InitialNodeCount: The initial node count for the pool. You must
+	// ensure that your
+	// Compute Engine <a href="/compute/docs/resource-quotas">resource
+	// quota</a>
+	// is sufficient for this number of instances. You must also have
+	// available
+	// firewall and routes quota.
+	InitialNodeCount int64 `json:"initialNodeCount,omitempty"`
 
 	// InstanceGroupUrls: The resource URLs of the [managed
 	// instance
@@ -1218,6 +1233,19 @@ type NodePoolClusterStatus struct {
 	// ged-instances)
 	// associated with this node pool.
 	InstanceGroupUrls []string `json:"instanceGroupUrls,omitempty"`
+
+	// Locations: The list of Google Compute Engine
+	// [zones](/compute/docs/zones#available)
+	// in which the NodePool's nodes should be located.
+	Locations []string `json:"locations,omitempty"`
+
+	// Management: NodeManagement configuration for this NodePool.
+	Management *NodeManagementClusterStatus `json:"management,omitempty"`
+
+	// MaxPodsConstraint: The constraint on the maximum number of pods that
+	// can be run
+	// simultaneously on a node in the node pool.
+	MaxPodsConstraint *MaxPodsConstraint `json:"maxPodsConstraint,omitempty"`
 
 	// Name: The name of the node pool.
 	Name string `json:"name,omitempty"`
@@ -1263,6 +1291,336 @@ type NodePoolClusterStatus struct {
 
 	// Version: The version of the Kubernetes of this node.
 	Version string `json:"version,omitempty"`
+}
+
+// NodePoolAutoscalingClusterStatus contains information required by cluster
+// autoscaler to adjust the size of the node pool to the current cluster usage.
+type NodePoolAutoscalingClusterStatus struct {
+	// Autoprovisioned: Can this node pool be deleted automatically.
+	Autoprovisioned bool `json:"autoprovisioned,omitempty"`
+
+	// Enabled: Is autoscaling enabled for this node pool.
+	Enabled bool `json:"enabled,omitempty"`
+
+	// MaxNodeCount: Maximum number of nodes in the NodePool. Must be >=
+	// min_node_count. There
+	// has to enough quota to scale up the cluster.
+	MaxNodeCount int64 `json:"maxNodeCount,omitempty"`
+
+	// MinNodeCount: Minimum number of nodes in the NodePool. Must be >= 1
+	// and <=
+	// max_node_count.
+	MinNodeCount int64 `json:"minNodeCount,omitempty"`
+}
+
+// NodeConfigClusterStatus is the configuration of the node pool.
+type NodeConfigClusterStatus struct {
+	// Accelerators: A list of hardware accelerators to be attached to each
+	// node.
+	// See https://cloud.google.com/compute/docs/gpus for more information
+	// about
+	// support for GPUs.
+	Accelerators []*AcceleratorConfigClusterStatus `json:"accelerators,omitempty"`
+
+	// DiskSizeGb: Size of the disk attached to each node, specified in
+	// GB.
+	// The smallest allowed disk size is 10GB.
+	//
+	// If unspecified, the default disk size is 100GB.
+	DiskSizeGb int64 `json:"diskSizeGb,omitempty"`
+
+	// DiskType: Type of the disk attached to each node (e.g. 'pd-standard'
+	// or 'pd-ssd')
+	//
+	// If unspecified, the default disk type is 'pd-standard'
+	DiskType string `json:"diskType,omitempty"`
+
+	// ImageType: The image type to use for this node. Note that for a given
+	// image type,
+	// the latest version of it will be used.
+	ImageType string `json:"imageType,omitempty"`
+
+	// Labels: The map of Kubernetes labels (key/value pairs) to be applied
+	// to each node.
+	// These will added in addition to any default label(s) that
+	// Kubernetes may apply to the node.
+	// In case of conflict in label keys, the applied set may differ
+	// depending on
+	// the Kubernetes version -- it's best to assume the behavior is
+	// undefined
+	// and conflicts should be avoided.
+	// For more information, including usage and the valid values,
+	// see:
+	// https://kubernetes.io/docs/concepts/overview/working-with-objects
+	// /labels/
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// LocalSsdCount: The number of local SSD disks to be attached to the
+	// node.
+	//
+	// The limit for this value is dependant upon the maximum number
+	// of
+	// disks available on a machine per zone.
+	// See:
+	// https://cloud.google.com/compute/docs/disks/local-ssd#local_ssd_l
+	// imits
+	// for more information.
+	LocalSsdCount int64 `json:"localSsdCount,omitempty"`
+
+	// MachineType: The name of a Google Compute Engine
+	// [machine
+	// type](/compute/docs/machine-types) (e.g.
+	// `n1-standard-1`).
+	//
+	// If unspecified, the default machine type is
+	// `n1-standard-1`.
+	MachineType string `json:"machineType,omitempty"`
+
+	// Metadata: The metadata key/value pairs assigned to instances in the
+	// cluster.
+	//
+	// Keys must conform to the regexp [a-zA-Z0-9-_]+ and be less than 128
+	// bytes
+	// in length. These are reflected as part of a URL in the metadata
+	// server.
+	// Additionally, to avoid ambiguity, keys must not conflict with any
+	// other
+	// metadata keys for the project or be one of the reserved keys:
+	//  "cluster-location"
+	//  "cluster-name"
+	//  "cluster-uid"
+	//  "configure-sh"
+	//  "containerd-configure-sh"
+	//  "enable-oslogin"
+	//  "gci-ensure-gke-docker"
+	//  "gci-update-strategy"
+	//  "instance-template"
+	//  "kube-env"
+	//  "startup-script"
+	//  "user-data"
+	//  "disable-address-manager"
+	//  "windows-startup-script-ps1"
+	//  "common-psm1"
+	//  "k8s-node-setup-psm1"
+	//  "install-ssh-psm1"
+	//  "user-profile-psm1"
+	//  "serial-port-logging-enable"
+	// Values are free-form strings, and only have meaning as interpreted
+	// by
+	// the image running in the instance. The only restriction placed on
+	// them is
+	// that each value's size must be less than or equal to 32 KB.
+	//
+	// The total size of all keys and values must be less than 512 KB.
+	Metadata map[string]string `json:"metadata,omitempty"`
+
+	// MinCpuPlatform: Minimum CPU platform to be used by this instance. The
+	// instance may be
+	// scheduled on the specified or newer CPU platform. Applicable values
+	// are the
+	// friendly names of CPU platforms, such as
+	// <code>minCpuPlatform: &quot;Intel Haswell&quot;</code>
+	// or
+	// <code>minCpuPlatform: &quot;Intel Sandy Bridge&quot;</code>. For
+	// more
+	// information, read [how to specify min
+	// CPU
+	// platform](https://cloud.google.com/compute/docs/instances/specify-
+	// min-cpu-platform)
+	MinCPUPlatform string `json:"minCpuPlatform,omitempty"`
+
+	// OauthScopes: The set of Google API scopes to be made available on all
+	// of the
+	// node VMs under the "default" service account.
+	//
+	// The following scopes are recommended, but not required, and by
+	// default are
+	// not included:
+	//
+	// * `https://www.googleapis.com/auth/compute` is required for
+	// mounting
+	// persistent storage on your nodes.
+	// * `https://www.googleapis.com/auth/devstorage.read_only` is required
+	// for
+	// communicating with **gcr.io**
+	// (the [Google Container Registry](/container-registry/)).
+	//
+	// If unspecified, no scopes are added, unless Cloud Logging or
+	// Cloud
+	// Monitoring are enabled, in which case their required scopes will be
+	// added.
+	OauthScopes []string `json:"oauthScopes,omitempty"`
+
+	// Preemptible: Whether the nodes are created as preemptible VM
+	// instances.
+	// See:
+	// https://cloud.google.com/compute/docs/instances/preemptible for
+	// more
+	// inforamtion about preemptible VM instances.
+	Preemptible bool `json:"preemptible,omitempty"`
+
+	// SandboxConfig: Sandbox configuration for this node.
+	SandboxConfig *SandboxConfigClusterStatus `json:"sandboxConfig,omitempty"`
+
+	// ServiceAccount: The Google Cloud Platform Service Account to be used
+	// by the node VMs. If
+	// no Service Account is specified, the "default" service account is
+	// used.
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// ShieldedInstanceConfig: Shielded Instance options.
+	ShieldedInstanceConfig *ShieldedInstanceConfigClusterStatus `json:"shieldedInstanceConfig,omitempty"`
+
+	// Tags: The list of instance tags applied to all nodes. Tags are used
+	// to identify
+	// valid sources or targets for network firewalls and are specified
+	// by
+	// the client during cluster or node pool creation. Each tag within the
+	// list
+	// must comply with RFC1035.
+	Tags []string `json:"tags,omitempty"`
+
+	// Taints: List of kubernetes taints to be applied to each node.
+	//
+	// For more information, including usage and the valid values,
+	// see:
+	// https://kubernetes.io/docs/concepts/configuration/taint-and-toler
+	// ation/
+	Taints []*NodeTaintClusterStatus `json:"taints,omitempty"`
+
+	// WorkloadMetadataConfig: The workload metadata configuration for this
+	// node.
+	WorkloadMetadataConfig *WorkloadMetadataConfigClusterStatus `json:"workloadMetadataConfig,omitempty"`
+}
+
+// AcceleratorConfigClusterStatus represents a Hardware
+// Accelerator request.
+type AcceleratorConfigClusterStatus struct {
+	// AcceleratorCount: The number of the accelerator cards exposed to an
+	// instance.
+	AcceleratorCount int64 `json:"acceleratorCount,omitempty,string"`
+
+	// AcceleratorType: The accelerator type resource name. List of
+	// supported accelerators
+	// [here](/compute/docs/gpus/#Introduction)
+	AcceleratorType string `json:"acceleratorType,omitempty"`
+}
+
+// SandboxConfigClusterStatus contains configurations of the sandbox to use for
+// the node.
+type SandboxConfigClusterStatus struct {
+	// SandboxType: Type of the sandbox to use for the node (e.g. 'gvisor')
+	SandboxType string `json:"sandboxType,omitempty"`
+}
+
+// ShieldedInstanceConfigClusterStatus is a set of Shielded Instance options.
+type ShieldedInstanceConfigClusterStatus struct {
+	// EnableIntegrityMonitoring: Defines whether the instance has integrity
+	// monitoring enabled.
+	//
+	// Enables monitoring and attestation of the boot integrity of the
+	// instance.
+	// The attestation is performed against the integrity policy baseline.
+	// This
+	// baseline is initially derived from the implicitly trusted boot image
+	// when
+	// the instance is created.
+	EnableIntegrityMonitoring bool `json:"enableIntegrityMonitoring,omitempty"`
+
+	// EnableSecureBoot: Defines whether the instance has Secure Boot
+	// enabled.
+	//
+	// Secure Boot helps ensure that the system only runs authentic software
+	// by
+	// verifying the digital signature of all boot components, and halting
+	// the
+	// boot process if signature verification fails.
+	EnableSecureBoot bool `json:"enableSecureBoot,omitempty"`
+}
+
+// NodeTaintClusterStatus is a Kubernetes taint is comprised of three fields:
+// key, value, and effect. Effect can only be one of three types:  NoSchedule,
+// PreferNoSchedule or NoExecute.
+type NodeTaintClusterStatus struct {
+	// Effect: Effect for taint.
+	//
+	// Possible values:
+	//   "EFFECT_UNSPECIFIED" - Not set
+	//   "NO_SCHEDULE" - NoSchedule
+	//   "PREFER_NO_SCHEDULE" - PreferNoSchedule
+	//   "NO_EXECUTE" - NoExecute
+	Effect string `json:"effect,omitempty"`
+
+	// Key: Key for taint.
+	Key string `json:"key,omitempty"`
+
+	// Value: Value for taint.
+	Value string `json:"value,omitempty"`
+}
+
+// WorkloadMetadataConfigClusterStatus defines the metadata
+// configuration to expose to
+// workloads on the node pool.
+type WorkloadMetadataConfigClusterStatus struct {
+	// NodeMetadata: NodeMetadata is the configuration for how to expose
+	// metadata to the
+	// workloads running on the node.
+	//
+	// Possible values:
+	//   "UNSPECIFIED" - Not set.
+	//   "SECURE" - Prevent workloads not in hostNetwork from accessing
+	// certain VM metadata,
+	// specifically kube-env, which contains Kubelet credentials, and
+	// the
+	// instance identity token.
+	//
+	// Metadata concealment is a temporary security solution available while
+	// the
+	// bootstrapping process for cluster nodes is being redesigned
+	// with
+	// significant security improvements.  This feature is scheduled to
+	// be
+	// deprecated in the future and later removed.
+	//   "EXPOSE" - Expose all VM metadata to pods.
+	//   "GKE_METADATA_SERVER" - Run the GKE Metadata Server on this node.
+	// The GKE Metadata Server exposes
+	// a metadata API to workloads that is compatible with the V1
+	// Compute
+	// Metadata APIs exposed by the Compute Engine and App Engine
+	// Metadata
+	// Servers. This feature can only be enabled if Workload Identity is
+	// enabled
+	// at the cluster level.
+	NodeMetadata string `json:"nodeMetadata,omitempty"`
+}
+
+// NodeManagementClusterStatus defines the set of node management services
+// turned on for the node pool.
+type NodeManagementClusterStatus struct {
+	// AutoRepair: Whether the nodes will be automatically repaired.
+	AutoRepair bool `json:"autoRepair,omitempty"`
+
+	// AutoUpgrade: Whether the nodes will be automatically upgraded.
+	AutoUpgrade bool `json:"autoUpgrade,omitempty"`
+
+	// UpgradeOptions: Specifies the Auto Upgrade knobs for the node pool.
+	UpgradeOptions *AutoUpgradeOptionsClusterStatus `json:"upgradeOptions,omitempty"`
+}
+
+// AutoUpgradeOptionsClusterStatus defines the set of options for the user to
+// control how the Auto Upgrades will proceed.
+type AutoUpgradeOptionsClusterStatus struct {
+	// AutoUpgradeStartTime: This field is set when upgrades
+	// are about to commence
+	// with the approximate start time for the upgrades,
+	// in
+	// [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text format.
+	AutoUpgradeStartTime string `json:"autoUpgradeStartTime,omitempty"`
+
+	// Description: This field is set when upgrades are about
+	// to commence
+	// with the description of the upgrade.
+	Description string `json:"description,omitempty"`
 }
 
 // A GKEClusterSpec defines the desired state of a GKECluster.
