@@ -18,10 +18,13 @@ package v1beta1
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -52,8 +55,6 @@ const (
 	providerName       = "gcp-provider"
 	providerSecretName = "gcp-creds"
 	providerSecretKey  = "creds"
-
-	password = "my_PassWord123!"
 )
 
 var errBoom = errors.New("boom")
@@ -809,6 +810,250 @@ func TestUpdate(t *testing.T) {
 				}
 			}
 
+		})
+	}
+}
+
+func TestConnectionDetails(t *testing.T) {
+	name := "gke-cluster"
+	endpoint := "endpoint"
+	username := "username"
+	password := "password"
+	clusterCA, _ := base64.StdEncoding.DecodeString("clusterCA")
+	clientCert, _ := base64.StdEncoding.DecodeString("clientCert")
+	clientKey, _ := base64.StdEncoding.DecodeString("clientKey")
+	server := fmt.Sprintf("https://%s", endpoint)
+	rawConfig :=
+		`apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: clusterC
+    server: https://endpoint
+  name: gke-cluster
+contexts:
+- context:
+    cluster: gke-cluster
+    user: gke-cluster
+  name: gke-cluster
+current-context: gke-cluster
+kind: Config
+preferences: {}
+users:
+- name: gke-cluster
+  user:
+    client-certificate-data: clientCe
+    client-key-data: clientKe
+    password: password
+    username: username
+`
+
+	cases := map[string]struct {
+		args *container.Cluster
+		want resource.ConnectionDetails
+	}{
+		"Full": {
+			args: &container.Cluster{
+				Name:     name,
+				Endpoint: endpoint,
+				MasterAuth: &container.MasterAuth{
+					Username:             username,
+					Password:             password,
+					ClusterCaCertificate: base64.StdEncoding.EncodeToString(clusterCA),
+					ClientCertificate:    base64.StdEncoding.EncodeToString(clientCert),
+					ClientKey:            base64.StdEncoding.EncodeToString(clientKey),
+				},
+			},
+			want: map[string][]byte{
+				runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(server),
+				runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(username),
+				runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(password),
+				runtimev1alpha1.ResourceCredentialsSecretCAKey:         []byte(clusterCA),
+				runtimev1alpha1.ResourceCredentialsSecretClientCertKey: []byte(clientCert),
+				runtimev1alpha1.ResourceCredentialsSecretClientKeyKey:  []byte(clientKey),
+				runtimev1alpha1.ResourceCredentialsSecretKubeconfigKey: []byte(rawConfig),
+			},
+		},
+		"Empty": {
+			args: &container.Cluster{},
+			want: nil,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			d := connectionDetails(tc.args)
+			if diff := cmp.Diff(tc.want, d); diff != "" {
+				t.Errorf("connectionDetails(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestUpdateFactory(t *testing.T) {
+	type args struct {
+		kind   gke.ClusterUpdate
+		update *v1beta1.GKEClusterParameters
+	}
+
+	cases := map[string]struct {
+		args args
+		want updateFn
+	}{
+		"NodePoolUpdate": {
+			args: args{
+				kind:   gke.NodePoolUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: deleteBootstrapNodePool(),
+		},
+		"AddonsConfigUpdate": {
+			args: args{
+				kind:   gke.AddonsConfigUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newAddonsConfigUpdate(cluster().Spec.ForProvider.AddonsConfig),
+		},
+		"AutoscalingUpdate": {
+			args: args{
+				kind:   gke.AutoscalingUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newAutoscalingUpdate(cluster().Spec.ForProvider.Autoscaling),
+		},
+		"BinaryAuthorizationUpdate": {
+			args: args{
+				kind:   gke.BinaryAuthorizationUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newBinaryAuthorizationUpdate(cluster().Spec.ForProvider.BinaryAuthorization),
+		},
+		"DatabaseEncryptionUpdate": {
+			args: args{
+				kind:   gke.DatabaseEncryptionUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newDatabaseEncryptionUpdate(cluster().Spec.ForProvider.DatabaseEncryption),
+		},
+		"LegacyAbacUpdate": {
+			args: args{
+				kind:   gke.LegacyAbacUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newLegacyAbacUpdate(cluster().Spec.ForProvider.LegacyAbac),
+		},
+		"LocationsUpdate": {
+			args: args{
+				kind:   gke.LocationsUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newLocationsUpdate(cluster().Spec.ForProvider.Locations),
+		},
+		"LoggingServiceUpdate": {
+			args: args{
+				kind:   gke.LoggingServiceUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newLoggingServiceUpdate(cluster().Spec.ForProvider.LoggingService),
+		},
+		"MaintenancePolicyUpdate": {
+			args: args{
+				kind:   gke.MaintenancePolicyUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newMaintenancePolicyUpdate(cluster().Spec.ForProvider.MaintenancePolicy),
+		},
+		"MasterAuthUpdate": {
+			args: args{
+				kind:   gke.MasterAuthUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newMasterAuthUpdate(cluster().Spec.ForProvider.MasterAuth),
+		},
+		"MasterAuthorizedNetworksConfigUpdateUpdate": {
+			args: args{
+				kind:   gke.MasterAuthorizedNetworksConfigUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newMasterAuthorizedNetworksConfigUpdate(cluster().Spec.ForProvider.MasterAuthorizedNetworksConfig),
+		},
+		"MonitoringServiceUpdate": {
+			args: args{
+				kind:   gke.MonitoringServiceUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newMonitoringServiceUpdate(cluster().Spec.ForProvider.MonitoringService),
+		},
+		"NetworkConfigUpdate": {
+			args: args{
+				kind:   gke.NetworkConfigUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newNetworkConfigUpdate(cluster().Spec.ForProvider.NetworkConfig),
+		},
+		"NetworkPolicyUpdate": {
+			args: args{
+				kind:   gke.NetworkPolicyUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newNetworkPolicyUpdate(cluster().Spec.ForProvider.NetworkPolicy),
+		},
+		"PodSecurityPolicyConfigUpdate": {
+			args: args{
+				kind:   gke.PodSecurityPolicyConfigUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newPodSecurityPolicyConfigUpdate(cluster().Spec.ForProvider.PodSecurityPolicyConfig),
+		},
+		"PrivateClusterConfigUpdate": {
+			args: args{
+				kind:   gke.PrivateClusterConfigUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newPrivateClusterConfigUpdate(cluster().Spec.ForProvider.PrivateClusterConfig),
+		},
+		"ResourceLabelsUpdate": {
+			args: args{
+				kind:   gke.ResourceLabelsUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newResourceLabelsUpdate(cluster().Spec.ForProvider.ResourceLabels),
+		},
+		"ResourceUsageExportConfigUpdate": {
+			args: args{
+				kind:   gke.ResourceUsageExportConfigUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newResourceUsageExportConfigUpdate(cluster().Spec.ForProvider.ResourceUsageExportConfig),
+		},
+		"VerticalPodAutoscalingUpdate": {
+			args: args{
+				kind:   gke.VerticalPodAutoscalingUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newVerticalPodAutoscalingUpdate(cluster().Spec.ForProvider.VerticalPodAutoscaling),
+		},
+		"WorkloadIdentityConfigUpdate": {
+			args: args{
+				kind:   gke.WorkloadIdentityConfigUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: newWorkloadIdentityConfigUpdate(cluster().Spec.ForProvider.WorkloadIdentityConfig),
+		},
+		"NoopUpdate": {
+			args: args{
+				kind:   gke.NoUpdate,
+				update: &cluster().Spec.ForProvider,
+			},
+			want: noOpUpdate,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			fn := updateFactory(tc.args.kind, tc.args.update)
+			if diff := cmp.Diff(reflect.ValueOf(tc.want).Pointer(), reflect.ValueOf(fn).Pointer()); diff != "" {
+				t.Errorf("updateFactory(...): -want, +got:\n%s", diff)
+			}
 		})
 	}
 }
