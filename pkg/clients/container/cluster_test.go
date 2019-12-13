@@ -1359,6 +1359,7 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	type want struct {
 		upToDate bool
+		kind     ClusterUpdate
 	}
 	tests := map[string]struct {
 		args args
@@ -1406,6 +1407,7 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: false,
+				kind:     AddonsConfigUpdate,
 			},
 		},
 		"NoUpdateNotBootstrapNodePool": {
@@ -1448,17 +1450,18 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: false,
+				kind:     NodePoolUpdate,
 			},
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, fn := IsUpToDate(tc.args.params, *tc.args.cluster)
-			if r == true && fn != nil {
-				t.Errorf("IsUpToDate(...) returned update function %v when up to date.", fn)
-			}
+			r, k := IsUpToDate(tc.args.params, *tc.args.cluster)
 			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
-				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+				t.Errorf("IsUpToDate(...): -want upToDate, +got upToDate:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.kind, k); diff != "" {
+				t.Errorf("IsUpToDate(...): -want kind, +got kind:\n%s", diff)
 			}
 		})
 	}
@@ -1599,7 +1602,7 @@ func TestGenerateClientConfig(t *testing.T) {
 				return
 			}
 			if diff := cmp.Diff(tc.out, got); diff != "" {
-				t.Errorf("GenerateClientConfig(...): -want error, +got error:\n%s", diff)
+				t.Errorf("GenerateClientConfig(...): -want config, +got config:\n%s", diff)
 			}
 		})
 	}

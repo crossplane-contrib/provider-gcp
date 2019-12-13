@@ -55,6 +55,7 @@ const (
 	errUpdateCluster           = "cannot update GKE cluster"
 	errDeleteCluster           = "cannot delete GKE cluster"
 	errDeleteBootstrapNodePool = "cannot delete bootstrap node pool"
+	errUnidentifiedUpdate      = "cannot determine how to update GKE cluster"
 )
 
 // GKEClusterController is responsible for adding the GKECluster
@@ -188,12 +189,12 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (reso
 		return resource.ExternalUpdate{}, errors.Wrap(err, errGetCluster)
 	}
 
-	u, update := gke.IsUpToDate(&cr.Spec.ForProvider, *existing)
+	u, kind := gke.IsUpToDate(&cr.Spec.ForProvider, *existing)
 	if u {
 		return resource.ExternalUpdate{}, nil
 	}
 
-	_, err = updateFactory(update)(ctx, e.cluster, gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider))
+	_, err = updateFactory(kind, &cr.Spec.ForProvider)(ctx, e.cluster, gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateCluster)
 }
 
@@ -230,48 +231,48 @@ func connectionDetails(cluster *container.Cluster) resource.ConnectionDetails {
 	return cd
 }
 
-func updateFactory(in interface{}) updateFn { // nolint:gocyclo
-	switch u := in.(type) {
-	case *gke.BootstrapNodePoolDeletion:
+func updateFactory(kind gke.ClusterUpdate, update *v1beta1.GKEClusterParameters) updateFn { // nolint:gocyclo
+	switch kind {
+	case gke.NodePoolUpdate:
 		return deleteBootstrapNodePool()
-	case *container.AddonsConfig:
-		return newAddonsConfigUpdate(u)
-	case *container.ClusterAutoscaling:
-		return newAutoscalingUpdate(u)
-	case *container.BinaryAuthorization:
-		return newBinaryAuthorizationUpdate(u)
-	case *container.DatabaseEncryption:
-		return newDatabaseEncryptionUpdate(u)
-	case *container.LegacyAbac:
-		return newLegacyAbacUpdate(u)
-	case *gke.WrappedLocations:
-		return newLocationsUpdate(u.Locations)
-	case *gke.WrappedLoggingService:
-		return newLoggingServiceUpdate(u.LoggingService)
-	case *container.MaintenancePolicy:
-		return newMaintenancePolicyUpdate(u)
-	case *container.MasterAuth:
-		return newMasterAuthUpdate(u)
-	case *container.MasterAuthorizedNetworksConfig:
-		return newMasterAuthorizedNetworksConfigUpdate(u)
-	case *gke.WrappedMonitoringService:
-		return newMonitoringServiceUpdate(u.MonitoringService)
-	case *container.NetworkConfig:
-		return newNetworkConfigUpdate(u)
-	case *container.NetworkPolicy:
-		return newNetworkPolicyUpdate(u)
-	case *container.PodSecurityPolicyConfig:
-		return newPodSecurityPolicyConfigUpdate(u)
-	case *container.PrivateClusterConfig:
-		return newPrivateClusterConfigUpdate(u)
-	case map[string]string:
-		return newResourceLabelsUpdate(u)
-	case *container.ResourceUsageExportConfig:
-		return newResourceUsageExportConfigUpdate(u)
-	case *container.VerticalPodAutoscaling:
-		return newVerticalPodAutoscalingUpdate(u)
-	case *container.WorkloadIdentityConfig:
-		return newWorkloadIdentityConfigUpdate(u)
+	case gke.AddonsConfigUpdate:
+		return newAddonsConfigUpdate(update.AddonsConfig)
+	case gke.AutoscalingUpdate:
+		return newAutoscalingUpdate(update.Autoscaling)
+	case gke.BinaryAuthorizationUpdate:
+		return newBinaryAuthorizationUpdate(update.BinaryAuthorization)
+	case gke.DatabaseEncryptionUpdate:
+		return newDatabaseEncryptionUpdate(update.DatabaseEncryption)
+	case gke.LegacyAbacUpdate:
+		return newLegacyAbacUpdate(update.LegacyAbac)
+	case gke.LocationsUpdate:
+		return newLocationsUpdate(update.Locations)
+	case gke.LoggingServiceUpdate:
+		return newLoggingServiceUpdate(update.LoggingService)
+	case gke.MaintenancePolicyUpdate:
+		return newMaintenancePolicyUpdate(update.MaintenancePolicy)
+	case gke.MasterAuthUpdate:
+		return newMasterAuthUpdate(update.MasterAuth)
+	case gke.MasterAuthorizedNetworksConfigUpdate:
+		return newMasterAuthorizedNetworksConfigUpdate(update.MasterAuthorizedNetworksConfig)
+	case gke.MonitoringServiceUpdate:
+		return newMonitoringServiceUpdate(update.MonitoringService)
+	case gke.NetworkConfigUpdate:
+		return newNetworkConfigUpdate(update.NetworkConfig)
+	case gke.NetworkPolicyUpdate:
+		return newNetworkPolicyUpdate(update.NetworkPolicy)
+	case gke.PodSecurityPolicyConfigUpdate:
+		return newPodSecurityPolicyConfigUpdate(update.PodSecurityPolicyConfig)
+	case gke.PrivateClusterConfigUpdate:
+		return newPrivateClusterConfigUpdate(update.PrivateClusterConfig)
+	case gke.ResourceLabelsUpdate:
+		return newResourceLabelsUpdate(update.ResourceLabels)
+	case gke.ResourceUsageExportConfigUpdate:
+		return newResourceUsageExportConfigUpdate(update.ResourceUsageExportConfig)
+	case gke.VerticalPodAutoscalingUpdate:
+		return newVerticalPodAutoscalingUpdate(update.VerticalPodAutoscaling)
+	case gke.WorkloadIdentityConfigUpdate:
+		return newWorkloadIdentityConfigUpdate(update.WorkloadIdentityConfig)
 	}
 	return noOpUpdate
 }
@@ -284,11 +285,13 @@ func noOpUpdate(ctx context.Context, s container.Service, name string) (*contain
 }
 
 // newAddonsConfigUpdate returns a function that updates the AddonsConfig of a cluster.
-func newAddonsConfigUpdate(in *container.AddonsConfig) updateFn {
+func newAddonsConfigUpdate(in *v1beta1.AddonsConfig) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateAddonsConfig(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredAddonsConfig: in,
+				DesiredAddonsConfig: out.AddonsConfig,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -296,11 +299,13 @@ func newAddonsConfigUpdate(in *container.AddonsConfig) updateFn {
 }
 
 // newAutoscalingUpdate returns a function that updates the Autoscaling of a cluster.
-func newAutoscalingUpdate(in *container.ClusterAutoscaling) updateFn {
+func newAutoscalingUpdate(in *v1beta1.ClusterAutoscaling) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateAutoscaling(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredClusterAutoscaling: in,
+				DesiredClusterAutoscaling: out.Autoscaling,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -308,11 +313,13 @@ func newAutoscalingUpdate(in *container.ClusterAutoscaling) updateFn {
 }
 
 // newBinaryAuthorizationUpdate returns a function that updates the BinaryAuthorization of a cluster.
-func newBinaryAuthorizationUpdate(in *container.BinaryAuthorization) updateFn {
+func newBinaryAuthorizationUpdate(in *v1beta1.BinaryAuthorization) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateBinaryAuthorization(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredBinaryAuthorization: in,
+				DesiredBinaryAuthorization: out.BinaryAuthorization,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -320,11 +327,13 @@ func newBinaryAuthorizationUpdate(in *container.BinaryAuthorization) updateFn {
 }
 
 // newDatabaseEncryptionUpdate returns a function that updates the DatabaseEncryption of a cluster.
-func newDatabaseEncryptionUpdate(in *container.DatabaseEncryption) updateFn {
+func newDatabaseEncryptionUpdate(in *v1beta1.DatabaseEncryption) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateDatabaseEncryption(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredDatabaseEncryption: in,
+				DesiredDatabaseEncryption: out.DatabaseEncryption,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -332,10 +341,12 @@ func newDatabaseEncryptionUpdate(in *container.DatabaseEncryption) updateFn {
 }
 
 // newLegacyAbacUpdate returns a function that updates the LegacyAbac of a cluster.
-func newLegacyAbacUpdate(in *container.LegacyAbac) updateFn {
+func newLegacyAbacUpdate(in *v1beta1.LegacyAbac) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateLegacyAbac(in, out)
 		update := &container.SetLegacyAbacRequest{
-			Enabled: in.Enabled,
+			Enabled: out.LegacyAbac.Enabled,
 		}
 		return s.Projects.Locations.Clusters.SetLegacyAbac(name, update).Context(ctx).Do()
 	}
@@ -366,32 +377,37 @@ func newLoggingServiceUpdate(in *string) updateFn {
 }
 
 // newMaintenancePolicyUpdate returns a function that updates the MaintenancePolicy of a cluster.
-func newMaintenancePolicyUpdate(in *container.MaintenancePolicy) updateFn {
+func newMaintenancePolicyUpdate(in *v1beta1.MaintenancePolicySpec) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateMaintenancePolicy(in, out)
 		update := &container.SetMaintenancePolicyRequest{
-			MaintenancePolicy: in,
+			MaintenancePolicy: out.MaintenancePolicy,
 		}
 		return s.Projects.Locations.Clusters.SetMaintenancePolicy(name, update).Context(ctx).Do()
 	}
 }
 
 // newMasterAuthUpdate returns a function that updates the MasterAuth of a cluster.
-func newMasterAuthUpdate(in *container.MasterAuth) updateFn {
+func newMasterAuthUpdate(in *v1beta1.MasterAuth) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateMasterAuth(in, out)
 		update := &container.SetMasterAuthRequest{
 			// TODO(hasheddan): need to set Action here?
-			Update: in,
+			Update: out.MasterAuth,
 		}
 		return s.Projects.Locations.Clusters.SetMasterAuth(name, update).Context(ctx).Do()
 	}
 }
 
 // newMasterAuthorizedNetworksConfigUpdate returns a function that updates the MasterAuthorizedNetworksConfig of a cluster.
-func newMasterAuthorizedNetworksConfigUpdate(in *container.MasterAuthorizedNetworksConfig) updateFn {
+func newMasterAuthorizedNetworksConfigUpdate(in *v1beta1.MasterAuthorizedNetworksConfig) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredMasterAuthorizedNetworksConfig: in,
+				DesiredMasterAuthorizedNetworksConfig: out.MasterAuthorizedNetworksConfig,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -411,12 +427,14 @@ func newMonitoringServiceUpdate(in *string) updateFn {
 }
 
 // newNetworkConfigUpdate returns a function that updates the NetworkConfig of a cluster.
-func newNetworkConfigUpdate(in *container.NetworkConfig) updateFn {
+func newNetworkConfigUpdate(in *v1beta1.NetworkConfigSpec) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateNetworkConfig(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
 				DesiredIntraNodeVisibilityConfig: &container.IntraNodeVisibilityConfig{
-					Enabled: in.EnableIntraNodeVisibility,
+					Enabled: out.NetworkConfig.EnableIntraNodeVisibility,
 				},
 			},
 		}
@@ -425,21 +443,25 @@ func newNetworkConfigUpdate(in *container.NetworkConfig) updateFn {
 }
 
 // newNetworkPolicyUpdate returns a function that updates the NetworkPolicy of a cluster.
-func newNetworkPolicyUpdate(in *container.NetworkPolicy) updateFn {
+func newNetworkPolicyUpdate(in *v1beta1.NetworkPolicy) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateNetworkPolicy(in, out)
 		update := &container.SetNetworkPolicyRequest{
-			NetworkPolicy: in,
+			NetworkPolicy: out.NetworkPolicy,
 		}
 		return s.Projects.Locations.Clusters.SetNetworkPolicy(name, update).Context(ctx).Do()
 	}
 }
 
 // newPodSecurityPolicyConfigUpdate returns a function that updates the PodSecurityPolicyConfig of a cluster.
-func newPodSecurityPolicyConfigUpdate(in *container.PodSecurityPolicyConfig) updateFn {
+func newPodSecurityPolicyConfigUpdate(in *v1beta1.PodSecurityPolicyConfig) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GeneratePodSecurityPolicyConfig(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredPodSecurityPolicyConfig: in,
+				DesiredPodSecurityPolicyConfig: out.PodSecurityPolicyConfig,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -447,11 +469,13 @@ func newPodSecurityPolicyConfigUpdate(in *container.PodSecurityPolicyConfig) upd
 }
 
 // newPrivateClusterConfigUpdate returns a function that updates the PrivateClusterConfig of a cluster.
-func newPrivateClusterConfigUpdate(in *container.PrivateClusterConfig) updateFn {
+func newPrivateClusterConfigUpdate(in *v1beta1.PrivateClusterConfigSpec) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GeneratePrivateClusterConfig(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredPrivateClusterConfig: in,
+				DesiredPrivateClusterConfig: out.PrivateClusterConfig,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -469,11 +493,13 @@ func newResourceLabelsUpdate(in map[string]string) updateFn {
 }
 
 // newResourceUsageExportConfigUpdate returns a function that updates the ResourceUsageExportConfig of a cluster.
-func newResourceUsageExportConfigUpdate(in *container.ResourceUsageExportConfig) updateFn {
+func newResourceUsageExportConfigUpdate(in *v1beta1.ResourceUsageExportConfig) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateResourceUsageExportConfig(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredResourceUsageExportConfig: in,
+				DesiredResourceUsageExportConfig: out.ResourceUsageExportConfig,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -481,11 +507,13 @@ func newResourceUsageExportConfigUpdate(in *container.ResourceUsageExportConfig)
 }
 
 // newVerticalPodAutoscalingUpdate returns a function that updates the VerticalPodAutoscaling of a cluster.
-func newVerticalPodAutoscalingUpdate(in *container.VerticalPodAutoscaling) updateFn {
+func newVerticalPodAutoscalingUpdate(in *v1beta1.VerticalPodAutoscaling) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateVerticalPodAutoscaling(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredVerticalPodAutoscaling: in,
+				DesiredVerticalPodAutoscaling: out.VerticalPodAutoscaling,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -493,11 +521,13 @@ func newVerticalPodAutoscalingUpdate(in *container.VerticalPodAutoscaling) updat
 }
 
 // newWorkloadIdentityConfigUpdate returns a function that updates the WorkloadIdentityConfig of a cluster.
-func newWorkloadIdentityConfigUpdate(in *container.WorkloadIdentityConfig) updateFn {
+func newWorkloadIdentityConfigUpdate(in *v1beta1.WorkloadIdentityConfig) updateFn {
 	return func(ctx context.Context, s container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		gke.GenerateWorkloadIdentityConfig(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
-				DesiredWorkloadIdentityConfig: in,
+				DesiredWorkloadIdentityConfig: out.WorkloadIdentityConfig,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()

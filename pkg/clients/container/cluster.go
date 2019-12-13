@@ -43,6 +43,34 @@ const (
 	ClusterNameFormat = "projects/%s/locations/%s/clusters/%s"
 )
 
+// ClusterUpdate indicates the type of update needed for the cluster.
+type ClusterUpdate int
+
+// Set of possible cluster update kinds.
+const (
+	NoUpdate ClusterUpdate = iota
+	NodePoolUpdate
+	AddonsConfigUpdate
+	AutoscalingUpdate
+	BinaryAuthorizationUpdate
+	DatabaseEncryptionUpdate
+	LegacyAbacUpdate
+	LocationsUpdate
+	LoggingServiceUpdate
+	MaintenancePolicyUpdate
+	MasterAuthUpdate
+	MasterAuthorizedNetworksConfigUpdate
+	MonitoringServiceUpdate
+	NetworkConfigUpdate
+	NetworkPolicyUpdate
+	PodSecurityPolicyConfigUpdate
+	PrivateClusterConfigUpdate
+	ResourceLabelsUpdate
+	ResourceUsageExportConfigUpdate
+	VerticalPodAutoscalingUpdate
+	WorkloadIdentityConfigUpdate
+)
+
 // GenerateNodePoolForCreate inserts the default node pool into
 // *container.Cluster so that it can be provisioned successfully.
 func GenerateNodePoolForCreate(in *container.Cluster) {
@@ -817,100 +845,70 @@ type WrappedMonitoringService struct {
 // NOTE(hasheddan): This function is significantly above our cyclomatic
 // complexity limit, but is necessary due to the fact that the GKE API only
 // allows for update of one field at a time.
-func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, interface{}) { // nolint:gocyclo
+func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, ClusterUpdate) { // nolint:gocyclo
 	currentParams := &v1beta1.GKEClusterParameters{}
 	LateInitializeSpec(currentParams, currentState)
 	if checkForBootstrapNodePool(currentState) {
-		return false, &BootstrapNodePoolDeletion{}
+		return false, NodePoolUpdate
 	}
 	if !cmp.Equal(in.AddonsConfig, currentParams.AddonsConfig) {
-		out := &container.Cluster{}
-		GenerateAddonsConfig(in.AddonsConfig, out)
-		return false, out.AddonsConfig
+		return false, AddonsConfigUpdate
 	}
 	if !cmp.Equal(in.Autoscaling, currentParams.Autoscaling) {
-		out := &container.Cluster{}
-		GenerateAutoscaling(in.Autoscaling, out)
-		return false, out.Autoscaling
+		return false, AutoscalingUpdate
 	}
 	if !cmp.Equal(in.BinaryAuthorization, currentParams.BinaryAuthorization) {
-		out := &container.Cluster{}
-		GenerateBinaryAuthorization(in.BinaryAuthorization, out)
-		return false, out.BinaryAuthorization
+		return false, BinaryAuthorizationUpdate
 	}
 	if !cmp.Equal(in.DatabaseEncryption, currentParams.DatabaseEncryption) {
-		out := &container.Cluster{}
-		GenerateDatabaseEncryption(in.DatabaseEncryption, out)
-		return false, out.DatabaseEncryption
+		return false, DatabaseEncryptionUpdate
 	}
 	if !cmp.Equal(in.LegacyAbac, currentParams.LegacyAbac) {
-		out := &container.Cluster{}
-		GenerateLegacyAbac(in.LegacyAbac, out)
-		return false, out.LegacyAbac
+		return false, LegacyAbacUpdate
 	}
 	if !cmp.Equal(in.Locations, currentParams.Locations) {
-		return false, &WrappedLocations{in.Locations}
+		return false, LocationsUpdate
 	}
 	if !cmp.Equal(in.LoggingService, currentParams.LoggingService) {
-		return false, &WrappedLoggingService{in.LoggingService}
+		return false, LoggingServiceUpdate
 	}
 	if !cmp.Equal(in.MaintenancePolicy, currentParams.MaintenancePolicy) {
-		out := &container.Cluster{}
-		GenerateMaintenancePolicy(in.MaintenancePolicy, out)
-		return false, out.MaintenancePolicy
+		return false, MaintenancePolicyUpdate
 	}
 	if !cmp.Equal(in.MasterAuth, currentParams.MasterAuth) {
-		out := &container.Cluster{}
-		GenerateMasterAuth(in.MasterAuth, out)
-		return false, out.MasterAuth
+		return false, MasterAuthUpdate
 	}
 	if !cmp.Equal(in.MasterAuthorizedNetworksConfig, currentParams.MasterAuthorizedNetworksConfig) {
-		out := &container.Cluster{}
-		GenerateMasterAuthorizedNetworksConfig(in.MasterAuthorizedNetworksConfig, out)
-		return false, out.MasterAuthorizedNetworksConfig
+		return false, MasterAuthorizedNetworksConfigUpdate
 	}
 	if !cmp.Equal(in.MonitoringService, currentParams.MonitoringService) {
-		return false, &WrappedMonitoringService{in.MonitoringService}
+		return false, MonitoringServiceUpdate
 	}
 	if !cmp.Equal(in.NetworkConfig, currentParams.NetworkConfig) {
-		out := &container.Cluster{}
-		GenerateNetworkConfig(in.NetworkConfig, out)
-		return false, out.NetworkConfig
+		return false, NetworkConfigUpdate
 	}
 	if !cmp.Equal(in.NetworkPolicy, currentParams.NetworkPolicy) {
-		out := &container.Cluster{}
-		GenerateNetworkPolicy(in.NetworkPolicy, out)
-		return false, out.NetworkPolicy
+		return false, NetworkPolicyUpdate
 	}
 	if !cmp.Equal(in.PodSecurityPolicyConfig, currentParams.PodSecurityPolicyConfig) {
-		out := &container.Cluster{}
-		GeneratePodSecurityPolicyConfig(in.PodSecurityPolicyConfig, out)
-		return false, out.PodSecurityPolicyConfig
+		return false, PodSecurityPolicyConfigUpdate
 	}
 	if !cmp.Equal(in.PrivateClusterConfig, currentParams.PrivateClusterConfig) {
-		out := &container.Cluster{}
-		GeneratePrivateClusterConfig(in.PrivateClusterConfig, out)
-		return false, out.PrivateClusterConfig
+		return false, PrivateClusterConfigUpdate
 	}
 	if !cmp.Equal(in.ResourceLabels, currentParams.ResourceLabels) {
-		return false, in.ResourceLabels
+		return false, ResourceLabelsUpdate
 	}
 	if !cmp.Equal(in.ResourceUsageExportConfig, currentParams.ResourceUsageExportConfig) {
-		out := &container.Cluster{}
-		GenerateResourceUsageExportConfig(in.ResourceUsageExportConfig, out)
-		return false, out.ResourceUsageExportConfig
+		return false, ResourceUsageExportConfigUpdate
 	}
 	if !cmp.Equal(in.VerticalPodAutoscaling, currentParams.VerticalPodAutoscaling) {
-		out := &container.Cluster{}
-		GenerateVerticalPodAutoscaling(in.VerticalPodAutoscaling, out)
-		return false, out.VerticalPodAutoscaling
+		return false, VerticalPodAutoscalingUpdate
 	}
 	if !cmp.Equal(in.WorkloadIdentityConfig, currentParams.WorkloadIdentityConfig) {
-		out := &container.Cluster{}
-		GenerateWorkloadIdentityConfig(in.WorkloadIdentityConfig, out)
-		return false, out.WorkloadIdentityConfig
+		return false, WorkloadIdentityConfigUpdate
 	}
-	return true, nil
+	return true, NoUpdate
 }
 
 // GetFullyQualifiedParent builds the fully qualified name of the cluster
