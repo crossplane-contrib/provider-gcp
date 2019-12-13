@@ -18,23 +18,30 @@ package v1beta1
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	"github.com/crossplaneio/crossplane-runtime/pkg/test"
+
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
+	gke "github.com/crossplaneio/stack-gcp/pkg/clients/container"
 )
 
 const (
@@ -54,7 +61,31 @@ var errBoom = errors.New("boom")
 var _ resource.ExternalConnecter = &clusterConnector{}
 var _ resource.ExternalClient = &clusterExternal{}
 
+func gError(code int, message string) *googleapi.Error {
+	return &googleapi.Error{
+		Code:    code,
+		Body:    "{}\n",
+		Message: message,
+	}
+}
+
 type clusterModifier func(*v1beta1.GKECluster)
+
+func withConditions(c ...runtimev1alpha1.Condition) clusterModifier {
+	return func(i *v1beta1.GKECluster) { i.Status.SetConditions(c...) }
+}
+
+func withProviderStatus(s string) clusterModifier {
+	return func(i *v1beta1.GKECluster) { i.Status.AtProvider.Status = s }
+}
+
+func withBindingPhase(p runtimev1alpha1.BindingPhase) clusterModifier {
+	return func(i *v1beta1.GKECluster) { i.Status.SetBindingPhase(p) }
+}
+
+func withLocations(l []string) clusterModifier {
+	return func(i *v1beta1.GKECluster) { i.Spec.ForProvider.Locations = l }
+}
 
 func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 	i := &v1beta1.GKECluster{
@@ -190,512 +221,594 @@ func TestConnect(t *testing.T) {
 	}
 }
 
-// func TestObserve(t *testing.T) {
-// 	type args struct {
-// 		mg resource.Managed
-// 	}
-// 	type want struct {
-// 		mg  resource.Managed
-// 		obs resource.ExternalObservation
-// 		err error
-// 	}
+func TestObserve(t *testing.T) {
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		obs resource.ExternalObservation
+		err error
+	}
 
-// 	cases := map[string]struct {
-// 		handler http.Handler
-// 		kube    client.Client
-// 		args    args
-// 		want    want
-// 	}{
-// 		"NotFound": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff("GET", r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusNotFound)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.DatabaseInstance{})
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  cluster(),
-// 				err: nil,
-// 			},
-// 		},
-// 		"GetFailed": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff("GET", r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusBadRequest)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.DatabaseInstance{})
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  cluster(),
-// 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetFailed),
-// 			},
-// 		},
-// 		"NotUpToDateSpecUpdateFailed": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff("GET", r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusOK)
-// 				db := instance(withBackupConfigurationStartTime("22:00"))
-// 				_ = json.NewEncoder(w).Encode(cloudsql.GenerateDatabaseInstance(db.Spec.ForProvider, meta.GetExternalName(db)))
-// 			}),
-// 			kube: &test.MockClient{
-// 				MockUpdate: test.NewMockUpdateFn(errBoom),
-// 			},
-// 			args: args{
+	cases := map[string]struct {
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
+	}{
+		"NotFound": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusNotFound)
+				_ = json.NewEncoder(w).Encode(&container.Cluster{})
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(),
+				err: nil,
+			},
+		},
+		"GetFailed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&container.Cluster{})
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetCluster),
+			},
+		},
+		"NotUpToDateSpecUpdateFailed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := cluster()
+				gc := gke.GenerateCluster(c.Spec.ForProvider)
+				gc.Locations = []string{"loc-1"}
+				_ = json.NewEncoder(w).Encode(gc)
+			}),
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(errBoom),
+			},
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(withLocations([]string{"loc-1"})),
+				err: errors.Wrap(errBoom, errManagedUpdateFailed),
+			},
+		},
+		"Creating": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := gke.GenerateCluster(cluster().Spec.ForProvider)
+				c.Status = v1beta1.ClusterStateProvisioning
+				c.MasterAuth = &container.MasterAuth{
+					Username: "admin",
+					Password: "admin",
+				}
+				_ = json.NewEncoder(w).Encode(c)
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				obs: resource.ExternalObservation{
+					ResourceExists:   true,
+					ResourceUpToDate: true,
+					ConnectionDetails: connectionDetails(&container.Cluster{
+						MasterAuth: &container.MasterAuth{
+							Username: "admin",
+							Password: "admin",
+						},
+					}),
+				},
+				mg: cluster(withProviderStatus(v1beta1.ClusterStateProvisioning), withConditions(runtimev1alpha1.Creating())),
+			},
+		},
+		"Unavailable": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := gke.GenerateCluster(cluster().Spec.ForProvider)
+				c.Status = v1beta1.ClusterStateReconciling
+				_ = json.NewEncoder(w).Encode(c)
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				obs: resource.ExternalObservation{
+					ResourceExists:    true,
+					ResourceUpToDate:  true,
+					ConnectionDetails: connectionDetails(&container.Cluster{}),
+				},
+				mg: cluster(withProviderStatus(v1beta1.ClusterStateReconciling), withConditions(runtimev1alpha1.Unavailable())),
+			},
+		},
+		"RunnableUnbound": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := gke.GenerateCluster(cluster().Spec.ForProvider)
+				c.Status = v1beta1.ClusterStateRunning
+				_ = json.NewEncoder(w).Encode(c)
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				obs: resource.ExternalObservation{
+					ResourceExists:    true,
+					ResourceUpToDate:  true,
+					ConnectionDetails: connectionDetails(&container.Cluster{}),
+				},
+				mg: cluster(
+					withProviderStatus(v1beta1.ClusterStateRunning),
+					withConditions(runtimev1alpha1.Available()),
+					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
+			},
+		},
+		"BoundUnavailable": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := gke.GenerateCluster(cluster().Spec.ForProvider)
+				c.Status = v1beta1.ClusterStateReconciling
+				_ = json.NewEncoder(w).Encode(c)
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: cluster(
+					withProviderStatus(v1beta1.ClusterStateRunning),
+					withConditions(runtimev1alpha1.Available()),
+					withBindingPhase(runtimev1alpha1.BindingPhaseBound),
+				),
+			},
+			want: want{
+				obs: resource.ExternalObservation{
+					ResourceExists:    true,
+					ResourceUpToDate:  true,
+					ConnectionDetails: connectionDetails(&container.Cluster{}),
+				},
+				mg: cluster(
+					withProviderStatus(v1beta1.ClusterStateReconciling),
+					withConditions(runtimev1alpha1.Unavailable()),
+					withBindingPhase(runtimev1alpha1.BindingPhaseBound)),
+			},
+		},
+	}
 
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  instance(withBackupConfigurationStartTime("22:00")),
-// 				err: errors.Wrap(errBoom, errManagedUpdateFailed),
-// 			},
-// 		},
-// 		"Creating": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff("GET", r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusOK)
-// 				db := cloudsql.GenerateDatabaseInstance(cluster().Spec.ForProvider, meta.GetExternalName(cluster()))
-// 				db.State = v1beta1.StateCreating
-// 				_ = json.NewEncoder(w).Encode(db)
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				obs: resource.ExternalObservation{
-// 					ResourceExists:    true,
-// 					ResourceUpToDate:  true,
-// 					ConnectionDetails: connDetails("", ""),
-// 				},
-// 				mg: instance(withProviderState(v1beta1.StateCreating), withConditions(runtimev1alpha1.Creating())),
-// 			},
-// 		},
-// 		"Unavailable": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff("GET", r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusOK)
-// 				db := cloudsql.GenerateDatabaseInstance(cluster().Spec.ForProvider, meta.GetExternalName(cluster()))
-// 				db.State = v1beta1.StateMaintenance
-// 				_ = json.NewEncoder(w).Encode(db)
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				obs: resource.ExternalObservation{
-// 					ResourceExists:    true,
-// 					ResourceUpToDate:  true,
-// 					ConnectionDetails: connDetails("", ""),
-// 				},
-// 				mg: instance(withProviderState(v1beta1.StateMaintenance), withConditions(runtimev1alpha1.Unavailable())),
-// 			},
-// 		},
-// 		"RunnableUnbound": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff("GET", r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusOK)
-// 				db := cloudsql.GenerateDatabaseInstance(cluster().Spec.ForProvider, meta.GetExternalName(cluster()))
-// 				db.State = v1beta1.StateRunnable
-// 				_ = json.NewEncoder(w).Encode(db)
-// 			}),
-// 			kube: &test.MockClient{
-// 				MockGet: test.NewMockGetFn(nil),
-// 			},
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				obs: resource.ExternalObservation{
-// 					ResourceExists:    true,
-// 					ResourceUpToDate:  true,
-// 					ConnectionDetails: connDetails("", ""),
-// 				},
-// 				mg: instance(
-// 					withProviderState(v1beta1.StateRunnable),
-// 					withConditions(runtimev1alpha1.Available()),
-// 					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
-// 			},
-// 		},
-// 	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := container.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := clusterExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				cluster:   s,
+			}
+			obs, err := e.Observe(context.Background(), tc.args.mg)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Observe(...): want error != got error:\n%s", diff)
+				}
+			}
+			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
+				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
 
-// 	for name, tc := range cases {
-// 		t.Run(name, func(t *testing.T) {
-// 			server := httptest.NewServer(tc.handler)
-// 			defer server.Close()
-// 			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-// 			e := cloudsqlExternal{
-// 				kube:      tc.kube,
-// 				projectID: projectID,
-// 				db:        s.Instances,
-// 			}
-// 			obs, err := e.Observe(context.Background(), tc.args.mg)
-// 			if tc.want.err != nil && err != nil {
-// 				// the case where our mock server returns error.
-// 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-// 					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
-// 				}
-// 			} else {
-// 				if diff := cmp.Diff(tc.want.err, err); diff != "" {
-// 					t.Errorf("Observe(...): want error != got error:\n%s", diff)
-// 				}
-// 			}
-// 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
-// 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
-// 			}
-// 			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
-// 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
-// 			}
-// 		})
-// 	}
-// }
+func TestCreate(t *testing.T) {
+	wantRandom := "i-want-random-data-not-this-special-string"
 
-// func TestCreate(t *testing.T) {
-// 	wantRandom := "i-want-random-data-not-this-special-string"
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		cre resource.ExternalCreation
+		err error
+	}
 
-// 	type args struct {
-// 		ctx context.Context
-// 		mg  resource.Managed
-// 	}
-// 	type want struct {
-// 		mg  resource.Managed
-// 		cre resource.ExternalCreation
-// 		err error
-// 	}
+	cases := map[string]struct {
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
+	}{
+		"Successful": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				i := &container.Cluster{}
+				b, err := ioutil.ReadAll(r.Body)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				err = json.Unmarshal(b, i)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = r.Body.Close()
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg: cluster(withConditions(runtimev1alpha1.Creating())),
+				cre: resource.ExternalCreation{ConnectionDetails: resource.ConnectionDetails{
+					runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
+				}},
+				err: nil,
+			},
+		},
+		"AlreadyExists": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusConflict)
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(withConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateCluster),
+			},
+		},
+		"Failed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(withConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateCluster),
+			},
+		},
+	}
 
-// 	cases := map[string]struct {
-// 		handler http.Handler
-// 		kube    client.Client
-// 		args    args
-// 		want    want
-// 	}{
-// 		"Successful": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				i := &sqladmin.DatabaseInstance{}
-// 				b, err := ioutil.ReadAll(r.Body)
-// 				if diff := cmp.Diff(err, nil); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				err = json.Unmarshal(b, i)
-// 				if diff := cmp.Diff(err, nil); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				if len(i.RootPassword) == 0 {
-// 					t.Errorf("r: wanted root password, got:%s", i.RootPassword)
-// 				}
-// 				w.WriteHeader(http.StatusOK)
-// 				_ = r.Body.Close()
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg: instance(withConditions(runtimev1alpha1.Creating())),
-// 				cre: resource.ExternalCreation{ConnectionDetails: resource.ConnectionDetails{
-// 					runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
-// 				}},
-// 				err: nil,
-// 			},
-// 		},
-// 		"AlreadyExists": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusConflict)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  instance(withConditions(runtimev1alpha1.Creating())),
-// 				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateFailed),
-// 			},
-// 		},
-// 		"Failed": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusBadRequest)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  instance(withConditions(runtimev1alpha1.Creating())),
-// 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateFailed),
-// 			},
-// 		},
-// 	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := container.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := clusterExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				cluster:   s,
+			}
+			_, err := e.Create(tc.args.ctx, tc.args.mg)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Create(...): -want, +got:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Create(...): -want, +got:\n%s", diff)
+				}
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Create(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
 
-// 	for name, tc := range cases {
-// 		t.Run(name, func(t *testing.T) {
-// 			server := httptest.NewServer(tc.handler)
-// 			defer server.Close()
-// 			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-// 			e := cloudsqlExternal{
-// 				kube:      tc.kube,
-// 				projectID: projectID,
-// 				db:        s.Instances,
-// 			}
-// 			cre, err := e.Create(tc.args.ctx, tc.args.mg)
-// 			if tc.want.err != nil && err != nil {
-// 				// the case where our mock server returns error.
-// 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-// 					t.Errorf("Create(...): -want, +got:\n%s", diff)
-// 				}
-// 			} else {
-// 				if diff := cmp.Diff(tc.want.err, err); diff != "" {
-// 					t.Errorf("Create(...): -want, +got:\n%s", diff)
-// 				}
-// 			}
-// 			if diff := cmp.Diff(tc.want.cre, cre, cmp.Comparer(func(a, b resource.ConnectionDetails) bool {
-// 				// This special comparer considers two ConnectionDetails to be
-// 				// equal if one has the special password value wantRandom and
-// 				// the other has a non-zero password string. If neither has the
-// 				// special password value it falls back to default compare
-// 				// semantics.
+func TestDelete(t *testing.T) {
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		err error
+	}
 
-// 				av := string(a[runtimev1alpha1.ResourceCredentialsSecretPasswordKey])
-// 				bv := string(b[runtimev1alpha1.ResourceCredentialsSecretPasswordKey])
+	cases := map[string]struct {
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
+	}{
+		"Successful": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(withConditions(runtimev1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"AlreadyGone": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusNotFound)
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(withConditions(runtimev1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"Failed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(withConditions(runtimev1alpha1.Deleting())),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteCluster),
+			},
+		},
+	}
 
-// 				if av == wantRandom {
-// 					return len(bv) > 0
-// 				}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := container.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := clusterExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				cluster:   s,
+			}
+			err := e.Delete(context.Background(), tc.args.mg)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				}
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
 
-// 				if bv == wantRandom {
-// 					return len(av) > 0
-// 				}
+func TestUpdate(t *testing.T) {
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		upd resource.ExternalUpdate
+		err error
+	}
 
-// 				return cmp.Equal(a, b)
-// 			})); diff != "" {
-// 				t.Errorf("Create(...): -want, +got:\n%s", diff)
-// 			}
-// 			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
-// 				t.Errorf("Create(...): -want, +got:\n%s", diff)
-// 			}
-// 		})
-// 	}
-// }
+	cases := map[string]struct {
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
+	}{
+		"Successful": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+				case http.MethodPut:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: cluster(withLocations([]string{"loc-1"})),
+			},
+			want: want{
+				mg:  cluster(withLocations([]string{"loc-1"})),
+				err: nil,
+			},
+		},
+		"SuccessfulNoopUpdate": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+				case http.MethodPut:
+					// Return bad request for update to demonstrate that
+					// underlying update is not making any http call.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(),
+				err: nil,
+			},
+		},
+		"GetFails": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+				case http.MethodPut:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				default:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				// No need to actually require an update. We won't get that far.
+				mg: cluster(),
+			},
+			want: want{
+				mg:  cluster(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetCluster),
+			},
+		},
+		"UpdateFails": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					// Must return successful get of cluster that does not match spec.
+					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+				case http.MethodPut:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				default:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				// Must include field that causes update.
+				mg: cluster(withLocations([]string{"loc-1"})),
+			},
+			want: want{
+				mg:  cluster(withLocations([]string{"loc-1"})),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateCluster),
+			},
+		},
+	}
 
-// func TestDelete(t *testing.T) {
-// 	type args struct {
-// 		mg resource.Managed
-// 	}
-// 	type want struct {
-// 		mg  resource.Managed
-// 		err error
-// 	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := container.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := clusterExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				cluster:   s,
+			}
+			upd, err := e.Update(context.Background(), tc.args.mg)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Update(...): -want, +got:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Update(...): -want, +got:\n%s", diff)
+				}
+			}
+			if tc.want.err == nil {
+				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+					t.Errorf("Update(...): -want, +got:\n%s", diff)
+				}
+				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
+					t.Errorf("Update(...): -want, +got:\n%s", diff)
+				}
+			}
 
-// 	cases := map[string]struct {
-// 		handler http.Handler
-// 		kube    client.Client
-// 		args    args
-// 		want    want
-// 	}{
-// 		"Successful": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusOK)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
-// 				err: nil,
-// 			},
-// 		},
-// 		"AlreadyGone": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusNotFound)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
-// 				err: nil,
-// 			},
-// 		},
-// 		"Failed": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusBadRequest)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-// 			}),
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
-// 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteFailed),
-// 			},
-// 		},
-// 	}
-
-// 	for name, tc := range cases {
-// 		t.Run(name, func(t *testing.T) {
-// 			server := httptest.NewServer(tc.handler)
-// 			defer server.Close()
-// 			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-// 			e := cloudsqlExternal{
-// 				kube:      tc.kube,
-// 				projectID: projectID,
-// 				db:        s.Instances,
-// 			}
-// 			err := e.Delete(context.Background(), tc.args.mg)
-// 			if tc.want.err != nil && err != nil {
-// 				// the case where our mock server returns error.
-// 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-// 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
-// 				}
-// 			} else {
-// 				if diff := cmp.Diff(tc.want.err, err); diff != "" {
-// 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
-// 				}
-// 			}
-// 			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
-// 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
-// 			}
-// 		})
-// 	}
-// }
-
-// func TestUpdate(t *testing.T) {
-// 	type args struct {
-// 		mg resource.Managed
-// 	}
-// 	type want struct {
-// 		mg  resource.Managed
-// 		upd resource.ExternalUpdate
-// 		err error
-// 	}
-
-// 	cases := map[string]struct {
-// 		handler http.Handler
-// 		kube    client.Client
-// 		args    args
-// 		want    want
-// 	}{
-// 		"Successful": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusOK)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-// 			}),
-// 			kube: &test.MockClient{
-// 				MockGet: test.NewMockGetFn(nil),
-// 			},
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				mg:  cluster(),
-// 				err: nil,
-// 			},
-// 		},
-// 		"PatchFails": {
-// 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 				_ = r.Body.Close()
-// 				if diff := cmp.Diff("PATCH", r.Method); diff != "" {
-// 					t.Errorf("r: -want, +got:\n%s", diff)
-// 				}
-// 				w.WriteHeader(http.StatusBadRequest)
-// 				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
-// 			}),
-// 			kube: &test.MockClient{
-// 				MockGet: test.NewMockGetFn(nil),
-// 			},
-// 			args: args{
-// 				mg: cluster(),
-// 			},
-// 			want: want{
-// 				upd: resource.ExternalUpdate{
-// 					ConnectionDetails: map[string][]byte{
-// 						runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
-// 					},
-// 				},
-// 				mg:  cluster(),
-// 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateFailed),
-// 			},
-// 		},
-// 	}
-
-// 	for name, tc := range cases {
-// 		t.Run(name, func(t *testing.T) {
-// 			server := httptest.NewServer(tc.handler)
-// 			defer server.Close()
-// 			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-// 			e := cloudsqlExternal{
-// 				kube:      tc.kube,
-// 				projectID: projectID,
-// 				db:        s.Instances,
-// 			}
-// 			upd, err := e.Update(context.Background(), tc.args.mg)
-// 			if tc.want.err != nil && err != nil {
-// 				// the case where our mock server returns error.
-// 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-// 					t.Errorf("Update(...): -want, +got:\n%s", diff)
-// 				}
-// 			} else {
-// 				if diff := cmp.Diff(tc.want.err, err); diff != "" {
-// 					t.Errorf("Update(...): -want, +got:\n%s", diff)
-// 				}
-// 			}
-// 			if tc.want.err == nil {
-// 				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
-// 					t.Errorf("Update(...): -want, +got:\n%s", diff)
-// 				}
-// 				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
-// 					t.Errorf("Update(...): -want, +got:\n%s", diff)
-// 				}
-// 			}
-
-// 		})
-// 	}
-// }
+		})
+	}
+}

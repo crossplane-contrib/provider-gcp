@@ -18,6 +18,7 @@ package container
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
@@ -41,6 +42,10 @@ const (
 
 	// ClusterNameFormat is the format for the fully qualified name of a cluster.
 	ClusterNameFormat = "projects/%s/locations/%s/clusters/%s"
+)
+
+const (
+	errNoSecretInfo = "missing secret information for GKE cluster"
 )
 
 // ClusterUpdate indicates the type of update needed for the cluster.
@@ -165,25 +170,23 @@ func GenerateAddonsConfig(in *v1beta1.AddonsConfig, cluster *container.Cluster) 
 // GenerateAuthenticatorGroupsConfig generates *container.AuthenticatorGroupsConfig from *AuthenticatorGroupsConfig.
 func GenerateAuthenticatorGroupsConfig(in *v1beta1.AuthenticatorGroupsConfig, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.AuthenticatorGroupsConfig{
+		cluster.AuthenticatorGroupsConfig = &container.AuthenticatorGroupsConfig{
 			Enabled:       gcp.BoolValue(in.Enabled),
 			SecurityGroup: gcp.StringValue(in.SecurityGroup),
 		}
-
-		cluster.AuthenticatorGroupsConfig = out
 	}
 }
 
 // GenerateAutoscaling generates *container.ClusterAutoscaling from *ClusterAutoscaling.
 func GenerateAutoscaling(in *v1beta1.ClusterAutoscaling, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.ClusterAutoscaling{
+		cluster.Autoscaling = &container.ClusterAutoscaling{
 			AutoprovisioningLocations:  in.AutoprovisioningLocations,
 			EnableNodeAutoprovisioning: gcp.BoolValue(in.EnableNodeAutoprovisioning),
 		}
 
 		if in.AutoprovisioningNodePoolDefaults != nil {
-			out.AutoprovisioningNodePoolDefaults = &container.AutoprovisioningNodePoolDefaults{
+			cluster.Autoscaling.AutoprovisioningNodePoolDefaults = &container.AutoprovisioningNodePoolDefaults{
 				OauthScopes:    in.AutoprovisioningNodePoolDefaults.OauthScopes,
 				ServiceAccount: gcp.StringValue(in.AutoprovisioningNodePoolDefaults.ServiceAccount),
 			}
@@ -191,56 +194,48 @@ func GenerateAutoscaling(in *v1beta1.ClusterAutoscaling, cluster *container.Clus
 
 		for _, limit := range in.ResourceLimits {
 			if limit != nil {
-				out.ResourceLimits = append(out.ResourceLimits, &container.ResourceLimit{
+				cluster.Autoscaling.ResourceLimits = append(cluster.Autoscaling.ResourceLimits, &container.ResourceLimit{
 					Maximum:      gcp.Int64Value(limit.Maximum),
 					Minimum:      gcp.Int64Value(limit.Minimum),
 					ResourceType: gcp.StringValue(limit.ResourceType),
 				})
 			}
 		}
-
-		cluster.Autoscaling = out
 	}
 }
 
 // GenerateBinaryAuthorization generates *container.BinaryAuthorization from *BinaryAuthorization.
 func GenerateBinaryAuthorization(in *v1beta1.BinaryAuthorization, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.BinaryAuthorization{
+		cluster.BinaryAuthorization = &container.BinaryAuthorization{
 			Enabled: in.Enabled,
 		}
-
-		cluster.BinaryAuthorization = out
 	}
 }
 
 // GenerateDatabaseEncryption generates *container.DatabaseEncryption from *DatabaseEncryption.
 func GenerateDatabaseEncryption(in *v1beta1.DatabaseEncryption, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.DatabaseEncryption{
+		cluster.DatabaseEncryption = &container.DatabaseEncryption{
 			KeyName: gcp.StringValue(in.KeyName),
 			State:   gcp.StringValue(in.State),
 		}
-
-		cluster.DatabaseEncryption = out
 	}
 }
 
 // GenerateDefaultMaxPodsConstraint generates *container.MaxPodsConstraint from *DefaultMaxPodsConstraint.
 func GenerateDefaultMaxPodsConstraint(in *v1beta1.MaxPodsConstraint, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.MaxPodsConstraint{
+		cluster.DefaultMaxPodsConstraint = &container.MaxPodsConstraint{
 			MaxPodsPerNode: in.MaxPodsPerNode,
 		}
-
-		cluster.DefaultMaxPodsConstraint = out
 	}
 }
 
 // GenerateIPAllocationPolicy generates *container.MaxPodsConstraint from *IpAllocationPolicy.
 func GenerateIPAllocationPolicy(in *v1beta1.IPAllocationPolicy, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.IPAllocationPolicy{
+		cluster.IpAllocationPolicy = &container.IPAllocationPolicy{
 			AllowRouteOverlap:          gcp.BoolValue(in.AllowRouteOverlap),
 			ClusterIpv4CidrBlock:       gcp.StringValue(in.ClusterIpv4CidrBlock),
 			ClusterSecondaryRangeName:  gcp.StringValue(in.ClusterSecondaryRangeName),
@@ -252,176 +247,145 @@ func GenerateIPAllocationPolicy(in *v1beta1.IPAllocationPolicy, cluster *contain
 			TpuIpv4CidrBlock:           gcp.StringValue(in.TpuIpv4CidrBlock),
 			UseIpAliases:               gcp.BoolValue(in.UseIPAliases),
 		}
-
-		cluster.IpAllocationPolicy = out
 	}
 }
 
 // GenerateLegacyAbac generates *container.LegacyAbac from *LegacyAbac.
 func GenerateLegacyAbac(in *v1beta1.LegacyAbac, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.LegacyAbac{
+		cluster.LegacyAbac = &container.LegacyAbac{
 			Enabled: in.Enabled,
 		}
-
-		cluster.LegacyAbac = out
 	}
 }
 
 // GenerateMaintenancePolicy generates *container.MaintenancePolicy from *MaintenancePolicy.
 func GenerateMaintenancePolicy(in *v1beta1.MaintenancePolicySpec, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.MaintenancePolicy{
+		cluster.MaintenancePolicy = &container.MaintenancePolicy{
 			Window: &container.MaintenanceWindow{
 				DailyMaintenanceWindow: &container.DailyMaintenanceWindow{
 					StartTime: in.Window.DailyMaintenanceWindow.StartTime,
 				},
 			},
 		}
-
-		cluster.MaintenancePolicy = out
 	}
 }
 
 // GenerateMasterAuth generates *container.MasterAuth from *MasterAuth.
 func GenerateMasterAuth(in *v1beta1.MasterAuth, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.MasterAuth{
-			Password: gcp.StringValue(in.Password),
-			Username: gcp.StringValue(in.Username),
-		}
-
-		if in.ClientCertificateConfig != nil {
-			out.ClientCertificateConfig = &container.ClientCertificateConfig{
+		cluster.MasterAuth = &container.MasterAuth{
+			ClientCertificateConfig: &container.ClientCertificateConfig{
 				IssueClientCertificate: in.ClientCertificateConfig.IssueClientCertificate,
-			}
+			},
 		}
-
-		cluster.MasterAuth = out
 	}
 }
 
 // GenerateMasterAuthorizedNetworksConfig generates *container.MasterAuthorizedNetworksConfig from *MasterAuthorizedNetworksConfig.
 func GenerateMasterAuthorizedNetworksConfig(in *v1beta1.MasterAuthorizedNetworksConfig, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.MasterAuthorizedNetworksConfig{
+		cluster.MasterAuthorizedNetworksConfig = &container.MasterAuthorizedNetworksConfig{
 			Enabled: gcp.BoolValue(in.Enabled),
 		}
 
 		for _, cidr := range in.CidrBlocks {
 			if cidr != nil {
-				out.CidrBlocks = append(out.CidrBlocks, &container.CidrBlock{
+				cluster.MasterAuthorizedNetworksConfig.CidrBlocks = append(cluster.MasterAuthorizedNetworksConfig.CidrBlocks, &container.CidrBlock{
 					CidrBlock:   cidr.CidrBlock,
 					DisplayName: gcp.StringValue(cidr.DisplayName),
 				})
 			}
 		}
-
-		cluster.MasterAuthorizedNetworksConfig = out
 	}
 }
 
 // GenerateNetworkConfig generates *container.NetworkConfig from *NetworkConfig.
 func GenerateNetworkConfig(in *v1beta1.NetworkConfigSpec, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.NetworkConfig{
+		cluster.NetworkConfig = &container.NetworkConfig{
 			EnableIntraNodeVisibility: in.EnableIntraNodeVisibility,
 		}
-
-		cluster.NetworkConfig = out
 	}
 }
 
 // GenerateNetworkPolicy generates *container.NetworkPolicy from *NetworkPolicy.
 func GenerateNetworkPolicy(in *v1beta1.NetworkPolicy, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.NetworkPolicy{
+		cluster.NetworkPolicy = &container.NetworkPolicy{
 			Enabled:  gcp.BoolValue(in.Enabled),
 			Provider: gcp.StringValue(in.Provider),
 		}
-
-		cluster.NetworkPolicy = out
 	}
 }
 
 // GeneratePodSecurityPolicyConfig generates *container.PodSecurityPolicyConfig from *PodSecurityPolicyConfig.
 func GeneratePodSecurityPolicyConfig(in *v1beta1.PodSecurityPolicyConfig, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.PodSecurityPolicyConfig{
+		cluster.PodSecurityPolicyConfig = &container.PodSecurityPolicyConfig{
 			Enabled: in.Enabled,
 		}
-
-		cluster.PodSecurityPolicyConfig = out
 	}
 }
 
 // GeneratePrivateClusterConfig generates *container.PrivateClusterConfig from *PrivateClusterConfig.
 func GeneratePrivateClusterConfig(in *v1beta1.PrivateClusterConfigSpec, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.PrivateClusterConfig{
+		cluster.PrivateClusterConfig = &container.PrivateClusterConfig{
 			EnablePeeringRouteSharing: gcp.BoolValue(in.EnablePeeringRouteSharing),
 			EnablePrivateEndpoint:     gcp.BoolValue(in.EnablePrivateEndpoint),
 			EnablePrivateNodes:        gcp.BoolValue(in.EnablePrivateNodes),
 			MasterIpv4CidrBlock:       gcp.StringValue(in.MasterIpv4CidrBlock),
 		}
-
-		cluster.PrivateClusterConfig = out
 	}
 }
 
 // GenerateResourceUsageExportConfig generates *container.ResourceUsageExportConfig from *ResourceUsageExportConfig.
 func GenerateResourceUsageExportConfig(in *v1beta1.ResourceUsageExportConfig, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.ResourceUsageExportConfig{
+		cluster.ResourceUsageExportConfig = &container.ResourceUsageExportConfig{
 			EnableNetworkEgressMetering: gcp.BoolValue(in.EnableNetworkEgressMetering),
 		}
 
 		if in.BigqueryDestination != nil {
-			out.BigqueryDestination = &container.BigQueryDestination{
+			cluster.ResourceUsageExportConfig.BigqueryDestination = &container.BigQueryDestination{
 				DatasetId: in.BigqueryDestination.DatasetID,
 			}
 		}
 
 		if in.ConsumptionMeteringConfig != nil {
-			out.ConsumptionMeteringConfig = &container.ConsumptionMeteringConfig{
+			cluster.ResourceUsageExportConfig.ConsumptionMeteringConfig = &container.ConsumptionMeteringConfig{
 				Enabled: in.ConsumptionMeteringConfig.Enabled,
 			}
 		}
-
-		cluster.ResourceUsageExportConfig = out
 	}
 }
 
 // GenerateTierSettings generates *container.TierSettings from *TierSettings.
 func GenerateTierSettings(in *v1beta1.TierSettings, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.TierSettings{
+		cluster.TierSettings = &container.TierSettings{
 			Tier: in.Tier,
 		}
-
-		cluster.TierSettings = out
 	}
 }
 
 // GenerateVerticalPodAutoscaling generates *container.VerticalPodAutoscaling from *VerticalPodAutoscaling.
 func GenerateVerticalPodAutoscaling(in *v1beta1.VerticalPodAutoscaling, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.VerticalPodAutoscaling{
+		cluster.VerticalPodAutoscaling = &container.VerticalPodAutoscaling{
 			Enabled: in.Enabled,
 		}
-
-		cluster.VerticalPodAutoscaling = out
 	}
 }
 
 // GenerateWorkloadIdentityConfig generates *container.WorkloadIdentityConfig from *WorkloadIdentityConfig.
 func GenerateWorkloadIdentityConfig(in *v1beta1.WorkloadIdentityConfig, cluster *container.Cluster) {
 	if in != nil {
-		out := &container.WorkloadIdentityConfig{
+		cluster.WorkloadIdentityConfig = &container.WorkloadIdentityConfig{
 			IdentityNamespace: in.IdentityNamespace,
 		}
-
-		cluster.WorkloadIdentityConfig = out
 	}
 }
 
@@ -659,9 +623,7 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 		}
 	}
 
-	if spec.Description == nil {
-		spec.Description = &in.Description
-	}
+	spec.Description = gcp.LateInitializeString(spec.Description, in.Description)
 
 	spec.EnableKubernetesAlpha = gcp.LateInitializeBool(spec.EnableKubernetesAlpha, in.EnableKubernetesAlpha)
 	spec.EnableTpu = gcp.LateInitializeBool(spec.EnableTpu, in.EnableTpu)
@@ -707,17 +669,14 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 		}
 	}
 
-	if in.MasterAuth != nil {
-		if spec.MasterAuth == nil {
-			spec.MasterAuth = &v1beta1.MasterAuth{}
-		}
-		if spec.MasterAuth.ClientCertificateConfig == nil && in.MasterAuth.ClientCertificateConfig != nil {
-			spec.MasterAuth.ClientCertificateConfig = &v1beta1.ClientCertificateConfig{
-				IssueClientCertificate: in.MasterAuth.ClientCertificateConfig.IssueClientCertificate,
+	if spec.MasterAuth == nil && in.MasterAuth != nil {
+		if in.MasterAuth.ClientCertificateConfig != nil {
+			spec.MasterAuth = &v1beta1.MasterAuth{
+				ClientCertificateConfig: v1beta1.ClientCertificateConfig{
+					IssueClientCertificate: in.MasterAuth.ClientCertificateConfig.IssueClientCertificate,
+				},
 			}
 		}
-		spec.MasterAuth.Password = gcp.LateInitializeString(spec.MasterAuth.Password, in.MasterAuth.Password)
-		spec.MasterAuth.Username = gcp.LateInitializeString(spec.MasterAuth.Username, in.MasterAuth.Username)
 	}
 
 	if in.MasterAuthorizedNetworksConfig != nil {
@@ -822,24 +781,6 @@ func checkForBootstrapNodePool(c container.Cluster) bool {
 	return false
 }
 
-// BootstrapNodePoolDeletion indicates the bootstrap node pool should be deleted.
-type BootstrapNodePoolDeletion struct{}
-
-// WrappedLocations wraps Locations for type assertion.
-type WrappedLocations struct {
-	Locations []string
-}
-
-// WrappedLoggingService wraps LoggingService for type assertion.
-type WrappedLoggingService struct {
-	LoggingService *string
-}
-
-// WrappedMonitoringService wraps MonitoringService for type assertion.
-type WrappedMonitoringService struct {
-	MonitoringService *string
-}
-
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
 // NOTE(hasheddan): This function is significantly above our cyclomatic
@@ -931,6 +872,9 @@ func GetFullyQualifiedBNP(clusterName string) string {
 // GenerateClientConfig generates a clientcmdapi.Config that can be used by any
 // kubernetes client.
 func GenerateClientConfig(cluster *container.Cluster) (clientcmdapi.Config, error) {
+	if cluster.MasterAuth == nil {
+		return clientcmdapi.Config{}, errors.New(errNoSecretInfo)
+	}
 	c := clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
 			cluster.Name: {

@@ -18,14 +18,16 @@ package container
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	container "google.golang.org/api/container/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+
+	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
@@ -799,9 +801,7 @@ func TestGenerateMasterAuth(t *testing.T) {
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.MasterAuth = &v1beta1.MasterAuth{
-						Username: gcp.StringPtr("root"),
-						Password: gcp.StringPtr("admin"),
-						ClientCertificateConfig: &v1beta1.ClientCertificateConfig{
+						ClientCertificateConfig: v1beta1.ClientCertificateConfig{
 							IssueClientCertificate: true,
 						},
 					}
@@ -809,30 +809,6 @@ func TestGenerateMasterAuth(t *testing.T) {
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.MasterAuth = &container.MasterAuth{
-					Username: "root",
-					Password: "admin",
-					ClientCertificateConfig: &container.ClientCertificateConfig{
-						IssueClientCertificate: true,
-					},
-				}
-			}),
-		},
-		"SuccessfulPartial": {
-			args: args{
-				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.MasterAuth = &v1beta1.MasterAuth{
-						Username: gcp.StringPtr("root"),
-						ClientCertificateConfig: &v1beta1.ClientCertificateConfig{
-							IssueClientCertificate: true,
-						},
-					}
-				}),
-			},
-			want: cluster(func(c *container.Cluster) {
-				c.MasterAuth = &container.MasterAuth{
-					Username: "root",
-					Password: "",
 					ClientCertificateConfig: &container.ClientCertificateConfig{
 						IssueClientCertificate: true,
 					},
@@ -1551,10 +1527,13 @@ func TestGenerateClientConfig(t *testing.T) {
 	clientCert, _ := base64.StdEncoding.DecodeString("clientCert")
 	clientKey, _ := base64.StdEncoding.DecodeString("clientKey")
 
-	cases := map[string]struct {
-		in  *container.Cluster
+	type want struct {
 		out clientcmdapi.Config
 		err error
+	}
+	cases := map[string]struct {
+		in   *container.Cluster
+		want want
 	}{
 		"Full": {
 			in: &container.Cluster{
@@ -1568,28 +1547,37 @@ func TestGenerateClientConfig(t *testing.T) {
 					ClientKey:            base64.StdEncoding.EncodeToString(clientKey),
 				},
 			},
-			out: clientcmdapi.Config{
-				Clusters: map[string]*clientcmdapi.Cluster{
-					name: {
-						Server:                   fmt.Sprintf("https://%s", endpoint),
-						CertificateAuthorityData: clusterCA,
+			want: want{
+				out: clientcmdapi.Config{
+					Clusters: map[string]*clientcmdapi.Cluster{
+						name: {
+							Server:                   fmt.Sprintf("https://%s", endpoint),
+							CertificateAuthorityData: clusterCA,
+						},
 					},
-				},
-				Contexts: map[string]*clientcmdapi.Context{
-					name: {
-						Cluster:  name,
-						AuthInfo: name,
+					Contexts: map[string]*clientcmdapi.Context{
+						name: {
+							Cluster:  name,
+							AuthInfo: name,
+						},
 					},
-				},
-				AuthInfos: map[string]*clientcmdapi.AuthInfo{
-					name: {
-						Username:              username,
-						Password:              password,
-						ClientKeyData:         clientKey,
-						ClientCertificateData: clientCert,
+					AuthInfos: map[string]*clientcmdapi.AuthInfo{
+						name: {
+							Username:              username,
+							Password:              password,
+							ClientKeyData:         clientKey,
+							ClientCertificateData: clientCert,
+						},
 					},
+					CurrentContext: name,
 				},
-				CurrentContext: name,
+			},
+		},
+		"Empty": {
+			in: &container.Cluster{},
+			want: want{
+				out: clientcmdapi.Config{},
+				err: errors.New(errNoSecretInfo),
 			},
 		},
 	}
@@ -1597,11 +1585,11 @@ func TestGenerateClientConfig(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			got, err := GenerateClientConfig(tc.in)
-			if diff := cmp.Diff(tc.err, err, test.EquateErrors()); diff != "" {
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("GenerateClientConfig(...): -want error, +got error:\n%s", diff)
 				return
 			}
-			if diff := cmp.Diff(tc.out, got); diff != "" {
+			if diff := cmp.Diff(tc.want.out, got); diff != "" {
 				t.Errorf("GenerateClientConfig(...): -want config, +got config:\n%s", diff)
 			}
 		})

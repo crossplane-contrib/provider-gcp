@@ -961,8 +961,8 @@ type DailyMaintenanceWindowStatus struct {
 	Duration string `json:"duration,omitempty"`
 }
 
-// NOTE(hasheddan): cluster auth information that is not configurable is not
-// reflected in the observed status of a GKECluster, but is used to generate its
+// NOTE(hasheddan): The only auth configuration exposed is the ability to
+// generate client certificate. All auth output information is reflected in the
 // connection secret.
 
 // MasterAuth is the authentication information for accessing the master endpoint.
@@ -975,25 +975,7 @@ type MasterAuth struct {
 	// client
 	// certificate is issued.
 	// +optional
-	ClientCertificateConfig *ClientCertificateConfig `json:"clientCertificateConfig,omitempty"`
-
-	// Password: The password to use for HTTP basic authentication to the
-	// master endpoint.
-	// Because the master endpoint is open to the Internet, you should
-	// create a
-	// strong password.  If a password is provided for cluster creation,
-	// username
-	// must be non-empty.
-	// +optional
-	Password *string `json:"password,omitempty"`
-
-	// Username: The username to use for HTTP basic authentication to the
-	// master endpoint.
-	// For clusters v1.6.0 and later, basic authentication can be disabled
-	// by
-	// leaving username unspecified (or setting it to the empty string).
-	// +optional
-	Username *string `json:"username,omitempty"`
+	ClientCertificateConfig ClientCertificateConfig `json:"clientCertificateConfig,omitempty"`
 }
 
 // ClientCertificateConfig is configuration for client certificates on the

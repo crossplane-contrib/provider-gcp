@@ -21,7 +21,6 @@ import (
 
 	"github.com/crossplaneio/stack-gcp/pkg/controller/cache"
 	computev1alpha3 "github.com/crossplaneio/stack-gcp/pkg/controller/compute/v1alpha3"
-	computev1beta1 "github.com/crossplaneio/stack-gcp/pkg/controller/compute/v1beta1"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/database"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/storage"
@@ -40,10 +39,6 @@ func (c *Controllers) SetupWithManager(mgr ctrl.Manager) error {
 		&cache.CloudMemorystoreInstanceClaimDefaultingController{},
 		&cache.CloudMemorystoreInstanceClaimController{},
 		&cache.CloudMemorystoreInstanceController{},
-		&computev1beta1.GKEClusterClaimSchedulingController{},
-		&computev1beta1.GKEClusterClaimDefaultingController{},
-		&computev1beta1.GKEClusterClaimController{},
-		&computev1beta1.GKEClusterController{},
 		&computev1alpha3.GlobalAddressController{},
 		&computev1alpha3.GKEClusterClaimSchedulingController{},
 		&computev1alpha3.GKEClusterClaimDefaultingController{},

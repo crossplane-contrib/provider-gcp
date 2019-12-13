@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Crossplane Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package database
 
 import (
@@ -267,7 +283,7 @@ func TestObserve(t *testing.T) {
 		"NotFound": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
@@ -284,7 +300,7 @@ func TestObserve(t *testing.T) {
 		"GetFailed": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
@@ -301,7 +317,7 @@ func TestObserve(t *testing.T) {
 		"NotUpToDateSpecUpdateFailed": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
@@ -323,7 +339,7 @@ func TestObserve(t *testing.T) {
 		"Creating": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
@@ -346,7 +362,7 @@ func TestObserve(t *testing.T) {
 		"Unavailable": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
@@ -369,7 +385,7 @@ func TestObserve(t *testing.T) {
 		"RunnableUnbound": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
@@ -700,7 +716,7 @@ func TestUpdate(t *testing.T) {
 		"PatchFails": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("PATCH", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
