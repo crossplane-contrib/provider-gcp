@@ -397,7 +397,7 @@ func (in *GKEClusterClass) DeepCopyObject() runtime.Object {
 func (in *GKEClusterClassList) DeepCopyInto(out *GKEClusterClassList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]GKEClusterClass, len(*in))
@@ -446,7 +446,7 @@ func (in *GKEClusterClassSpecTemplate) DeepCopy() *GKEClusterClassSpecTemplate {
 func (in *GKEClusterList) DeepCopyInto(out *GKEClusterList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]GKECluster, len(*in))
