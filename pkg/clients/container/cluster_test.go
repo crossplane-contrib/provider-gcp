@@ -198,45 +198,39 @@ func TestGenerateObservation(t *testing.T) {
 		"SuccessfulWithNodePool": {
 			args: args{
 				cluster(addOutputFields, func(c *container.Cluster) {
-					c.NodePools = []*container.NodePool{
-						&container.NodePool{
-							Conditions: []*container.StatusCondition{
-								&container.StatusCondition{
-									Code:    "cool-code",
-									Message: "cool-message",
-								},
-							},
-							Config: &container.NodeConfig{
-								Accelerators: []*container.AcceleratorConfig{
-									&container.AcceleratorConfig{
-										AcceleratorCount: 5,
-									},
-								},
-							},
-							Name: "cool-node-pool",
-						},
+					sc := &container.StatusCondition{
+						Code:    "cool-code",
+						Message: "cool-message",
 					}
+					ac := &container.AcceleratorConfig{
+						AcceleratorCount: 5,
+					}
+					np := &container.NodePool{
+						Conditions: []*container.StatusCondition{sc},
+						Config: &container.NodeConfig{
+							Accelerators: []*container.AcceleratorConfig{ac},
+						},
+						Name: "cool-node-pool",
+					}
+					c.NodePools = []*container.NodePool{np}
 				}),
 			},
 			want: observation(func(p *v1beta1.GKEClusterObservation) {
-				p.NodePools = []*v1beta1.NodePoolClusterStatus{
-					&v1beta1.NodePoolClusterStatus{
-						Conditions: []*v1beta1.StatusCondition{
-							&v1beta1.StatusCondition{
-								Code:    "cool-code",
-								Message: "cool-message",
-							},
-						},
-						Config: &v1beta1.NodeConfigClusterStatus{
-							Accelerators: []*v1beta1.AcceleratorConfigClusterStatus{
-								&v1beta1.AcceleratorConfigClusterStatus{
-									AcceleratorCount: 5,
-								},
-							},
-						},
-						Name: "cool-node-pool",
-					},
+				sc := &v1beta1.StatusCondition{
+					Code:    "cool-code",
+					Message: "cool-message",
 				}
+				ac := &v1beta1.AcceleratorConfigClusterStatus{
+					AcceleratorCount: 5,
+				}
+				np := &v1beta1.NodePoolClusterStatus{
+					Conditions: []*v1beta1.StatusCondition{sc},
+					Config: &v1beta1.NodeConfigClusterStatus{
+						Accelerators: []*v1beta1.AcceleratorConfigClusterStatus{ac},
+					},
+					Name: "cool-node-pool",
+				}
+				p.NodePools = []*v1beta1.NodePoolClusterStatus{np}
 			}),
 		},
 	}
@@ -1389,17 +1383,15 @@ func TestIsUpToDate(t *testing.T) {
 		"NoUpdateNotBootstrapNodePool": {
 			args: args{
 				cluster: cluster(func(c *container.Cluster) {
-					c.NodePools = []*container.NodePool{
-						&container.NodePool{
-							Conditions: []*container.StatusCondition{
-								&container.StatusCondition{
-									Code:    "cool-code",
-									Message: "cool-message",
-								},
-							},
-							Name: "cool-node-pool",
-						},
+					sc := &container.StatusCondition{
+						Code:    "cool-code",
+						Message: "cool-message",
 					}
+					np := &container.NodePool{
+						Conditions: []*container.StatusCondition{sc},
+						Name:       "cool-node-pool",
+					}
+					c.NodePools = []*container.NodePool{np}
 				}),
 				params: params(),
 			},
@@ -1410,17 +1402,15 @@ func TestIsUpToDate(t *testing.T) {
 		"NeedsUpdateBootstrapNodePool": {
 			args: args{
 				cluster: cluster(func(c *container.Cluster) {
-					c.NodePools = []*container.NodePool{
-						&container.NodePool{
-							Conditions: []*container.StatusCondition{
-								&container.StatusCondition{
-									Code:    "cool-code",
-									Message: "cool-message",
-								},
-							},
-							Name: BootstrapNodePoolName,
-						},
+					sc := &container.StatusCondition{
+						Code:    "cool-code",
+						Message: "cool-message",
 					}
+					np := &container.NodePool{
+						Conditions: []*container.StatusCondition{sc},
+						Name:       BootstrapNodePoolName,
+					}
+					c.NodePools = []*container.NodePool{np}
 				}),
 				params: params(),
 			},

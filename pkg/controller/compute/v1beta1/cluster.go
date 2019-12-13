@@ -44,18 +44,15 @@ import (
 
 // Error strings.
 const (
-	errGetProvider             = "cannot get Provider"
-	errGetProviderSecret       = "cannot get Provider Secret"
-	errNewClient               = "cannot create new GKE cluster client"
-	errManagedUpdateFailed     = "cannot update GKECluster custom resource"
-	errNotCluster              = "managed resource is not a GKECluster"
-	errUpdateCR                = "cannot update GKECluster custom resource"
-	errGetCluster              = "cannot get GKE cluster"
-	errCreateCluster           = "cannot create GKE cluster"
-	errUpdateCluster           = "cannot update GKE cluster"
-	errDeleteCluster           = "cannot delete GKE cluster"
-	errDeleteBootstrapNodePool = "cannot delete bootstrap node pool"
-	errUnidentifiedUpdate      = "cannot determine how to update GKE cluster"
+	errGetProvider         = "cannot get Provider"
+	errGetProviderSecret   = "cannot get Provider Secret"
+	errNewClient           = "cannot create new GKE cluster client"
+	errManagedUpdateFailed = "cannot update GKECluster custom resource"
+	errNotCluster          = "managed resource is not a GKECluster"
+	errGetCluster          = "cannot get GKE cluster"
+	errCreateCluster       = "cannot create GKE cluster"
+	errUpdateCluster       = "cannot update GKE cluster"
+	errDeleteCluster       = "cannot delete GKE cluster"
 )
 
 // GKEClusterController is responsible for adding the GKECluster
@@ -405,6 +402,7 @@ func newMasterAuthUpdate(in *v1beta1.MasterAuth) updateFn {
 func newMasterAuthorizedNetworksConfigUpdate(in *v1beta1.MasterAuthorizedNetworksConfig) updateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
 		out := &container.Cluster{}
+		gke.GenerateMasterAuthorizedNetworksConfig(in, out)
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
 				DesiredMasterAuthorizedNetworksConfig: out.MasterAuthorizedNetworksConfig,
