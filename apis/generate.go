@@ -22,8 +22,14 @@ limitations under the License.
 // Remove existing CRDs
 //go:generate rm -rf ../config/crd
 
+// TODO(hasheddan): update following enabling version.
 // Generate deepcopy methodsets and CRD manifests
-//go:generate go run -tags generate sigs.k8s.io/controller-tools/cmd/controller-gen object:headerFile=../hack/boilerplate.go.txt paths=./... crd:trivialVersions=true output:artifacts:config=../config/crd
+//go:generate go run -tags generate sigs.k8s.io/controller-tools/cmd/controller-gen object:headerFile=../hack/boilerplate.go.txt paths=./cache/... crd:trivialVersions=true output:artifacts:config=../config/crd
+//go:generate go run -tags generate sigs.k8s.io/controller-tools/cmd/controller-gen object:headerFile=../hack/boilerplate.go.txt paths=./compute/v1alpha3/... crd:trivialVersions=true output:artifacts:config=../config/crd
+//go:generate go run -tags generate sigs.k8s.io/controller-tools/cmd/controller-gen object:headerFile=../hack/boilerplate.go.txt paths=./database/... crd:trivialVersions=true output:artifacts:config=../config/crd
+//go:generate go run -tags generate sigs.k8s.io/controller-tools/cmd/controller-gen object:headerFile=../hack/boilerplate.go.txt paths=./servicenetworking/... crd:trivialVersions=true output:artifacts:config=../config/crd
+//go:generate go run -tags generate sigs.k8s.io/controller-tools/cmd/controller-gen object:headerFile=../hack/boilerplate.go.txt paths=./storage/... crd:trivialVersions=true output:artifacts:config=../config/crd
+//go:generate go run -tags generate sigs.k8s.io/controller-tools/cmd/controller-gen object:headerFile=../hack/boilerplate.go.txt paths=./v1alpha3/... crd:trivialVersions=true output:artifacts:config=../config/crd
 
 // Generate crossplane-runtime methodsets (resource.Claim, etc)
 //go:generate go run -tags generate github.com/crossplaneio/crossplane-tools/cmd/angryjet generate-methodsets --header-file=../hack/boilerplate.go.txt ./...
