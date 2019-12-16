@@ -1609,7 +1609,7 @@ type AutoUpgradeOptionsClusterStatus struct {
 // A GKEClusterSpec defines the desired state of a GKECluster.
 type GKEClusterSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  GKEClusterParameters `json:"forProvider,omitempty"`
+	ForProvider                  GKEClusterParameters `json:"forProvider"`
 }
 
 // A GKEClusterStatus represents the observed state of a GKECluster.
@@ -1636,7 +1636,7 @@ type GKECluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GKEClusterSpec   `json:"spec,omitempty"`
+	Spec   GKEClusterSpec   `json:"spec"`
 	Status GKEClusterStatus `json:"status,omitempty"`
 }
 
