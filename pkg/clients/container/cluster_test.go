@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
@@ -260,7 +260,7 @@ func TestGenerateCluster(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						HorizontalPodAutoscaling: &v1beta1.HorizontalPodAutoscaling{
-							Disabled: true,
+							Disabled: gcp.BoolPtr(true),
 						},
 					}
 					p.DatabaseEncryption = &v1beta1.DatabaseEncryption{
@@ -272,7 +272,8 @@ func TestGenerateCluster(t *testing.T) {
 			want: cluster(func(c *container.Cluster) {
 				c.AddonsConfig = &container.AddonsConfig{
 					HorizontalPodAutoscaling: &container.HorizontalPodAutoscaling{
-						Disabled: true,
+						Disabled:        true,
+						ForceSendFields: []string{"disabled"},
 					},
 				}
 				c.DatabaseEncryption = &container.DatabaseEncryption{
@@ -341,7 +342,7 @@ func TestGenerateAddonsConfig(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						HorizontalPodAutoscaling: &v1beta1.HorizontalPodAutoscaling{
-							Disabled: true,
+							Disabled: gcp.BoolPtr(true),
 						},
 					}
 				}),
@@ -349,7 +350,8 @@ func TestGenerateAddonsConfig(t *testing.T) {
 			want: cluster(func(c *container.Cluster) {
 				c.AddonsConfig = &container.AddonsConfig{
 					HorizontalPodAutoscaling: &container.HorizontalPodAutoscaling{
-						Disabled: true,
+						Disabled:        true,
+						ForceSendFields: []string{"disabled"},
 					},
 				}
 			}),
@@ -1293,7 +1295,7 @@ func TestLateInitializeSpec(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
-							Disabled: true,
+							Disabled: gcp.BoolPtr(true),
 						},
 					}
 					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{

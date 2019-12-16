@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package container
 
 import (
 	"context"
@@ -36,7 +36,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	gke "github.com/crossplaneio/stack-gcp/pkg/clients/container"
@@ -96,10 +96,10 @@ func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (re
 		return nil, errors.Wrap(err, errGetProviderSecret)
 	}
 
-	gke, err := c.newServiceFn(ctx,
+	client, err := c.newServiceFn(ctx,
 		option.WithCredentialsJSON(s.Data[p.Spec.Secret.Key]),
 		option.WithScopes(container.CloudPlatformScope))
-	return &clusterExternal{cluster: gke, projectID: p.Spec.ProjectID, kube: c.kube}, errors.Wrap(err, errNewClient)
+	return &clusterExternal{cluster: client, projectID: p.Spec.ProjectID, kube: c.kube}, errors.Wrap(err, errNewClient)
 }
 
 type clusterExternal struct {
@@ -191,6 +191,11 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (reso
 		return resource.ExternalUpdate{}, nil
 	}
 
+	// GKE uses different update methods depending on the field that is being
+	// changed. updateFactory returns the appropriate update operation based on
+	// the difference in the desired and existing spec. Only one field can be
+	// updated at a time, so if there are multiple diffs, the next one will be
+	// handled after the current one is completed.
 	_, err = updateFactory(kind, &cr.Spec.ForProvider)(ctx, e.cluster, gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateCluster)
 }
@@ -248,8 +253,6 @@ func updateFactory(kind gke.ClusterUpdate, update *v1beta1.GKEClusterParameters)
 		return newLoggingServiceUpdate(update.LoggingService)
 	case gke.MaintenancePolicyUpdate:
 		return newMaintenancePolicyUpdate(update.MaintenancePolicy)
-	case gke.MasterAuthUpdate:
-		return newMasterAuthUpdate(update.MasterAuth)
 	case gke.MasterAuthorizedNetworksConfigUpdate:
 		return newMasterAuthorizedNetworksConfigUpdate(update.MasterAuthorizedNetworksConfig)
 	case gke.MonitoringServiceUpdate:
@@ -382,19 +385,6 @@ func newMaintenancePolicyUpdate(in *v1beta1.MaintenancePolicySpec) updateFn {
 			MaintenancePolicy: out.MaintenancePolicy,
 		}
 		return s.Projects.Locations.Clusters.SetMaintenancePolicy(name, update).Context(ctx).Do()
-	}
-}
-
-// newMasterAuthUpdate returns a function that updates the MasterAuth of a cluster.
-func newMasterAuthUpdate(in *v1beta1.MasterAuth) updateFn {
-	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		gke.GenerateMasterAuth(in, out)
-		update := &container.SetMasterAuthRequest{
-			// TODO(hasheddan): need to set Action here?
-			Update: out.MasterAuth,
-		}
-		return s.Projects.Locations.Clusters.SetMasterAuth(name, update).Context(ctx).Do()
 	}
 }
 

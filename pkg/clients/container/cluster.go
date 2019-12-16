@@ -25,7 +25,7 @@ import (
 	container "google.golang.org/api/container/v1beta1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
@@ -63,7 +63,6 @@ const (
 	LocationsUpdate
 	LoggingServiceUpdate
 	MaintenancePolicyUpdate
-	MasterAuthUpdate
 	MasterAuthorizedNetworksConfigUpdate
 	MonitoringServiceUpdate
 	NetworkConfigUpdate
@@ -133,33 +132,39 @@ func GenerateAddonsConfig(in *v1beta1.AddonsConfig, cluster *container.Cluster) 
 		out := &container.AddonsConfig{}
 		if in.CloudRunConfig != nil {
 			out.CloudRunConfig = &container.CloudRunConfig{
-				Disabled: in.CloudRunConfig.Disabled,
+				Disabled:        gcp.BoolValue(in.CloudRunConfig.Disabled),
+				ForceSendFields: []string{"disabled"},
 			}
 		}
 		if in.HorizontalPodAutoscaling != nil {
 			out.HorizontalPodAutoscaling = &container.HorizontalPodAutoscaling{
-				Disabled: in.HorizontalPodAutoscaling.Disabled,
+				Disabled:        gcp.BoolValue(in.HorizontalPodAutoscaling.Disabled),
+				ForceSendFields: []string{"disabled"},
 			}
 		}
-		if in.HTTPLoadBalancing != nil {
+		if in.HTTPLoadBalancing != nil && in.HTTPLoadBalancing.Disabled != nil {
 			out.HttpLoadBalancing = &container.HttpLoadBalancing{
-				Disabled: in.HTTPLoadBalancing.Disabled,
+				Disabled:        gcp.BoolValue(in.HTTPLoadBalancing.Disabled),
+				ForceSendFields: []string{"disabled"},
 			}
 		}
 		if in.IstioConfig != nil {
 			out.IstioConfig = &container.IstioConfig{
-				Auth:     gcp.StringValue(in.IstioConfig.Auth),
-				Disabled: gcp.BoolValue(in.IstioConfig.Disabled),
+				Auth:            gcp.StringValue(in.IstioConfig.Auth),
+				Disabled:        gcp.BoolValue(in.IstioConfig.Disabled),
+				ForceSendFields: []string{"disabled"},
 			}
 		}
 		if in.KubernetesDashboard != nil {
 			out.KubernetesDashboard = &container.KubernetesDashboard{
-				Disabled: in.KubernetesDashboard.Disabled,
+				Disabled:        gcp.BoolValue(in.KubernetesDashboard.Disabled),
+				ForceSendFields: []string{"disabled"},
 			}
 		}
 		if in.NetworkPolicyConfig != nil {
 			out.NetworkPolicyConfig = &container.NetworkPolicyConfig{
-				Disabled: in.NetworkPolicyConfig.Disabled,
+				Disabled:        gcp.BoolValue(in.NetworkPolicyConfig.Disabled),
+				ForceSendFields: []string{"disabled"},
 			}
 		}
 
@@ -536,17 +541,17 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 		}
 		if spec.AddonsConfig.CloudRunConfig == nil && in.AddonsConfig.CloudRunConfig != nil {
 			spec.AddonsConfig.CloudRunConfig = &v1beta1.CloudRunConfig{
-				Disabled: in.AddonsConfig.CloudRunConfig.Disabled,
+				Disabled: gcp.BoolPtr(in.AddonsConfig.CloudRunConfig.Disabled),
 			}
 		}
 		if spec.AddonsConfig.HorizontalPodAutoscaling == nil && in.AddonsConfig.HorizontalPodAutoscaling != nil {
 			spec.AddonsConfig.HorizontalPodAutoscaling = &v1beta1.HorizontalPodAutoscaling{
-				Disabled: in.AddonsConfig.HorizontalPodAutoscaling.Disabled,
+				Disabled: gcp.BoolPtr(in.AddonsConfig.HorizontalPodAutoscaling.Disabled),
 			}
 		}
 		if spec.AddonsConfig.HTTPLoadBalancing == nil && in.AddonsConfig.HttpLoadBalancing != nil {
 			spec.AddonsConfig.HTTPLoadBalancing = &v1beta1.HTTPLoadBalancing{
-				Disabled: in.AddonsConfig.HttpLoadBalancing.Disabled,
+				Disabled: gcp.BoolPtr(in.AddonsConfig.HttpLoadBalancing.Disabled),
 			}
 		}
 		if in.AddonsConfig.IstioConfig != nil {
@@ -558,12 +563,12 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 		}
 		if spec.AddonsConfig.KubernetesDashboard == nil && in.AddonsConfig.KubernetesDashboard != nil {
 			spec.AddonsConfig.KubernetesDashboard = &v1beta1.KubernetesDashboard{
-				Disabled: in.AddonsConfig.KubernetesDashboard.Disabled,
+				Disabled: gcp.BoolPtr(in.AddonsConfig.KubernetesDashboard.Disabled),
 			}
 		}
 		if spec.AddonsConfig.NetworkPolicyConfig == nil && in.AddonsConfig.NetworkPolicyConfig != nil {
 			spec.AddonsConfig.NetworkPolicyConfig = &v1beta1.NetworkPolicyConfig{
-				Disabled: in.AddonsConfig.NetworkPolicyConfig.Disabled,
+				Disabled: gcp.BoolPtr(in.AddonsConfig.NetworkPolicyConfig.Disabled),
 			}
 		}
 	}
@@ -815,9 +820,6 @@ func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster
 	}
 	if !cmp.Equal(in.MaintenancePolicy, currentParams.MaintenancePolicy) {
 		return false, MaintenancePolicyUpdate
-	}
-	if !cmp.Equal(in.MasterAuth, currentParams.MasterAuth) {
-		return false, MasterAuthUpdate
 	}
 	if !cmp.Equal(in.MasterAuthorizedNetworksConfig, currentParams.MasterAuthorizedNetworksConfig) {
 		return false, MasterAuthorizedNetworksConfigUpdate

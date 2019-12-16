@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package container
 
 import (
 	"context"
@@ -30,7 +30,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	computev1alpha1 "github.com/crossplaneio/crossplane/apis/compute/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 )
 
 var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureGKECluster)
@@ -50,6 +50,7 @@ func TestConfigureGKECluster(t *testing.T) {
 
 	claimUID := types.UID("definitely-a-uuid")
 	providerName := "coolprovider"
+	location := "cool-place"
 
 	cases := map[string]struct {
 		args args
@@ -58,20 +59,24 @@ func TestConfigureGKECluster(t *testing.T) {
 		"Successful": {
 			args: args{
 				cm: &computev1alpha1.KubernetesCluster{ObjectMeta: metav1.ObjectMeta{UID: claimUID}},
-				cs: &v1alpha3.GKEClusterClass{
-					SpecTemplate: v1alpha3.GKEClusterClassSpecTemplate{
+				cs: &v1beta1.GKEClusterClass{
+					SpecTemplate: v1beta1.GKEClusterClassSpecTemplate{
 						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
 							WriteConnectionSecretsToNamespace: namespace,
 							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:                     runtimev1alpha1.ReclaimDelete,
 						},
+						GKEClusterParameters: v1beta1.GKEClusterParameters{
+							Name:     name,
+							Location: location,
+						},
 					},
 				},
-				mg: &v1alpha3.GKECluster{},
+				mg: &v1beta1.GKECluster{},
 			},
 			want: want{
-				mg: &v1alpha3.GKECluster{
-					Spec: v1alpha3.GKEClusterSpec{
+				mg: &v1beta1.GKECluster{
+					Spec: v1beta1.GKEClusterSpec{
 						ResourceSpec: runtimev1alpha1.ResourceSpec{
 							ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
 							WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
@@ -80,10 +85,9 @@ func TestConfigureGKECluster(t *testing.T) {
 							},
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
-						GKEClusterParameters: v1alpha3.GKEClusterParameters{
-							NumNodes: 1,
-							Scopes:   []string{},
-							Labels:   map[string]string{},
+						ForProvider: v1beta1.GKEClusterParameters{
+							Name:     name,
+							Location: location,
 						},
 					},
 				},

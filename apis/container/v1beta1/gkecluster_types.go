@@ -227,6 +227,33 @@ type GKEClusterObservation struct {
 // GKEClusterParameters define the desired state of a Google Kubernetes Engine
 // cluster.
 type GKEClusterParameters struct {
+	// NOTE(hasheddan): Location is labelled as Output Only by GCP but is required
+	// to create a cluster. It is not included in the actual cluster object
+	// itself, but is instead passed to the create call. If a region is given
+	// the cluster will be Regional, if a zone is given the cluster will be
+	// Zonal.
+
+	// Location: The name of the Google Compute
+	// Engine
+	// [zone](/compute/docs/regions-zones/regions-zones#available)
+	// or
+	// [region](/compute/docs/regions-zones/regions-zones#available) in
+	// which
+	// the cluster resides.
+	// +immutable
+	Location string `json:"location"`
+
+	// Name: The name of this cluster. The name must be unique within this
+	// project
+	// and zone, and can be up to 40 characters with the following
+	// restrictions:
+	//
+	// * Lowercase letters, numbers, and hyphens only.
+	// * Must start with a letter.
+	// * Must end with a number or a letter.
+	// +immutable
+	Name string `json:"name"`
+
 	// AddonsConfig: Configurations for the various addons available to run
 	// in the cluster.
 	// +optional
@@ -330,22 +357,6 @@ type GKEClusterParameters struct {
 	// +optional
 	LegacyAbac *LegacyAbac `json:"legacyAbac,omitempty"`
 
-	// NOTE(hasheddan): Location is labelled as Output Only by GCP but is required
-	// to create a cluster. It is not included in the actual cluster object
-	// itself, but is instead passed to the create call. If a region is given
-	// the cluster will be Regional, if a zone is given the cluster will be
-	// Zonal.
-
-	// Location: The name of the Google Compute
-	// Engine
-	// [zone](/compute/docs/regions-zones/regions-zones#available)
-	// or
-	// [region](/compute/docs/regions-zones/regions-zones#available) in
-	// which
-	// the cluster resides.
-	// +immutable
-	Location string `json:"location"`
-
 	// Locations: The list of Google Compute
 	// Engine
 	// [zones](/compute/docs/zones#available) in which the cluster's
@@ -406,17 +417,6 @@ type GKEClusterParameters struct {
 	// +optional
 	MonitoringService *string `json:"monitoringService,omitempty"`
 
-	// Name: The name of this cluster. The name must be unique within this
-	// project
-	// and zone, and can be up to 40 characters with the following
-	// restrictions:
-	//
-	// * Lowercase letters, numbers, and hyphens only.
-	// * Must start with a letter.
-	// * Must end with a number or a letter.
-	// +immutable
-	Name string `json:"name"`
-
 	// Network: The name of the Google Compute
 	// Engine
 	// [network](/compute/docs/networks-and-firewalls#networks) to which
@@ -432,7 +432,7 @@ type GKEClusterParameters struct {
 	// +immutable
 	NetworkRef *NetworkURIReferencerForGKECluster `json:"networkRef,omitempty" resource:"attributereferencer"`
 
-	// NOTE(hasheddan): only intradnode visibility can be updated in
+	// NOTE(hasheddan): only intranode visibility can be updated in
 	// NetworkConfig
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/ClusterUpdate?authuser=1#IntraNodeVisibilityConfig
 
@@ -552,7 +552,7 @@ type AddonsConfig struct {
 // CloudRunConfig is configuration options for the Cloud Run feature.
 type CloudRunConfig struct {
 	// Disabled: Whether Cloud Run addon is enabled for this cluster.
-	Disabled bool `json:"disabled"`
+	Disabled *bool `json:"disabled"`
 }
 
 // HorizontalPodAutoscaling is configuration options for the horizontal
@@ -566,7 +566,7 @@ type HorizontalPodAutoscaling struct {
 	// When enabled, it ensures that a Heapster pod is running in the
 	// cluster,
 	// which is also used by the Cloud Monitoring service.
-	Disabled bool `json:"disabled"`
+	Disabled *bool `json:"disabled"`
 }
 
 // HTTPLoadBalancing is configuration options for the HTTP (L7) load
@@ -579,7 +579,7 @@ type HTTPLoadBalancing struct {
 	// When enabled, it runs a small pod in the cluster that manages the
 	// load
 	// balancers.
-	Disabled bool `json:"disabled"`
+	Disabled *bool `json:"disabled"`
 }
 
 // IstioConfig is configuration options for Istio addon.
@@ -601,7 +601,7 @@ type IstioConfig struct {
 type KubernetesDashboard struct {
 	// Disabled: Whether the Kubernetes Dashboard is enabled for this
 	// cluster.
-	Disabled bool `json:"disabled"`
+	Disabled *bool `json:"disabled"`
 }
 
 // NetworkPolicyConfig is configuration for NetworkPolicy. This only
@@ -611,7 +611,7 @@ type KubernetesDashboard struct {
 // is enabled for the nodes.
 type NetworkPolicyConfig struct {
 	// Disabled: Whether NetworkPolicy is enabled for this cluster.
-	Disabled bool `json:"disabled"`
+	Disabled *bool `json:"disabled"`
 }
 
 // AuthenticatorGroupsConfig is configuration for returning group
@@ -982,6 +982,7 @@ type MasterAuth struct {
 // cluster.
 type ClientCertificateConfig struct {
 	// IssueClientCertificate: Issue a client certificate.
+	// +immutable
 	IssueClientCertificate bool `json:"issueClientCertificate"`
 }
 
@@ -1618,7 +1619,6 @@ type GKEClusterStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:storageversion
 
 // A GKECluster is a managed resource that represents a Google Kubernetes Engine
 // cluster.
@@ -1657,7 +1657,6 @@ type GKEClusterClassSpecTemplate struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:storageversion
 
 // A GKEClusterClass is a resource class. It defines the desired spec of
 // resource claims that use it to dynamically provision a managed

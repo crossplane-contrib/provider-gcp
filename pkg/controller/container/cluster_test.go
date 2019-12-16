@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package container
 
 import (
 	"context"
@@ -42,7 +42,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	gke "github.com/crossplaneio/stack-gcp/pkg/clients/container"
 )
@@ -961,13 +961,6 @@ func TestUpdateFactory(t *testing.T) {
 				update: &cluster().Spec.ForProvider,
 			},
 			want: newMaintenancePolicyUpdate(cluster().Spec.ForProvider.MaintenancePolicy),
-		},
-		"MasterAuthUpdate": {
-			args: args{
-				kind:   gke.MasterAuthUpdate,
-				update: &cluster().Spec.ForProvider,
-			},
-			want: newMasterAuthUpdate(cluster().Spec.ForProvider.MasterAuth),
 		},
 		"MasterAuthorizedNetworksConfigUpdateUpdate": {
 			args: args{
