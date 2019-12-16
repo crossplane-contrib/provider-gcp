@@ -71,7 +71,7 @@ type Subnetwork struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SubnetworkSpec   `json:"spec,omitempty"`
+	Spec   SubnetworkSpec   `json:"spec"`
 	Status SubnetworkStatus `json:"status,omitempty"`
 }
 

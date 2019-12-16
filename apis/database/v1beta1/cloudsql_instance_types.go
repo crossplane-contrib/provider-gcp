@@ -598,7 +598,7 @@ type DatabaseInstanceFailoverReplicaStatus struct {
 // A CloudSQLInstanceSpec defines the desired state of a CloudSQLInstance.
 type CloudSQLInstanceSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  CloudSQLInstanceParameters `json:"forProvider,omitempty"`
+	ForProvider                  CloudSQLInstanceParameters `json:"forProvider"`
 }
 
 // A CloudSQLInstanceStatus represents the observed state of a CloudSQLInstance.
@@ -622,7 +622,7 @@ type CloudSQLInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CloudSQLInstanceSpec   `json:"spec,omitempty"`
+	Spec   CloudSQLInstanceSpec   `json:"spec"`
 	Status CloudSQLInstanceStatus `json:"status,omitempty"`
 }
 
@@ -639,7 +639,7 @@ type CloudSQLInstanceList struct {
 // dynamically provisioned CloudSQLInstance.
 type CloudSQLInstanceClassSpecTemplate struct {
 	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
-	ForProvider                       CloudSQLInstanceParameters `json:"forProvider,omitempty"`
+	ForProvider                       CloudSQLInstanceParameters `json:"forProvider"`
 }
 
 // +kubebuilder:object:root=true

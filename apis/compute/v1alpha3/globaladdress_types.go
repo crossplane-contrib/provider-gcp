@@ -171,7 +171,7 @@ type GlobalAddress struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GlobalAddressSpec   `json:"spec,omitempty"`
+	Spec   GlobalAddressSpec   `json:"spec"`
 	Status GlobalAddressStatus `json:"status,omitempty"`
 }
 

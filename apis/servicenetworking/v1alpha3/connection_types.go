@@ -130,7 +130,7 @@ type Connection struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ConnectionSpec   `json:"spec,omitempty"`
+	Spec   ConnectionSpec   `json:"spec"`
 	Status ConnectionStatus `json:"status,omitempty"`
 }
 

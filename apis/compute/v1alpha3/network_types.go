@@ -44,7 +44,7 @@ type Network struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NetworkSpec   `json:"spec,omitempty"`
+	Spec   NetworkSpec   `json:"spec"`
 	Status NetworkStatus `json:"status,omitempty"`
 }
 
