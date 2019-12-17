@@ -280,7 +280,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := cluster()
-				gc := gke.GenerateCluster(c.Spec.ForProvider)
+				gc := gke.GenerateCluster(c.Spec.ForProvider, name)
 				gc.Locations = []string{"loc-1"}
 				_ = json.NewEncoder(w).Encode(gc)
 			}),
@@ -302,7 +302,7 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := gke.GenerateCluster(cluster().Spec.ForProvider)
+				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
 				c.Status = v1beta1.ClusterStateProvisioning
 				c.MasterAuth = &container.MasterAuth{
 					Username: "admin",
@@ -318,6 +318,7 @@ func TestObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 					ConnectionDetails: connectionDetails(&container.Cluster{
+						Name: name,
 						MasterAuth: &container.MasterAuth{
 							Username: "admin",
 							Password: "admin",
@@ -334,7 +335,7 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := gke.GenerateCluster(cluster().Spec.ForProvider)
+				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
 				c.Status = v1beta1.ClusterStateReconciling
 				_ = json.NewEncoder(w).Encode(c)
 			}),
@@ -357,7 +358,7 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := gke.GenerateCluster(cluster().Spec.ForProvider)
+				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
 				c.Status = v1beta1.ClusterStateRunning
 				_ = json.NewEncoder(w).Encode(c)
 			}),
@@ -386,7 +387,7 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := gke.GenerateCluster(cluster().Spec.ForProvider)
+				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
 				c.Status = v1beta1.ClusterStateReconciling
 				_ = json.NewEncoder(w).Encode(c)
 			}),

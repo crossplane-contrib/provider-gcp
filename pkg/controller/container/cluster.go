@@ -114,7 +114,7 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (res
 		return resource.ExternalObservation{}, errors.New(errNotCluster)
 	}
 
-	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider)).Context(ctx).Do()
+	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetCluster)
 	}
@@ -155,13 +155,13 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (reso
 	cr.SetConditions(v1alpha1.Creating())
 
 	// Generate GKE cluster from resource spec.
-	cluster := gke.GenerateCluster(cr.Spec.ForProvider)
+	cluster := gke.GenerateCluster(cr.Spec.ForProvider, meta.GetExternalName(cr))
 
 	// Insert default node pool for bootstrapping cluster. This is required to
 	// create a GKE cluster. After successful creation we delete the bootstrap
 	// node pool immediately and provision any subsequent node pools using the
 	// NodePool resource type.
-	gke.GenerateNodePoolForCreate(cluster)
+	gke.AddNodePoolForCreate(cluster)
 
 	create := &container.CreateClusterRequest{
 		Cluster: cluster,
@@ -181,7 +181,7 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (reso
 	}
 
 	// We have to get the cluster again here to determine how to update.
-	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider)).Context(ctx).Do()
+	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalUpdate{}, errors.Wrap(err, errGetCluster)
 	}
@@ -196,7 +196,7 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (reso
 	// the difference in the desired and existing spec. Only one field can be
 	// updated at a time, so if there are multiple diffs, the next one will be
 	// handled after the current one is completed.
-	_, err = updateFactory(kind, &cr.Spec.ForProvider)(ctx, e.cluster, gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider))
+	_, err = updateFactory(kind, &cr.Spec.ForProvider)(ctx, e.cluster, gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr)))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateCluster)
 }
 
@@ -207,7 +207,7 @@ func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error
 	}
 	cr.SetConditions(runtimev1alpha1.Deleting())
 
-	_, err := e.cluster.Projects.Locations.Clusters.Delete(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider)).Context(ctx).Do()
+	_, err := e.cluster.Projects.Locations.Clusters.Delete(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteCluster)
 }
 

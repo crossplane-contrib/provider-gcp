@@ -78,7 +78,6 @@ func params(m ...func(*v1beta1.GKEClusterParameters)) *v1beta1.GKEClusterParamet
 		Locations:             []string{"us-central1-a", "us-central1-b"},
 		LoggingService:        gcp.StringPtr("logging.googleapis.com"),
 		MonitoringService:     gcp.StringPtr("monitoring.googleapis.com"),
-		Name:                  name,
 		Location:              location,
 		Network:               gcp.StringPtr("default"),
 		ResourceLabels:        resourceLabels,
@@ -248,6 +247,7 @@ func TestGenerateCluster(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
 		params  *v1beta1.GKEClusterParameters
+		name    string
 	}
 
 	tests := map[string]struct {
@@ -268,6 +268,7 @@ func TestGenerateCluster(t *testing.T) {
 						State:   gcp.StringPtr("UNKNOWN"),
 					}
 				}),
+				name: name,
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.AddonsConfig = &container.AddonsConfig{
@@ -286,13 +287,14 @@ func TestGenerateCluster(t *testing.T) {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
+				name:    name,
 			},
 			want: cluster(),
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			cluster := GenerateCluster(*tc.args.params)
+			cluster := GenerateCluster(*tc.args.params, tc.args.name)
 			if diff := cmp.Diff(tc.want, cluster); diff != "" {
 				t.Errorf("GenerateCluster(...): -want, +got:\n%s", diff)
 			}
@@ -300,7 +302,7 @@ func TestGenerateCluster(t *testing.T) {
 	}
 }
 
-func TestGenerateNodePoolForCreate(t *testing.T) {
+func TestAddNodePoolForCreate(t *testing.T) {
 	pool := &container.NodePool{
 		Name:             BootstrapNodePoolName,
 		InitialNodeCount: 0,
@@ -318,9 +320,9 @@ func TestGenerateNodePoolForCreate(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			GenerateNodePoolForCreate(tc.args)
+			AddNodePoolForCreate(tc.args)
 			if diff := cmp.Diff(tc.want, tc.args); diff != "" {
-				t.Errorf("GenerateNodePoolsForCreate(...): -want, +got:\n%s", diff)
+				t.Errorf("AddNodePoolForCreate(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -1466,6 +1468,7 @@ func TestGetFullyQualifiedName(t *testing.T) {
 	type args struct {
 		project string
 		params  v1beta1.GKEClusterParameters
+		name    string
 	}
 	tests := map[string]struct {
 		args args
@@ -1475,13 +1478,14 @@ func TestGetFullyQualifiedName(t *testing.T) {
 			args: args{
 				project: project,
 				params:  *params(),
+				name:    name,
 			},
 			want: fmt.Sprintf(ClusterNameFormat, project, location, name),
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			s := GetFullyQualifiedName(tc.args.project, tc.args.params)
+			s := GetFullyQualifiedName(tc.args.project, tc.args.params, tc.args.name)
 			if diff := cmp.Diff(tc.want, s); diff != "" {
 				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
 			}

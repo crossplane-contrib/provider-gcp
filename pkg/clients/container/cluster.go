@@ -75,9 +75,9 @@ const (
 	WorkloadIdentityConfigUpdate
 )
 
-// GenerateNodePoolForCreate inserts the default node pool into
-// *container.Cluster so that it can be provisioned successfully.
-func GenerateNodePoolForCreate(in *container.Cluster) {
+// AddNodePoolForCreate inserts the default node pool into *container.Cluster so
+// that it can be provisioned successfully.
+func AddNodePoolForCreate(in *container.Cluster) {
 	pool := &container.NodePool{
 		Name:             BootstrapNodePoolName,
 		InitialNodeCount: 0,
@@ -86,7 +86,7 @@ func GenerateNodePoolForCreate(in *container.Cluster) {
 }
 
 // GenerateCluster generates *container.Cluster instance from GKEClusterParameters.
-func GenerateCluster(in v1beta1.GKEClusterParameters) *container.Cluster { // nolint:gocyclo
+func GenerateCluster(in v1beta1.GKEClusterParameters, name string) *container.Cluster { // nolint:gocyclo
 	cluster := &container.Cluster{
 		ClusterIpv4Cidr:       gcp.StringValue(in.ClusterIpv4Cidr),
 		Description:           gcp.StringValue(in.Description),
@@ -97,7 +97,7 @@ func GenerateCluster(in v1beta1.GKEClusterParameters) *container.Cluster { // no
 		Locations:             in.Locations,
 		LoggingService:        gcp.StringValue(in.LoggingService),
 		MonitoringService:     gcp.StringValue(in.MonitoringService),
-		Name:                  in.Name,
+		Name:                  name,
 		Network:               gcp.StringValue(in.Network),
 		ResourceLabels:        in.ResourceLabels,
 		Subnetwork:            gcp.StringValue(in.Subnetwork),
@@ -861,8 +861,8 @@ func GetFullyQualifiedParent(project string, p v1beta1.GKEClusterParameters) str
 }
 
 // GetFullyQualifiedName builds the fully qualified name of the cluster.
-func GetFullyQualifiedName(project string, p v1beta1.GKEClusterParameters) string {
-	return fmt.Sprintf(ClusterNameFormat, project, p.Location, p.Name)
+func GetFullyQualifiedName(project string, p v1beta1.GKEClusterParameters, name string) string {
+	return fmt.Sprintf(ClusterNameFormat, project, p.Location, name)
 }
 
 // GetFullyQualifiedBNP build the fully qualified name of the bootstrap node

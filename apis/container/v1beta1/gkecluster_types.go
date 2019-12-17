@@ -243,17 +243,6 @@ type GKEClusterParameters struct {
 	// +immutable
 	Location string `json:"location"`
 
-	// Name: The name of this cluster. The name must be unique within this
-	// project
-	// and zone, and can be up to 40 characters with the following
-	// restrictions:
-	//
-	// * Lowercase letters, numbers, and hyphens only.
-	// * Must start with a letter.
-	// * Must end with a number or a letter.
-	// +immutable
-	Name string `json:"name"`
-
 	// AddonsConfig: Configurations for the various addons available to run
 	// in the cluster.
 	// +optional
@@ -692,7 +681,7 @@ type BinaryAuthorization struct {
 	// Enabled: Enable Binary Authorization for this cluster. If enabled,
 	// all container
 	// images will be validated by Google Binauthz.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 }
 
 // DatabaseEncryption is configuration of etcd encryption.
@@ -903,7 +892,7 @@ type LegacyAbac struct {
 	// controllers, will have statically granted permissions beyond
 	// those
 	// provided by the RBAC configuration or IAM.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 }
 
 // MaintenancePolicySpec defines the maintenance policy
@@ -938,7 +927,7 @@ type DailyMaintenanceWindowSpec struct {
 type MaintenancePolicyStatus struct {
 	// Window: Specifies the maintenance window in which maintenance may be
 	// performed.
-	Window MaintenanceWindowStatus `json:"window"`
+	Window MaintenanceWindowStatus `json:"window,omitempty"`
 }
 
 // MaintenanceWindowStatus defines the maintenance window
@@ -946,7 +935,7 @@ type MaintenancePolicyStatus struct {
 type MaintenanceWindowStatus struct {
 	// DailyMaintenanceWindow: DailyMaintenanceWindow specifies a daily
 	// maintenance operation window.
-	DailyMaintenanceWindow DailyMaintenanceWindowStatus `json:"dailyMaintenanceWindow"`
+	DailyMaintenanceWindow DailyMaintenanceWindowStatus `json:"dailyMaintenanceWindow,omitempty"`
 }
 
 // DailyMaintenanceWindowStatus is the observed time window for daily
@@ -974,8 +963,7 @@ type MasterAuth struct {
 	// clusters before v1.12, if no configuration is specified, a
 	// client
 	// certificate is issued.
-	// +optional
-	ClientCertificateConfig ClientCertificateConfig `json:"clientCertificateConfig,omitempty"`
+	ClientCertificateConfig ClientCertificateConfig `json:"clientCertificateConfig"`
 }
 
 // ClientCertificateConfig is configuration for client certificates on the
@@ -1068,7 +1056,7 @@ type PodSecurityPolicyConfig struct {
 	// Enabled: Enable the PodSecurityPolicy controller for this cluster. If
 	// enabled, pods
 	// must be valid under a PodSecurityPolicy to be created.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 }
 
 // PrivateClusterConfigSpec is configuration options for private clusters.
@@ -1137,7 +1125,7 @@ type ResourceUsageExportConfig struct {
 // of resource usage export.
 type BigQueryDestination struct {
 	// DatasetId: The ID of a BigQuery Dataset.
-	DatasetID string `json:"datasetId,omitempty"`
+	DatasetID string `json:"datasetId"`
 }
 
 // ConsumptionMeteringConfig is parameters for controlling consumption
@@ -1148,7 +1136,7 @@ type ConsumptionMeteringConfig struct {
 	// second BigQuery table will be created to hold resource
 	// consumption
 	// records.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 }
 
 // TierSettings is cluster tier settings.
@@ -1162,7 +1150,7 @@ type TierSettings struct {
 	//   "STANDARD" - Represents the standard tier or base Google Kubernetes
 	// Engine offering.
 	//   "ADVANCED" - Represents the advanced tier.
-	Tier string `json:"tier,omitempty"`
+	Tier string `json:"tier"`
 }
 
 // VerticalPodAutoscaling contains global,
@@ -1171,7 +1159,7 @@ type TierSettings struct {
 // the resources of pods controlled by it.
 type VerticalPodAutoscaling struct {
 	// Enabled: Enables vertical pod autoscaling.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 }
 
 // WorkloadIdentityConfig is configuration for the use of Kubernetes
@@ -1180,7 +1168,7 @@ type VerticalPodAutoscaling struct {
 type WorkloadIdentityConfig struct {
 	// IdentityNamespace: IAM Identity Namespace to attach all Kubernetes
 	// Service Accounts to.
-	IdentityNamespace string `json:"identityNamespace,omitempty"`
+	IdentityNamespace string `json:"identityNamespace"`
 }
 
 // NOTE(hasheddan): the following structs are meant to be utilized to model Node
@@ -1624,8 +1612,7 @@ type GKEClusterStatus struct {
 // cluster.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
-// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.state"
-// +kubebuilder:printcolumn:name="CLUSTER-NAME",type="string",JSONPath=".spec.forProvider.name"
+// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
 // +kubebuilder:printcolumn:name="ENDPOINT",type="string",JSONPath=".status.atProvider.endpoint"
 // +kubebuilder:printcolumn:name="CLUSTER-CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
@@ -1653,7 +1640,7 @@ type GKEClusterList struct {
 // provisioned GKECluster.
 type GKEClusterClassSpecTemplate struct {
 	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
-	GKEClusterParameters              `json:",inline"`
+	ForProvider                       GKEClusterParameters `json:"forProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

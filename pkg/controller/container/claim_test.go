@@ -66,8 +66,7 @@ func TestConfigureGKECluster(t *testing.T) {
 							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
 							ReclaimPolicy:                     runtimev1alpha1.ReclaimDelete,
 						},
-						GKEClusterParameters: v1beta1.GKEClusterParameters{
-							Name:     name,
+						ForProvider: v1beta1.GKEClusterParameters{
 							Location: location,
 						},
 					},
@@ -86,7 +85,6 @@ func TestConfigureGKECluster(t *testing.T) {
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
 						ForProvider: v1beta1.GKEClusterParameters{
-							Name:     name,
 							Location: location,
 						},
 					},

@@ -12,11 +12,8 @@ spec:
   - JSONPath: .status.bindingPhase
     name: STATUS
     type: string
-  - JSONPath: .status.state
+  - JSONPath: .status.atProvider.status
     name: STATE
-    type: string
-  - JSONPath: .spec.forProvider.name
-    name: CLUSTER-NAME
     type: string
   - JSONPath: .status.atProvider.endpoint
     name: ENDPOINT
@@ -311,6 +308,8 @@ spec:
                         cluster. If enabled, all container images will be validated
                         by Google Binauthz.'
                       type: boolean
+                  required:
+                  - enabled
                   type: object
                 clusterIpv4Cidr:
                   description: "ClusterIpv4Cidr: The IP address range of the container
@@ -485,6 +484,8 @@ spec:
                         statically granted permissions beyond those provided by the
                         RBAC configuration or IAM.'
                       type: boolean
+                  required:
+                  - enabled
                   type: object
                 location:
                   description: 'Location: The name of the Google Compute Engine [zone](/compute/docs/regions-zones/regions-zones#available)
@@ -553,6 +554,8 @@ spec:
                       required:
                       - issueClientCertificate
                       type: object
+                  required:
+                  - clientCertificateConfig
                   type: object
                 masterAuthorizedNetworksConfig:
                   description: 'MasterAuthorizedNetworksConfig: The configuration
@@ -588,13 +591,6 @@ spec:
                     `monitoring.googleapis.com` - the Google Cloud Monitoring service.
                     * `none` - no metrics will be exported from the cluster. * if
                     left as an empty string, `monitoring.googleapis.com` will be used."
-                  type: string
-                name:
-                  description: "Name: The name of this cluster. The name must be unique
-                    within this project and zone, and can be up to 40 characters with
-                    the following restrictions: \n * Lowercase letters, numbers, and
-                    hyphens only. * Must start with a letter. * Must end with a number
-                    or a letter."
                   type: string
                 network:
                   description: 'Network: The name of the Google Compute Engine [network](/compute/docs/networks-and-firewalls#networks)
@@ -644,6 +640,8 @@ spec:
                         for this cluster. If enabled, pods must be valid under a PodSecurityPolicy
                         to be created.'
                       type: boolean
+                  required:
+                  - enabled
                   type: object
                 privateClusterConfig:
                   description: 'PrivateClusterConfig: Configuration for private cluster.'
@@ -688,6 +686,8 @@ spec:
                         datasetId:
                           description: 'DatasetId: The ID of a BigQuery Dataset.'
                           type: string
+                      required:
+                      - datasetId
                       type: object
                     consumptionMeteringConfig:
                       description: 'ConsumptionMeteringConfig: Configuration to enable
@@ -698,6 +698,8 @@ spec:
                             for this cluster. If enabled, a second BigQuery table
                             will be created to hold resource consumption records.'
                           type: boolean
+                      required:
+                      - enabled
                       type: object
                     enableNetworkEgressMetering:
                       description: 'EnableNetworkEgressMetering: Whether to enable
@@ -730,6 +732,8 @@ spec:
                         Kubernetes Engine offering.   \"ADVANCED\" - Represents the
                         advanced tier."
                       type: string
+                  required:
+                  - tier
                   type: object
                 verticalPodAutoscaling:
                   description: 'VerticalPodAutoscaling: Cluster-level Vertical Pod
@@ -738,6 +742,8 @@ spec:
                     enabled:
                       description: 'Enabled: Enables vertical pod autoscaling.'
                       type: boolean
+                  required:
+                  - enabled
                   type: object
                 workloadIdentityConfig:
                   description: 'WorkloadIdentityConfig: Configuration for the use
@@ -747,10 +753,11 @@ spec:
                       description: 'IdentityNamespace: IAM Identity Namespace to attach
                         all Kubernetes Service Accounts to.'
                       type: string
+                  required:
+                  - identityNamespace
                   type: object
               required:
               - location
-              - name
               type: object
             providerRef:
               description: ProviderReference specifies the provider that will be used
@@ -912,11 +919,7 @@ spec:
                                 format "PTnHnMnS".'
                               type: string
                           type: object
-                      required:
-                      - dailyMaintenanceWindow
                       type: object
-                  required:
-                  - window
                   type: object
                 networkConfig:
                   description: 'NetworkConfig: Configuration for cluster networking.'

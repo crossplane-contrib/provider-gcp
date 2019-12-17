@@ -107,7 +107,6 @@ func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		resource.ClaimKind(computev1alpha1.KubernetesClusterGroupVersionKind),
 		resource.ClassKind(v1beta1.GKEClusterClassGroupVersionKind),
 		resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind),
-		resource.WithBinder(resource.NewAPIBinder(mgr.GetClient(), mgr.GetScheme())),
 		resource.WithManagedConfigurators(
 			resource.ManagedConfiguratorFn(ConfigureGKECluster),
 			resource.ManagedConfiguratorFn(resource.ConfigureReclaimPolicy),
@@ -144,7 +143,7 @@ func ConfigureGKECluster(_ context.Context, cm resource.Claim, cs resource.Class
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: v1beta1.DefaultReclaimPolicy,
 		},
-		ForProvider: rs.SpecTemplate.GKEClusterParameters,
+		ForProvider: rs.SpecTemplate.ForProvider,
 	}
 
 	spec.WriteConnectionSecretToReference = &runtimev1alpha1.SecretReference{
