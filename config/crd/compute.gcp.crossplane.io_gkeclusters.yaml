@@ -372,6 +372,8 @@ spec:
               description: State of this GKE cluster.
               type: string
           type: object
+      required:
+      - spec
       type: object
   version: v1alpha3
   versions:

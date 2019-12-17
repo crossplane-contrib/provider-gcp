@@ -216,7 +216,7 @@ type GKECluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GKEClusterSpec   `json:"spec,omitempty"`
+	Spec   GKEClusterSpec   `json:"spec"`
 	Status GKEClusterStatus `json:"status,omitempty"`
 }
 

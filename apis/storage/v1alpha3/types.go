@@ -806,7 +806,7 @@ type Bucket struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BucketSpec   `json:"spec,omitempty"`
+	Spec   BucketSpec   `json:"spec"`
 	Status BucketStatus `json:"status,omitempty"`
 }
 

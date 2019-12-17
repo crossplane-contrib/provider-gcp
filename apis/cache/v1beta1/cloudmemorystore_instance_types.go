@@ -160,7 +160,7 @@ type CloudMemorystoreInstanceObservation struct {
 // CloudMemorystoreInstance.
 type CloudMemorystoreInstanceSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  CloudMemorystoreInstanceParameters `json:"forProvider,omitempty"`
+	ForProvider                  CloudMemorystoreInstanceParameters `json:"forProvider"`
 }
 
 // A CloudMemorystoreInstanceStatus represents the observed state of a
@@ -185,7 +185,7 @@ type CloudMemorystoreInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CloudMemorystoreInstanceSpec   `json:"spec,omitempty"`
+	Spec   CloudMemorystoreInstanceSpec   `json:"spec"`
 	Status CloudMemorystoreInstanceStatus `json:"status,omitempty"`
 }
 
@@ -202,7 +202,7 @@ type CloudMemorystoreInstanceList struct {
 // dynamically provisioned CloudMemorystoreInstance.
 type CloudMemorystoreInstanceClassSpecTemplate struct {
 	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
-	ForProvider                       CloudMemorystoreInstanceParameters `json:"forProvider,omitempty"`
+	ForProvider                       CloudMemorystoreInstanceParameters `json:"forProvider"`
 }
 
 // +kubebuilder:object:root=true
