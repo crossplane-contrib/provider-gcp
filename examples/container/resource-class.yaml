@@ -1,0 +1,14 @@
+---
+apiVersion: container.gcp.crossplane.io/v1beta1
+kind: GKEClusterClass
+metadata:
+  name: gkecluster-standard
+  labels:
+    example: "true"
+specTemplate:
+  forProvider:
+    location: us-central1 # indicates regional cluster
+  writeConnectionSecretsToNamespace: crossplane-system
+  providerRef:
+    name: gcp-provider
+  reclaimPolicy: Delete
