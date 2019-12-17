@@ -19,9 +19,9 @@ package database
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
@@ -125,7 +125,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	cloudsql.LateInitializeSpec(&cr.Spec.ForProvider, *instance)
 	// TODO(muvaf): reflection in production code might cause performance bottlenecks. Generating comparison
 	// methods would make more sense.
-	if !reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider) {
+	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := c.kube.Update(ctx, cr); err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 		}

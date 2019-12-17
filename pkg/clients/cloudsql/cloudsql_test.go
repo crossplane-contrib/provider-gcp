@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Crossplane Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cloudsql
 
 import (
@@ -8,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
 const (
@@ -19,14 +36,14 @@ func params(m ...func(*v1beta1.CloudSQLInstanceParameters)) *v1beta1.CloudSQLIns
 		Region: "us-west2",
 		Settings: v1beta1.Settings{
 			Tier:                        "best-one-available",
-			ActivationPolicy:            getString("always"),
+			ActivationPolicy:            gcp.StringPtr("always"),
 			AuthorizedGaeApplications:   []string{"my-gapp"},
-			AvailabilityType:            getString("time-to-time"),
-			CrashSafeReplicationEnabled: getBool(true),
-			StorageAutoResize:           getBool(false),
-			DataDiskType:                getString("PD_SSD"),
-			PricingPlan:                 getString("PER_USE"),
-			ReplicationType:             getString("SYNCHRONOUS"),
+			AvailabilityType:            gcp.StringPtr("time-to-time"),
+			CrashSafeReplicationEnabled: gcp.BoolPtr(true),
+			StorageAutoResize:           gcp.BoolPtr(false),
+			DataDiskType:                gcp.StringPtr("PD_SSD"),
+			PricingPlan:                 gcp.StringPtr("PER_USE"),
+			ReplicationType:             gcp.StringPtr("SYNCHRONOUS"),
 			UserLabels: map[string]string{
 				"importance": "high",
 			},
@@ -37,45 +54,45 @@ func params(m ...func(*v1beta1.CloudSQLInstanceParameters)) *v1beta1.CloudSQLIns
 				},
 			},
 			BackupConfiguration: &v1beta1.BackupConfiguration{
-				BinaryLogEnabled:               getBool(true),
-				Enabled:                        getBool(true),
-				Location:                       getString("us-west1"),
-				ReplicationLogArchivingEnabled: getBool(true),
-				StartTime:                      getString("20191018"),
+				BinaryLogEnabled:               gcp.BoolPtr(true),
+				Enabled:                        gcp.BoolPtr(true),
+				Location:                       gcp.StringPtr("us-west1"),
+				ReplicationLogArchivingEnabled: gcp.BoolPtr(true),
+				StartTime:                      gcp.StringPtr("20191018"),
 			},
 			IPConfiguration: &v1beta1.IPConfiguration{
 				AuthorizedNetworks: []*v1beta1.ACLEntry{
 					{
-						ExpirationTime: getString("20201018"),
-						Name:           getString("hate"),
-						Value:          getString("unittests"),
+						ExpirationTime: gcp.StringPtr("20201018"),
+						Name:           gcp.StringPtr("hate"),
+						Value:          gcp.StringPtr("unittests"),
 					},
 				},
 			},
 			LocationPreference: &v1beta1.LocationPreference{
-				FollowGaeApplication: getString("my-gapp"),
-				Zone:                 getString("us-west1-a"),
+				FollowGaeApplication: gcp.StringPtr("my-gapp"),
+				Zone:                 gcp.StringPtr("us-west1-a"),
 			},
 			MaintenanceWindow: &v1beta1.MaintenanceWindow{
-				Day:         getInt64(1),
-				Hour:        getInt64(2),
-				UpdateTrack: getString("canary"),
+				Day:         gcp.Int64Ptr(1),
+				Hour:        gcp.Int64Ptr(2),
+				UpdateTrack: gcp.StringPtr("canary"),
 			},
-			DataDiskSizeGb:             getInt64(2),
-			DatabaseReplicationEnabled: getBool(true),
-			StorageAutoResizeLimit:     getInt64(3),
+			DataDiskSizeGb:             gcp.Int64Ptr(2),
+			DatabaseReplicationEnabled: gcp.BoolPtr(true),
+			StorageAutoResizeLimit:     gcp.Int64Ptr(3),
 		},
-		DatabaseVersion:    getString("3.2"),
-		MasterInstanceName: getString("myFunnyMaster"),
+		DatabaseVersion:    gcp.StringPtr("3.2"),
+		MasterInstanceName: gcp.StringPtr("myFunnyMaster"),
 		DiskEncryptionConfiguration: &v1beta1.DiskEncryptionConfiguration{
 			KmsKeyName: "my-key",
 		},
 		FailoverReplica: &v1beta1.DatabaseInstanceFailoverReplicaSpec{
 			Name: "my-failover",
 		},
-		GceZone:      getString("us-west2"),
-		InstanceType: getString("db-standard-1"),
-		MaxDiskSize:  getInt64(3000000000),
+		GceZone:      gcp.StringPtr("us-west2"),
+		InstanceType: gcp.StringPtr("db-standard-1"),
+		MaxDiskSize:  gcp.Int64Ptr(3000000000),
 		OnPremisesConfiguration: &v1beta1.OnPremisesConfiguration{
 			HostPort: "3306",
 		},
@@ -130,7 +147,7 @@ func db(m ...func(*sqladmin.DatabaseInstance)) *sqladmin.DatabaseInstance {
 			AuthorizedGaeApplications:   []string{"my-gapp"},
 			AvailabilityType:            "time-to-time",
 			CrashSafeReplicationEnabled: true,
-			StorageAutoResize:           getBool(false),
+			StorageAutoResize:           gcp.BoolPtr(false),
 			DataDiskType:                "PD_SSD",
 			PricingPlan:                 "PER_USE",
 			ReplicationType:             "SYNCHRONOUS",
@@ -223,10 +240,6 @@ func addOutputFields(db *sqladmin.DatabaseInstance) {
 	db.Settings.SettingsVersion = 23142
 }
 
-func getString(s string) *string { return &s }
-func getInt64(i int64) *int64    { return &i }
-func getBool(b bool) *bool       { return &b }
-
 func TestGenerateDatabaseInstance(t *testing.T) {
 	type args struct {
 		name   string
@@ -289,7 +302,7 @@ func TestLateInitializeSpec(t *testing.T) {
 				}),
 			},
 			want: want{params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
-				p.GceZone = getString("us-different-2")
+				p.GceZone = gcp.StringPtr("us-different-2")
 			})},
 		},
 		"AllFilledAlready": {
@@ -306,7 +319,7 @@ func TestLateInitializeSpec(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			LateInitializeSpec(tc.args.params, *tc.args.db)
 			if diff := cmp.Diff(tc.want.params, tc.args.params); diff != "" {
-				t.Errorf("GenerateDatabaseInstance(...): -want, +got:\n%s", diff)
+				t.Errorf("LateInitializeSpec(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -342,12 +355,12 @@ func TestGenerateObservation(t *testing.T) {
 
 func TestDatabaseUserName(t *testing.T) {
 	p := v1beta1.CloudSQLInstanceParameters{
-		DatabaseVersion: getString("POSTGRES_3.2"),
+		DatabaseVersion: gcp.StringPtr("POSTGRES_3.2"),
 	}
 	if diff := cmp.Diff(v1beta1.PostgresqlDefaultUser, DatabaseUserName(p)); diff != "" {
 		t.Errorf("DatabaseUserName(...): -want, +got:\n%s", diff)
 	}
-	p.DatabaseVersion = getString("3.2")
+	p.DatabaseVersion = gcp.StringPtr("3.2")
 	if diff := cmp.Diff(v1beta1.MysqlDefaultUser, DatabaseUserName(p)); diff != "" {
 		t.Errorf("DatabaseUserName(...): -want, +got:\n%s", diff)
 	}

@@ -19,10 +19,10 @@ package cache
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -118,7 +118,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.E
 
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	cloudmemorystore.LateInitializeSpec(&cr.Spec.ForProvider, *existing)
-	if !reflect.DeepEqual(currentSpec, &cr.Spec.ForProvider) {
+	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.kube.Update(ctx, cr); err != nil {
 			return resource.ExternalObservation{}, errors.Wrap(err, errUpdateCR)
 		}

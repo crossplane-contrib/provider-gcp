@@ -21,6 +21,7 @@ import (
 
 	"github.com/crossplaneio/stack-gcp/pkg/controller/cache"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/compute"
+	"github.com/crossplaneio/stack-gcp/pkg/controller/container"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/database"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/storage"
@@ -46,6 +47,10 @@ func (c *Controllers) SetupWithManager(mgr ctrl.Manager) error {
 		&compute.GKEClusterController{},
 		&compute.NetworkController{},
 		&compute.SubnetworkController{},
+		&container.GKEClusterClaimSchedulingController{},
+		&container.GKEClusterClaimDefaultingController{},
+		&container.GKEClusterClaimController{},
+		&container.GKEClusterController{},
 		&database.PostgreSQLInstanceClaimSchedulingController{},
 		&database.PostgreSQLInstanceClaimDefaultingController{},
 		&database.PostgreSQLInstanceClaimController{},
