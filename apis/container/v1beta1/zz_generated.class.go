@@ -29,3 +29,13 @@ func (cs *GKEClusterClass) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 func (cs *GKEClusterClass) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
 	cs.SpecTemplate.ReclaimPolicy = r
 }
+
+// GetReclaimPolicy of this NodePoolClass.
+func (cs *NodePoolClass) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
+	return cs.SpecTemplate.ReclaimPolicy
+}
+
+// SetReclaimPolicy of this NodePoolClass.
+func (cs *NodePoolClass) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
+	cs.SpecTemplate.ReclaimPolicy = r
+}

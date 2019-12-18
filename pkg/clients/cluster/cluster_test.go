@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package container
+package cluster
 
 import (
 	"encoding/base64"
@@ -1333,7 +1333,7 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	type want struct {
 		upToDate bool
-		kind     ClusterUpdate
+		kind     UpdateKind
 	}
 	tests := map[string]struct {
 		args args

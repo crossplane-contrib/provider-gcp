@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package container
+package cluster
 
 import (
 	"encoding/base64"
@@ -48,12 +48,12 @@ const (
 	errNoSecretInfo = "missing secret information for GKE cluster"
 )
 
-// ClusterUpdate indicates the type of update needed for the cluster.
-type ClusterUpdate int
+// UpdateKind indicates the type of update needed for the cluster.
+type UpdateKind int
 
 // Set of possible cluster update kinds.
 const (
-	NoUpdate ClusterUpdate = iota
+	NoUpdate UpdateKind = iota
 	NodePoolUpdate
 	AddonsConfigUpdate
 	AutoscalingUpdate
@@ -394,7 +394,7 @@ func GenerateWorkloadIdentityConfig(in *v1beta1.WorkloadIdentityConfig, cluster 
 	}
 }
 
-// GenerateObservation produces GKEClusterObservation object from *sqladmin.DatabaseInstance object.
+// GenerateObservation produces GKEClusterObservation object from *container.Cluster object.
 func GenerateObservation(in container.Cluster) v1beta1.GKEClusterObservation { // nolint:gocyclo
 	o := v1beta1.GKEClusterObservation{
 		CreateTime:           in.CreateTime,
@@ -791,7 +791,7 @@ func checkForBootstrapNodePool(c container.Cluster) bool {
 // NOTE(hasheddan): This function is significantly above our cyclomatic
 // complexity limit, but is necessary due to the fact that the GKE API only
 // allows for update of one field at a time.
-func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, ClusterUpdate) { // nolint:gocyclo
+func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateKind) { // nolint:gocyclo
 	currentParams := &v1beta1.GKEClusterParameters{}
 	LateInitializeSpec(currentParams, currentState)
 	if checkForBootstrapNodePool(currentState) {

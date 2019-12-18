@@ -39,14 +39,14 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
-	gke "github.com/crossplaneio/stack-gcp/pkg/clients/container"
+	gke "github.com/crossplaneio/stack-gcp/pkg/clients/cluster"
 )
 
 // Error strings.
 const (
 	errGetProvider         = "cannot get Provider"
 	errGetProviderSecret   = "cannot get Provider Secret"
-	errNewClient           = "cannot create new GKE cluster client"
+	errNewClient           = "cannot create new GKE container client"
 	errManagedUpdateFailed = "cannot update GKECluster custom resource"
 	errNotCluster          = "managed resource is not a GKECluster"
 	errGetCluster          = "cannot get GKE cluster"
@@ -233,7 +233,7 @@ func connectionDetails(cluster *container.Cluster) resource.ConnectionDetails {
 	return cd
 }
 
-func updateFactory(kind gke.ClusterUpdate, update *v1beta1.GKEClusterParameters) updateFn { // nolint:gocyclo
+func updateFactory(kind gke.UpdateKind, update *v1beta1.GKEClusterParameters) updateFn { // nolint:gocyclo
 	switch kind {
 	case gke.NodePoolUpdate:
 		return deleteBootstrapNodePool()

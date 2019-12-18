@@ -51,7 +51,23 @@ var (
 	GKEClusterClassGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterClassKind)
 )
 
+// NodePool type metadata.
+var (
+	NodePoolKind             = reflect.TypeOf(NodePool{}).Name()
+	NodePoolKindAPIVersion   = NodePoolKind + "." + SchemeGroupVersion.String()
+	NodePoolGroupVersionKind = SchemeGroupVersion.WithKind(NodePoolKind)
+)
+
+// NodePoolClass type metadata.
+var (
+	NodePoolClassKind             = reflect.TypeOf(NodePoolClass{}).Name()
+	NodePoolClassKindAPIVersion   = NodePoolClassKind + "." + SchemeGroupVersion.String()
+	NodePoolClassGroupVersionKind = SchemeGroupVersion.WithKind(NodePoolClassKind)
+)
+
 func init() {
 	SchemeBuilder.Register(&GKECluster{}, &GKEClusterList{})
 	SchemeBuilder.Register(&GKEClusterClass{}, &GKEClusterClassList{})
+	SchemeBuilder.Register(&NodePool{}, &NodePoolList{})
+	SchemeBuilder.Register(&NodePoolClass{}, &NodePoolClassList{})
 }

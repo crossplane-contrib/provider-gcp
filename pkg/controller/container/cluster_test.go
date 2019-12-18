@@ -44,7 +44,7 @@ import (
 
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	gke "github.com/crossplaneio/stack-gcp/pkg/clients/container"
+	gke "github.com/crossplaneio/stack-gcp/pkg/clients/cluster"
 )
 
 const (
@@ -892,7 +892,7 @@ users:
 
 func TestUpdateFactory(t *testing.T) {
 	type args struct {
-		kind   gke.ClusterUpdate
+		kind   gke.UpdateKind
 		update *v1beta1.GKEClusterParameters
 	}
 
