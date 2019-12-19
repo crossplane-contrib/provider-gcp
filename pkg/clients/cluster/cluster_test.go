@@ -1306,7 +1306,7 @@ func TestLateInitializeSpec(t *testing.T) {
 				}),
 			},
 		},
-		"AllFilled": {
+		"NoneFilled": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1458,7 +1458,7 @@ func TestGetFullyQualifiedParent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s := GetFullyQualifiedParent(tc.args.project, tc.args.params)
 			if diff := cmp.Diff(tc.want, s); diff != "" {
-				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+				t.Errorf("GetFullyQualifiedParent(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -1487,7 +1487,7 @@ func TestGetFullyQualifiedName(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s := GetFullyQualifiedName(tc.args.project, tc.args.params, tc.args.name)
 			if diff := cmp.Diff(tc.want, s); diff != "" {
-				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+				t.Errorf("GetFullyQualifiedName(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
