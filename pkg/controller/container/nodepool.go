@@ -156,7 +156,7 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (res
 		NodePool: pool,
 	}
 
-	if _, err := e.cluster.Projects.Locations.Clusters.NodePools.Create(gcp.StringValue(cr.Spec.ForProvider.Cluster), create).Context(ctx).Do(); err != nil {
+	if _, err := e.cluster.Projects.Locations.Clusters.NodePools.Create(cr.Spec.ForProvider.Cluster, create).Context(ctx).Do(); err != nil {
 		return resource.ExternalCreation{}, errors.Wrap(err, errCreateNodePool)
 	}
 

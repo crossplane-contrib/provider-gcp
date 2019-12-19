@@ -15,3 +15,44 @@ limitations under the License.
 */
 
 package v1beta1
+
+import (
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
+
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	"github.com/crossplaneio/crossplane-runtime/pkg/test"
+)
+
+var _ resource.AttributeReferencer = (*GKEClusterURIReferencerForNodePool)(nil)
+
+func TestGKEClusterURIReferencerForNodePool_AssignInvalidType_ReturnsErr(t *testing.T) {
+
+	r := &GKEClusterURIReferencerForNodePool{}
+	expectedErr := errors.New(errResourceIsNotNodePool)
+
+	err := r.Assign(nil, "mockValue")
+	if diff := cmp.Diff(expectedErr, err, test.EquateErrors()); diff != "" {
+		t.Errorf("Assign(...): -want error, +got error:\n%s", diff)
+	}
+}
+
+func TestGKEClusterURIReferencerForNodePool_AssignValidType_ReturnsExpected(t *testing.T) {
+
+	r := &GKEClusterURIReferencerForNodePool{}
+	res := &NodePool{}
+	var expectedErr error
+
+	mockValue := "mockValue"
+
+	err := r.Assign(res, mockValue)
+	if diff := cmp.Diff(expectedErr, err, test.EquateErrors()); diff != "" {
+		t.Errorf("Assign(...): -want error, +got error:\n%s", diff)
+	}
+
+	if diff := cmp.Diff(res.Spec.ForProvider.Cluster, mockValue); diff != "" {
+		t.Errorf("Assign(...): -want value, +got value:\n%s", diff)
+	}
+}

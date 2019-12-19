@@ -327,5 +327,5 @@ func IsUpToDate(in *v1beta1.NodePoolParameters, currentState container.NodePool)
 
 // GetFullyQualifiedName builds the fully qualified name of the cluster.
 func GetFullyQualifiedName(p v1beta1.NodePoolParameters, name string) string {
-	return fmt.Sprintf(NodePoolNameFormat, gcp.StringValue(p.Cluster), name)
+	return fmt.Sprintf(NodePoolNameFormat, p.Cluster, name)
 }

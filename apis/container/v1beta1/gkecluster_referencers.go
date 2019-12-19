@@ -33,7 +33,7 @@ import (
 
 const (
 	// URIPrefix is the prefix that is used in selfLink
-	URIPrefix = "https://container.googleapis.com/v1beta1"
+	URIPrefix = "https://container.googleapis.com/v1beta1/"
 )
 
 // GKEClusterURIReferencer retrieves a GKEClusterURI from a referenced GKECluster object

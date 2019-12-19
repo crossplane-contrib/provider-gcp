@@ -54,7 +54,7 @@ func (v *GKEClusterURIReferencerForNodePool) Assign(res resource.CanReference, v
 		return errors.New(errResourceIsNotNodePool)
 	}
 
-	np.Spec.ForProvider.Cluster = &value
+	np.Spec.ForProvider.Cluster = value
 	return nil
 }
 
@@ -122,12 +122,14 @@ type NodePoolParameters struct {
 	// we use this or should we trim off project and then add it back using the
 	// referenced provider?
 
+	// NOTE(hasheddan): Cluster is marked as omitempty but is not optional. It
+	// will either be assigned a value directly or set from the ClusterRef.
+
 	// Cluster: The resource link for the GKE cluster to which the NodePool will
 	// attach. Must be of format
 	// /locations/clusterLocation/clusters/clusterName. Must be supplied if
 	// ClusterRef is not.
-	// +optional
-	Cluster *string `json:"cluster,omitempty"`
+	Cluster string `json:"cluster,omitempty"`
 
 	// ClusterRef sets the Cluster field by resolving the resource link of the
 	// referenced Crossplane GKECluster managed resource. Must be supplied in
