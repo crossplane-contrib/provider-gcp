@@ -30,12 +30,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
+	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	np "github.com/crossplaneio/stack-gcp/pkg/clients/nodepool"
@@ -59,14 +58,14 @@ type NodePoolController struct{}
 // and Start it when the Manager is Started.
 func (c *NodePoolController) SetupWithManager(mgr ctrl.Manager) error {
 	r := resource.NewManagedReconciler(mgr,
-		resource.ManagedKind(v1beta1.NodePoolGroupVersionKind),
+		resource.ManagedKind(v1alpha1.NodePoolGroupVersionKind),
 		resource.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}))
 
-	name := strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.NodePoolKindAPIVersion, v1beta1.Group))
+	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha1.NodePoolKindAPIVersion, v1alpha1.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&v1beta1.NodePool{}).
+		For(&v1alpha1.NodePool{}).
 		Complete(r)
 }
 
@@ -76,7 +75,7 @@ type nodePoolConnector struct {
 }
 
 func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
-	i, ok := mg.(*v1beta1.NodePool)
+	i, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
 		return nil, errors.New(errNotNodePool)
 	}
@@ -105,7 +104,7 @@ type nodePoolExternal struct {
 }
 
 func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) { // nolint:gocyclo
-	cr, ok := mg.(*v1beta1.NodePool)
+	cr, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
 		return resource.ExternalObservation{}, errors.New(errNotNodePool)
 	}
@@ -125,13 +124,13 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	}
 
 	switch cr.Status.AtProvider.Status {
-	case v1beta1.NodePoolStateRunning:
-		cr.Status.SetConditions(v1alpha1.Available())
+	case v1alpha1.NodePoolStateRunning:
+		cr.Status.SetConditions(runtimev1alpha1.Available())
 		resource.SetBindable(cr)
-	case v1beta1.NodePoolStateProvisioning:
-		cr.Status.SetConditions(v1alpha1.Creating())
-	case v1beta1.NodePoolStateUnspecified, v1beta1.NodePoolStateRunningError, v1beta1.NodePoolStateError, v1beta1.NodePoolStateReconciling:
-		cr.Status.SetConditions(v1alpha1.Unavailable())
+	case v1alpha1.NodePoolStateProvisioning:
+		cr.Status.SetConditions(runtimev1alpha1.Creating())
+	case v1alpha1.NodePoolStateUnspecified, v1alpha1.NodePoolStateRunningError, v1alpha1.NodePoolStateError, v1alpha1.NodePoolStateReconciling:
+		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
 	}
 
 	u, _ := np.IsUpToDate(&cr.Spec.ForProvider, *existing)
@@ -143,11 +142,11 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (re
 }
 
 func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
-	cr, ok := mg.(*v1beta1.NodePool)
+	cr, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
 		return resource.ExternalCreation{}, errors.New(errNotNodePool)
 	}
-	cr.SetConditions(v1alpha1.Creating())
+	cr.SetConditions(runtimev1alpha1.Creating())
 
 	// Generate GKE node pool from resource spec.
 	pool := np.GenerateNodePool(cr.Spec.ForProvider, meta.GetExternalName(cr))
@@ -164,7 +163,7 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (res
 }
 
 func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
-	cr, ok := mg.(*v1beta1.NodePool)
+	cr, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotNodePool)
 	}
@@ -190,7 +189,7 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (res
 }
 
 func (e *nodePoolExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1beta1.NodePool)
+	cr, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
 		return errors.New(errNotNodePool)
 	}
@@ -200,7 +199,7 @@ func (e *nodePoolExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteNodePool)
 }
 
-func npUpdateFactory(kind np.UpdateKind, update *v1beta1.NodePoolParameters) updateFn { // nolint:gocyclo
+func npUpdateFactory(kind np.UpdateKind, update *v1alpha1.NodePoolParameters) updateFn { // nolint:gocyclo
 	switch kind {
 	case np.AutoscalingUpdate:
 		return newNodePoolAutoscalingUpdate(update.Autoscaling)
@@ -215,7 +214,7 @@ func npUpdateFactory(kind np.UpdateKind, update *v1beta1.NodePoolParameters) upd
 }
 
 // newNodePoolAutoscalingUpdate returns a function that updates the Autoscaling of a node pool.
-func newNodePoolAutoscalingUpdate(in *v1beta1.NodePoolAutoscaling) updateFn {
+func newNodePoolAutoscalingUpdate(in *v1alpha1.NodePoolAutoscaling) updateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
 		out := &container.NodePool{}
 		np.GenerateAutoscaling(in, out)
@@ -227,7 +226,7 @@ func newNodePoolAutoscalingUpdate(in *v1beta1.NodePoolAutoscaling) updateFn {
 }
 
 // newNodePoolManagementUpdate returns a function that updates the Management of a node pool.
-func newNodePoolManagementUpdate(in *v1beta1.NodeManagementSpec) updateFn {
+func newNodePoolManagementUpdate(in *v1alpha1.NodeManagementSpec) updateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
 		out := &container.NodePool{}
 		np.GenerateManagement(in, out)
@@ -239,7 +238,7 @@ func newNodePoolManagementUpdate(in *v1beta1.NodeManagementSpec) updateFn {
 }
 
 // newNodePoolGeneralUpdate returns a function that updates a node pool.
-func newNodePoolGeneralUpdate(in *v1beta1.NodePoolParameters) updateFn {
+func newNodePoolGeneralUpdate(in *v1alpha1.NodePoolParameters) updateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
 		return s.Projects.Locations.Clusters.NodePools.Update(name, np.GenerateNodePoolUpdate(in)).Context(ctx).Do()
 	}

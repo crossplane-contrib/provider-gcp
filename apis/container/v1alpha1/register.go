@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1alpha1
 
 import (
 	"reflect"
@@ -26,7 +26,7 @@ import (
 // Package type metadata.
 const (
 	Group   = "container.gcp.crossplane.io"
-	Version = "v1beta1"
+	Version = "v1alpha1"
 )
 
 var (
@@ -37,21 +37,21 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// GKECluster type metadata.
+// NodePool type metadata.
 var (
-	GKEClusterKind             = reflect.TypeOf(GKECluster{}).Name()
-	GKEClusterKindAPIVersion   = GKEClusterKind + "." + SchemeGroupVersion.String()
-	GKEClusterGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterKind)
+	NodePoolKind             = reflect.TypeOf(NodePool{}).Name()
+	NodePoolKindAPIVersion   = NodePoolKind + "." + SchemeGroupVersion.String()
+	NodePoolGroupVersionKind = SchemeGroupVersion.WithKind(NodePoolKind)
 )
 
-// GKEClusterClass type metadata.
+// NodePoolClass type metadata.
 var (
-	GKEClusterClassKind             = reflect.TypeOf(GKEClusterClass{}).Name()
-	GKEClusterClassKindAPIVersion   = GKEClusterClassKind + "." + SchemeGroupVersion.String()
-	GKEClusterClassGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterClassKind)
+	NodePoolClassKind             = reflect.TypeOf(NodePoolClass{}).Name()
+	NodePoolClassKindAPIVersion   = NodePoolClassKind + "." + SchemeGroupVersion.String()
+	NodePoolClassGroupVersionKind = SchemeGroupVersion.WithKind(NodePoolClassKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&GKECluster{}, &GKEClusterList{})
-	SchemeBuilder.Register(&GKEClusterClass{}, &GKEClusterClassList{})
+	SchemeBuilder.Register(&NodePool{}, &NodePoolList{})
+	SchemeBuilder.Register(&NodePoolClass{}, &NodePoolClassList{})
 }

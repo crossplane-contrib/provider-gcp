@@ -14,13 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1alpha1
 
 import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 )
 
 // NodePool states.
@@ -43,7 +45,7 @@ const (
 // GKECluster by returning the referenced GKECluster's resource link, e.g.
 // projects/projectID/locations/clusterLocation/clusters/clusterName.
 type GKEClusterURIReferencerForNodePool struct {
-	GKEClusterURIReferencer `json:",inline"`
+	v1beta1.GKEClusterURIReferencer `json:",inline"`
 }
 
 // Assign the PrivateGKECluster field of the supplied resource.CanReference,
@@ -62,7 +64,7 @@ func (v *GKEClusterURIReferencerForNodePool) Assign(res resource.CanReference, v
 // resource on GCP.
 type NodePoolObservation struct {
 	// Conditions: Which conditions caused the current node pool state.
-	Conditions []*StatusCondition `json:"conditions,omitempty"`
+	Conditions []*v1beta1.StatusCondition `json:"conditions,omitempty"`
 
 	// InstanceGroupUrls: [Output only] The resource URLs of the [managed
 	// instance
@@ -177,7 +179,7 @@ type NodePoolParameters struct {
 	// MaxPodsConstraint: The constraint on the maximum number of pods that
 	// can be run
 	// simultaneously on a node in the node pool.
-	MaxPodsConstraint *MaxPodsConstraint `json:"maxPodsConstraint,omitempty"`
+	MaxPodsConstraint *v1beta1.MaxPodsConstraint `json:"maxPodsConstraint,omitempty"`
 
 	// Version: The version of the Kubernetes of this node.
 	// +optional

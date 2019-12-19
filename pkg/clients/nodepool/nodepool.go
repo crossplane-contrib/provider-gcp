@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	container "google.golang.org/api/container/v1beta1"
 
+	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
@@ -44,7 +45,7 @@ const (
 )
 
 // GenerateNodePool generates *container.NodePool instance from NodePoolParameters.
-func GenerateNodePool(in v1beta1.NodePoolParameters, name string) *container.NodePool { // nolint:gocyclo
+func GenerateNodePool(in v1alpha1.NodePoolParameters, name string) *container.NodePool { // nolint:gocyclo
 	pool := &container.NodePool{
 		InitialNodeCount: gcp.Int64Value(in.InitialNodeCount),
 		Locations:        in.Locations,
@@ -61,7 +62,7 @@ func GenerateNodePool(in v1beta1.NodePoolParameters, name string) *container.Nod
 }
 
 // GenerateAutoscaling generates *container.Autoscaling from *Autoscaling.
-func GenerateAutoscaling(in *v1beta1.NodePoolAutoscaling, pool *container.NodePool) {
+func GenerateAutoscaling(in *v1alpha1.NodePoolAutoscaling, pool *container.NodePool) {
 	if in != nil {
 		out := &container.NodePoolAutoscaling{
 			Autoprovisioned: gcp.BoolValue(in.Autoprovisioned),
@@ -75,7 +76,7 @@ func GenerateAutoscaling(in *v1beta1.NodePoolAutoscaling, pool *container.NodePo
 }
 
 // GenerateConfig generates *container.Config from *NodeConfig.
-func GenerateConfig(in *v1beta1.NodeConfig, pool *container.NodePool) {
+func GenerateConfig(in *v1alpha1.NodeConfig, pool *container.NodePool) {
 	if in != nil {
 		out := &container.NodeConfig{
 			DiskSizeGb:     gcp.Int64Value(in.DiskSizeGb),
@@ -135,7 +136,7 @@ func GenerateConfig(in *v1beta1.NodeConfig, pool *container.NodePool) {
 }
 
 // GenerateManagement generates *container.NodeManagement from *NodeManagementSpec.
-func GenerateManagement(in *v1beta1.NodeManagementSpec, pool *container.NodePool) {
+func GenerateManagement(in *v1alpha1.NodeManagementSpec, pool *container.NodePool) {
 	if in != nil {
 		out := &container.NodeManagement{
 			AutoRepair:  gcp.BoolValue(in.AutoRepair),
@@ -158,8 +159,8 @@ func GenerateMaxPodsConstraint(in *v1beta1.MaxPodsConstraint, pool *container.No
 }
 
 // GenerateObservation produces NodePoolObservation object from *container.NodePool object.
-func GenerateObservation(in container.NodePool) v1beta1.NodePoolObservation { // nolint:gocyclo
-	o := v1beta1.NodePoolObservation{
+func GenerateObservation(in container.NodePool) v1alpha1.NodePoolObservation { // nolint:gocyclo
+	o := v1alpha1.NodePoolObservation{
 		InstanceGroupUrls: in.InstanceGroupUrls,
 		PodIpv4CidrSize:   in.PodIpv4CidrSize,
 		SelfLink:          in.SelfLink,
@@ -177,8 +178,8 @@ func GenerateObservation(in container.NodePool) v1beta1.NodePoolObservation { //
 	}
 
 	if in.Management != nil && in.Management.UpgradeOptions != nil {
-		o.Management = &v1beta1.NodeManagementStatus{
-			UpgradeOptions: &v1beta1.AutoUpgradeOptions{
+		o.Management = &v1alpha1.NodeManagementStatus{
+			UpgradeOptions: &v1alpha1.AutoUpgradeOptions{
 				AutoUpgradeStartTime: in.Management.UpgradeOptions.AutoUpgradeStartTime,
 				Description:          in.Management.UpgradeOptions.Description,
 			},
@@ -190,7 +191,7 @@ func GenerateObservation(in container.NodePool) v1beta1.NodePoolObservation { //
 }
 
 // GenerateNodePoolUpdate produces NodePoolObservation object from *container.NodePool object.
-func GenerateNodePoolUpdate(in *v1beta1.NodePoolParameters) *container.UpdateNodePoolRequest { // nolint:gocyclo
+func GenerateNodePoolUpdate(in *v1alpha1.NodePoolParameters) *container.UpdateNodePoolRequest { // nolint:gocyclo
 	o := &container.UpdateNodePoolRequest{
 		Locations:   in.Locations,
 		NodeVersion: gcp.StringValue(in.Version),
@@ -210,10 +211,10 @@ func GenerateNodePoolUpdate(in *v1beta1.NodePoolParameters) *container.UpdateNod
 }
 
 // LateInitializeSpec fills unassigned fields with the values in container.NodePool object.
-func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool) { // nolint:gocyclo
+func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool) { // nolint:gocyclo
 	if in.Autoscaling != nil {
 		if spec.Autoscaling == nil {
-			spec.Autoscaling = &v1beta1.NodePoolAutoscaling{}
+			spec.Autoscaling = &v1alpha1.NodePoolAutoscaling{}
 		}
 
 		spec.Autoscaling.Autoprovisioned = gcp.LateInitializeBool(spec.Autoscaling.Autoprovisioned, in.Autoscaling.Autoprovisioned)
@@ -224,13 +225,13 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 
 	if in.Config != nil {
 		if spec.Config == nil {
-			spec.Config = &v1beta1.NodeConfig{}
+			spec.Config = &v1alpha1.NodeConfig{}
 		}
 
 		if len(in.Config.Accelerators) != 0 && len(spec.Config.Accelerators) == 0 {
-			spec.Config.Accelerators = make([]*v1beta1.AcceleratorConfig, len(in.Config.Accelerators))
+			spec.Config.Accelerators = make([]*v1alpha1.AcceleratorConfig, len(in.Config.Accelerators))
 			for i, a := range in.Config.Accelerators {
-				spec.Config.Accelerators[i] = &v1beta1.AcceleratorConfig{
+				spec.Config.Accelerators[i] = &v1alpha1.AcceleratorConfig{
 					AcceleratorCount: a.AcceleratorCount,
 					AcceleratorType:  a.AcceleratorType,
 				}
@@ -249,7 +250,7 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 		spec.Config.Preemptible = gcp.LateInitializeBool(spec.Config.Preemptible, in.Config.Preemptible)
 
 		if in.Config.SandboxConfig != nil && spec.Config.SandboxConfig == nil {
-			spec.Config.SandboxConfig = &v1beta1.SandboxConfig{
+			spec.Config.SandboxConfig = &v1alpha1.SandboxConfig{
 				SandboxType: in.Config.SandboxConfig.SandboxType,
 			}
 		}
@@ -258,7 +259,7 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 
 		if in.Config.ShieldedInstanceConfig != nil {
 			if spec.Config.ShieldedInstanceConfig == nil {
-				spec.Config.ShieldedInstanceConfig = &v1beta1.ShieldedInstanceConfig{}
+				spec.Config.ShieldedInstanceConfig = &v1alpha1.ShieldedInstanceConfig{}
 			}
 			spec.Config.ShieldedInstanceConfig.EnableIntegrityMonitoring = gcp.LateInitializeBool(spec.Config.ShieldedInstanceConfig.EnableIntegrityMonitoring, in.Config.ShieldedInstanceConfig.EnableIntegrityMonitoring)
 			spec.Config.ShieldedInstanceConfig.EnableSecureBoot = gcp.LateInitializeBool(spec.Config.ShieldedInstanceConfig.EnableSecureBoot, in.Config.ShieldedInstanceConfig.EnableSecureBoot)
@@ -267,9 +268,9 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 		spec.Config.Tags = gcp.LateInitializeStringSlice(spec.Config.Tags, in.Config.Tags)
 
 		if len(in.Config.Taints) != 0 && len(spec.Config.Taints) == 0 {
-			spec.Config.Taints = make([]*v1beta1.NodeTaint, len(in.Config.Taints))
+			spec.Config.Taints = make([]*v1alpha1.NodeTaint, len(in.Config.Taints))
 			for i, t := range in.Config.Taints {
-				spec.Config.Taints[i] = &v1beta1.NodeTaint{
+				spec.Config.Taints[i] = &v1alpha1.NodeTaint{
 					Effect: t.Effect,
 					Key:    t.Key,
 					Value:  t.Value,
@@ -278,7 +279,7 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 		}
 
 		if in.Config.WorkloadMetadataConfig != nil && spec.Config.WorkloadMetadataConfig == nil {
-			spec.Config.WorkloadMetadataConfig = &v1beta1.WorkloadMetadataConfig{
+			spec.Config.WorkloadMetadataConfig = &v1alpha1.WorkloadMetadataConfig{
 				NodeMetadata: in.Config.WorkloadMetadataConfig.NodeMetadata,
 			}
 		}
@@ -289,7 +290,7 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 
 	if in.Management != nil {
 		if spec.Management == nil {
-			spec.Management = &v1beta1.NodeManagementSpec{}
+			spec.Management = &v1alpha1.NodeManagementSpec{}
 		}
 
 		spec.Management.AutoRepair = gcp.LateInitializeBool(spec.Management.AutoRepair, in.Management.AutoRepair)
@@ -307,8 +308,8 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(in *v1beta1.NodePoolParameters, currentState container.NodePool) (bool, UpdateKind) {
-	currentParams := &v1beta1.NodePoolParameters{}
+func IsUpToDate(in *v1alpha1.NodePoolParameters, currentState container.NodePool) (bool, UpdateKind) {
+	currentParams := &v1alpha1.NodePoolParameters{}
 	LateInitializeSpec(currentParams, currentState)
 	if !cmp.Equal(in.Autoscaling, currentParams.Autoscaling) {
 		return false, AutoscalingUpdate
@@ -326,6 +327,6 @@ func IsUpToDate(in *v1beta1.NodePoolParameters, currentState container.NodePool)
 }
 
 // GetFullyQualifiedName builds the fully qualified name of the cluster.
-func GetFullyQualifiedName(p v1beta1.NodePoolParameters, name string) string {
+func GetFullyQualifiedName(p v1alpha1.NodePoolParameters, name string) string {
 	return fmt.Sprintf(NodePoolNameFormat, p.Cluster, name)
 }

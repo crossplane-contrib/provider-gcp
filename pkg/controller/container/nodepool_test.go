@@ -29,7 +29,6 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
-	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
@@ -39,30 +38,31 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	np "github.com/crossplaneio/stack-gcp/pkg/clients/nodepool"
 )
 
-type nodePoolModifier func(*v1beta1.NodePool)
+type nodePoolModifier func(*v1alpha1.NodePool)
 
 func npWithConditions(c ...runtimev1alpha1.Condition) nodePoolModifier {
-	return func(i *v1beta1.NodePool) { i.Status.SetConditions(c...) }
+	return func(i *v1alpha1.NodePool) { i.Status.SetConditions(c...) }
 }
 
 func npWithProviderStatus(s string) nodePoolModifier {
-	return func(i *v1beta1.NodePool) { i.Status.AtProvider.Status = s }
+	return func(i *v1alpha1.NodePool) { i.Status.AtProvider.Status = s }
 }
 
 func npWithBindingPhase(p runtimev1alpha1.BindingPhase) nodePoolModifier {
-	return func(i *v1beta1.NodePool) { i.Status.SetBindingPhase(p) }
+	return func(i *v1alpha1.NodePool) { i.Status.SetBindingPhase(p) }
 }
 
 func npWithLocations(l []string) nodePoolModifier {
-	return func(i *v1beta1.NodePool) { i.Spec.ForProvider.Locations = l }
+	return func(i *v1alpha1.NodePool) { i.Spec.ForProvider.Locations = l }
 }
 
-func nodePool(im ...nodePoolModifier) *v1beta1.NodePool {
-	i := &v1beta1.NodePool{
+func nodePool(im ...nodePoolModifier) *v1alpha1.NodePool {
+	i := &v1alpha1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Finalizers: []string{},
@@ -70,11 +70,11 @@ func nodePool(im ...nodePoolModifier) *v1beta1.NodePool {
 				meta.ExternalNameAnnotationKey: name,
 			},
 		},
-		Spec: v1beta1.NodePoolSpec{
+		Spec: v1alpha1.NodePoolSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
 				ProviderReference: &corev1.ObjectReference{Name: providerName},
 			},
-			ForProvider: v1beta1.NodePoolParameters{},
+			ForProvider: v1alpha1.NodePoolParameters{},
 		},
 	}
 
@@ -276,7 +276,7 @@ func TestNodePoolObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				n := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
-				n.Status = v1beta1.NodePoolStateProvisioning
+				n.Status = v1alpha1.NodePoolStateProvisioning
 				_ = json.NewEncoder(w).Encode(n)
 			}),
 			args: args{
@@ -287,7 +287,7 @@ func TestNodePoolObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: nodePool(npWithProviderStatus(v1beta1.NodePoolStateProvisioning), npWithConditions(runtimev1alpha1.Creating())),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateProvisioning), npWithConditions(runtimev1alpha1.Creating())),
 			},
 		},
 		"Unavailable": {
@@ -298,7 +298,7 @@ func TestNodePoolObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
-				c.Status = v1beta1.NodePoolStateReconciling
+				c.Status = v1alpha1.NodePoolStateReconciling
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			args: args{
@@ -309,7 +309,7 @@ func TestNodePoolObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: nodePool(npWithProviderStatus(v1beta1.NodePoolStateReconciling), npWithConditions(runtimev1alpha1.Unavailable())),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateReconciling), npWithConditions(runtimev1alpha1.Unavailable())),
 			},
 		},
 		"RunnableUnbound": {
@@ -320,7 +320,7 @@ func TestNodePoolObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
-				c.Status = v1beta1.NodePoolStateRunning
+				c.Status = v1alpha1.NodePoolStateRunning
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			kube: &test.MockClient{
@@ -335,7 +335,7 @@ func TestNodePoolObserve(t *testing.T) {
 					ResourceUpToDate: true,
 				},
 				mg: nodePool(
-					npWithProviderStatus(v1beta1.NodePoolStateRunning),
+					npWithProviderStatus(v1alpha1.NodePoolStateRunning),
 					npWithConditions(runtimev1alpha1.Available()),
 					npWithBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
 			},
@@ -348,7 +348,7 @@ func TestNodePoolObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				n := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
-				n.Status = v1beta1.NodePoolStateReconciling
+				n.Status = v1alpha1.NodePoolStateReconciling
 				_ = json.NewEncoder(w).Encode(n)
 			}),
 			kube: &test.MockClient{
@@ -356,7 +356,7 @@ func TestNodePoolObserve(t *testing.T) {
 			},
 			args: args{
 				mg: nodePool(
-					npWithProviderStatus(v1beta1.NodePoolStateRunning),
+					npWithProviderStatus(v1alpha1.NodePoolStateRunning),
 					npWithConditions(runtimev1alpha1.Available()),
 					npWithBindingPhase(runtimev1alpha1.BindingPhaseBound),
 				),
@@ -367,7 +367,7 @@ func TestNodePoolObserve(t *testing.T) {
 					ResourceUpToDate: true,
 				},
 				mg: nodePool(
-					npWithProviderStatus(v1beta1.NodePoolStateReconciling),
+					npWithProviderStatus(v1alpha1.NodePoolStateReconciling),
 					npWithConditions(runtimev1alpha1.Unavailable()),
 					npWithBindingPhase(runtimev1alpha1.BindingPhaseBound)),
 			},
@@ -773,7 +773,7 @@ func TestNodePoolUpdate(t *testing.T) {
 func TestNPUpdateFactory(t *testing.T) {
 	type args struct {
 		kind   np.UpdateKind
-		update *v1beta1.NodePoolParameters
+		update *v1alpha1.NodePoolParameters
 	}
 
 	cases := map[string]struct {
