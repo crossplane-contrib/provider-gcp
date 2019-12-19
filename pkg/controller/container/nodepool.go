@@ -95,12 +95,12 @@ func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (r
 	client, err := c.newServiceFn(ctx,
 		option.WithCredentialsJSON(s.Data[p.Spec.Secret.Key]),
 		option.WithScopes(container.CloudPlatformScope))
-	return &nodePoolExternal{cluster: client, projectID: p.Spec.ProjectID, kube: c.kube}, errors.Wrap(err, errNewClient)
+	return &nodePoolExternal{container: client, projectID: p.Spec.ProjectID, kube: c.kube}, errors.Wrap(err, errNewClient)
 }
 
 type nodePoolExternal struct {
 	kube      client.Client
-	cluster   *container.Service
+	container *container.Service
 	projectID string
 }
 
@@ -110,7 +110,7 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (re
 		return resource.ExternalObservation{}, errors.New(errNotNodePool)
 	}
 
-	existing, err := e.cluster.Projects.Locations.Clusters.NodePools.Get(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
+	existing, err := e.container.Projects.Locations.Clusters.NodePools.Get(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetNodePool)
 	}
@@ -156,7 +156,7 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (res
 		NodePool: pool,
 	}
 
-	if _, err := e.cluster.Projects.Locations.Clusters.NodePools.Create(cr.Spec.ForProvider.Cluster, create).Context(ctx).Do(); err != nil {
+	if _, err := e.container.Projects.Locations.Clusters.NodePools.Create(cr.Spec.ForProvider.Cluster, create).Context(ctx).Do(); err != nil {
 		return resource.ExternalCreation{}, errors.Wrap(err, errCreateNodePool)
 	}
 
@@ -170,7 +170,7 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (res
 	}
 
 	// We have to get the node pool again here to determine how to update.
-	existing, err := e.cluster.Projects.Locations.Clusters.NodePools.Get(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
+	existing, err := e.container.Projects.Locations.Clusters.NodePools.Get(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
 		return resource.ExternalUpdate{}, errors.Wrap(err, errGetNodePool)
 	}
@@ -185,7 +185,7 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (res
 	// the difference in the desired and existing spec. If it is a specialized
 	// update, only one can be performed at a time. If it is not, then updates
 	// can be mass applied.
-	_, err = npUpdateFactory(kind, &cr.Spec.ForProvider)(ctx, e.cluster, np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr)))
+	_, err = npUpdateFactory(kind, &cr.Spec.ForProvider)(ctx, e.container, np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr)))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateNodePool)
 }
 
@@ -196,7 +196,7 @@ func (e *nodePoolExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	}
 	cr.SetConditions(runtimev1alpha1.Deleting())
 
-	_, err := e.cluster.Projects.Locations.Clusters.NodePools.Delete(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
+	_, err := e.container.Projects.Locations.Clusters.NodePools.Delete(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteNodePool)
 }
 

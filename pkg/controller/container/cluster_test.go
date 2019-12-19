@@ -194,7 +194,7 @@ func TestConnect(t *testing.T) {
 			args: args{mg: cluster()},
 			want: want{err: errors.Wrap(errBoom, errGetProviderSecret)},
 		},
-		"FailedToCreateCloudSQLInstanceClient": {
+		"FailedToCreateContainerClient": {
 			conn: &clusterConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
