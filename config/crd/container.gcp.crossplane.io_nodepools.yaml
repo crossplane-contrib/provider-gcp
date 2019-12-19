@@ -176,7 +176,12 @@ spec:
                   description: ClusterRef sets the Cluster field by resolving the
                     resource link of the referenced Crossplane GKECluster managed
                     resource. Must be supplied in Cluster is not.
-                  type: string
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
                 config:
                   description: 'Config: The node configuration of the pool.'
                   properties:

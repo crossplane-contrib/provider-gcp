@@ -443,7 +443,7 @@ func (in *NodePoolParameters) DeepCopyInto(out *NodePoolParameters) {
 	*out = *in
 	if in.ClusterRef != nil {
 		in, out := &in.ClusterRef, &out.ClusterRef
-		*out = new(string)
+		*out = new(GKEClusterURIReferencerForNodePool)
 		**out = **in
 	}
 	if in.Autoscaling != nil {

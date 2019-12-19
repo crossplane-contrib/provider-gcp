@@ -137,7 +137,7 @@ type NodePoolParameters struct {
 	// referenced Crossplane GKECluster managed resource. Must be supplied in
 	// Cluster is not.
 	// +optional
-	ClusterRef *string `json:"clusterRef,omitempty" resource:"attributereferencer"`
+	ClusterRef *GKEClusterURIReferencerForNodePool `json:"clusterRef,omitempty" resource:"attributereferencer"`
 
 	// NOTE(hasheddan): Autoscaling can only be updated via setAutoscaling
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters.nodePools/setAutoscaling
