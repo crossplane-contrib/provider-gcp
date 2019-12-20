@@ -66,24 +66,24 @@ type NodePoolObservation struct {
 	// Conditions: Which conditions caused the current node pool state.
 	Conditions []*v1beta1.StatusCondition `json:"conditions,omitempty"`
 
-	// InstanceGroupUrls: [Output only] The resource URLs of the [managed
+	// InstanceGroupUrls: The resource URLs of the [managed
 	// instance
 	// groups](/compute/docs/instance-groups/creating-groups-of-mana
 	// ged-instances)
 	// associated with this node pool.
 	InstanceGroupUrls []string `json:"instanceGroupUrls,omitempty"`
 
-	// PodIpv4CidrSize: [Output only] The pod CIDR block size per node in
+	// PodIpv4CidrSize: The pod CIDR block size per node in
 	// this node pool.
 	PodIpv4CidrSize int64 `json:"podIpv4CidrSize,omitempty"`
 
 	// Management: NodeManagement configuration for this NodePool.
 	Management *NodeManagementStatus `json:"management,omitempty"`
 
-	// SelfLink: [Output only] Server-defined URL for the resource.
+	// SelfLink: Server-defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// Status: [Output only] The status of the nodes in this pool instance.
+	// Status: The status of the nodes in this pool instance.
 	//
 	// Possible values:
 	//   "STATUS_UNSPECIFIED" - Not set.
@@ -110,7 +110,7 @@ type NodePoolObservation struct {
 	// can be found in the `statusMessage` field.
 	Status string `json:"status,omitempty"`
 
-	// StatusMessage: [Output only] Additional information about the current
+	// StatusMessage: Additional information about the current
 	// status of this
 	// node pool instance, if available.
 	StatusMessage string `json:"statusMessage,omitempty"`
@@ -124,8 +124,8 @@ type NodePoolParameters struct {
 
 	// Cluster: The resource link for the GKE cluster to which the NodePool will
 	// attach. Must be of format
-	// /locations/clusterLocation/clusters/clusterName. Must be supplied if
-	// ClusterRef is not.
+	// projects/projectID/locations/clusterLocation/clusters/clusterName. Must
+	// be supplied if ClusterRef is not.
 	// +immutable
 	Cluster string `json:"cluster,omitempty"`
 

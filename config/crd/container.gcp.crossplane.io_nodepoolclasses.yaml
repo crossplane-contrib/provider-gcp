@@ -72,7 +72,7 @@ spec:
               type: object
             cluster:
               description: 'Cluster: The resource link for the GKE cluster to which
-                the NodePool will attach. Must be of format /locations/clusterLocation/clusters/clusterName.
+                the NodePool will attach. Must be of format projects/projectID/locations/clusterLocation/clusters/clusterName.
                 Must be supplied if ClusterRef is not.'
               type: string
             clusterRef:

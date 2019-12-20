@@ -163,7 +163,7 @@ spec:
                   type: object
                 cluster:
                   description: 'Cluster: The resource link for the GKE cluster to
-                    which the NodePool will attach. Must be of format /locations/clusterLocation/clusters/clusterName.
+                    which the NodePool will attach. Must be of format projects/projectID/locations/clusterLocation/clusters/clusterName.
                     Must be supplied if ClusterRef is not.'
                   type: string
                 clusterRef:
@@ -541,8 +541,8 @@ spec:
                     type: object
                   type: array
                 instanceGroupUrls:
-                  description: 'InstanceGroupUrls: [Output only] The resource URLs
-                    of the [managed instance groups](/compute/docs/instance-groups/creating-groups-of-mana
+                  description: 'InstanceGroupUrls: The resource URLs of the [managed
+                    instance groups](/compute/docs/instance-groups/creating-groups-of-mana
                     ged-instances) associated with this node pool.'
                   items:
                     type: string
@@ -568,34 +568,33 @@ spec:
                       type: object
                   type: object
                 podIpv4CidrSize:
-                  description: 'PodIpv4CidrSize: [Output only] The pod CIDR block
-                    size per node in this node pool.'
+                  description: 'PodIpv4CidrSize: The pod CIDR block size per node
+                    in this node pool.'
                   format: int64
                   type: integer
                 selfLink:
-                  description: 'SelfLink: [Output only] Server-defined URL for the
-                    resource.'
+                  description: 'SelfLink: Server-defined URL for the resource.'
                   type: string
                 status:
-                  description: "Status: [Output only] The status of the nodes in this
-                    pool instance. \n Possible values:   \"STATUS_UNSPECIFIED\" -
-                    Not set.   \"PROVISIONING\" - The PROVISIONING state indicates
-                    the node pool is being created.   \"RUNNING\" - The RUNNING state
-                    indicates the node pool has been created and is fully usable.
-                    \  \"RUNNING_WITH_ERROR\" - The RUNNING_WITH_ERROR state indicates
-                    the node pool has been created and is partially usable. Some error
-                    state has occurred and some functionality may be impaired. Customer
-                    may need to reissue a request or trigger a new update.   \"RECONCILING\"
-                    - The RECONCILING state indicates that some work is actively being
-                    done on the node pool, such as upgrading node software. Details
-                    can be found in the `statusMessage` field.   \"STOPPING\" - The
-                    STOPPING state indicates the node pool is being deleted.   \"ERROR\"
-                    - The ERROR state indicates the node pool may be unusable. Details
-                    can be found in the `statusMessage` field."
+                  description: "Status: The status of the nodes in this pool instance.
+                    \n Possible values:   \"STATUS_UNSPECIFIED\" - Not set.   \"PROVISIONING\"
+                    - The PROVISIONING state indicates the node pool is being created.
+                    \  \"RUNNING\" - The RUNNING state indicates the node pool has
+                    been created and is fully usable.   \"RUNNING_WITH_ERROR\" - The
+                    RUNNING_WITH_ERROR state indicates the node pool has been created
+                    and is partially usable. Some error state has occurred and some
+                    functionality may be impaired. Customer may need to reissue a
+                    request or trigger a new update.   \"RECONCILING\" - The RECONCILING
+                    state indicates that some work is actively being done on the node
+                    pool, such as upgrading node software. Details can be found in
+                    the `statusMessage` field.   \"STOPPING\" - The STOPPING state
+                    indicates the node pool is being deleted.   \"ERROR\" - The ERROR
+                    state indicates the node pool may be unusable. Details can be
+                    found in the `statusMessage` field."
                   type: string
                 statusMessage:
-                  description: 'StatusMessage: [Output only] Additional information
-                    about the current status of this node pool instance, if available.'
+                  description: 'StatusMessage: Additional information about the current
+                    status of this node pool instance, if available.'
                   type: string
               type: object
             bindingPhase:
