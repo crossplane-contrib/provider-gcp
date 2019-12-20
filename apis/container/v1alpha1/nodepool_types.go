@@ -131,11 +131,13 @@ type NodePoolParameters struct {
 	// attach. Must be of format
 	// /locations/clusterLocation/clusters/clusterName. Must be supplied if
 	// ClusterRef is not.
+	// +immutable
 	Cluster string `json:"cluster,omitempty"`
 
 	// ClusterRef sets the Cluster field by resolving the resource link of the
 	// referenced Crossplane GKECluster managed resource. Must be supplied in
 	// Cluster is not.
+	// +immutable
 	// +optional
 	ClusterRef *GKEClusterURIReferencerForNodePool `json:"clusterRef,omitempty" resource:"attributereferencer"`
 
@@ -188,6 +190,7 @@ type NodePoolParameters struct {
 	// MaxPodsConstraint: The constraint on the maximum number of pods that
 	// can be run
 	// simultaneously on a node in the node pool.
+	// +immutable
 	MaxPodsConstraint *v1beta1.MaxPodsConstraint `json:"maxPodsConstraint,omitempty"`
 
 	// Version: The version of the Kubernetes of this node.
@@ -227,6 +230,7 @@ type NodeConfig struct {
 	// See https://cloud.google.com/compute/docs/gpus for more information
 	// about
 	// support for GPUs.
+	// +immutable
 	Accelerators []*AcceleratorConfig `json:"accelerators,omitempty"`
 
 	// DiskSizeGb: Size of the disk attached to each node, specified in
@@ -234,6 +238,7 @@ type NodeConfig struct {
 	// The smallest allowed disk size is 10GB.
 	//
 	// If unspecified, the default disk size is 100GB.
+	// +immutable
 	// +optional
 	DiskSizeGb *int64 `json:"diskSizeGb,omitempty"`
 
@@ -241,6 +246,7 @@ type NodeConfig struct {
 	// or 'pd-ssd')
 	//
 	// If unspecified, the default disk type is 'pd-standard'
+	// +immutable
 	// +optional
 	DiskType *string `json:"diskType,omitempty"`
 
@@ -263,6 +269,7 @@ type NodeConfig struct {
 	// see:
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects
 	// /labels/
+	// +immutable
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
 
@@ -276,6 +283,7 @@ type NodeConfig struct {
 	// https://cloud.google.com/compute/docs/disks/local-ssd#local_ssd_l
 	// imits
 	// for more information.
+	// +immutable
 	// +optional
 	LocalSsdCount *int64 `json:"localSsdCount,omitempty"`
 
@@ -286,6 +294,7 @@ type NodeConfig struct {
 	//
 	// If unspecified, the default machine type is
 	// `n1-standard-1`.
+	// +immutable
 	// +optional
 	MachineType *string `json:"machineType,omitempty"`
 
@@ -325,6 +334,7 @@ type NodeConfig struct {
 	// that each value's size must be less than or equal to 32 KB.
 	//
 	// The total size of all keys and values must be less than 512 KB.
+	// +immutable
 	// +optional
 	Metadata map[string]string `json:"metadata,omitempty"`
 
@@ -341,6 +351,7 @@ type NodeConfig struct {
 	// CPU
 	// platform](https://cloud.google.com/compute/docs/instances/specify-
 	// min-cpu-platform)
+	// +immutable
 	// +optional
 	MinCPUPlatform *string `json:"minCpuPlatform,omitempty"`
 
@@ -364,6 +375,7 @@ type NodeConfig struct {
 	// Cloud
 	// Monitoring are enabled, in which case their required scopes will be
 	// added.
+	// +immutable
 	// +optional
 	OauthScopes []string `json:"oauthScopes,omitempty"`
 
@@ -373,10 +385,12 @@ type NodeConfig struct {
 	// https://cloud.google.com/compute/docs/instances/preemptible for
 	// more
 	// inforamtion about preemptible VM instances.
+	// +immutable
 	// +optional
 	Preemptible *bool `json:"preemptible,omitempty"`
 
 	// SandboxConfig: Sandbox configuration for this node.
+	// +immutable
 	// +optional
 	SandboxConfig *SandboxConfig `json:"sandboxConfig,omitempty"`
 
@@ -384,10 +398,12 @@ type NodeConfig struct {
 	// by the node VMs. If
 	// no Service Account is specified, the "default" service account is
 	// used.
+	// +immutable
 	// +optional
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
 
 	// ShieldedInstanceConfig: Shielded Instance options.
+	// +immutable
 	// +optional
 	ShieldedInstanceConfig *ShieldedInstanceConfig `json:"shieldedInstanceConfig,omitempty"`
 
@@ -398,6 +414,7 @@ type NodeConfig struct {
 	// the client during cluster or node pool creation. Each tag within the
 	// list
 	// must comply with RFC1035.
+	// +immutable
 	// +optional
 	Tags []string `json:"tags,omitempty"`
 
@@ -407,6 +424,7 @@ type NodeConfig struct {
 	// see:
 	// https://kubernetes.io/docs/concepts/configuration/taint-and-toler
 	// ation/
+	// +immutable
 	// +optional
 	Taints []*NodeTaint `json:"taints,omitempty"`
 
@@ -418,8 +436,6 @@ type NodeConfig struct {
 
 // AcceleratorConfig represents a Hardware Accelerator request.
 type AcceleratorConfig struct {
-	// TODO(hasheddan): are both fields required?
-
 	// AcceleratorCount: The number of the accelerator cards exposed to an
 	// instance.
 	AcceleratorCount int64 `json:"acceleratorCount,omitempty,string"`
@@ -576,11 +592,9 @@ type NodePoolStatus struct {
 // node pool.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
-// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.state"
-// +kubebuilder:printcolumn:name="CLUSTER-NAME",type="string",JSONPath=".spec.forProvider.clusterName"
-// +kubebuilder:printcolumn:name="ENDPOINT",type="string",JSONPath=".status.atProvider.endpoint"
-// +kubebuilder:printcolumn:name="CLUSTER-CLASS",type="string",JSONPath=".spec.classRef.name"
-// +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
+// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
+// +kubebuilder:printcolumn:name="CLUSTER-NAME",type="string",JSONPath=".spec.forProvider.cluster"
+// +kubebuilder:printcolumn:name="NODE-POOL-CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".spec.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster

@@ -12,20 +12,14 @@ spec:
   - JSONPath: .status.bindingPhase
     name: STATUS
     type: string
-  - JSONPath: .status.state
+  - JSONPath: .status.atProvider.status
     name: STATE
     type: string
-  - JSONPath: .spec.forProvider.clusterName
+  - JSONPath: .spec.forProvider.cluster
     name: CLUSTER-NAME
     type: string
-  - JSONPath: .status.atProvider.endpoint
-    name: ENDPOINT
-    type: string
   - JSONPath: .spec.classRef.name
-    name: CLUSTER-CLASS
-    type: string
-  - JSONPath: .spec.forProvider.location
-    name: LOCATION
+    name: NODE-POOL-CLASS
     type: string
   - JSONPath: .spec.reclaimPolicy
     name: RECLAIM-POLICY
