@@ -493,6 +493,38 @@ func TestCreate(t *testing.T) {
 				err: nil,
 			},
 		},
+		"SuccessfulSkipCreate": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				i := &container.Cluster{}
+				b, err := ioutil.ReadAll(r.Body)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				err = json.Unmarshal(b, i)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				// Return bad request for create to demonstrate that
+				// http call is never made.
+				w.WriteHeader(http.StatusBadRequest)
+				_ = r.Body.Close()
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: cluster(withProviderStatus(v1beta1.ClusterStateProvisioning)),
+			},
+			want: want{
+				mg: cluster(
+					withConditions(runtimev1alpha1.Creating()),
+					withProviderStatus(v1beta1.ClusterStateProvisioning),
+				),
+				cre: resource.ExternalCreation{},
+				err: nil,
+			},
+		},
 		"AlreadyExists": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
@@ -586,6 +618,28 @@ func TestDelete(t *testing.T) {
 			},
 			want: want{
 				mg:  cluster(withConditions(runtimev1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"SuccessfulSkipDelete": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				// Return bad request for delete to demonstrate that
+				// http call is never made.
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: cluster(withProviderStatus(v1beta1.ClusterStateStopping)),
+			},
+			want: want{
+				mg: cluster(
+					withConditions(runtimev1alpha1.Deleting()),
+					withProviderStatus(v1beta1.ClusterStateStopping),
+				),
 				err: nil,
 			},
 		},
@@ -695,7 +749,7 @@ func TestUpdate(t *testing.T) {
 				err: nil,
 			},
 		},
-		"SuccessfulSkipUpdate": {
+		"SuccessfulSkipUpdateReconciling": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
 				switch r.Method {
@@ -727,6 +781,42 @@ func TestUpdate(t *testing.T) {
 				mg: cluster(
 					withLocations([]string{"loc-1"}),
 					withProviderStatus(v1beta1.ClusterStateReconciling),
+				),
+				err: nil,
+			},
+		},
+		"SuccessfulSkipUpdateProvisioning": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					// Return bad request for get to demonstrate that
+					// http call is never made.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				case http.MethodPut:
+					// Return bad request for put to demonstrate that
+					// http call is never made.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: cluster(
+					withLocations([]string{"loc-1"}),
+					withProviderStatus(v1beta1.ClusterStateProvisioning),
+				),
+			},
+			want: want{
+				mg: cluster(
+					withLocations([]string{"loc-1"}),
+					withProviderStatus(v1beta1.ClusterStateProvisioning),
 				),
 				err: nil,
 			},

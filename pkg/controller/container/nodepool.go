@@ -148,6 +148,11 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (res
 	}
 	cr.SetConditions(runtimev1alpha1.Creating())
 
+	// Wait until creation is complete if already provisioning.
+	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateProvisioning {
+		return resource.ExternalCreation{}, nil
+	}
+
 	// Generate GKE node pool from resource spec.
 	pool := np.GenerateNodePool(cr.Spec.ForProvider, meta.GetExternalName(cr))
 
@@ -169,7 +174,7 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (res
 	}
 	// Do not issue another update until the node pool finishes the previous
 	// one.
-	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateReconciling {
+	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateReconciling || cr.Status.AtProvider.Status == v1alpha1.NodePoolStateProvisioning {
 		return resource.ExternalUpdate{}, nil
 	}
 
@@ -199,6 +204,10 @@ func (e *nodePoolExternal) Delete(ctx context.Context, mg resource.Managed) erro
 		return errors.New(errNotNodePool)
 	}
 	cr.SetConditions(runtimev1alpha1.Deleting())
+	// Wait until deletion is complete if already stopping.
+	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateStopping {
+		return nil
+	}
 
 	_, err := e.container.Projects.Locations.Clusters.NodePools.Delete(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteNodePool)

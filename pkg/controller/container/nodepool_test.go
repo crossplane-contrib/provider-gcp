@@ -448,6 +448,38 @@ func TestNodePoolCreate(t *testing.T) {
 				err: nil,
 			},
 		},
+		"SuccessfulSkipCreate": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				i := &container.NodePool{}
+				b, err := ioutil.ReadAll(r.Body)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				err = json.Unmarshal(b, i)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				// Return bad request for post to demonstrate that
+				// http call is never made.
+				w.WriteHeader(http.StatusBadRequest)
+				_ = r.Body.Close()
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateProvisioning)),
+			},
+			want: want{
+				mg: nodePool(
+					npWithConditions(runtimev1alpha1.Creating()),
+					npWithProviderStatus(v1alpha1.NodePoolStateProvisioning),
+				),
+				cre: resource.ExternalCreation{},
+				err: nil,
+			},
+		},
 		"AlreadyExists": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
@@ -541,6 +573,28 @@ func TestNodePoolDelete(t *testing.T) {
 			},
 			want: want{
 				mg:  nodePool(npWithConditions(runtimev1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"SuccessfulSkipDelete": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				// Return bad request for delete to demonstrate that
+				// http call is never made.
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&container.Operation{})
+			}),
+			args: args{
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateStopping)),
+			},
+			want: want{
+				mg: nodePool(
+					npWithConditions(runtimev1alpha1.Deleting()),
+					npWithProviderStatus(v1alpha1.NodePoolStateStopping),
+				),
 				err: nil,
 			},
 		},
@@ -682,6 +736,42 @@ func TestNodePoolUpdate(t *testing.T) {
 				mg: nodePool(
 					npWithLocations([]string{"loc-1"}),
 					npWithProviderStatus(v1alpha1.NodePoolStateReconciling),
+				),
+				err: nil,
+			},
+		},
+		"SuccessfulSkipWhileProvisioning": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					// Return bad request for get to demonstrate that
+					// http call is never made.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.NodePool{})
+				case http.MethodPut:
+					// Return bad request for put to demonstrate that
+					// http call is never made.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: nodePool(
+					npWithLocations([]string{"loc-1"}),
+					npWithProviderStatus(v1alpha1.NodePoolStateProvisioning),
+				),
+			},
+			want: want{
+				mg: nodePool(
+					npWithLocations([]string{"loc-1"}),
+					npWithProviderStatus(v1alpha1.NodePoolStateProvisioning),
 				),
 				err: nil,
 			},

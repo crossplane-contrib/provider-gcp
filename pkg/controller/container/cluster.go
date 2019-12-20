@@ -154,6 +154,11 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (reso
 	}
 	cr.SetConditions(v1alpha1.Creating())
 
+	// Wait until creation is complete if already provisioning.
+	if cr.Status.AtProvider.Status == v1beta1.ClusterStateProvisioning {
+		return resource.ExternalCreation{}, nil
+	}
+
 	// Generate GKE cluster from resource spec.
 	cluster := gke.GenerateCluster(cr.Spec.ForProvider, meta.GetExternalName(cr))
 
@@ -180,7 +185,7 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (reso
 		return resource.ExternalUpdate{}, errors.New(errNotCluster)
 	}
 	// Do not issue another update until the cluster finishes the previous one.
-	if cr.Status.AtProvider.Status == v1beta1.ClusterStateReconciling {
+	if cr.Status.AtProvider.Status == v1beta1.ClusterStateReconciling || cr.Status.AtProvider.Status == v1beta1.ClusterStateProvisioning {
 		return resource.ExternalUpdate{}, nil
 	}
 	// We have to get the cluster again here to determine how to update.
@@ -209,6 +214,10 @@ func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error
 		return errors.New(errNotCluster)
 	}
 	cr.SetConditions(runtimev1alpha1.Deleting())
+	// Wait until delete is complete if already deleting.
+	if cr.Status.AtProvider.Status == v1beta1.ClusterStateStopping {
+		return nil
+	}
 
 	_, err := e.cluster.Projects.Locations.Clusters.Delete(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteCluster)
