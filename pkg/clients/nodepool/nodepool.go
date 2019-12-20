@@ -19,6 +19,7 @@ package nodepool
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -359,5 +360,5 @@ func IsUpToDate(in *v1alpha1.NodePoolParameters, currentState container.NodePool
 
 // GetFullyQualifiedName builds the fully qualified name of the cluster.
 func GetFullyQualifiedName(p v1alpha1.NodePoolParameters, name string) string {
-	return fmt.Sprintf(NodePoolNameFormat, p.Cluster, name)
+	return strings.Replace(fmt.Sprintf(NodePoolNameFormat, p.Cluster, name), "/zones/", "/locations/", -1)
 }

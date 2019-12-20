@@ -30,8 +30,10 @@ import (
 )
 
 const (
-	name    = "my-cool-pool"
-	cluster = "/projects/cool-proj/locations/us-central1/clusters/cool-cluster"
+	name                  = "my-cool-pool"
+	cluster               = "/projects/cool-proj/locations/us-central1/clusters/cool-cluster"
+	zonalCluster          = "/projects/cool-proj/zones/us-central1-a/clusters/cool-cluster"
+	zonalClusterFormatted = "/projects/cool-proj/locations/us-central1-a/clusters/cool-cluster"
 )
 
 func nodePool(m ...func(*container.NodePool)) *container.NodePool {
@@ -599,6 +601,15 @@ func TestGetFullyQualifiedName(t *testing.T) {
 				name:   name,
 			},
 			want: fmt.Sprintf(NodePoolNameFormat, cluster, name),
+		},
+		"SuccessfulZonal": {
+			args: args{
+				params: *params(func(p *v1alpha1.NodePoolParameters) {
+					p.Cluster = zonalCluster
+				}),
+				name: name,
+			},
+			want: fmt.Sprintf(NodePoolNameFormat, zonalClusterFormatted, name),
 		},
 	}
 	for name, tc := range tests {
