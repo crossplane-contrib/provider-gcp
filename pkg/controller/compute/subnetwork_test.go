@@ -56,18 +56,20 @@ func TestSubnetworkConnector_Connect(t *testing.T) {
 	fakeErr := errors.New("i reject to work")
 	testProvider := &gcpapis.Provider{
 		Spec: gcpapis.ProviderSpec{
-			Secret: corev1alpha1.SecretKeySelector{
-				SecretReference: corev1alpha1.SecretReference{
-					Namespace: testNamespace,
-					Name:      "test-secret-name",
+			ProviderSpec: corev1alpha1.ProviderSpec{
+				CredentialsSecretRef: corev1alpha1.SecretKeySelector{
+					SecretReference: corev1alpha1.SecretReference{
+						Namespace: testNamespace,
+						Name:      "test-secret-name",
+					},
+					Key: "test-key",
 				},
-				Key: "test-key",
 			},
 		},
 	}
 	testSecret := &v1.Secret{
 		Data: map[string][]byte{
-			testProvider.Spec.Secret.Key: []byte(testGCPCredentialsJSON),
+			testProvider.Spec.CredentialsSecretRef.Key: []byte(testGCPCredentialsJSON),
 		},
 	}
 

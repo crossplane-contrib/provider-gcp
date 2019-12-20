@@ -154,12 +154,12 @@ func (m *bucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha3.Bucket) 
 	}
 
 	s := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}
+	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
 	if err := m.Get(ctx, n, s); err != nil {
 		return nil, errors.Wrapf(err, "cannot get provider's secret %s", n)
 	}
 
-	creds, err := google.CredentialsFromJSON(context.Background(), s.Data[p.Spec.Secret.Key], storage.ScopeFullControl)
+	creds, err := google.CredentialsFromJSON(context.Background(), s.Data[p.Spec.CredentialsSecretRef.Key], storage.ScopeFullControl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot retrieve creds from json")
 	}
