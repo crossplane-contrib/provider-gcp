@@ -94,7 +94,7 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (re
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
 	secret := &v1.Secret{}
-	n := types.NamespacedName{Namespace: provider.Spec.Secret.Namespace, Name: provider.Spec.Secret.Name}
+	n := types.NamespacedName{Namespace: provider.Spec.CredentialsSecretRef.Namespace, Name: provider.Spec.CredentialsSecretRef.Name}
 	if err := c.kube.Get(ctx, n, secret); err != nil {
 		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)
 	}
@@ -103,7 +103,7 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (re
 		c.newServiceFn = googlecompute.NewService
 	}
 	s, err := c.newServiceFn(ctx,
-		option.WithCredentialsJSON(secret.Data[provider.Spec.Secret.Key]),
+		option.WithCredentialsJSON(secret.Data[provider.Spec.CredentialsSecretRef.Key]),
 		option.WithScopes(googlecompute.ComputeScope))
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)

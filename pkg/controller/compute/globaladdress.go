@@ -79,12 +79,12 @@ func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (resourc
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
 	s := &v1.Secret{}
-	if err := c.client.Get(ctx, types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}, s); err != nil {
+	if err := c.client.Get(ctx, types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}, s); err != nil {
 		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)
 	}
 
 	cmp, err := c.newCompute(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.Secret.Key]),
+		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
 		option.WithScopes(compute.ComputeScope))
 	return &gaExternal{client: c.client, compute: cmp, projectID: p.Spec.ProjectID}, errors.Wrap(err, errNewClient)
 }

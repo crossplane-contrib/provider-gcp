@@ -111,20 +111,20 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (resource.
 		return nil, errors.Wrap(err, errGetProvider)
 	}
 	s := &v1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}
+	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
 	if err := c.client.Get(ctx, n, s); err != nil {
 		return nil, errors.Wrap(err, errGetProviderSecret)
 	}
 
 	cmp, err := c.newCompute(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.Secret.Key]),
+		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
 		option.WithScopes(compute.ComputeScope))
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
 
 	sn, err := c.newServiceNetworking(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.Secret.Key]),
+		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
 		option.WithScopes(servicenetworking.ServiceManagementScope))
 	return &external{sn: sn, compute: cmp, projectID: p.Spec.ProjectID}, errors.Wrap(err, errNewClient)
 }

@@ -91,13 +91,13 @@ func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (re
 	}
 
 	s := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}
+	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
 	if err := c.kube.Get(ctx, n, s); err != nil {
 		return nil, errors.Wrap(err, errGetProviderSecret)
 	}
 
 	client, err := c.newServiceFn(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.Secret.Key]),
+		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
 		option.WithScopes(container.CloudPlatformScope))
 	return &clusterExternal{cluster: client, projectID: p.Spec.ProjectID, kube: c.kube}, errors.Wrap(err, errNewClient)
 }

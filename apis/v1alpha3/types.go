@@ -24,10 +24,7 @@ import (
 
 // A ProviderSpec defines the desired state of a Provider.
 type ProviderSpec struct {
-
-	// A Secret containing JSON encoded credentials for a Google Service Account
-	// that will be used to authenticate to this GCP Provider.
-	Secret runtimev1alpha1.SecretKeySelector `json:"credentialsSecretRef"`
+	runtimev1alpha1.ProviderSpec `json:",inline'"`
 
 	// ProjectID is the project name (not numerical ID) of this GCP Provider.
 	ProjectID string `json:"projectID"`

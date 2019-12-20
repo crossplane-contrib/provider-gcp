@@ -143,12 +143,14 @@ func TestConnect(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: providerName},
 		Spec: gcpv1alpha3.ProviderSpec{
 			ProjectID: project,
-			Secret: runtimev1alpha1.SecretKeySelector{
-				SecretReference: runtimev1alpha1.SecretReference{
-					Namespace: namespace,
-					Name:      providerSecretName,
+			ProviderSpec: runtimev1alpha1.ProviderSpec{
+				CredentialsSecretRef: runtimev1alpha1.SecretKeySelector{
+					SecretReference: runtimev1alpha1.SecretReference{
+						Namespace: namespace,
+						Name:      providerSecretName,
+					},
+					Key: providerSecretKey,
 				},
-				Key: providerSecretKey,
 			},
 		},
 	}

@@ -143,13 +143,13 @@ func (r *Reconciler) _connect(instance *gcpcomputev1alpha3.GKECluster) (gke.Clie
 		return nil, err
 	}
 	secret := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.Secret.Namespace, Name: p.Spec.Secret.Name}
+	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
 	if err := r.Client.Get(ctx, n, secret); err != nil {
 		return nil, err
 	}
-	data, ok := secret.Data[p.Spec.Secret.Key]
+	data, ok := secret.Data[p.Spec.CredentialsSecretRef.Key]
 	if !ok {
-		return nil, fmt.Errorf("secret data is not found for key [%s]", p.Spec.Secret.Key)
+		return nil, fmt.Errorf("secret data is not found for key [%s]", p.Spec.CredentialsSecretRef.Key)
 	}
 	creds, err := google.CredentialsFromJSON(context.Background(), data, gke.DefaultScope)
 	if err != nil {
