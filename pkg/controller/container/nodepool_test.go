@@ -298,7 +298,7 @@ func TestNodePoolObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
-				c.Status = v1alpha1.NodePoolStateReconciling
+				c.Status = v1alpha1.NodePoolStateError
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			args: args{
@@ -309,7 +309,7 @@ func TestNodePoolObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateReconciling), npWithConditions(runtimev1alpha1.Unavailable())),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateError), npWithConditions(runtimev1alpha1.Unavailable())),
 			},
 		},
 		"RunnableUnbound": {
@@ -348,7 +348,7 @@ func TestNodePoolObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				n := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
-				n.Status = v1alpha1.NodePoolStateReconciling
+				n.Status = v1alpha1.NodePoolStateError
 				_ = json.NewEncoder(w).Encode(n)
 			}),
 			kube: &test.MockClient{
@@ -367,7 +367,7 @@ func TestNodePoolObserve(t *testing.T) {
 					ResourceUpToDate: true,
 				},
 				mg: nodePool(
-					npWithProviderStatus(v1alpha1.NodePoolStateReconciling),
+					npWithProviderStatus(v1alpha1.NodePoolStateError),
 					npWithConditions(runtimev1alpha1.Unavailable()),
 					npWithBindingPhase(runtimev1alpha1.BindingPhaseBound)),
 			},
@@ -648,6 +648,42 @@ func TestNodePoolUpdate(t *testing.T) {
 			},
 			want: want{
 				mg:  nodePool(npWithLocations([]string{"loc-1"})),
+				err: nil,
+			},
+		},
+		"SuccessfulSkipWhileReconciling": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					// Return bad request for get to demonstrate that
+					// http call is never made.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.NodePool{})
+				case http.MethodPut:
+					// Return bad request for put to demonstrate that
+					// http call is never made.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: nodePool(
+					npWithLocations([]string{"loc-1"}),
+					npWithProviderStatus(v1alpha1.NodePoolStateReconciling),
+				),
+			},
+			want: want{
+				mg: nodePool(
+					npWithLocations([]string{"loc-1"}),
+					npWithProviderStatus(v1alpha1.NodePoolStateReconciling),
+				),
 				err: nil,
 			},
 		},

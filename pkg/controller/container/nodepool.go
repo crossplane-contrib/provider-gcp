@@ -124,12 +124,12 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	}
 
 	switch cr.Status.AtProvider.Status {
-	case v1alpha1.NodePoolStateRunning:
+	case v1alpha1.NodePoolStateRunning, v1alpha1.NodePoolStateReconciling:
 		cr.Status.SetConditions(runtimev1alpha1.Available())
 		resource.SetBindable(cr)
 	case v1alpha1.NodePoolStateProvisioning:
 		cr.Status.SetConditions(runtimev1alpha1.Creating())
-	case v1alpha1.NodePoolStateUnspecified, v1alpha1.NodePoolStateRunningError, v1alpha1.NodePoolStateError, v1alpha1.NodePoolStateReconciling:
+	case v1alpha1.NodePoolStateUnspecified, v1alpha1.NodePoolStateRunningError, v1alpha1.NodePoolStateError:
 		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
 	}
 
@@ -166,6 +166,11 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (res
 	cr, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotNodePool)
+	}
+	// Do not issue another update until the node pool finishes the previous
+	// one.
+	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateReconciling {
+		return resource.ExternalUpdate{}, nil
 	}
 
 	// We have to get the node pool again here to determine how to update.

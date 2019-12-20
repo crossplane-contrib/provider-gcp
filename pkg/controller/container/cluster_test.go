@@ -336,7 +336,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
-				c.Status = v1beta1.ClusterStateReconciling
+				c.Status = v1beta1.ClusterStateError
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			args: args{
@@ -348,7 +348,7 @@ func TestObserve(t *testing.T) {
 					ResourceUpToDate:  true,
 					ConnectionDetails: connectionDetails(&container.Cluster{}),
 				},
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateReconciling), withConditions(runtimev1alpha1.Unavailable())),
+				mg: cluster(withProviderStatus(v1beta1.ClusterStateError), withConditions(runtimev1alpha1.Unavailable())),
 			},
 		},
 		"RunnableUnbound": {
@@ -388,7 +388,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
-				c.Status = v1beta1.ClusterStateReconciling
+				c.Status = v1beta1.ClusterStateError
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			kube: &test.MockClient{
@@ -408,7 +408,7 @@ func TestObserve(t *testing.T) {
 					ConnectionDetails: connectionDetails(&container.Cluster{}),
 				},
 				mg: cluster(
-					withProviderStatus(v1beta1.ClusterStateReconciling),
+					withProviderStatus(v1beta1.ClusterStateError),
 					withConditions(runtimev1alpha1.Unavailable()),
 					withBindingPhase(runtimev1alpha1.BindingPhaseBound)),
 			},
@@ -693,6 +693,42 @@ func TestUpdate(t *testing.T) {
 			},
 			want: want{
 				mg:  cluster(withLocations([]string{"loc-1"})),
+				err: nil,
+			},
+		},
+		"SuccessfulSkipUpdate": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					// Return bad request for get to demonstrate that
+					// http call is never made.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				case http.MethodPut:
+					// Return bad request for put to demonstrate that
+					// http call is never made.
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&container.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: cluster(
+					withLocations([]string{"loc-1"}),
+					withProviderStatus(v1beta1.ClusterStateReconciling),
+				),
+			},
+			want: want{
+				mg: cluster(
+					withLocations([]string{"loc-1"}),
+					withProviderStatus(v1beta1.ClusterStateReconciling),
+				),
 				err: nil,
 			},
 		},

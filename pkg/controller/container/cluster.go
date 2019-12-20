@@ -129,12 +129,12 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (res
 	}
 
 	switch cr.Status.AtProvider.Status {
-	case v1beta1.ClusterStateRunning:
+	case v1beta1.ClusterStateRunning, v1beta1.ClusterStateReconciling:
 		cr.Status.SetConditions(v1alpha1.Available())
 		resource.SetBindable(cr)
 	case v1beta1.ClusterStateProvisioning:
 		cr.Status.SetConditions(v1alpha1.Creating())
-	case v1beta1.ClusterStateUnspecified, v1beta1.ClusterStateDegraded, v1beta1.ClusterStateError, v1beta1.ClusterStateReconciling:
+	case v1beta1.ClusterStateUnspecified, v1beta1.ClusterStateDegraded, v1beta1.ClusterStateError:
 		cr.Status.SetConditions(v1alpha1.Unavailable())
 	}
 
@@ -179,7 +179,10 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (reso
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotCluster)
 	}
-
+	// Do not issue another update until the cluster finishes the previous one.
+	if cr.Status.AtProvider.Status == v1beta1.ClusterStateReconciling {
+		return resource.ExternalUpdate{}, nil
+	}
 	// We have to get the cluster again here to determine how to update.
 	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {

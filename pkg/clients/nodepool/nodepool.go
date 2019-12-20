@@ -24,6 +24,7 @@ import (
 	container "google.golang.org/api/container/v1beta1"
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+
 	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
@@ -323,7 +324,6 @@ func IsUpToDate(in *v1alpha1.NodePoolParameters, currentState container.NodePool
 	if !cmp.Equal(in, currentParams,
 		cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}),
 		cmpopts.IgnoreFields(v1alpha1.NodePoolParameters{}, "Cluster", "InitialNodeCount")) {
-		fmt.Println(cmp.Diff(in, currentParams))
 		return false, GeneralUpdate
 	}
 	return true, NoUpdate
