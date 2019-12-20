@@ -18,77 +18,50 @@ package container
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
-
-	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
+	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	gke "github.com/crossplaneio/stack-gcp/pkg/clients/cluster"
+	np "github.com/crossplaneio/stack-gcp/pkg/clients/nodepool"
 )
 
-const (
-	name      = "test-cluster"
-	namespace = "mynamespace"
+type nodePoolModifier func(*v1alpha1.NodePool)
 
-	projectID          = "myproject-id-1234"
-	providerName       = "gcp-provider"
-	providerSecretName = "gcp-creds"
-	providerSecretKey  = "creds"
-)
-
-var errBoom = errors.New("boom")
-
-var _ resource.ExternalConnecter = &clusterConnector{}
-var _ resource.ExternalClient = &clusterExternal{}
-
-func gError(code int, message string) *googleapi.Error {
-	return &googleapi.Error{
-		Code:    code,
-		Body:    "{}\n",
-		Message: message,
-	}
+func npWithConditions(c ...runtimev1alpha1.Condition) nodePoolModifier {
+	return func(i *v1alpha1.NodePool) { i.Status.SetConditions(c...) }
 }
 
-type clusterModifier func(*v1beta1.GKECluster)
-
-func withConditions(c ...runtimev1alpha1.Condition) clusterModifier {
-	return func(i *v1beta1.GKECluster) { i.Status.SetConditions(c...) }
+func npWithProviderStatus(s string) nodePoolModifier {
+	return func(i *v1alpha1.NodePool) { i.Status.AtProvider.Status = s }
 }
 
-func withProviderStatus(s string) clusterModifier {
-	return func(i *v1beta1.GKECluster) { i.Status.AtProvider.Status = s }
+func npWithBindingPhase(p runtimev1alpha1.BindingPhase) nodePoolModifier {
+	return func(i *v1alpha1.NodePool) { i.Status.SetBindingPhase(p) }
 }
 
-func withBindingPhase(p runtimev1alpha1.BindingPhase) clusterModifier {
-	return func(i *v1beta1.GKECluster) { i.Status.SetBindingPhase(p) }
+func npWithLocations(l []string) nodePoolModifier {
+	return func(i *v1alpha1.NodePool) { i.Spec.ForProvider.Locations = l }
 }
 
-func withLocations(l []string) clusterModifier {
-	return func(i *v1beta1.GKECluster) { i.Spec.ForProvider.Locations = l }
-}
-
-func cluster(im ...clusterModifier) *v1beta1.GKECluster {
-	i := &v1beta1.GKECluster{
+func nodePool(im ...nodePoolModifier) *v1alpha1.NodePool {
+	i := &v1alpha1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Finalizers: []string{},
@@ -96,11 +69,11 @@ func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 				meta.ExternalNameAnnotationKey: name,
 			},
 		},
-		Spec: v1beta1.GKEClusterSpec{
+		Spec: v1alpha1.NodePoolSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
 				ProviderReference: &corev1.ObjectReference{Name: providerName},
 			},
-			ForProvider: v1beta1.GKEClusterParameters{},
+			ForProvider: v1alpha1.NodePoolParameters{},
 		},
 	}
 
@@ -111,19 +84,17 @@ func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 	return i
 }
 
-func TestConnect(t *testing.T) {
+func TestNodePoolConnect(t *testing.T) {
 	provider := gcpv1alpha3.Provider{
 		ObjectMeta: metav1.ObjectMeta{Name: providerName},
 		Spec: gcpv1alpha3.ProviderSpec{
 			ProjectID: projectID,
-			ProviderSpec: runtimev1alpha1.ProviderSpec{
-				CredentialsSecretRef: runtimev1alpha1.SecretKeySelector{
-					SecretReference: runtimev1alpha1.SecretReference{
-						Namespace: namespace,
-						Name:      providerSecretName,
-					},
-					Key: providerSecretKey,
+			Secret: runtimev1alpha1.SecretKeySelector{
+				SecretReference: runtimev1alpha1.SecretReference{
+					Namespace: namespace,
+					Name:      providerSecretName,
 				},
+				Key: providerSecretKey,
 			},
 		},
 	}
@@ -146,7 +117,7 @@ func TestConnect(t *testing.T) {
 		want want
 	}{
 		"Connected": {
-			conn: &clusterConnector{
+			conn: &nodePoolConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Name: providerName}:
@@ -161,27 +132,27 @@ func TestConnect(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
 				err: nil,
 			},
 		},
 		"FailedToGetProvider": {
-			conn: &clusterConnector{
+			conn: &nodePoolConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					return errBoom
 				}},
 			},
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
 				err: errors.Wrap(errBoom, errGetProvider),
 			},
 		},
 		"FailedToGetProviderSecret": {
-			conn: &clusterConnector{
+			conn: &nodePoolConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Name: providerName}:
@@ -192,11 +163,11 @@ func TestConnect(t *testing.T) {
 					return nil
 				}},
 			},
-			args: args{mg: cluster()},
+			args: args{mg: nodePool()},
 			want: want{err: errors.Wrap(errBoom, errGetProviderSecret)},
 		},
 		"FailedToCreateContainerClient": {
-			conn: &clusterConnector{
+			conn: &nodePoolConnector{
 				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
 					switch key {
 					case client.ObjectKey{Name: providerName}:
@@ -208,7 +179,7 @@ func TestConnect(t *testing.T) {
 				}},
 				newServiceFn: func(_ context.Context, _ ...option.ClientOption) (*container.Service, error) { return nil, errBoom },
 			},
-			args: args{mg: cluster()},
+			args: args{mg: nodePool()},
 			want: want{err: errors.Wrap(errBoom, errNewClient)},
 		},
 	}
@@ -223,7 +194,7 @@ func TestConnect(t *testing.T) {
 	}
 }
 
-func TestObserve(t *testing.T) {
+func TestNodePoolObserve(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -246,13 +217,13 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&container.Cluster{})
+				_ = json.NewEncoder(w).Encode(&container.NodePool{})
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(),
+				mg:  nodePool(),
 				err: nil,
 			},
 		},
@@ -263,14 +234,14 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.Cluster{})
+				_ = json.NewEncoder(w).Encode(&container.NodePool{})
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetCluster),
+				mg:  nodePool(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetNodePool),
 			},
 		},
 		"NotUpToDateSpecUpdateFailed": {
@@ -280,20 +251,20 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := cluster()
-				gc := gke.GenerateCluster(c.Spec.ForProvider, name)
-				gc.Locations = []string{"loc-1"}
-				_ = json.NewEncoder(w).Encode(gc)
+				n := nodePool()
+				gn := np.GenerateNodePool(n.Spec.ForProvider, name)
+				gn.Locations = []string{"loc-1"}
+				_ = json.NewEncoder(w).Encode(gn)
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(errBoom),
 			},
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(withLocations([]string{"loc-1"})),
-				err: errors.Wrap(errBoom, errManagedUpdateFailed),
+				mg:  nodePool(npWithLocations([]string{"loc-1"})),
+				err: errors.Wrap(errBoom, errManagedNodePoolUpdateFailed),
 			},
 		},
 		"Creating": {
@@ -303,30 +274,19 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
-				c.Status = v1beta1.ClusterStateProvisioning
-				c.MasterAuth = &container.MasterAuth{
-					Username: "admin",
-					Password: "admin",
-				}
-				_ = json.NewEncoder(w).Encode(c)
+				n := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
+				n.Status = v1alpha1.NodePoolStateProvisioning
+				_ = json.NewEncoder(w).Encode(n)
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
 				obs: resource.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
-					ConnectionDetails: connectionDetails(&container.Cluster{
-						Name: name,
-						MasterAuth: &container.MasterAuth{
-							Username: "admin",
-							Password: "admin",
-						},
-					}),
 				},
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateProvisioning), withConditions(runtimev1alpha1.Creating())),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateProvisioning), npWithConditions(runtimev1alpha1.Creating())),
 			},
 		},
 		"Unavailable": {
@@ -336,20 +296,19 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
-				c.Status = v1beta1.ClusterStateError
+				c := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
+				c.Status = v1alpha1.NodePoolStateError
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
 				obs: resource.ExternalObservation{
-					ResourceExists:    true,
-					ResourceUpToDate:  true,
-					ConnectionDetails: connectionDetails(&container.Cluster{}),
+					ResourceExists:   true,
+					ResourceUpToDate: true,
 				},
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateError), withConditions(runtimev1alpha1.Unavailable())),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateError), npWithConditions(runtimev1alpha1.Unavailable())),
 			},
 		},
 		"RunnableUnbound": {
@@ -359,26 +318,25 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
-				c.Status = v1beta1.ClusterStateRunning
+				c := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
+				c.Status = v1alpha1.NodePoolStateRunning
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
 				obs: resource.ExternalObservation{
-					ResourceExists:    true,
-					ResourceUpToDate:  true,
-					ConnectionDetails: connectionDetails(&container.Cluster{}),
+					ResourceExists:   true,
+					ResourceUpToDate: true,
 				},
-				mg: cluster(
-					withProviderStatus(v1beta1.ClusterStateRunning),
-					withConditions(runtimev1alpha1.Available()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
+				mg: nodePool(
+					npWithProviderStatus(v1alpha1.NodePoolStateRunning),
+					npWithConditions(runtimev1alpha1.Available()),
+					npWithBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
 			},
 		},
 		"BoundUnavailable": {
@@ -388,30 +346,29 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := gke.GenerateCluster(cluster().Spec.ForProvider, name)
-				c.Status = v1beta1.ClusterStateError
-				_ = json.NewEncoder(w).Encode(c)
+				n := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
+				n.Status = v1alpha1.NodePoolStateError
+				_ = json.NewEncoder(w).Encode(n)
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				mg: cluster(
-					withProviderStatus(v1beta1.ClusterStateRunning),
-					withConditions(runtimev1alpha1.Available()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseBound),
+				mg: nodePool(
+					npWithProviderStatus(v1alpha1.NodePoolStateRunning),
+					npWithConditions(runtimev1alpha1.Available()),
+					npWithBindingPhase(runtimev1alpha1.BindingPhaseBound),
 				),
 			},
 			want: want{
 				obs: resource.ExternalObservation{
-					ResourceExists:    true,
-					ResourceUpToDate:  true,
-					ConnectionDetails: connectionDetails(&container.Cluster{}),
+					ResourceExists:   true,
+					ResourceUpToDate: true,
 				},
-				mg: cluster(
-					withProviderStatus(v1beta1.ClusterStateError),
-					withConditions(runtimev1alpha1.Unavailable()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseBound)),
+				mg: nodePool(
+					npWithProviderStatus(v1alpha1.NodePoolStateError),
+					npWithConditions(runtimev1alpha1.Unavailable()),
+					npWithBindingPhase(runtimev1alpha1.BindingPhaseBound)),
 			},
 		},
 	}
@@ -421,10 +378,10 @@ func TestObserve(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := container.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := clusterExternal{
+			e := nodePoolExternal{
 				kube:      tc.kube,
 				projectID: projectID,
-				cluster:   s,
+				container: s,
 			}
 			obs, err := e.Observe(context.Background(), tc.args.mg)
 			if tc.want.err != nil && err != nil {
@@ -447,9 +404,7 @@ func TestObserve(t *testing.T) {
 	}
 }
 
-func TestCreate(t *testing.T) {
-	wantRandom := "i-want-random-data-not-this-special-string"
-
+func TestNodePoolCreate(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		mg  resource.Managed
@@ -471,7 +426,7 @@ func TestCreate(t *testing.T) {
 				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
-				i := &container.Cluster{}
+				i := &container.NodePool{}
 				b, err := ioutil.ReadAll(r.Body)
 				if diff := cmp.Diff(err, nil); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
@@ -485,13 +440,11 @@ func TestCreate(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg: cluster(withConditions(runtimev1alpha1.Creating())),
-				cre: resource.ExternalCreation{ConnectionDetails: resource.ConnectionDetails{
-					runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
-				}},
+				mg:  nodePool(npWithConditions(runtimev1alpha1.Creating())),
+				cre: resource.ExternalCreation{},
 				err: nil,
 			},
 		},
@@ -500,7 +453,7 @@ func TestCreate(t *testing.T) {
 				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
-				i := &container.Cluster{}
+				i := &container.NodePool{}
 				b, err := ioutil.ReadAll(r.Body)
 				if diff := cmp.Diff(err, nil); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
@@ -509,19 +462,19 @@ func TestCreate(t *testing.T) {
 				if diff := cmp.Diff(err, nil); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
-				// Return bad request for create to demonstrate that
+				// Return bad request for post to demonstrate that
 				// http call is never made.
 				w.WriteHeader(http.StatusBadRequest)
 				_ = r.Body.Close()
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateProvisioning)),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateProvisioning)),
 			},
 			want: want{
-				mg: cluster(
-					withConditions(runtimev1alpha1.Creating()),
-					withProviderStatus(v1beta1.ClusterStateProvisioning),
+				mg: nodePool(
+					npWithConditions(runtimev1alpha1.Creating()),
+					npWithProviderStatus(v1alpha1.NodePoolStateProvisioning),
 				),
 				cre: resource.ExternalCreation{},
 				err: nil,
@@ -537,11 +490,11 @@ func TestCreate(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(withConditions(runtimev1alpha1.Creating())),
-				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateCluster),
+				mg:  nodePool(npWithConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateNodePool),
 			},
 		},
 		"Failed": {
@@ -554,11 +507,11 @@ func TestCreate(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(withConditions(runtimev1alpha1.Creating())),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateCluster),
+				mg:  nodePool(npWithConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateNodePool),
 			},
 		},
 	}
@@ -568,10 +521,10 @@ func TestCreate(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := container.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := clusterExternal{
+			e := nodePoolExternal{
 				kube:      tc.kube,
 				projectID: projectID,
-				cluster:   s,
+				container: s,
 			}
 			_, err := e.Create(tc.args.ctx, tc.args.mg)
 			if tc.want.err != nil && err != nil {
@@ -591,7 +544,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestNodePoolDelete(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -616,10 +569,10 @@ func TestDelete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(withConditions(runtimev1alpha1.Deleting())),
+				mg:  nodePool(npWithConditions(runtimev1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -635,12 +588,12 @@ func TestDelete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateStopping)),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateStopping)),
 			},
 			want: want{
-				mg: cluster(
-					withConditions(runtimev1alpha1.Deleting()),
-					withProviderStatus(v1beta1.ClusterStateStopping),
+				mg: nodePool(
+					npWithConditions(runtimev1alpha1.Deleting()),
+					npWithProviderStatus(v1alpha1.NodePoolStateStopping),
 				),
 				err: nil,
 			},
@@ -655,10 +608,10 @@ func TestDelete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(withConditions(runtimev1alpha1.Deleting())),
+				mg:  nodePool(npWithConditions(runtimev1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -672,11 +625,11 @@ func TestDelete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(withConditions(runtimev1alpha1.Deleting())),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteCluster),
+				mg:  nodePool(npWithConditions(runtimev1alpha1.Deleting())),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteNodePool),
 			},
 		},
 	}
@@ -686,10 +639,10 @@ func TestDelete(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := container.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := clusterExternal{
+			e := nodePoolExternal{
 				kube:      tc.kube,
 				projectID: projectID,
-				cluster:   s,
+				container: s,
 			}
 			err := e.Delete(context.Background(), tc.args.mg)
 			if tc.want.err != nil && err != nil {
@@ -709,7 +662,7 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func TestUpdate(t *testing.T) {
+func TestNodePoolUpdate(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -731,7 +684,7 @@ func TestUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+					_ = json.NewEncoder(w).Encode(&container.NodePool{})
 				case http.MethodPut:
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(&container.Operation{})
@@ -744,14 +697,14 @@ func TestUpdate(t *testing.T) {
 				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				mg: cluster(withLocations([]string{"loc-1"})),
+				mg: nodePool(npWithLocations([]string{"loc-1"})),
 			},
 			want: want{
-				mg:  cluster(withLocations([]string{"loc-1"})),
+				mg:  nodePool(npWithLocations([]string{"loc-1"})),
 				err: nil,
 			},
 		},
-		"SuccessfulSkipUpdateReconciling": {
+		"SuccessfulSkipWhileReconciling": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
 				switch r.Method {
@@ -759,7 +712,7 @@ func TestUpdate(t *testing.T) {
 					// Return bad request for get to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					_ = json.NewEncoder(w).Encode(&container.NodePool{})
 				case http.MethodPut:
 					// Return bad request for put to demonstrate that
 					// http call is never made.
@@ -774,20 +727,20 @@ func TestUpdate(t *testing.T) {
 				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				mg: cluster(
-					withLocations([]string{"loc-1"}),
-					withProviderStatus(v1beta1.ClusterStateReconciling),
+				mg: nodePool(
+					npWithLocations([]string{"loc-1"}),
+					npWithProviderStatus(v1alpha1.NodePoolStateReconciling),
 				),
 			},
 			want: want{
-				mg: cluster(
-					withLocations([]string{"loc-1"}),
-					withProviderStatus(v1beta1.ClusterStateReconciling),
+				mg: nodePool(
+					npWithLocations([]string{"loc-1"}),
+					npWithProviderStatus(v1alpha1.NodePoolStateReconciling),
 				),
 				err: nil,
 			},
 		},
-		"SuccessfulSkipUpdateProvisioning": {
+		"SuccessfulSkipWhileProvisioning": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
 				switch r.Method {
@@ -795,7 +748,7 @@ func TestUpdate(t *testing.T) {
 					// Return bad request for get to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					_ = json.NewEncoder(w).Encode(&container.NodePool{})
 				case http.MethodPut:
 					// Return bad request for put to demonstrate that
 					// http call is never made.
@@ -810,15 +763,15 @@ func TestUpdate(t *testing.T) {
 				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				mg: cluster(
-					withLocations([]string{"loc-1"}),
-					withProviderStatus(v1beta1.ClusterStateProvisioning),
+				mg: nodePool(
+					npWithLocations([]string{"loc-1"}),
+					npWithProviderStatus(v1alpha1.NodePoolStateProvisioning),
 				),
 			},
 			want: want{
-				mg: cluster(
-					withLocations([]string{"loc-1"}),
-					withProviderStatus(v1beta1.ClusterStateProvisioning),
+				mg: nodePool(
+					npWithLocations([]string{"loc-1"}),
+					npWithProviderStatus(v1alpha1.NodePoolStateProvisioning),
 				),
 				err: nil,
 			},
@@ -829,7 +782,7 @@ func TestUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+					_ = json.NewEncoder(w).Encode(&container.NodePool{})
 				case http.MethodPut:
 					// Return bad request for update to demonstrate that
 					// underlying update is not making any http call.
@@ -844,10 +797,10 @@ func TestUpdate(t *testing.T) {
 				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(),
+				mg:  nodePool(),
 				err: nil,
 			},
 		},
@@ -857,7 +810,7 @@ func TestUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+					_ = json.NewEncoder(w).Encode(&container.NodePool{})
 				case http.MethodPut:
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(&container.Operation{})
@@ -871,11 +824,11 @@ func TestUpdate(t *testing.T) {
 			},
 			args: args{
 				// No need to actually require an update. We won't get that far.
-				mg: cluster(),
+				mg: nodePool(),
 			},
 			want: want{
-				mg:  cluster(),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetCluster),
+				mg:  nodePool(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetNodePool),
 			},
 		},
 		"UpdateFails": {
@@ -884,8 +837,8 @@ func TestUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					// Must return successful get of cluster that does not match spec.
-					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+					// Must return successful get of node pool that does not match spec.
+					_ = json.NewEncoder(w).Encode(&container.NodePool{})
 				case http.MethodPut:
 					w.WriteHeader(http.StatusBadRequest)
 					_ = json.NewEncoder(w).Encode(&container.Operation{})
@@ -899,11 +852,11 @@ func TestUpdate(t *testing.T) {
 			},
 			args: args{
 				// Must include field that causes update.
-				mg: cluster(withLocations([]string{"loc-1"})),
+				mg: nodePool(npWithLocations([]string{"loc-1"})),
 			},
 			want: want{
-				mg:  cluster(withLocations([]string{"loc-1"})),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateCluster),
+				mg:  nodePool(npWithLocations([]string{"loc-1"})),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateNodePool),
 			},
 		},
 	}
@@ -913,10 +866,10 @@ func TestUpdate(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := container.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := clusterExternal{
+			e := nodePoolExternal{
 				kube:      tc.kube,
 				projectID: projectID,
-				cluster:   s,
+				container: s,
 			}
 			upd, err := e.Update(context.Background(), tc.args.mg)
 			if tc.want.err != nil && err != nil {
@@ -938,81 +891,6 @@ func TestUpdate(t *testing.T) {
 				}
 			}
 
-		})
-	}
-}
-
-func TestConnectionDetails(t *testing.T) {
-	name := "gke-cluster"
-	endpoint := "endpoint"
-	username := "username"
-	password := "password"
-	clusterCA, _ := base64.StdEncoding.DecodeString("clusterCA")
-	clientCert, _ := base64.StdEncoding.DecodeString("clientCert")
-	clientKey, _ := base64.StdEncoding.DecodeString("clientKey")
-	server := fmt.Sprintf("https://%s", endpoint)
-	rawConfig :=
-		`apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: clusterC
-    server: https://endpoint
-  name: gke-cluster
-contexts:
-- context:
-    cluster: gke-cluster
-    user: gke-cluster
-  name: gke-cluster
-current-context: gke-cluster
-kind: Config
-preferences: {}
-users:
-- name: gke-cluster
-  user:
-    client-certificate-data: clientCe
-    client-key-data: clientKe
-    password: password
-    username: username
-`
-
-	cases := map[string]struct {
-		args *container.Cluster
-		want resource.ConnectionDetails
-	}{
-		"Full": {
-			args: &container.Cluster{
-				Name:     name,
-				Endpoint: endpoint,
-				MasterAuth: &container.MasterAuth{
-					Username:             username,
-					Password:             password,
-					ClusterCaCertificate: base64.StdEncoding.EncodeToString(clusterCA),
-					ClientCertificate:    base64.StdEncoding.EncodeToString(clientCert),
-					ClientKey:            base64.StdEncoding.EncodeToString(clientKey),
-				},
-			},
-			want: map[string][]byte{
-				runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(server),
-				runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(username),
-				runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(password),
-				runtimev1alpha1.ResourceCredentialsSecretCAKey:         clusterCA,
-				runtimev1alpha1.ResourceCredentialsSecretClientCertKey: clientCert,
-				runtimev1alpha1.ResourceCredentialsSecretClientKeyKey:  clientKey,
-				runtimev1alpha1.ResourceCredentialsSecretKubeconfigKey: []byte(rawConfig),
-			},
-		},
-		"Empty": {
-			args: &container.Cluster{},
-			want: nil,
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			d := connectionDetails(tc.args)
-			if diff := cmp.Diff(tc.want, d); diff != "" {
-				t.Errorf("connectionDetails(...): -want, +got:\n%s", diff)
-			}
 		})
 	}
 }

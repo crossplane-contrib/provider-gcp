@@ -51,6 +51,7 @@ func (c *Controllers) SetupWithManager(mgr ctrl.Manager) error {
 		&container.GKEClusterClaimDefaultingController{},
 		&container.GKEClusterClaimController{},
 		&container.GKEClusterController{},
+		&container.NodePoolController{},
 		&database.PostgreSQLInstanceClaimSchedulingController{},
 		&database.PostgreSQLInstanceClaimDefaultingController{},
 		&database.PostgreSQLInstanceClaimController{},

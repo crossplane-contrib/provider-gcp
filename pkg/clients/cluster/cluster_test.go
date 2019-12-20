@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package container
+package cluster
 
 import (
 	"encoding/base64"
@@ -1306,7 +1306,7 @@ func TestLateInitializeSpec(t *testing.T) {
 				}),
 			},
 		},
-		"AllFilled": {
+		"NoneFilled": {
 			args: args{
 				cluster: cluster(),
 				params:  params(),
@@ -1333,7 +1333,6 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	type want struct {
 		upToDate bool
-		kind     ClusterUpdate
 	}
 	tests := map[string]struct {
 		args args
@@ -1381,7 +1380,6 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: false,
-				kind:     AddonsConfigUpdate,
 			},
 		},
 		"NoUpdateNotBootstrapNodePool": {
@@ -1420,18 +1418,14 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: false,
-				kind:     NodePoolUpdate,
 			},
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, k := IsUpToDate(tc.args.params, *tc.args.cluster)
+			r, _ := IsUpToDate(tc.args.params, *tc.args.cluster)
 			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
 				t.Errorf("IsUpToDate(...): -want upToDate, +got upToDate:\n%s", diff)
-			}
-			if diff := cmp.Diff(tc.want.kind, k); diff != "" {
-				t.Errorf("IsUpToDate(...): -want kind, +got kind:\n%s", diff)
 			}
 		})
 	}
@@ -1458,7 +1452,7 @@ func TestGetFullyQualifiedParent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s := GetFullyQualifiedParent(tc.args.project, tc.args.params)
 			if diff := cmp.Diff(tc.want, s); diff != "" {
-				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+				t.Errorf("GetFullyQualifiedParent(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -1487,7 +1481,7 @@ func TestGetFullyQualifiedName(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s := GetFullyQualifiedName(tc.args.project, tc.args.params, tc.args.name)
 			if diff := cmp.Diff(tc.want, s); diff != "" {
-				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+				t.Errorf("GetFullyQualifiedName(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
