@@ -205,8 +205,6 @@ func npUpdateFactory(kind np.UpdateKind, update *v1alpha1.NodePoolParameters) up
 		return newNodePoolAutoscalingUpdate(update.Autoscaling)
 	case np.ManagementUpdate:
 		return newNodePoolManagementUpdate(update.Management)
-	case np.SizeUpdate:
-		// TODO(hasheddan): must parse instance groups
 	case np.GeneralUpdate:
 		return newNodePoolGeneralUpdate(update)
 	}

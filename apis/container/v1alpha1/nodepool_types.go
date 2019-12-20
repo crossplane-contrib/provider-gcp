@@ -142,6 +142,13 @@ type NodePoolParameters struct {
 	// NOTE(hasheddan): Autoscaling can only be updated via setAutoscaling
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters.nodePools/setAutoscaling
 
+	// NOTE(hasheddan): from GCP: If the current node pool size is lower than
+	// the specified minimum or greater than the specified maximum when you
+	// enable autoscaling, the autoscaler waits to take effect until a new node
+	// is needed in the node pool or until a node can be safely deleted from the
+	// node pool.
+	// https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-autoscaler
+
 	// Autoscaling: Autoscaler configuration for this NodePool. Autoscaler
 	// is enabled
 	// only if a valid configuration is present.
@@ -150,8 +157,9 @@ type NodePoolParameters struct {
 	// Config: The node configuration of the pool.
 	Config *NodeConfig `json:"config,omitempty"`
 
-	// NOTE(hasheddan): Node count can only be updated via setSize
-	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters.nodePools/setSize
+	// NOTE(hasheddan): InitialNodeCount is only reflected in the
+	// container.NodePool if it is specified on creation. If omitted at creation
+	// time, it will never be reflected in container.NodePool.
 
 	// InitialNodeCount: The initial node count for the pool. You must
 	// ensure that your
@@ -160,6 +168,7 @@ type NodePoolParameters struct {
 	// is sufficient for this number of instances. You must also have
 	// available
 	// firewall and routes quota.
+	// +immutable
 	// +optional
 	InitialNodeCount *int64 `json:"initialNodeCount,omitempty"`
 

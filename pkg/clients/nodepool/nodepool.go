@@ -20,8 +20,10 @@ import (
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	container "google.golang.org/api/container/v1beta1"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
@@ -40,7 +42,6 @@ const (
 	NoUpdate UpdateKind = iota
 	AutoscalingUpdate
 	ManagementUpdate
-	SizeUpdate
 	GeneralUpdate
 )
 
@@ -317,10 +318,12 @@ func IsUpToDate(in *v1alpha1.NodePoolParameters, currentState container.NodePool
 	if !cmp.Equal(in.Management, currentParams.Management) {
 		return false, ManagementUpdate
 	}
-	// if !cmp.Equal(in.InitialNodeCount, currentParams.InitialNodeCount) {
-	// 	return false, AutoscalingUpdate
-	// }
-	if !cmp.Equal(in, currentParams) {
+	// Ignore references, Cluster and InitialNodeCount because they are not
+	// reflected in the container.NodePool object.
+	if !cmp.Equal(in, currentParams,
+		cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}),
+		cmpopts.IgnoreFields(v1alpha1.NodePoolParameters{}, "Cluster", "InitialNodeCount")) {
+		fmt.Println(cmp.Diff(in, currentParams))
 		return false, GeneralUpdate
 	}
 	return true, NoUpdate

@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	container "google.golang.org/api/container/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
@@ -517,116 +518,76 @@ func TestLateInitializeSpec(t *testing.T) {
 	}
 }
 
-// func TestIsUpToDate(t *testing.T) {
-// 	type args struct {
-// 		cluster *container.NodePool
-// 		params  *v1alpha1.NodePoolParameters
-// 	}
-// 	type want struct {
-// 		upToDate bool
-// 		kind     UpdateKind
-// 	}
-// 	tests := map[string]struct {
-// 		args args
-// 		want want
-// 	}{
-// 		"UpToDate": {
-// 			args: args{
-// 				cluster: cluster(),
-// 				params:  params(),
-// 			},
-// 			want: want{
-// 				upToDate: true,
-// 			},
-// 		},
-// 		"UpToDateIgnoreRefs": {
-// 			args: args{
-// 				cluster: cluster(),
-// 				params: params(func(p *v1alpha1.NodePoolParameters) {
-// 					p.NetworkRef = &v1alpha1.NetworkURIReferencerForGKECluster{
-// 						NetworkURIReferencer: v1alpha3.NetworkURIReferencer{
-// 							LocalObjectReference: corev1.LocalObjectReference{
-// 								Name: "my-network",
-// 							},
-// 						},
-// 					}
-// 				}),
-// 			},
-// 			want: want{
-// 				upToDate: true,
-// 			},
-// 		},
-// 		"NeedsUpdate": {
-// 			args: args{
-// 				cluster: cluster(func(n *container.NodePool) {
-// 					c.AddonsConfig = &container.AddonsConfig{
-// 						HttpLoadBalancing: &container.HttpLoadBalancing{
-// 							Disabled: true,
-// 						},
-// 					}
-// 					c.IpAllocationPolicy = &container.IPAllocationPolicy{
-// 						ClusterIpv4CidrBlock: "0.0.0.0/0",
-// 					}
-// 				}),
-// 				params: params(),
-// 			},
-// 			want: want{
-// 				upToDate: false,
-// 				kind:     AddonsConfigUpdate,
-// 			},
-// 		},
-// 		"NoUpdateNotBootstrapNodePool": {
-// 			args: args{
-// 				cluster: cluster(func(n *container.NodePool) {
-// 					sc := &container.StatusCondition{
-// 						Code:    "cool-code",
-// 						Message: "cool-message",
-// 					}
-// 					np := &container.NodePool{
-// 						Conditions: []*container.StatusCondition{sc},
-// 						Name:       "cool-node-pool",
-// 					}
-// 					c.NodePools = []*container.NodePool{np}
-// 				}),
-// 				params: params(),
-// 			},
-// 			want: want{
-// 				upToDate: true,
-// 			},
-// 		},
-// 		"NeedsUpdateBootstrapNodePool": {
-// 			args: args{
-// 				cluster: cluster(func(n *container.NodePool) {
-// 					sc := &container.StatusCondition{
-// 						Code:    "cool-code",
-// 						Message: "cool-message",
-// 					}
-// 					np := &container.NodePool{
-// 						Conditions: []*container.StatusCondition{sc},
-// 						Name:       BootstrapNodePoolName,
-// 					}
-// 					c.NodePools = []*container.NodePool{np}
-// 				}),
-// 				params: params(),
-// 			},
-// 			want: want{
-// 				upToDate: false,
-// 				kind:     NodePoolUpdate,
-// 			},
-// 		},
-// 	}
-// 	for name, tc := range tests {
-// 		t.Run(name, func(t *testing.T) {
-// 			r, k := IsUpToDate(tc.args.params, *tc.args.cluster)
-// 			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
-// 				t.Errorf("IsUpToDate(...): -want upToDate, +got upToDate:\n%s", diff)
-// 			}
-// 			if diff := cmp.Diff(tc.want.kind, k); diff != "" {
-// 				t.Errorf("IsUpToDate(...): -want kind, +got kind:\n%s", diff)
-// 			}
-// 		})
-// 	}
-// }
+func TestIsUpToDate(t *testing.T) {
+	type args struct {
+		nodePool *container.NodePool
+		params   *v1alpha1.NodePoolParameters
+	}
+	type want struct {
+		upToDate bool
+		kind     UpdateKind
+	}
+	tests := map[string]struct {
+		args args
+		want want
+	}{
+		"UpToDate": {
+			args: args{
+				nodePool: nodePool(),
+				params:   params(),
+			},
+			want: want{
+				upToDate: true,
+			},
+		},
+		"UpToDateIgnoreRefs": {
+			args: args{
+				nodePool: nodePool(),
+				params: params(func(p *v1alpha1.NodePoolParameters) {
+					p.ClusterRef = &v1alpha1.GKEClusterURIReferencerForNodePool{
+						GKEClusterURIReferencer: v1beta1.GKEClusterURIReferencer{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cluster,
+							},
+						},
+					}
+					p.Cluster = cluster
+				}),
+			},
+			want: want{
+				upToDate: true,
+			},
+		},
+		"NeedsUpdate": {
+			args: args{
+				nodePool: nodePool(func(n *container.NodePool) {
+					n.Autoscaling = &container.NodePoolAutoscaling{
+						Autoprovisioned: true,
+						Enabled:         true,
+						MaxNodeCount:    3,
+						MinNodeCount:    3,
+					}
+				}),
+				params: params(),
+			},
+			want: want{
+				upToDate: false,
+				kind:     AutoscalingUpdate,
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			r, k := IsUpToDate(tc.args.params, *tc.args.nodePool)
+			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
+				t.Errorf("IsUpToDate(...): -want upToDate, +got upToDate:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.kind, k); diff != "" {
+				t.Errorf("IsUpToDate(...): -want kind, +got kind:\n%s", diff)
+			}
+		})
+	}
+}
 
 func TestGetFullyQualifiedName(t *testing.T) {
 	type args struct {
