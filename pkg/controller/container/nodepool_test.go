@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
@@ -802,56 +801,6 @@ func TestNodePoolUpdate(t *testing.T) {
 				}
 			}
 
-		})
-	}
-}
-
-func TestNPUpdateFactory(t *testing.T) {
-	type args struct {
-		kind   np.UpdateKind
-		update *v1alpha1.NodePoolParameters
-	}
-
-	cases := map[string]struct {
-		args args
-		want updateFn
-	}{
-		"AutoscalingUpdate": {
-			args: args{
-				kind:   np.AutoscalingUpdate,
-				update: &nodePool().Spec.ForProvider,
-			},
-			want: newNodePoolAutoscalingUpdate(nodePool().Spec.ForProvider.Autoscaling),
-		},
-		"ManagementUpdate": {
-			args: args{
-				kind:   np.ManagementUpdate,
-				update: &nodePool().Spec.ForProvider,
-			},
-			want: newNodePoolManagementUpdate(nodePool().Spec.ForProvider.Management),
-		},
-		"GeneralUpdate": {
-			args: args{
-				kind:   np.GeneralUpdate,
-				update: &nodePool().Spec.ForProvider,
-			},
-			want: newNodePoolGeneralUpdate(&nodePool().Spec.ForProvider),
-		},
-		"NoopUpdate": {
-			args: args{
-				kind:   np.NoUpdate,
-				update: &nodePool().Spec.ForProvider,
-			},
-			want: noOpUpdate,
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			fn := npUpdateFactory(tc.args.kind, tc.args.update)
-			if diff := cmp.Diff(reflect.ValueOf(tc.want).Pointer(), reflect.ValueOf(fn).Pointer()); diff != "" {
-				t.Errorf("updateFactory(...): -want, +got:\n%s", diff)
-			}
 		})
 	}
 }

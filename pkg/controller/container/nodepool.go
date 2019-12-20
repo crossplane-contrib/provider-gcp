@@ -179,17 +179,17 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (res
 		return resource.ExternalUpdate{}, errors.Wrap(err, errGetNodePool)
 	}
 
-	u, kind := np.IsUpToDate(&cr.Spec.ForProvider, *existing)
+	u, fn := np.IsUpToDate(&cr.Spec.ForProvider, *existing)
 	if u {
 		return resource.ExternalUpdate{}, nil
 	}
 
 	// GKE uses different update methods depending on the field that is being
-	// changed. npUpdateFactory returns the appropriate update operation based on
+	// changed. np.IsUpToDate returns the appropriate update operation based on
 	// the difference in the desired and existing spec. If it is a specialized
 	// update, only one can be performed at a time. If it is not, then updates
 	// can be mass applied.
-	_, err = npUpdateFactory(kind, &cr.Spec.ForProvider)(ctx, e.container, np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr)))
+	_, err = fn(ctx, e.container, np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr)))
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateNodePool)
 }
 
@@ -202,47 +202,4 @@ func (e *nodePoolExternal) Delete(ctx context.Context, mg resource.Managed) erro
 
 	_, err := e.container.Projects.Locations.Clusters.NodePools.Delete(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteNodePool)
-}
-
-func npUpdateFactory(kind np.UpdateKind, update *v1alpha1.NodePoolParameters) updateFn { // nolint:gocyclo
-	switch kind {
-	case np.AutoscalingUpdate:
-		return newNodePoolAutoscalingUpdate(update.Autoscaling)
-	case np.ManagementUpdate:
-		return newNodePoolManagementUpdate(update.Management)
-	case np.GeneralUpdate:
-		return newNodePoolGeneralUpdate(update)
-	}
-	return noOpUpdate
-}
-
-// newNodePoolAutoscalingUpdate returns a function that updates the Autoscaling of a node pool.
-func newNodePoolAutoscalingUpdate(in *v1alpha1.NodePoolAutoscaling) updateFn {
-	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
-		out := &container.NodePool{}
-		np.GenerateAutoscaling(in, out)
-		update := &container.SetNodePoolAutoscalingRequest{
-			Autoscaling: out.Autoscaling,
-		}
-		return s.Projects.Locations.Clusters.NodePools.SetAutoscaling(name, update).Context(ctx).Do()
-	}
-}
-
-// newNodePoolManagementUpdate returns a function that updates the Management of a node pool.
-func newNodePoolManagementUpdate(in *v1alpha1.NodeManagementSpec) updateFn {
-	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
-		out := &container.NodePool{}
-		np.GenerateManagement(in, out)
-		update := &container.SetNodePoolManagementRequest{
-			Management: out.Management,
-		}
-		return s.Projects.Locations.Clusters.NodePools.SetManagement(name, update).Context(ctx).Do()
-	}
-}
-
-// newNodePoolGeneralUpdate returns a function that updates a node pool.
-func newNodePoolGeneralUpdate(in *v1alpha1.NodePoolParameters) updateFn {
-	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
-		return s.Projects.Locations.Clusters.NodePools.Update(name, np.GenerateNodePoolUpdate(in)).Context(ctx).Do()
-	}
 }

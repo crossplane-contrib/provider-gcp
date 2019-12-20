@@ -17,6 +17,7 @@ limitations under the License.
 package nodepool
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
@@ -33,17 +34,6 @@ import (
 const (
 	// NodePoolNameFormat is the format for the fully qualified name of a node pool.
 	NodePoolNameFormat = "%s/nodePools/%s"
-)
-
-// UpdateKind indicates the type of update needed for the node pool.
-type UpdateKind int
-
-// Set of possible cluster update kinds.
-const (
-	NoUpdate UpdateKind = iota
-	AutoscalingUpdate
-	ManagementUpdate
-	GeneralUpdate
 )
 
 // GenerateNodePool generates *container.NodePool instance from NodePoolParameters.
@@ -308,25 +298,63 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 	spec.Version = gcp.LateInitializeString(spec.Version, in.Version)
 }
 
+// newAutoscalingUpdateFn returns a function that updates the Autoscaling of a node pool.
+func newAutoscalingUpdateFn(in *v1alpha1.NodePoolAutoscaling) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.NodePool{}
+		GenerateAutoscaling(in, out)
+		update := &container.SetNodePoolAutoscalingRequest{
+			Autoscaling: out.Autoscaling,
+		}
+		return s.Projects.Locations.Clusters.NodePools.SetAutoscaling(name, update).Context(ctx).Do()
+	}
+}
+
+// newManagementUpdateFn returns a function that updates the Management of a node pool.
+func newManagementUpdateFn(in *v1alpha1.NodeManagementSpec) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.NodePool{}
+		GenerateManagement(in, out)
+		update := &container.SetNodePoolManagementRequest{
+			Management: out.Management,
+		}
+		return s.Projects.Locations.Clusters.NodePools.SetManagement(name, update).Context(ctx).Do()
+	}
+}
+
+// newGeneralUpdateFn returns a function that updates a node pool.
+func newGeneralUpdateFn(in *v1alpha1.NodePoolParameters) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		return s.Projects.Locations.Clusters.NodePools.Update(name, GenerateNodePoolUpdate(in)).Context(ctx).Do()
+	}
+}
+
+func noOpUpdate(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+	return nil, nil
+}
+
+// UpdateFn returns a function that updates a node pool.
+type UpdateFn func(context.Context, *container.Service, string) (*container.Operation, error)
+
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(in *v1alpha1.NodePoolParameters, currentState container.NodePool) (bool, UpdateKind) {
+func IsUpToDate(in *v1alpha1.NodePoolParameters, currentState container.NodePool) (bool, UpdateFn) {
 	currentParams := &v1alpha1.NodePoolParameters{}
 	LateInitializeSpec(currentParams, currentState)
 	if !cmp.Equal(in.Autoscaling, currentParams.Autoscaling) {
-		return false, AutoscalingUpdate
+		return false, newAutoscalingUpdateFn(in.Autoscaling)
 	}
 	if !cmp.Equal(in.Management, currentParams.Management) {
-		return false, ManagementUpdate
+		return false, newManagementUpdateFn(in.Management)
 	}
 	// Ignore references, Cluster and InitialNodeCount because they are not
 	// reflected in the container.NodePool object.
 	if !cmp.Equal(in, currentParams,
 		cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}),
 		cmpopts.IgnoreFields(v1alpha1.NodePoolParameters{}, "Cluster", "InitialNodeCount")) {
-		return false, GeneralUpdate
+		return false, newGeneralUpdateFn(in)
 	}
-	return true, NoUpdate
+	return true, noOpUpdate
 }
 
 // GetFullyQualifiedName builds the fully qualified name of the cluster.

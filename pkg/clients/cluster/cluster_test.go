@@ -1333,7 +1333,6 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	type want struct {
 		upToDate bool
-		kind     UpdateKind
 	}
 	tests := map[string]struct {
 		args args
@@ -1381,7 +1380,6 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: false,
-				kind:     AddonsConfigUpdate,
 			},
 		},
 		"NoUpdateNotBootstrapNodePool": {
@@ -1420,18 +1418,14 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: false,
-				kind:     NodePoolUpdate,
 			},
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, k := IsUpToDate(tc.args.params, *tc.args.cluster)
+			r, _ := IsUpToDate(tc.args.params, *tc.args.cluster)
 			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
 				t.Errorf("IsUpToDate(...): -want upToDate, +got upToDate:\n%s", diff)
-			}
-			if diff := cmp.Diff(tc.want.kind, k); diff != "" {
-				t.Errorf("IsUpToDate(...): -want kind, +got kind:\n%s", diff)
 			}
 		})
 	}

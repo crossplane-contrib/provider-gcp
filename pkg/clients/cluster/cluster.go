@@ -17,6 +17,7 @@ limitations under the License.
 package cluster
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -46,33 +47,6 @@ const (
 
 const (
 	errNoSecretInfo = "missing secret information for GKE cluster"
-)
-
-// UpdateKind indicates the type of update needed for the cluster.
-type UpdateKind int
-
-// Set of possible cluster update kinds.
-const (
-	NoUpdate UpdateKind = iota
-	NodePoolUpdate
-	AddonsConfigUpdate
-	AutoscalingUpdate
-	BinaryAuthorizationUpdate
-	DatabaseEncryptionUpdate
-	LegacyAbacUpdate
-	LocationsUpdate
-	LoggingServiceUpdate
-	MaintenancePolicyUpdate
-	MasterAuthorizedNetworksConfigUpdate
-	MonitoringServiceUpdate
-	NetworkConfigUpdate
-	NetworkPolicyUpdate
-	PodSecurityPolicyConfigUpdate
-	PrivateClusterConfigUpdate
-	ResourceLabelsUpdate
-	ResourceUsageExportConfigUpdate
-	VerticalPodAutoscalingUpdate
-	WorkloadIdentityConfigUpdate
 )
 
 // AddNodePoolForCreate inserts the default node pool into *container.Cluster so
@@ -774,6 +748,258 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 
 }
 
+// newAddonsConfigUpdateFn returns a function that updates the AddonsConfig of a cluster.
+func newAddonsConfigUpdateFn(in *v1beta1.AddonsConfig) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateAddonsConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredAddonsConfig: out.AddonsConfig,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newAutoscalingUpdateFn returns a function that updates the Autoscaling of a cluster.
+func newAutoscalingUpdateFn(in *v1beta1.ClusterAutoscaling) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateAutoscaling(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredClusterAutoscaling: out.Autoscaling,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newBinaryAuthorizationUpdateFn returns a function that updates the BinaryAuthorization of a cluster.
+func newBinaryAuthorizationUpdateFn(in *v1beta1.BinaryAuthorization) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateBinaryAuthorization(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredBinaryAuthorization: out.BinaryAuthorization,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newDatabaseEncryptionUpdateFn returns a function that updates the DatabaseEncryption of a cluster.
+func newDatabaseEncryptionUpdateFn(in *v1beta1.DatabaseEncryption) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateDatabaseEncryption(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredDatabaseEncryption: out.DatabaseEncryption,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newLegacyAbacUpdateFn returns a function that updates the LegacyAbac of a cluster.
+func newLegacyAbacUpdateFn(in *v1beta1.LegacyAbac) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateLegacyAbac(in, out)
+		update := &container.SetLegacyAbacRequest{
+			Enabled: out.LegacyAbac.Enabled,
+		}
+		return s.Projects.Locations.Clusters.SetLegacyAbac(name, update).Context(ctx).Do()
+	}
+}
+
+// newLocationsUpdateFn returns a function that updates the Locations of a cluster.
+func newLocationsUpdateFn(in []string) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredLocations: in,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newLoggingServiceUpdateFn returns a function that updates the LoggingService of a cluster.
+func newLoggingServiceUpdateFn(in *string) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredLoggingService: gcp.StringValue(in),
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newMaintenancePolicyUpdateFn returns a function that updates the MaintenancePolicy of a cluster.
+func newMaintenancePolicyUpdateFn(in *v1beta1.MaintenancePolicySpec) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateMaintenancePolicy(in, out)
+		update := &container.SetMaintenancePolicyRequest{
+			MaintenancePolicy: out.MaintenancePolicy,
+		}
+		return s.Projects.Locations.Clusters.SetMaintenancePolicy(name, update).Context(ctx).Do()
+	}
+}
+
+// newMasterAuthorizedNetworksConfigUpdateFn returns a function that updates the MasterAuthorizedNetworksConfig of a cluster.
+func newMasterAuthorizedNetworksConfigUpdateFn(in *v1beta1.MasterAuthorizedNetworksConfig) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateMasterAuthorizedNetworksConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredMasterAuthorizedNetworksConfig: out.MasterAuthorizedNetworksConfig,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newMonitoringServiceUpdateFn returns a function that updates the MonitoringService of a cluster.
+func newMonitoringServiceUpdateFn(in *string) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredMonitoringService: gcp.StringValue(in),
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newNetworkConfigUpdateFn returns a function that updates the NetworkConfig of a cluster.
+func newNetworkConfigUpdateFn(in *v1beta1.NetworkConfigSpec) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateNetworkConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredIntraNodeVisibilityConfig: &container.IntraNodeVisibilityConfig{
+					Enabled: out.NetworkConfig.EnableIntraNodeVisibility,
+				},
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newNetworkPolicyUpdateFn returns a function that updates the NetworkPolicy of a cluster.
+func newNetworkPolicyUpdateFn(in *v1beta1.NetworkPolicy) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateNetworkPolicy(in, out)
+		update := &container.SetNetworkPolicyRequest{
+			NetworkPolicy: out.NetworkPolicy,
+		}
+		return s.Projects.Locations.Clusters.SetNetworkPolicy(name, update).Context(ctx).Do()
+	}
+}
+
+// newPodSecurityPolicyConfigUpdateFn returns a function that updates the PodSecurityPolicyConfig of a cluster.
+func newPodSecurityPolicyConfigUpdateFn(in *v1beta1.PodSecurityPolicyConfig) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GeneratePodSecurityPolicyConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredPodSecurityPolicyConfig: out.PodSecurityPolicyConfig,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newPrivateClusterConfigUpdateFn returns a function that updates the PrivateClusterConfig of a cluster.
+func newPrivateClusterConfigUpdateFn(in *v1beta1.PrivateClusterConfigSpec) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GeneratePrivateClusterConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredPrivateClusterConfig: out.PrivateClusterConfig,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newResourceLabelsUpdateFn returns a function that updates the ResourceLabels of a cluster.
+func newResourceLabelsUpdateFn(in map[string]string) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		update := &container.SetLabelsRequest{
+			ResourceLabels: in,
+		}
+		return s.Projects.Locations.Clusters.SetResourceLabels(name, update).Context(ctx).Do()
+	}
+}
+
+// newResourceUsageExportConfigUpdateFn returns a function that updates the ResourceUsageExportConfig of a cluster.
+func newResourceUsageExportConfigUpdateFn(in *v1beta1.ResourceUsageExportConfig) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateResourceUsageExportConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredResourceUsageExportConfig: out.ResourceUsageExportConfig,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newVerticalPodAutoscalingUpdateFn returns a function that updates the VerticalPodAutoscaling of a cluster.
+func newVerticalPodAutoscalingUpdateFn(in *v1beta1.VerticalPodAutoscaling) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateVerticalPodAutoscaling(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredVerticalPodAutoscaling: out.VerticalPodAutoscaling,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newWorkloadIdentityConfigUpdateFn returns a function that updates the WorkloadIdentityConfig of a cluster.
+func newWorkloadIdentityConfigUpdateFn(in *v1beta1.WorkloadIdentityConfig) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateWorkloadIdentityConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredWorkloadIdentityConfig: out.WorkloadIdentityConfig,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// deleteBootstrapNodePoolFn returns a function to delete the bootstrap node pool.
+func deleteBootstrapNodePoolFn() UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		return s.Projects.Locations.Clusters.NodePools.Delete(GetFullyQualifiedBNP(name)).Context(ctx).Do()
+	}
+}
+
+// UpdateFn returns a function that updates a node pool.
+type UpdateFn func(context.Context, *container.Service, string) (*container.Operation, error)
+
+func noOpUpdate(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+	return nil, nil
+}
+
 // checkForBootstrapNodePool checks if the bootstrap node pool exists for the
 // cluster.
 func checkForBootstrapNodePool(c container.Cluster) bool {
@@ -791,67 +1017,67 @@ func checkForBootstrapNodePool(c container.Cluster) bool {
 // NOTE(hasheddan): This function is significantly above our cyclomatic
 // complexity limit, but is necessary due to the fact that the GKE API only
 // allows for update of one field at a time.
-func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateKind) { // nolint:gocyclo
+func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateFn) { // nolint:gocyclo
 	currentParams := &v1beta1.GKEClusterParameters{}
 	LateInitializeSpec(currentParams, currentState)
 	if checkForBootstrapNodePool(currentState) {
-		return false, NodePoolUpdate
+		return false, deleteBootstrapNodePoolFn()
 	}
 	if !cmp.Equal(in.AddonsConfig, currentParams.AddonsConfig) {
-		return false, AddonsConfigUpdate
+		return false, newAddonsConfigUpdateFn(in.AddonsConfig)
 	}
 	if !cmp.Equal(in.Autoscaling, currentParams.Autoscaling) {
-		return false, AutoscalingUpdate
+		return false, newAutoscalingUpdateFn(in.Autoscaling)
 	}
 	if !cmp.Equal(in.BinaryAuthorization, currentParams.BinaryAuthorization) {
-		return false, BinaryAuthorizationUpdate
+		return false, newBinaryAuthorizationUpdateFn(in.BinaryAuthorization)
 	}
 	if !cmp.Equal(in.DatabaseEncryption, currentParams.DatabaseEncryption) {
-		return false, DatabaseEncryptionUpdate
+		return false, newDatabaseEncryptionUpdateFn(in.DatabaseEncryption)
 	}
 	if !cmp.Equal(in.LegacyAbac, currentParams.LegacyAbac) {
-		return false, LegacyAbacUpdate
+		return false, newLegacyAbacUpdateFn(in.LegacyAbac)
 	}
 	if !cmp.Equal(in.Locations, currentParams.Locations) {
-		return false, LocationsUpdate
+		return false, newLocationsUpdateFn(in.Locations)
 	}
 	if !cmp.Equal(in.LoggingService, currentParams.LoggingService) {
-		return false, LoggingServiceUpdate
+		return false, newLoggingServiceUpdateFn(in.LoggingService)
 	}
 	if !cmp.Equal(in.MaintenancePolicy, currentParams.MaintenancePolicy) {
-		return false, MaintenancePolicyUpdate
+		return false, newMaintenancePolicyUpdateFn(in.MaintenancePolicy)
 	}
 	if !cmp.Equal(in.MasterAuthorizedNetworksConfig, currentParams.MasterAuthorizedNetworksConfig) {
-		return false, MasterAuthorizedNetworksConfigUpdate
+		return false, newMasterAuthorizedNetworksConfigUpdateFn(in.MasterAuthorizedNetworksConfig)
 	}
 	if !cmp.Equal(in.MonitoringService, currentParams.MonitoringService) {
-		return false, MonitoringServiceUpdate
+		return false, newMonitoringServiceUpdateFn(in.MonitoringService)
 	}
 	if !cmp.Equal(in.NetworkConfig, currentParams.NetworkConfig) {
-		return false, NetworkConfigUpdate
+		return false, newNetworkConfigUpdateFn(in.NetworkConfig)
 	}
 	if !cmp.Equal(in.NetworkPolicy, currentParams.NetworkPolicy) {
-		return false, NetworkPolicyUpdate
+		return false, newNetworkPolicyUpdateFn(in.NetworkPolicy)
 	}
 	if !cmp.Equal(in.PodSecurityPolicyConfig, currentParams.PodSecurityPolicyConfig) {
-		return false, PodSecurityPolicyConfigUpdate
+		return false, newPodSecurityPolicyConfigUpdateFn(in.PodSecurityPolicyConfig)
 	}
 	if !cmp.Equal(in.PrivateClusterConfig, currentParams.PrivateClusterConfig) {
-		return false, PrivateClusterConfigUpdate
+		return false, newPrivateClusterConfigUpdateFn(in.PrivateClusterConfig)
 	}
 	if !cmp.Equal(in.ResourceLabels, currentParams.ResourceLabels) {
-		return false, ResourceLabelsUpdate
+		return false, newResourceLabelsUpdateFn(in.ResourceLabels)
 	}
 	if !cmp.Equal(in.ResourceUsageExportConfig, currentParams.ResourceUsageExportConfig) {
-		return false, ResourceUsageExportConfigUpdate
+		return false, newResourceUsageExportConfigUpdateFn(in.ResourceUsageExportConfig)
 	}
 	if !cmp.Equal(in.VerticalPodAutoscaling, currentParams.VerticalPodAutoscaling) {
-		return false, VerticalPodAutoscalingUpdate
+		return false, newVerticalPodAutoscalingUpdateFn(in.VerticalPodAutoscaling)
 	}
 	if !cmp.Equal(in.WorkloadIdentityConfig, currentParams.WorkloadIdentityConfig) {
-		return false, WorkloadIdentityConfigUpdate
+		return false, newWorkloadIdentityConfigUpdateFn(in.WorkloadIdentityConfig)
 	}
-	return true, NoUpdate
+	return true, noOpUpdate
 }
 
 // GetFullyQualifiedParent builds the fully qualified name of the cluster
