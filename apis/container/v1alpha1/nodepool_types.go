@@ -119,11 +119,6 @@ type NodePoolObservation struct {
 // NodePoolParameters define the desired state of a Google Kubernetes Engine
 // node pool.
 type NodePoolParameters struct {
-	// TODO(hasheddan): currently, the format is actually
-	// projects/projectID/locations/clusterLocation/clusters/clusterName. Should
-	// we use this or should we trim off project and then add it back using the
-	// referenced provider?
-
 	// NOTE(hasheddan): Cluster is marked as omitempty but is not optional. It
 	// will either be assigned a value directly or set from the ClusterRef.
 
