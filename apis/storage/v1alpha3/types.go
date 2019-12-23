@@ -29,8 +29,12 @@ import (
 
 // ProjectTeam is the project team associated with the entity, if any.
 type ProjectTeam struct {
+	// ProjectNumber is the number of the project.
 	ProjectNumber string `json:"projectNumber,omitempty"`
-	Team          string `json:"team,omitempty"`
+
+	// The team. Acceptable values are: "editors", "owners" or "viewers"
+	// +kubebuilder:validation:Enum=editors;owners;viewers
+	Team string `json:"team,omitempty"`
 }
 
 // NewProjectTeam creates new instance of ProjectTeam from the storage counterpart
@@ -58,11 +62,29 @@ func CopyToProjectTeam(pt *ProjectTeam) *storage.ProjectTeam {
 // ACLRule represents a grant for a role to an entity (user, group or team) for a
 // Google Cloud Storage object or bucket.
 type ACLRule struct {
-	Entity      string       `json:"entity,omitempty"`
-	EntityID    string       `json:"entityId,omitempty"`
-	Role        string       `json:"role,omitempty"`
-	Domain      string       `json:"domain,omitempty"`
-	Email       string       `json:"email,omitempty"`
+	// Entity refers to a user or group. They are sometimes referred to as grantees.
+	// It could be in the form of:
+	// "user-<userId>", "user-<email>", "group-<groupId>", "group-<email>",
+	// "domain-<domain>" and "project-team-<projectId>".
+	//
+	// Or one of the predefined constants: AllUsers, AllAuthenticatedUsers.
+	Entity string `json:"entity,omitempty"`
+
+	// Role is the access permission for the entity.
+	// Valid values are "OWNER", "READER" and "WRITER"
+	// +kubebuilder:validation:Enum=OWNER;READER;WRITER
+	Role string `json:"role,omitempty"`
+
+	// EntityID is the ID for the entity, if any.
+	EntityID string `json:"entityId,omitempty"`
+
+	// The domain associated with the entity, if any.
+	Domain string `json:"domain,omitempty"`
+
+	// The email address associated with the entity, if any.
+	Email string `json:"email,omitempty"`
+
+	// ProjectTeam that is associated with the entity, if any.
 	ProjectTeam *ProjectTeam `json:"projectTeam,omitempty"`
 }
 
