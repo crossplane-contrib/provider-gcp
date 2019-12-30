@@ -1,0 +1,9 @@
+id: nodepoolclass
+title: NodePoolClass
+titlePlural: NodePoolClasses
+category: Container
+overviewShort: "A NodePoolClass is a non-portable resource class. It defines the desired spec of resource claims that use it to dynamically provision a managed resource."
+overview: |
+ "A NodePoolClass is a non-portable resource class. It defines the desired spec of resource claims that use it to dynamically provision a managed resource."
+readme: |
+ NodePoolClasses are currently experimental and cannot be used to dynamically provision NodePools.
