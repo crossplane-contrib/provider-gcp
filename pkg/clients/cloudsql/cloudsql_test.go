@@ -175,7 +175,7 @@ func db(m ...func(*sqladmin.DatabaseInstance)) *sqladmin.DatabaseInstance {
 						Value:          "unittests",
 					},
 				},
-				ForceSendFields: []string{"ipv4Enabled"},
+				ForceSendFields: []string{"Ipv4Enabled"},
 			},
 			LocationPreference: &sqladmin.LocationPreference{
 				FollowGaeApplication: "my-gapp",

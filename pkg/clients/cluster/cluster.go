@@ -107,38 +107,38 @@ func GenerateAddonsConfig(in *v1beta1.AddonsConfig, cluster *container.Cluster) 
 		if in.CloudRunConfig != nil {
 			out.CloudRunConfig = &container.CloudRunConfig{
 				Disabled:        gcp.BoolValue(in.CloudRunConfig.Disabled),
-				ForceSendFields: []string{"disabled"},
+				ForceSendFields: []string{"Disabled"},
 			}
 		}
 		if in.HorizontalPodAutoscaling != nil {
 			out.HorizontalPodAutoscaling = &container.HorizontalPodAutoscaling{
 				Disabled:        gcp.BoolValue(in.HorizontalPodAutoscaling.Disabled),
-				ForceSendFields: []string{"disabled"},
+				ForceSendFields: []string{"Disabled"},
 			}
 		}
 		if in.HTTPLoadBalancing != nil && in.HTTPLoadBalancing.Disabled != nil {
 			out.HttpLoadBalancing = &container.HttpLoadBalancing{
 				Disabled:        gcp.BoolValue(in.HTTPLoadBalancing.Disabled),
-				ForceSendFields: []string{"disabled"},
+				ForceSendFields: []string{"Disabled"},
 			}
 		}
 		if in.IstioConfig != nil {
 			out.IstioConfig = &container.IstioConfig{
 				Auth:            gcp.StringValue(in.IstioConfig.Auth),
 				Disabled:        gcp.BoolValue(in.IstioConfig.Disabled),
-				ForceSendFields: []string{"disabled"},
+				ForceSendFields: []string{"Disabled"},
 			}
 		}
 		if in.KubernetesDashboard != nil {
 			out.KubernetesDashboard = &container.KubernetesDashboard{
 				Disabled:        gcp.BoolValue(in.KubernetesDashboard.Disabled),
-				ForceSendFields: []string{"disabled"},
+				ForceSendFields: []string{"Disabled"},
 			}
 		}
 		if in.NetworkPolicyConfig != nil {
 			out.NetworkPolicyConfig = &container.NetworkPolicyConfig{
 				Disabled:        gcp.BoolValue(in.NetworkPolicyConfig.Disabled),
-				ForceSendFields: []string{"disabled"},
+				ForceSendFields: []string{"Disabled"},
 			}
 		}
 
