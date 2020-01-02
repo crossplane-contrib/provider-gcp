@@ -179,6 +179,9 @@ func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (res
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotCloudSQL)
 	}
+	if cr.Status.AtProvider.State == v1beta1.StateCreating {
+		return resource.ExternalUpdate{}, nil
+	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	_, err := c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
 	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)

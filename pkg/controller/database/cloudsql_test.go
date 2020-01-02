@@ -715,6 +715,15 @@ func TestUpdate(t *testing.T) {
 				err: nil,
 			},
 		},
+		"NoUpdateNecessary": {
+			args: args{
+				mg: instance(withProviderState(v1beta1.StateCreating)),
+			},
+			want: want{
+				mg:  instance(withProviderState(v1beta1.StateCreating)),
+				err: nil,
+			},
+		},
 		"PatchFails": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
