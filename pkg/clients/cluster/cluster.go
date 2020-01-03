@@ -262,7 +262,7 @@ func GenerateMasterAuth(in *v1beta1.MasterAuth, cluster *container.Cluster) {
 				IssueClientCertificate: in.ClientCertificateConfig.IssueClientCertificate,
 			},
 		}
-		if in.ClientCertificateConfig.IssueClientCertificate == true {
+		if in.ClientCertificateConfig.IssueClientCertificate {
 			cluster.MasterAuth.Username = adminUser
 		}
 	}
