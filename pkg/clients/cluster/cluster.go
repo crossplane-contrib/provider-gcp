@@ -47,6 +47,9 @@ const (
 
 const (
 	errNoSecretInfo = "missing secret information for GKE cluster"
+
+	// Username supplied if basic auth is enabled
+	adminUser = "admin"
 )
 
 // AddNodePoolForCreate inserts the default node pool into *container.Cluster so
@@ -258,6 +261,9 @@ func GenerateMasterAuth(in *v1beta1.MasterAuth, cluster *container.Cluster) {
 			ClientCertificateConfig: &container.ClientCertificateConfig{
 				IssueClientCertificate: in.ClientCertificateConfig.IssueClientCertificate,
 			},
+		}
+		if in.ClientCertificateConfig.IssueClientCertificate == true {
+			cluster.MasterAuth.Username = adminUser
 		}
 	}
 }

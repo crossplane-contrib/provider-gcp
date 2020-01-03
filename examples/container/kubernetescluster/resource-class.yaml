@@ -8,6 +8,9 @@ metadata:
 specTemplate:
   forProvider:
     location: us-central1 # indicates regional cluster
+    masterAuth:
+      clientCertificateConfig:
+        issueClientCertificate: true
   writeConnectionSecretsToNamespace: crossplane-system
   providerRef:
     name: gcp-provider
