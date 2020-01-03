@@ -54,23 +54,45 @@ spec:
                   group or team) for a Google Cloud Storage object or bucket.
                 properties:
                   domain:
+                    description: The domain associated with the entity, if any.
                     type: string
                   email:
+                    description: The email address associated with the entity, if
+                      any.
                     type: string
                   entity:
+                    description: "Entity refers to a user or group. They are sometimes
+                      referred to as grantees. It could be in the form of: \"user-<userId>\",
+                      \"user-<email>\", \"group-<groupId>\", \"group-<email>\", \"domain-<domain>\"
+                      and \"project-team-<projectId>\". \n Or one of the predefined
+                      constants: AllUsers, AllAuthenticatedUsers."
                     type: string
                   entityId:
+                    description: EntityID is the ID for the entity, if any.
                     type: string
                   projectTeam:
-                    description: ProjectTeam is the project team associated with the
-                      entity, if any.
+                    description: ProjectTeam that is associated with the entity, if
+                      any.
                     properties:
                       projectNumber:
+                        description: ProjectNumber is the number of the project.
                         type: string
                       team:
+                        description: 'The team. Acceptable values are: "editors",
+                          "owners" or "viewers"'
+                        enum:
+                        - editors
+                        - owners
+                        - viewers
                         type: string
                     type: object
                   role:
+                    description: Role is the access permission for the entity. Valid
+                      values are "OWNER", "READER" and "WRITER"
+                    enum:
+                    - OWNER
+                    - READER
+                    - WRITER
                     type: string
                 type: object
               type: array
@@ -133,23 +155,45 @@ spec:
                   group or team) for a Google Cloud Storage object or bucket.
                 properties:
                   domain:
+                    description: The domain associated with the entity, if any.
                     type: string
                   email:
+                    description: The email address associated with the entity, if
+                      any.
                     type: string
                   entity:
+                    description: "Entity refers to a user or group. They are sometimes
+                      referred to as grantees. It could be in the form of: \"user-<userId>\",
+                      \"user-<email>\", \"group-<groupId>\", \"group-<email>\", \"domain-<domain>\"
+                      and \"project-team-<projectId>\". \n Or one of the predefined
+                      constants: AllUsers, AllAuthenticatedUsers."
                     type: string
                   entityId:
+                    description: EntityID is the ID for the entity, if any.
                     type: string
                   projectTeam:
-                    description: ProjectTeam is the project team associated with the
-                      entity, if any.
+                    description: ProjectTeam that is associated with the entity, if
+                      any.
                     properties:
                       projectNumber:
+                        description: ProjectNumber is the number of the project.
                         type: string
                       team:
+                        description: 'The team. Acceptable values are: "editors",
+                          "owners" or "viewers"'
+                        enum:
+                        - editors
+                        - owners
+                        - viewers
                         type: string
                     type: object
                   role:
+                    description: Role is the access permission for the entity. Valid
+                      values are "OWNER", "READER" and "WRITER"
+                    enum:
+                    - OWNER
+                    - READER
+                    - WRITER
                     type: string
                 type: object
               type: array
