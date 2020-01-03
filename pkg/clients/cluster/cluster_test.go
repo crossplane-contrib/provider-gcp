@@ -785,6 +785,8 @@ func TestGenerateMaintenancePolicy(t *testing.T) {
 }
 
 func TestGenerateMasterAuth(t *testing.T) {
+	var adminUser = "admin"
+
 	type args struct {
 		cluster *container.Cluster
 		params  *v1beta1.GKEClusterParameters
@@ -799,7 +801,7 @@ func TestGenerateMasterAuth(t *testing.T) {
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.MasterAuth = &v1beta1.MasterAuth{
-						ClientCertificateConfig: v1beta1.ClientCertificateConfig{
+						ClientCertificateConfig: &v1beta1.ClientCertificateConfig{
 							IssueClientCertificate: true,
 						},
 					}
@@ -810,18 +812,18 @@ func TestGenerateMasterAuth(t *testing.T) {
 					ClientCertificateConfig: &container.ClientCertificateConfig{
 						IssueClientCertificate: true,
 					},
-					Username: adminUser,
 				}
 			}),
 		},
-		"SuccessfulFalse": {
+		"SuccessfulFalseWithUsername": {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.MasterAuth = &v1beta1.MasterAuth{
-						ClientCertificateConfig: v1beta1.ClientCertificateConfig{
+						ClientCertificateConfig: &v1beta1.ClientCertificateConfig{
 							IssueClientCertificate: false,
 						},
+						Username: &adminUser,
 					}
 				}),
 			},
@@ -830,6 +832,22 @@ func TestGenerateMasterAuth(t *testing.T) {
 					ClientCertificateConfig: &container.ClientCertificateConfig{
 						IssueClientCertificate: false,
 					},
+					Username: adminUser,
+				}
+			}),
+		},
+		"SuccessfulOnlyUsername": {
+			args: args{
+				cluster: cluster(),
+				params: params(func(p *v1beta1.GKEClusterParameters) {
+					p.MasterAuth = &v1beta1.MasterAuth{
+						Username: &adminUser,
+					}
+				}),
+			},
+			want: cluster(func(c *container.Cluster) {
+				c.MasterAuth = &container.MasterAuth{
+					Username: adminUser,
 				}
 			}),
 		},
@@ -1288,6 +1306,8 @@ func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 }
 
 func TestLateInitializeSpec(t *testing.T) {
+	var adminUser = "admin"
+
 	type args struct {
 		cluster *container.Cluster
 		params  *v1beta1.GKEClusterParameters
@@ -1322,6 +1342,43 @@ func TestLateInitializeSpec(t *testing.T) {
 					}
 					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
+					}
+				}),
+			},
+		},
+		"SomeFilledOverride": {
+			args: args{
+				cluster: cluster(func(c *container.Cluster) {
+					c.AddonsConfig = &container.AddonsConfig{
+						HttpLoadBalancing: &container.HttpLoadBalancing{
+							Disabled: true,
+						},
+					}
+					c.IpAllocationPolicy = &container.IPAllocationPolicy{
+						ClusterIpv4CidrBlock: "0.0.0.0/0",
+					}
+					c.MasterAuth = &container.MasterAuth{
+						Username: "someUser",
+					}
+				}),
+				params: params(func(p *v1beta1.GKEClusterParameters) {
+					p.MasterAuth = &v1beta1.MasterAuth{
+						Username: &adminUser,
+					}
+				}),
+			},
+			want: want{
+				params: params(func(p *v1beta1.GKEClusterParameters) {
+					p.AddonsConfig = &v1beta1.AddonsConfig{
+						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
+							Disabled: gcp.BoolPtr(true),
+						},
+					}
+					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
+						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
+					}
+					p.MasterAuth = &v1beta1.MasterAuth{
+						Username: &adminUser,
 					}
 				}),
 			},
