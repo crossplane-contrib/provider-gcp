@@ -87,6 +87,14 @@ func withLocations(l []string) clusterModifier {
 	return func(i *v1beta1.GKECluster) { i.Spec.ForProvider.Locations = l }
 }
 
+func withUsername(u string) clusterModifier {
+	return func(i *v1beta1.GKECluster) {
+		i.Spec.ForProvider.MasterAuth = &v1beta1.MasterAuth{
+			Username: &u,
+		}
+	}
+}
+
 func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 	i := &v1beta1.GKECluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -312,7 +320,7 @@ func TestObserve(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			args: args{
-				mg: cluster(),
+				mg: cluster(withUsername("admin")),
 			},
 			want: want{
 				obs: resource.ExternalObservation{
@@ -326,7 +334,7 @@ func TestObserve(t *testing.T) {
 						},
 					}),
 				},
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateProvisioning), withConditions(runtimev1alpha1.Creating())),
+				mg: cluster(withUsername("admin"), withProviderStatus(v1beta1.ClusterStateProvisioning), withConditions(runtimev1alpha1.Creating())),
 			},
 		},
 		"Unavailable": {
