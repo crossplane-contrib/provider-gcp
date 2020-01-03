@@ -810,6 +810,26 @@ func TestGenerateMasterAuth(t *testing.T) {
 					ClientCertificateConfig: &container.ClientCertificateConfig{
 						IssueClientCertificate: true,
 					},
+					Username: adminUser,
+				}
+			}),
+		},
+		"SuccessfulFalse": {
+			args: args{
+				cluster: cluster(),
+				params: params(func(p *v1beta1.GKEClusterParameters) {
+					p.MasterAuth = &v1beta1.MasterAuth{
+						ClientCertificateConfig: v1beta1.ClientCertificateConfig{
+							IssueClientCertificate: false,
+						},
+					}
+				}),
+			},
+			want: cluster(func(c *container.Cluster) {
+				c.MasterAuth = &container.MasterAuth{
+					ClientCertificateConfig: &container.ClientCertificateConfig{
+						IssueClientCertificate: false,
+					},
 				}
 			}),
 		},
