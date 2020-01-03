@@ -554,8 +554,12 @@ spec:
                       required:
                       - issueClientCertificate
                       type: object
-                  required:
-                  - clientCertificateConfig
+                    username:
+                      description: 'Username: The username to use for HTTP basic authentication
+                        to the master endpoint. For clusters v1.6.0 and later, basic
+                        authentication can be disabled by leaving username unspecified
+                        (or setting it to the empty string).'
+                      type: string
                   type: object
                 masterAuthorizedNetworksConfig:
                   description: 'MasterAuthorizedNetworksConfig: The configuration

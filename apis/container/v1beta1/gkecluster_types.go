@@ -950,10 +950,6 @@ type DailyMaintenanceWindowStatus struct {
 	Duration string `json:"duration,omitempty"`
 }
 
-// NOTE(hasheddan): The only auth configuration exposed is the ability to
-// generate client certificate. All auth output information is reflected in the
-// connection secret.
-
 // MasterAuth is the authentication information for accessing the master endpoint.
 // Authentication can be done using HTTP basic auth or using client
 // certificates.
@@ -963,7 +959,16 @@ type MasterAuth struct {
 	// clusters before v1.12, if no configuration is specified, a
 	// client
 	// certificate is issued.
-	ClientCertificateConfig ClientCertificateConfig `json:"clientCertificateConfig"`
+	// +optional
+	ClientCertificateConfig *ClientCertificateConfig `json:"clientCertificateConfig,omitempty"`
+
+	// Username: The username to use for HTTP basic authentication to the
+	// master endpoint.
+	// For clusters v1.6.0 and later, basic authentication can be disabled
+	// by
+	// leaving username unspecified (or setting it to the empty string).
+	// +optional
+	Username *string `json:"username,omitempty"`
 }
 
 // ClientCertificateConfig is configuration for client certificates on the
