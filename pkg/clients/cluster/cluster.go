@@ -255,9 +255,13 @@ func GenerateMaintenancePolicy(in *v1beta1.MaintenancePolicySpec, cluster *conta
 func GenerateMasterAuth(in *v1beta1.MasterAuth, cluster *container.Cluster) {
 	if in != nil {
 		cluster.MasterAuth = &container.MasterAuth{
-			ClientCertificateConfig: &container.ClientCertificateConfig{
+			Username: gcp.StringValue(in.Username),
+		}
+
+		if in.ClientCertificateConfig != nil {
+			cluster.MasterAuth.ClientCertificateConfig = &container.ClientCertificateConfig{
 				IssueClientCertificate: in.ClientCertificateConfig.IssueClientCertificate,
-			},
+			}
 		}
 	}
 }
@@ -648,14 +652,16 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 		}
 	}
 
-	if spec.MasterAuth == nil && in.MasterAuth != nil {
+	if in.MasterAuth != nil {
+		if spec.MasterAuth == nil {
+			spec.MasterAuth = &v1beta1.MasterAuth{}
+		}
 		if in.MasterAuth.ClientCertificateConfig != nil {
-			spec.MasterAuth = &v1beta1.MasterAuth{
-				ClientCertificateConfig: v1beta1.ClientCertificateConfig{
-					IssueClientCertificate: in.MasterAuth.ClientCertificateConfig.IssueClientCertificate,
-				},
+			spec.MasterAuth.ClientCertificateConfig = &v1beta1.ClientCertificateConfig{
+				IssueClientCertificate: in.MasterAuth.ClientCertificateConfig.IssueClientCertificate,
 			}
 		}
+		spec.MasterAuth.Username = gcp.LateInitializeString(spec.MasterAuth.Username, in.MasterAuth.Username)
 	}
 
 	if in.MasterAuthorizedNetworksConfig != nil {
