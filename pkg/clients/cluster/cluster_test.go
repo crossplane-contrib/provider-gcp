@@ -274,7 +274,7 @@ func TestGenerateCluster(t *testing.T) {
 				c.AddonsConfig = &container.AddonsConfig{
 					HorizontalPodAutoscaling: &container.HorizontalPodAutoscaling{
 						Disabled:        true,
-						ForceSendFields: []string{"disabled"},
+						ForceSendFields: []string{"Disabled"},
 					},
 				}
 				c.DatabaseEncryption = &container.DatabaseEncryption{
@@ -353,7 +353,7 @@ func TestGenerateAddonsConfig(t *testing.T) {
 				c.AddonsConfig = &container.AddonsConfig{
 					HorizontalPodAutoscaling: &container.HorizontalPodAutoscaling{
 						Disabled:        true,
-						ForceSendFields: []string{"disabled"},
+						ForceSendFields: []string{"Disabled"},
 					},
 				}
 			}),

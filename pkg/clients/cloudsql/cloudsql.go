@@ -91,7 +91,7 @@ func GenerateDatabaseInstance(in v1beta1.CloudSQLInstanceParameters, name string
 			Ipv4Enabled:     gcp.BoolValue(in.Settings.IPConfiguration.Ipv4Enabled),
 			PrivateNetwork:  gcp.StringValue(in.Settings.IPConfiguration.PrivateNetwork),
 			RequireSsl:      gcp.BoolValue(in.Settings.IPConfiguration.RequireSsl),
-			ForceSendFields: []string{"ipv4Enabled"},
+			ForceSendFields: []string{"Ipv4Enabled"},
 		}
 		for _, val := range in.Settings.IPConfiguration.AuthorizedNetworks {
 			acl := &sqladmin.AclEntry{
