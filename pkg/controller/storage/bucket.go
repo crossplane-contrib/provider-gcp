@@ -105,8 +105,21 @@ type bucketExternal struct {
 }
 
 func (b *bucketExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
-
-	return resource.ExternalObservation{}, nil
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return resource.ExternalObservation{}, errors.New(errNotBucket)
+	}
+	instance, err := b.bucket.Get(meta.GetExternalName(cr)).Context(ctx).Do()
+	if err != nil {
+		return resource.ExternalObservation{}, errors.Wrap(err, "cannot get bucket")
+	}
+	cr.Status.AtProvider = bucket.GenerateObservation(*instance)
+	// todo: Late init
+	cr.Status.SetConditions(v1alpha1.Available())
+	resource.SetBindable(cr)
+	return resource.ExternalObservation{
+		ResourceExists: true,
+	}, nil
 }
 
 func (b *bucketExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
@@ -123,7 +136,25 @@ func (b *bucketExternal) Create(ctx context.Context, mg resource.Managed) (resou
 }
 
 func (b *bucketExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return resource.ExternalUpdate{}, errors.New(errNotBucket)
+	}
+	instance := bucket.GenerateBucket(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	if _, err := b.bucket.Patch(b.projectID, instance).Context(ctx).Do(); err != nil {
+		return resource.ExternalUpdate{}, errors.Wrap(err, "cannot patch bucket")
+	}
 	return resource.ExternalUpdate{}, nil
 }
 
-func (b *bucketExternal) Delete(ctx context.Context, mg resource.Managed) error { return nil }
+func (b *bucketExternal) Delete(ctx context.Context, mg resource.Managed) error {
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return errors.New(errNotBucket)
+	}
+	cr.SetConditions(v1alpha1.Deleting())
+	if err := b.bucket.Delete(meta.GetExternalName(cr)).Context(ctx).Do(); resource.Ignore(gcp.IsErrorNotFound, err) != nil {
+		return errors.Wrap(err, "cannot delete bucket")
+	}
+	return nil
+}

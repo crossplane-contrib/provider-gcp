@@ -24,70 +24,87 @@ import (
 
 func GenerateBucket(spec v1alpha3.BucketParameters, name string) *storage.Bucket {
 	b := &storage.Bucket{
-		Location: spec.Location,
-		Name:     name,
+		Location:        spec.Location,
+		Name:            name,
+		ForceSendFields: []string{"Location", "Name"},
 	}
-	b.StorageClass, b.ForceSendFields, b.NullFields = GenerateString("StorageClass", spec.StorageClass, b.ForceSendFields, b.NullFields)
-	b.DefaultEventBasedHold, b.ForceSendFields, b.NullFields = GenerateBool("DefaultEventBasedHold", spec.DefaultEventBasedHold, b.ForceSendFields, b.NullFields)
-	b.LocationType, b.ForceSendFields, b.NullFields = GenerateString("LocationType", spec.LocationType, b.ForceSendFields, b.NullFields)
-	b.Labels, b.ForceSendFields, b.NullFields = GenerateStringMap("Labels", spec.Labels, b.ForceSendFields, b.NullFields)
+	b.StorageClass, b.ForceSendFields = GenerateString("StorageClass", spec.StorageClass, b.ForceSendFields)
+	b.DefaultEventBasedHold, b.ForceSendFields = GenerateBool("DefaultEventBasedHold", spec.DefaultEventBasedHold, b.ForceSendFields)
+	b.LocationType, b.ForceSendFields = GenerateString("LocationType", spec.LocationType, b.ForceSendFields)
+	b.Labels, b.ForceSendFields = GenerateStringMap("Labels", spec.Labels, b.ForceSendFields)
 
-	b.Billing, b.ForceSendFields, b.NullFields = GenerateBilling(spec, b.ForceSendFields, b.NullFields)
-	b.Cors, b.ForceSendFields, b.NullFields = GenerateCors(spec, b.ForceSendFields, b.NullFields)
-	b.Encryption, b.ForceSendFields, b.NullFields = GenerateEncryption(spec, b.ForceSendFields, b.NullFields)
-	b.IamConfiguration, b.ForceSendFields, b.NullFields = GenerateIamConfiguration(spec, b.ForceSendFields, b.NullFields)
-	b.Lifecycle, b.ForceSendFields, b.NullFields = GenerateLifecycle(spec, b.ForceSendFields, b.NullFields)
-	b.Logging, b.ForceSendFields, b.NullFields = GenerateBucketLogging(spec, b.ForceSendFields, b.NullFields)
-	b.RetentionPolicy, b.ForceSendFields, b.NullFields = GenerateBucketRetentionPolicy(spec, b.ForceSendFields, b.NullFields)
-	b.Versioning, b.ForceSendFields, b.NullFields = GenerateBucketVersioning(spec, b.ForceSendFields, b.NullFields)
-	b.Website, b.ForceSendFields, b.NullFields = GenerateBucketWebsite(spec, b.ForceSendFields, b.NullFields)
-
+	b.Billing, b.ForceSendFields = GenerateBilling(spec, b.ForceSendFields)
+	b.Cors, b.ForceSendFields = GenerateCors(spec, b.ForceSendFields)
+	b.Encryption, b.ForceSendFields = GenerateEncryption(spec, b.ForceSendFields)
+	b.IamConfiguration, b.ForceSendFields = GenerateIamConfiguration(spec, b.ForceSendFields)
+	b.Lifecycle, b.ForceSendFields = GenerateLifecycle(spec, b.ForceSendFields)
+	b.Logging, b.ForceSendFields = GenerateBucketLogging(spec, b.ForceSendFields)
+	b.RetentionPolicy, b.ForceSendFields = GenerateBucketRetentionPolicy(spec, b.ForceSendFields)
+	b.Versioning, b.ForceSendFields = GenerateBucketVersioning(spec, b.ForceSendFields)
+	b.Website, b.ForceSendFields = GenerateBucketWebsite(spec, b.ForceSendFields)
 	return b
 }
-func GenerateString(fieldName string, specValue *string, f []string, n []string) (string, []string, []string) {
-	if specValue == nil {
-		return "", f, append(n, fieldName)
+
+func GenerateObservation(b storage.Bucket) v1alpha3.BucketObservation {
+	o := v1alpha3.BucketObservation{
+		SelfLink:       b.SelfLink,
+		TimeCreated:    b.TimeCreated,
+		Updated:        b.Updated,
+		ProjectNumber:  int64(b.ProjectNumber),
+		Metageneration: b.Metageneration,
 	}
-	return *specValue, append(f, fieldName), n
+	if b.Owner != nil {
+		o.Owner = &v1alpha3.BucketOwner{
+			Entity:   b.Owner.Entity,
+			EntityId: b.Owner.EntityId,
+		}
+	}
+	return o
 }
-func GenerateStringSlice(fieldName string, specValue []string, f []string, n []string) ([]string, []string, []string) {
+func GenerateString(fieldName string, specValue *string, f []string) (string, []string) {
 	if specValue == nil {
-		return nil, f, append(n, fieldName)
+		return "", f
 	}
-	return specValue, append(f, fieldName), n
+	return *specValue, append(f, fieldName)
 }
-func GenerateInt64(fieldName string, specValue *int64, f []string, n []string) (int64, []string, []string) {
+func GenerateStringSlice(fieldName string, specValue []string, f []string) ([]string, []string) {
 	if specValue == nil {
-		return 0, f, append(n, fieldName)
+		return nil, f
 	}
-	return *specValue, append(f, fieldName), n
+	return specValue, append(f, fieldName)
+}
+func GenerateInt64(fieldName string, specValue *int64, f []string) (int64, []string) {
+	if specValue == nil {
+		return 0, f
+	}
+	return *specValue, append(f, fieldName)
 }
 
-func GenerateBool(fieldName string, specValue *bool, f []string, n []string) (bool, []string, []string) {
+func GenerateBool(fieldName string, specValue *bool, f []string) (bool, []string) {
 	if specValue == nil {
-		return false, f, append(n, fieldName)
+		return false, f
 	}
-	return *specValue, append(f, fieldName), n
+	return *specValue, append(f, fieldName)
 }
 
-func GenerateStringMap(fieldName string, specValue map[string]string, f []string, n []string) (map[string]string, []string, []string) {
+func GenerateStringMap(fieldName string, specValue map[string]string, f []string) (map[string]string, []string) {
 	if specValue == nil {
-		return nil, f, append(n, fieldName)
+		return nil, f
 	}
-	return specValue, append(f, fieldName), n
+	return specValue, append(f, fieldName)
 }
-func GenerateBilling(spec v1alpha3.BucketParameters, f []string, n []string) (*storage.BucketBilling, []string, []string) {
+func GenerateBilling(spec v1alpha3.BucketParameters, f []string) (*storage.BucketBilling, []string) {
 	if spec.Billing == nil {
-		return nil, f, append(n, "Billing")
+		return nil, f
 	}
 	return &storage.BucketBilling{
 		RequesterPays:   spec.Billing.RequesterPays,
 		ForceSendFields: []string{"RequesterPays"},
-	}, f, n
+	}, f
 }
-func GenerateCors(spec v1alpha3.BucketParameters, f []string, n []string) ([]*storage.BucketCors, []string, []string) {
+func GenerateCors(spec v1alpha3.BucketParameters, f []string) ([]*storage.BucketCors, []string) {
 	if spec.Cors == nil {
-		return nil, f, append(n, "Cors")
+		return nil, f
 	}
 	cors := make([]*storage.BucketCors, len(spec.Cors))
 	for i, val := range spec.Cors {
@@ -99,20 +116,20 @@ func GenerateCors(spec v1alpha3.BucketParameters, f []string, n []string) ([]*st
 			ForceSendFields: []string{"MaxAgeSeconds", "Method", "Origin", "ResponseHeader"},
 		}
 	}
-	return cors, append(f, "Cors"), n
+	return cors, append(f, "Cors")
 }
-func GenerateEncryption(spec v1alpha3.BucketParameters, f []string, n []string) (*storage.BucketEncryption, []string, []string) {
+func GenerateEncryption(spec v1alpha3.BucketParameters, f []string) (*storage.BucketEncryption, []string) {
 	if spec.Encryption == nil {
-		return nil, f, append(n, "Encryption")
+		return nil, f
 	}
 	return &storage.BucketEncryption{
 		DefaultKmsKeyName: spec.Encryption.DefaultKmsKeyName,
 		ForceSendFields:   []string{"DefaultKmsKeyName"},
-	}, f, n
+	}, f
 }
-func GenerateIamConfiguration(spec v1alpha3.BucketParameters, f []string, n []string) (*storage.BucketIamConfiguration, []string, []string) {
+func GenerateIamConfiguration(spec v1alpha3.BucketParameters, f []string) (*storage.BucketIamConfiguration, []string) {
 	if spec.IamConfiguration == nil {
-		return nil, f, append(n, "IamConfiguration")
+		return nil, f
 	}
 	iam := &storage.BucketIamConfiguration{}
 	if spec.IamConfiguration.BucketPolicyOnly != nil {
@@ -120,26 +137,22 @@ func GenerateIamConfiguration(spec v1alpha3.BucketParameters, f []string, n []st
 			Enabled:         spec.IamConfiguration.BucketPolicyOnly.Enabled,
 			ForceSendFields: []string{"Enabled"},
 		}
-		bpl.LockedTime, bpl.ForceSendFields, bpl.NullFields = GenerateString("LockedTime", spec.IamConfiguration.BucketPolicyOnly.LockedTime, bpl.ForceSendFields, bpl.NullFields)
+		bpl.LockedTime, bpl.ForceSendFields = GenerateString("LockedTime", spec.IamConfiguration.BucketPolicyOnly.LockedTime, bpl.ForceSendFields)
 		iam.BucketPolicyOnly = bpl
-	} else {
-		iam.NullFields = append(iam.NullFields, "BucketPolicyOnly")
 	}
 	if spec.IamConfiguration.UniformBucketLevelAccess != nil {
 		ubla := &storage.BucketIamConfigurationUniformBucketLevelAccess{
 			Enabled:         spec.IamConfiguration.UniformBucketLevelAccess.Enabled,
 			ForceSendFields: []string{"Enabled"},
 		}
-		ubla.LockedTime, ubla.ForceSendFields, ubla.NullFields = GenerateString("LockedTime", spec.IamConfiguration.BucketPolicyOnly.LockedTime, ubla.ForceSendFields, ubla.NullFields)
+		ubla.LockedTime, ubla.ForceSendFields = GenerateString("LockedTime", spec.IamConfiguration.BucketPolicyOnly.LockedTime, ubla.ForceSendFields)
 		iam.UniformBucketLevelAccess = ubla
-	} else {
-		iam.NullFields = append(iam.NullFields, "UniformBucketLevelAccess")
 	}
-	return iam, f, n
+	return iam, f
 }
-func GenerateLifecycle(spec v1alpha3.BucketParameters, f []string, n []string) (*storage.BucketLifecycle, []string, []string) {
+func GenerateLifecycle(spec v1alpha3.BucketParameters, f []string) (*storage.BucketLifecycle, []string) {
 	if spec.Lifecycle == nil {
-		return nil, f, append(n, "Lifecycle")
+		return nil, f
 	}
 	l := &storage.BucketLifecycle{}
 	l.Rule = make([]*storage.BucketLifecycleRule, len(spec.Lifecycle.Rule))
@@ -150,59 +163,59 @@ func GenerateLifecycle(spec v1alpha3.BucketParameters, f []string, n []string) (
 				Type:            val.Action.Type,
 				ForceSendFields: []string{"Type"},
 			}
-			r.Action.StorageClass, r.Action.ForceSendFields, r.Action.NullFields = GenerateString("StorageClass", val.Action.StorageClass, r.Action.ForceSendFields, r.Action.NullFields)
+			r.Action.StorageClass, r.Action.ForceSendFields = GenerateString("StorageClass", val.Action.StorageClass, r.Action.ForceSendFields)
 		}
 		if val.Condition != nil {
 			cond := &storage.BucketLifecycleRuleCondition{}
-			cond.Age, cond.ForceSendFields, cond.NullFields = GenerateInt64("Age", val.Condition.Age, cond.ForceSendFields, cond.NullFields)
-			cond.CreatedBefore, cond.ForceSendFields, cond.NullFields = GenerateString("CreatedBefore", val.Condition.CreatedBefore, cond.ForceSendFields, cond.NullFields)
-			cond.MatchesPattern, cond.ForceSendFields, cond.NullFields = GenerateString("MatchesPattern", val.Condition.MatchesPattern, cond.ForceSendFields, cond.NullFields)
-			cond.NumNewerVersions, cond.ForceSendFields, cond.NullFields = GenerateInt64("NumNewerVersions", val.Condition.NumNewerVersions, cond.ForceSendFields, cond.NullFields)
-			cond.MatchesStorageClass, cond.ForceSendFields, cond.NullFields = GenerateStringSlice("MatchesStorageClass", val.Condition.MatchesStorageClass, cond.ForceSendFields, cond.NullFields)
+			cond.Age, cond.ForceSendFields = GenerateInt64("Age", val.Condition.Age, cond.ForceSendFields)
+			cond.CreatedBefore, cond.ForceSendFields = GenerateString("CreatedBefore", val.Condition.CreatedBefore, cond.ForceSendFields)
+			cond.MatchesPattern, cond.ForceSendFields = GenerateString("MatchesPattern", val.Condition.MatchesPattern, cond.ForceSendFields)
+			cond.NumNewerVersions, cond.ForceSendFields = GenerateInt64("NumNewerVersions", val.Condition.NumNewerVersions, cond.ForceSendFields)
+			cond.MatchesStorageClass, cond.ForceSendFields = GenerateStringSlice("MatchesStorageClass", val.Condition.MatchesStorageClass, cond.ForceSendFields)
 			var isLive bool
-			isLive, cond.ForceSendFields, cond.NullFields = GenerateBool("IsLive", val.Condition.IsLive, cond.ForceSendFields, cond.NullFields)
+			isLive, cond.ForceSendFields = GenerateBool("IsLive", val.Condition.IsLive, cond.ForceSendFields)
 			cond.IsLive = &isLive
 			r.Condition = cond
 		}
 		l.Rule[i] = r
 	}
-	return l, f, n
+	return l, f
 }
-func GenerateBucketLogging(spec v1alpha3.BucketParameters, f []string, n []string) (*storage.BucketLogging, []string, []string) {
+func GenerateBucketLogging(spec v1alpha3.BucketParameters, f []string) (*storage.BucketLogging, []string) {
 	if spec.Logging == nil {
-		return nil, f, append(n, "Logging")
+		return nil, f
 	}
 	l := &storage.BucketLogging{}
-	l.LogBucket, l.ForceSendFields, l.NullFields = GenerateString("LogBucket", spec.Logging.LogBucket, l.ForceSendFields, l.NullFields)
-	l.LogObjectPrefix, l.ForceSendFields, l.NullFields = GenerateString("LogObjectPrefix", spec.Logging.LogObjectPrefix, l.ForceSendFields, l.NullFields)
-	return l, f, n
+	l.LogBucket, l.ForceSendFields = GenerateString("LogBucket", spec.Logging.LogBucket, l.ForceSendFields)
+	l.LogObjectPrefix, l.ForceSendFields = GenerateString("LogObjectPrefix", spec.Logging.LogObjectPrefix, l.ForceSendFields)
+	return l, f
 }
 
-func GenerateBucketRetentionPolicy(spec v1alpha3.BucketParameters, f []string, n []string) (*storage.BucketRetentionPolicy, []string, []string) {
+func GenerateBucketRetentionPolicy(spec v1alpha3.BucketParameters, f []string) (*storage.BucketRetentionPolicy, []string) {
 	if spec.RetentionPolicy == nil {
-		return nil, f, append(n, "RetentionPolicy")
+		return nil, f
 	}
 	r := &storage.BucketRetentionPolicy{}
-	r.EffectiveTime, r.ForceSendFields, r.NullFields = GenerateString("EffectiveTime", spec.RetentionPolicy.EffectiveTime, r.ForceSendFields, r.NullFields)
-	r.IsLocked, r.ForceSendFields, r.NullFields = GenerateBool("IsLocked", spec.RetentionPolicy.IsLocked, r.ForceSendFields, r.NullFields)
-	r.RetentionPeriod, r.ForceSendFields, r.NullFields = GenerateInt64("RetentionPeriod", spec.RetentionPolicy.RetentionPeriod, r.ForceSendFields, r.NullFields)
-	return r, f, n
+	r.EffectiveTime, r.ForceSendFields = GenerateString("EffectiveTime", spec.RetentionPolicy.EffectiveTime, r.ForceSendFields)
+	r.IsLocked, r.ForceSendFields = GenerateBool("IsLocked", spec.RetentionPolicy.IsLocked, r.ForceSendFields)
+	r.RetentionPeriod, r.ForceSendFields = GenerateInt64("RetentionPeriod", spec.RetentionPolicy.RetentionPeriod, r.ForceSendFields)
+	return r, f
 }
-func GenerateBucketVersioning(spec v1alpha3.BucketParameters, f []string, n []string) (*storage.BucketVersioning, []string, []string) {
+func GenerateBucketVersioning(spec v1alpha3.BucketParameters, f []string) (*storage.BucketVersioning, []string) {
 	if spec.Versioning == nil {
-		return nil, f, append(n, "Versioning")
+		return nil, f
 	}
 	return &storage.BucketVersioning{
 		Enabled:         spec.Versioning.Enabled,
 		ForceSendFields: []string{"Enabled"},
-	}, f, n
+	}, f
 }
-func GenerateBucketWebsite(spec v1alpha3.BucketParameters, f []string, n []string) (*storage.BucketWebsite, []string, []string) {
+func GenerateBucketWebsite(spec v1alpha3.BucketParameters, f []string) (*storage.BucketWebsite, []string) {
 	if spec.Website == nil {
-		return nil, f, append(n, "Website")
+		return nil, f
 	}
 	w := &storage.BucketWebsite{}
-	w.MainPageSuffix, w.ForceSendFields, w.NullFields = GenerateString("MainPageSuffix", spec.Website.MainPageSuffix, w.ForceSendFields, w.NullFields)
-	w.NotFoundPage, w.ForceSendFields, w.NullFields = GenerateString("NotFoundPage", spec.Website.NotFoundPage, w.ForceSendFields, w.NullFields)
-	return w, f, n
+	w.MainPageSuffix, w.ForceSendFields = GenerateString("MainPageSuffix", spec.Website.MainPageSuffix, w.ForceSendFields)
+	w.NotFoundPage, w.ForceSendFields = GenerateString("NotFoundPage", spec.Website.NotFoundPage, w.ForceSendFields)
+	return w, f
 }
