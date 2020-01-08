@@ -17,6 +17,7 @@ limitations under the License.
 package bucket
 
 import (
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	"google.golang.org/api/storage/v1"
 
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
@@ -61,6 +62,49 @@ func GenerateObservation(b storage.Bucket) v1alpha3.BucketObservation {
 	}
 	return o
 }
+func LateInitialize(spec *v1alpha3.BucketParameters, b storage.Bucket) {
+	if spec.Location == "" {
+		spec.Location = b.Location
+	}
+	spec.DefaultEventBasedHold = gcp.LateInitializeBool(spec.DefaultEventBasedHold, b.DefaultEventBasedHold)
+	spec.Labels = gcp.LateInitializeStringMap(spec.Labels, b.Labels)
+	if b.Billing != nil && spec.Billing == nil {
+		spec.Billing = &v1alpha3.BucketBilling{RequesterPays: b.Billing.RequesterPays}
+	}
+	if b.Cors != nil && spec.Cors == nil {
+		spec.Cors = make([]*v1alpha3.BucketCORS, len(b.Cors))
+		for i, val := range b.Cors {
+			cors := &v1alpha3.BucketCORS{}
+			cors.MaxAgeSeconds = gcp.LateInitializeInt64(cors.MaxAgeSeconds, val.MaxAgeSeconds)
+			cors.Method = gcp.LateInitializeStringSlice(cors.Method, val.Method)
+			cors.Origin = gcp.LateInitializeStringSlice(cors.Origin, val.Origin)
+			cors.ResponseHeader = gcp.LateInitializeStringSlice(cors.ResponseHeader, val.ResponseHeader)
+			spec.Cors[i] = cors
+		}
+	}
+	if b.Encryption != nil && spec.Encryption == nil {
+		spec.Encryption = &v1alpha3.BucketEncryption{DefaultKmsKeyName: b.Encryption.DefaultKmsKeyName}
+	}
+	if b.IamConfiguration != nil {
+		if spec.IamConfiguration == nil {
+			spec.IamConfiguration = &v1alpha3.BucketIamConfiguration{}
+		}
+		if b.IamConfiguration.BucketPolicyOnly != nil && spec.IamConfiguration.BucketPolicyOnly == nil {
+			spec.IamConfiguration.BucketPolicyOnly = &v1alpha3.BucketIamConfigurationBucketPolicyOnly{
+				Enabled: b.IamConfiguration.BucketPolicyOnly.Enabled,
+			}
+			spec.IamConfiguration.BucketPolicyOnly.LockedTime = gcp.LateInitializeString(spec.IamConfiguration.BucketPolicyOnly.LockedTime, b.IamConfiguration.BucketPolicyOnly.LockedTime)
+		}
+		if b.IamConfiguration.UniformBucketLevelAccess != nil && spec.IamConfiguration.UniformBucketLevelAccess == nil {
+			spec.IamConfiguration.UniformBucketLevelAccess = &v1alpha3.BucketIamConfigurationUniformBucketLevelAccess{
+				Enabled: b.IamConfiguration.UniformBucketLevelAccess.Enabled,
+			}
+			spec.IamConfiguration.UniformBucketLevelAccess.LockedTime = gcp.LateInitializeString(spec.IamConfiguration.UniformBucketLevelAccess.LockedTime, b.IamConfiguration.UniformBucketLevelAccess.LockedTime)
+		}
+	}
+	// muvaf: i will try json merge patches, this is killing me.
+}
+
 func GenerateString(fieldName string, specValue *string, f []string) (string, []string) {
 	if specValue == nil {
 		return "", f

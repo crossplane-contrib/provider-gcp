@@ -297,21 +297,25 @@ type BucketBilling struct {
 type BucketCORS struct {
 	// MaxAgeSeconds: The value, in seconds, to return in the
 	// Access-Control-Max-Age header used in preflight responses.
-	MaxAgeSeconds int64 `json:"maxAgeSeconds,omitempty"`
+	// +optional
+	MaxAgeSeconds *int64 `json:"maxAgeSeconds,omitempty"`
 
 	// Method: The list of HTTP methods on which to include CORS response
 	// headers, (GET, OPTIONS, POST, etc) Note: "*" is permitted in the list
 	// of methods, and means "any method".
+	// +optional
 	Method []string `json:"method,omitempty"`
 
 	// Origin: The list of Origins eligible to receive CORS response
 	// headers. Note: "*" is permitted in the list of origins, and means
 	// "any Origin".
+	// +optional
 	Origin []string `json:"origin,omitempty"`
 
 	// ResponseHeader: The list of HTTP headers other than the simple
 	// response headers to give permission for the user-agent to share
 	// across domains.
+	// +optional
 	ResponseHeader []string `json:"responseHeader,omitempty"`
 }
 
