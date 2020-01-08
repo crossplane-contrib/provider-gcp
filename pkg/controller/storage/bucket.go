@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+
 	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 	"google.golang.org/api/storage/v1"
@@ -29,11 +31,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
 	apisv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/bucket"
 )
 
 const (
@@ -41,7 +45,8 @@ const (
 	errProviderNotRetrieved       = "provider could not be retrieved"
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
 
-	errNewClient = "cannot create a new Storage Service"
+	errNewClient    = "cannot create a new Storage Service"
+	errCreateFailed = "cannot create a new bucket"
 )
 
 // BucketController is the controller for Bucket CRD.
@@ -100,10 +105,20 @@ type bucketExternal struct {
 }
 
 func (b *bucketExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+
 	return resource.ExternalObservation{}, nil
 }
 
 func (b *bucketExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return resource.ExternalCreation{}, errors.New(errNotBucket)
+	}
+	cr.SetConditions(v1alpha1.Creating())
+	instance := bucket.GenerateBucket(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	if _, err := b.bucket.Insert(b.projectID, instance).Context(ctx).Do(); err != nil {
+		return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateFailed)
+	}
 	return resource.ExternalCreation{}, nil
 }
 

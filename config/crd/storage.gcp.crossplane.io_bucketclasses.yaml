@@ -136,6 +136,8 @@ spec:
                             may be changed from true to false until the locked time,
                             after which the field is immutable.'
                           type: string
+                      required:
+                      - enabled
                       type: object
                     uniformBucketLevelAccess:
                       description: 'UniformBucketLevelAccess: The bucket''s uniform
@@ -151,6 +153,8 @@ spec:
                             may be changed from true to false until the locked time,
                             after which the field is immutable.'
                           type: string
+                      required:
+                      - enabled
                       type: object
                   type: object
                 labels:
@@ -179,6 +183,8 @@ spec:
                                 description: 'Type: Type of the action. Currently,
                                   only Delete and SetStorageClass are supported.'
                                 type: string
+                            required:
+                            - type
                             type: object
                           condition:
                             description: 'Condition: The condition(s) under which

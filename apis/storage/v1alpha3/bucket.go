@@ -139,14 +139,14 @@ type BucketObservation struct {
 
 	// ProjectNumber: The project number of the project the bucket belongs
 	// to.
-	ProjectNumber uint64 `json:"projectNumber,omitempty,string"`
+	ProjectNumber int64 `json:"projectNumber,omitempty"`
 
 	// Owner: The owner of the bucket. This is always the project team's
 	// owner group.
 	Owner *BucketOwner `json:"owner,omitempty"`
 
 	// Metageneration: The metadata generation of this bucket.
-	Metageneration int64 `json:"metageneration,omitempty,string"`
+	Metageneration int64 `json:"metageneration,omitempty"`
 }
 
 // BucketLogging: The bucket's logging configuration, which defines the
@@ -183,11 +183,12 @@ type BucketLifecycleRule struct {
 type BucketLifecycleRuleAction struct {
 	// StorageClass: Target storage class. Required iff the type of the
 	// action is SetStorageClass.
-	StorageClass string `json:"storageClass,omitempty"`
+	// +optional
+	StorageClass *string `json:"storageClass,omitempty"`
 
 	// Type: Type of the action. Currently, only Delete and SetStorageClass
 	// are supported.
-	Type string `json:"type,omitempty"`
+	Type string `json:"type"`
 }
 
 // BucketLifecycleRuleCondition: The condition(s) under which the action
@@ -195,16 +196,19 @@ type BucketLifecycleRuleAction struct {
 type BucketLifecycleRuleCondition struct {
 	// Age: Age of an object (in days). This condition is satisfied when an
 	// object reaches the specified age.
-	Age int64 `json:"age,omitempty"`
+	// +optional
+	Age *int64 `json:"age,omitempty"`
 
 	// CreatedBefore: A date in RFC 3339 format with only the date part (for
 	// instance, "2013-01-15"). This condition is satisfied when an object
 	// is created before midnight of the specified date in UTC.
-	CreatedBefore string `json:"createdBefore,omitempty"`
+	// +optional
+	CreatedBefore *string `json:"createdBefore,omitempty"`
 
 	// IsLive: Relevant only for versioned objects. If the value is true,
 	// this condition matches live objects; if the value is false, it
 	// matches archived objects.
+	// +optional
 	IsLive *bool `json:"isLive,omitempty"`
 
 	// MatchesPattern: A regular expression that satisfies the RE2 syntax.
@@ -213,18 +217,21 @@ type BucketLifecycleRuleCondition struct {
 	// launch stage and is only available to a whitelisted set of users;
 	// that means that this feature may be changed in backward-incompatible
 	// ways and that it is not guaranteed to be released.
-	MatchesPattern string `json:"matchesPattern,omitempty"`
+	// +optional
+	MatchesPattern *string `json:"matchesPattern,omitempty"`
 
 	// MatchesStorageClass: Objects having any of the storage classes
 	// specified by this condition will be matched. Values include
 	// MULTI_REGIONAL, REGIONAL, NEARLINE, COLDLINE, STANDARD, and
 	// DURABLE_REDUCED_AVAILABILITY.
+	// +optional
 	MatchesStorageClass []string `json:"matchesStorageClass,omitempty"`
 
 	// NumNewerVersions: Relevant only for versioned objects. If the value
 	// is N, this condition is satisfied when there are at least N versions
 	// (including the live version) newer than this version of the object.
-	NumNewerVersions int64 `json:"numNewerVersions,omitempty"`
+	// +optional
+	NumNewerVersions *int64 `json:"numNewerVersions,omitempty"`
 }
 
 // BucketIamConfiguration: The bucket's IAM configuration.
@@ -244,8 +251,7 @@ type BucketIamConfiguration struct {
 type BucketIamConfigurationBucketPolicyOnly struct {
 	// Enabled: If set, access is controlled only by bucket-level or above
 	// IAM policies.
-	// +optional
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 
 	// LockedTime: The deadline for changing
 	// iamConfiguration.bucketPolicyOnly.enabled from true to false in RFC
@@ -261,8 +267,7 @@ type BucketIamConfigurationBucketPolicyOnly struct {
 type BucketIamConfigurationUniformBucketLevelAccess struct {
 	// Enabled: If set, access is controlled only by bucket-level or above
 	// IAM policies.
-	// +optional
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 
 	// LockedTime: The deadline for changing
 	// iamConfiguration.uniformBucketLevelAccess.enabled from true to false
@@ -334,17 +339,20 @@ type BucketRetentionPolicy struct {
 	// EffectiveTime: Server-determined value that indicates the time from
 	// which policy was enforced and effective. This value is in RFC 3339
 	// format.
-	EffectiveTime string `json:"effectiveTime,omitempty"`
+	// +optional
+	EffectiveTime *string `json:"effectiveTime,omitempty"`
 
 	// IsLocked: Once locked, an object retention policy cannot be modified.
-	IsLocked bool `json:"isLocked,omitempty"`
+	// +optional
+	IsLocked *bool `json:"isLocked,omitempty"`
 
 	// RetentionPeriod: The duration in seconds that objects need to be
 	// retained. Retention duration must be greater than zero and less than
 	// 100 years. Note that enforcement of retention periods less than a day
 	// is not guaranteed. Such periods should only be used for testing
 	// purposes.
-	RetentionPeriod int64 `json:"retentionPeriod,omitempty,string"`
+	// +optional
+	RetentionPeriod *int64 `json:"retentionPeriod,omitempty"`
 }
 
 // BucketVersioning: The bucket's versioning configuration.
@@ -362,13 +370,15 @@ type BucketWebsite struct {
 	// will ensure the path has a trailing '/', append this suffix, and
 	// attempt to retrieve the resulting object. This allows the creation of
 	// index.html objects to represent directory pages.
-	MainPageSuffix string `json:"mainPageSuffix,omitempty"`
+	// +optional
+	MainPageSuffix *string `json:"mainPageSuffix,omitempty"`
 
 	// NotFoundPage: If the requested object path is missing, and any
 	// mainPageSuffix object is missing, if applicable, the service will
 	// return the named object from this bucket as the content for a 404 Not
 	// Found result.
-	NotFoundPage string `json:"notFoundPage,omitempty"`
+	// +optional
+	NotFoundPage *string `json:"notFoundPage,omitempty"`
 }
 
 // A BucketSpec defines the desired state of a Bucket.
