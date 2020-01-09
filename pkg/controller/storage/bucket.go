@@ -111,10 +111,15 @@ func (b *bucketExternal) Observe(ctx context.Context, mg resource.Managed) (reso
 	}
 	instance, err := b.bucket.Get(meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
-		return resource.ExternalObservation{}, errors.Wrap(err, "cannot get bucket")
+		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), "cannot get bucket")
+	}
+	if err := bucket.LateInitialize(&cr.Spec.ForProvider, *instance); err != nil {
+		return resource.ExternalObservation{}, errors.Wrap(err, "cannot late initialize bucket spec")
+	}
+	if err := b.kube.Update(ctx, cr); err != nil {
+		return resource.ExternalObservation{}, errors.Wrap(err, "cannot update bucket custom resource")
 	}
 	cr.Status.AtProvider = bucket.GenerateObservation(*instance)
-	// todo: Late init
 	cr.Status.SetConditions(v1alpha1.Available())
 	resource.SetBindable(cr)
 	return resource.ExternalObservation{
@@ -128,7 +133,10 @@ func (b *bucketExternal) Create(ctx context.Context, mg resource.Managed) (resou
 		return resource.ExternalCreation{}, errors.New(errNotBucket)
 	}
 	cr.SetConditions(v1alpha1.Creating())
-	instance := bucket.GenerateBucket(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	instance, err := bucket.GenerateBucket(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	if err != nil {
+		return resource.ExternalCreation{}, errors.Wrap(err, "cannot generate bucket")
+	}
 	if _, err := b.bucket.Insert(b.projectID, instance).Context(ctx).Do(); err != nil {
 		return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateFailed)
 	}
@@ -140,7 +148,10 @@ func (b *bucketExternal) Update(ctx context.Context, mg resource.Managed) (resou
 	if !ok {
 		return resource.ExternalUpdate{}, errors.New(errNotBucket)
 	}
-	instance := bucket.GenerateBucket(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	instance, err := bucket.GenerateBucket(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	if err != nil {
+		return resource.ExternalUpdate{}, errors.Wrap(err, "cannot generate bucket")
+	}
 	if _, err := b.bucket.Patch(b.projectID, instance).Context(ctx).Do(); err != nil {
 		return resource.ExternalUpdate{}, errors.Wrap(err, "cannot patch bucket")
 	}
