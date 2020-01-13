@@ -1,0 +1,32 @@
+pipeline {
+    agent { label 'upbound-gce' }
+
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    environment {
+        GCP_SA = credentials('inttests-sa')
+        KUBE_SECRET = credentials('inttests-kubeconfig')
+    }
+
+    stages {
+        stage('Integration Tests') {
+            steps {
+                sh '''
+                set +x
+                cp $KUBE_SECRET kubeconfig.yaml
+                cp $GCP_SA sa.json
+                '''
+                sh "./build/run make -j\$(nproc) go-integration"
+            }
+        }
+    }
+
+    post {
+        always {
+            deleteDir()
+        }
+    }
+}
