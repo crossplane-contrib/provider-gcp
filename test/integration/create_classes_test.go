@@ -1,3 +1,5 @@
+// +build integration
+
 /*
 Copyright 2019 The Crossplane Authors.
 
@@ -24,7 +26,7 @@ import (
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/test/integration"
 	crossplaneapis "github.com/crossplaneio/crossplane/apis"
-	clientcmd "k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
