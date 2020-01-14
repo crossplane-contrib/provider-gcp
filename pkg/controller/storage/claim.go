@@ -144,23 +144,13 @@ func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.Class, mg
 		ResourceSpec: runtimev1alpha1.ResourceSpec{
 			ReclaimPolicy: runtimev1alpha1.ReclaimRetain,
 		},
-		BucketParameters: rs.SpecTemplate.BucketParameters,
+		ForProvider: rs.SpecTemplate.ForProvider,
 	}
-
-	// Set Name bucket name if Name value is provided by Bucket Claim spec
-	if bcm.Spec.Name != "" {
-		spec.NameFormat = bcm.Spec.Name
-	}
-
-	// Set PredefinedACL from bucketClaim claim only iff: claim has this value and
-	// it is not defined in the resource class (i.e. not already in the spec)
-	if bcm.Spec.PredefinedACL != nil && spec.PredefinedACL == "" {
-		spec.PredefinedACL = string(*bcm.Spec.PredefinedACL)
-	}
-
+	// TODO(muvaf): it should be safe to use managed resource name as the name
+	// of the secret instead of claim's UID.
 	spec.WriteConnectionSecretToReference = &runtimev1alpha1.SecretReference{
 		Namespace: rs.SpecTemplate.WriteConnectionSecretsToNamespace,
-		Name:      string(cm.GetUID()),
+		Name:      string(bcm.GetUID()),
 	}
 	spec.ProviderReference = rs.SpecTemplate.ProviderReference
 	spec.ReclaimPolicy = rs.SpecTemplate.ReclaimPolicy

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,291 +18,154 @@ package storage
 
 import (
 	"context"
-	"reflect"
-	"time"
+	"fmt"
+	"strings"
 
-	"cloud.google.com/go/storage"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
-	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"google.golang.org/api/storage/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
+	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
-	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/storage"
+	apisv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/bucket"
 )
 
 const (
-	controllerName = "bucket.storage.gcp.crossplane.io"
-	finalizer      = "finalizer." + controllerName
+	errNotBucket                  = "managed resource is not a Bucket custom resource"
+	errProviderNotRetrieved       = "provider could not be retrieved"
+	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
 
-	reconcileTimeout      = 1 * time.Minute
-	requeueAfterOnSuccess = 30 * time.Second
+	errNewClient    = "cannot create a new Storage Service"
+	errCreateFailed = "cannot create a new bucket"
 )
 
-// Amounts of time we wait before requeuing a reconcile.
-const (
-	aLongWait = 60 * time.Second
-)
-
-// Error strings
-const (
-	errUpdateManagedStatus = "cannot update managed resource status"
-)
-
-var (
-	resultRequeue    = reconcile.Result{Requeue: true}
-	requeueOnSuccess = reconcile.Result{RequeueAfter: requeueAfterOnSuccess}
-
-	log = logging.Logger.WithName("controller." + controllerName)
-)
-
-// Reconciler reconciles a GCP storage bucket bucket
-type Reconciler struct {
-	client.Client
-	factory
-	resource.ManagedReferenceResolver
-}
-
-// BucketController is responsible for adding the Bucket controller and its
-// corresponding reconciler to the manager with any runtime configuration.
+// BucketController is the controller for Bucket CRD.
 type BucketController struct{}
 
-// SetupWithManager creates a newSyncDeleter Controller and adds it to the Manager with default RBAC.
-// The Manager will set fields on the Controller and Start it when the Manager is Started.
+// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields
+// on the Controller and Start it when the Manager is Started.
 func (c *BucketController) SetupWithManager(mgr ctrl.Manager) error {
-	r := &Reconciler{
-		Client:                   mgr.GetClient(),
-		factory:                  &bucketFactory{mgr.GetClient()},
-		ManagedReferenceResolver: resource.NewAPIManagedReferenceResolver(mgr.GetClient()),
-	}
+	r := resource.NewManagedReconciler(mgr,
+		resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
+		resource.WithExternalConnecter(&bucketController{kube: mgr.GetClient(), newServiceFn: storage.NewService}))
+
+	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.BucketKindAPIVersion, v1alpha3.Group))
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(controllerName).
+		Named(name).
 		For(&v1alpha3.Bucket{}).
-		Owns(&corev1.Secret{}).
 		Complete(r)
 }
 
-// Reconcile reads that state of the cluster for a Provider bucket and makes changes based on the state read
-// and what is in the Provider.Spec
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.V(logging.Debug).Info("reconciling", "kind", v1alpha3.BucketKindAPIVersion, "request", request)
+type bucketController struct {
+	kube         client.Client
+	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*storage.Service, error)
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), reconcileTimeout)
-	defer cancel()
-
-	b := &v1alpha3.Bucket{}
-	if err := r.Get(ctx, request.NamespacedName, b); err != nil {
-		if kerrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
+func (c *bucketController) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return nil, errors.New(errNotBucket)
 	}
 
-	if !resource.IsConditionTrue(b.GetCondition(runtimev1alpha1.TypeReferencesResolved)) {
-		if err := r.ResolveReferences(ctx, b); err != nil {
-			condition := runtimev1alpha1.ReconcileError(err)
-			if resource.IsReferencesAccessError(err) {
-				condition = runtimev1alpha1.ReferenceResolutionBlocked(err)
-			}
-
-			b.Status.SetConditions(condition)
-			return reconcile.Result{RequeueAfter: aLongWait}, errors.Wrap(r.Update(ctx, b), errUpdateManagedStatus)
-		}
-
-		// Add ReferenceResolutionSuccess to the conditions
-		b.Status.SetConditions(runtimev1alpha1.ReferenceResolutionSuccess())
+	provider := &apisv1alpha3.Provider{}
+	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), provider); err != nil {
+		return nil, errors.Wrap(err, errProviderNotRetrieved)
+	}
+	secret := &v1.Secret{}
+	n := types.NamespacedName{Namespace: provider.Spec.CredentialsSecretRef.Namespace, Name: provider.Spec.CredentialsSecretRef.Name}
+	if err := c.kube.Get(ctx, n, secret); err != nil {
+		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)
 	}
 
-	bh, err := r.newSyncDeleter(ctx, b)
+	s, err := c.newServiceFn(ctx,
+		option.WithCredentialsJSON(secret.Data[provider.Spec.CredentialsSecretRef.Key]),
+		option.WithScopes(storage.CloudPlatformScope))
 	if err != nil {
-		b.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
-		return resultRequeue, r.Status().Update(ctx, b)
+		return nil, errors.Wrap(err, errNewClient)
 	}
 
-	// Check for deletion
-	if b.DeletionTimestamp != nil {
-		return bh.delete(ctx)
-	}
-
-	return bh.sync(ctx)
+	return &bucketExternal{kube: c.kube, bucket: s.Buckets, projectID: provider.Spec.ProjectID}, nil
 }
 
-type factory interface {
-	newSyncDeleter(context.Context, *v1alpha3.Bucket) (syncdeleter, error)
-}
-
-type bucketFactory struct {
-	client.Client
-}
-
-func (m *bucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha3.Bucket) (syncdeleter, error) {
-	p := &gcpv1alpha3.Provider{}
-	if err := m.Get(ctx, meta.NamespacedNameOf(b.Spec.ProviderReference), p); err != nil {
-		return nil, err
-	}
-
-	s := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
-	if err := m.Get(ctx, n, s); err != nil {
-		return nil, errors.Wrapf(err, "cannot get provider's secret %s", n)
-	}
-
-	creds, err := google.CredentialsFromJSON(context.Background(), s.Data[p.Spec.CredentialsSecretRef.Key], storage.ScopeFullControl)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot retrieve creds from json")
-	}
-
-	sc, err := storage.NewClient(ctx, option.WithCredentials(creds))
-	if err != nil {
-		return nil, errors.Wrapf(err, "error creating storage client")
-	}
-
-	ops := &bucketHandler{
-		Bucket: b,
-		gcp:    &gcpstorage.BucketClient{BucketHandle: sc.Bucket(b.GetBucketName())},
-		kube:   m.Client,
-	}
-
-	return &bucketSyncDeleter{
-		operations:    ops,
-		createupdater: &bucketCreateUpdater{operations: ops, projectID: creds.ProjectID},
-	}, nil
-
-}
-
-type syncdeleter interface {
-	delete(context.Context) (reconcile.Result, error)
-	sync(context.Context) (reconcile.Result, error)
-}
-
-type bucketSyncDeleter struct {
-	operations
-	createupdater
-}
-
-func newBucketSyncDeleter(ops operations, projectID string) *bucketSyncDeleter {
-	return &bucketSyncDeleter{
-		operations:    ops,
-		createupdater: newBucketCreateUpdater(ops, projectID),
-	}
-}
-
-func (bh *bucketSyncDeleter) delete(ctx context.Context) (reconcile.Result, error) {
-	bh.setStatusConditions(runtimev1alpha1.Deleting())
-
-	if bh.isReclaimDelete() {
-		if err := bh.deleteBucket(ctx); err != nil && err != storage.ErrBucketNotExist {
-			bh.setStatusConditions(runtimev1alpha1.ReconcileError(err))
-			return resultRequeue, bh.updateStatus(ctx)
-		}
-	}
-
-	// NOTE(negz): We don't update the conditioned status here because assuming
-	// no other finalizers need to be cleaned up the object should cease to
-	// exist after we update it.
-	bh.removeFinalizer()
-	return reconcile.Result{}, bh.updateObject(ctx)
-}
-
-// sync - synchronizes the state of the bucket resource with the state of the
-// bucket Kubernetes bucket
-func (bh *bucketSyncDeleter) sync(ctx context.Context) (reconcile.Result, error) {
-	if err := bh.updateSecret(ctx); err != nil {
-		bh.setStatusConditions(runtimev1alpha1.ReconcileError(err))
-		return resultRequeue, bh.updateStatus(ctx)
-	}
-
-	attrs, err := bh.getAttributes(ctx)
-	if err != nil && err != storage.ErrBucketNotExist {
-		return resultRequeue, bh.updateStatus(ctx)
-	}
-
-	if attrs == nil {
-		return bh.create(ctx)
-	}
-
-	return bh.update(ctx, attrs)
-}
-
-// createupdater interface defining create and update operations on/for bucket resource
-type createupdater interface {
-	create(context.Context) (reconcile.Result, error)
-	update(context.Context, *storage.BucketAttrs) (reconcile.Result, error)
-}
-
-// bucketCreateUpdater implementation of createupdater interface
-type bucketCreateUpdater struct {
-	operations
+type bucketExternal struct {
+	kube      client.Client
+	bucket    *storage.BucketsService
 	projectID string
 }
 
-// newBucketCreateUpdater new instance of bucketCreateUpdater
-func newBucketCreateUpdater(ops operations, pID string) *bucketCreateUpdater {
-	return &bucketCreateUpdater{
-		operations: ops,
-		projectID:  pID,
+func (b *bucketExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return resource.ExternalObservation{}, errors.New(errNotBucket)
 	}
+	instance, err := b.bucket.Get(meta.GetExternalName(cr)).Context(ctx).Do()
+	if err != nil {
+		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), "cannot get bucket")
+	}
+	if err := bucket.LateInitialize(&cr.Spec.ForProvider, *instance); err != nil {
+		return resource.ExternalObservation{}, errors.Wrap(err, "cannot late initialize bucket spec")
+	}
+	if err := b.kube.Update(ctx, cr); err != nil {
+		return resource.ExternalObservation{}, errors.Wrap(err, "cannot update bucket custom resource")
+	}
+	cr.Status.AtProvider = bucket.GenerateObservation(*instance)
+	cr.Status.SetConditions(v1alpha1.Available())
+	resource.SetBindable(cr)
+	return resource.ExternalObservation{
+		ResourceExists: true,
+	}, nil
 }
 
-// create new bucket resource and save changes back to bucket specs
-func (bh *bucketCreateUpdater) create(ctx context.Context) (reconcile.Result, error) {
-	bh.setStatusConditions(runtimev1alpha1.Creating())
-	bh.addFinalizer()
-
-	if err := bh.createBucket(ctx, bh.projectID); err != nil {
-		bh.setStatusConditions(runtimev1alpha1.ReconcileError(err))
-		return resultRequeue, bh.updateStatus(ctx)
+func (b *bucketExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return resource.ExternalCreation{}, errors.New(errNotBucket)
 	}
-
-	attrs, err := bh.getAttributes(ctx)
+	cr.SetConditions(v1alpha1.Creating())
+	instance, err := bucket.GenerateBucket(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	if err != nil {
-		bh.setStatusConditions(runtimev1alpha1.ReconcileError(err))
-		return resultRequeue, bh.updateStatus(ctx)
+		return resource.ExternalCreation{}, errors.Wrap(err, "cannot generate bucket")
 	}
-	bh.setSpecAttrs(attrs)
-
-	if err := bh.updateObject(ctx); err != nil {
-		return resultRequeue, err
+	if _, err := b.bucket.Insert(b.projectID, instance).Context(ctx).Do(); err != nil {
+		return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateFailed)
 	}
-	bh.setStatusAttrs(attrs)
-
-	bh.setStatusConditions(runtimev1alpha1.Available(), runtimev1alpha1.ReconcileSuccess())
-	bh.setBindable()
-
-	return requeueOnSuccess, bh.updateStatus(ctx)
+	return resource.ExternalCreation{}, nil
 }
 
-// update bucket resource if needed
-func (bh *bucketCreateUpdater) update(ctx context.Context, attrs *storage.BucketAttrs) (reconcile.Result, error) {
-	current := v1alpha3.NewBucketUpdatableAttrs(attrs)
-	if reflect.DeepEqual(*current, bh.getSpecAttrs()) {
-		return requeueOnSuccess, nil
+func (b *bucketExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return resource.ExternalUpdate{}, errors.New(errNotBucket)
 	}
-
-	attrs, err := bh.updateBucket(ctx, attrs.Labels)
+	instance, err := bucket.GenerateBucket(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	if err != nil {
-		bh.setStatusConditions(runtimev1alpha1.ReconcileError(err))
-		return resultRequeue, bh.updateStatus(ctx)
+		return resource.ExternalUpdate{}, errors.Wrap(err, "cannot generate bucket")
 	}
-
-	// Sync attributes back to spec
-	bh.setSpecAttrs(attrs)
-	if err := bh.updateObject(ctx); err != nil {
-		return resultRequeue, err
+	if _, err := b.bucket.Patch(b.projectID, instance).Context(ctx).Do(); err != nil {
+		return resource.ExternalUpdate{}, errors.Wrap(err, "cannot patch bucket")
 	}
+	return resource.ExternalUpdate{}, nil
+}
 
-	bh.setStatusConditions(runtimev1alpha1.ReconcileSuccess())
-	return requeueOnSuccess, bh.updateStatus(ctx)
+func (b *bucketExternal) Delete(ctx context.Context, mg resource.Managed) error {
+	cr, ok := mg.(*v1alpha3.Bucket)
+	if !ok {
+		return errors.New(errNotBucket)
+	}
+	cr.SetConditions(v1alpha1.Deleting())
+	if err := b.bucket.Delete(meta.GetExternalName(cr)).Context(ctx).Do(); resource.Ignore(gcp.IsErrorNotFound, err) != nil {
+		return errors.Wrap(err, "cannot delete bucket")
+	}
+	return nil
 }

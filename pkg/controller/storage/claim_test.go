@@ -89,14 +89,6 @@ func TestConfigureBucket(t *testing.T) {
 							},
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
-						BucketParameters: v1alpha3.BucketParameters{
-							NameFormat: bucketName,
-							BucketSpecAttrs: v1alpha3.BucketSpecAttrs{
-								BucketUpdatableAttrs: v1alpha3.BucketUpdatableAttrs{
-									PredefinedACL: string(bucketPrivate),
-								},
-							},
-						},
 					},
 				},
 				err: nil,

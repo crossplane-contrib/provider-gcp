@@ -872,7 +872,7 @@ func TestCopyBucketSpecAttrs(t *testing.T) {
 }
 
 var (
-	testBucketOutputAttrs = BucketOutputAttrs{
+	testBucketOutputAttrs = BucketObservation{
 		Created:         metav1.NewTime(now),
 		Name:            "test-name",
 		RetentionPolicy: testRetentionPolicyStatus,
@@ -889,9 +889,9 @@ func TestNewBucketOutputAttrs(t *testing.T) {
 	tests := []struct {
 		name string
 		args *storage.BucketAttrs
-		want BucketOutputAttrs
+		want BucketObservation
 	}{
-		{"Nil", nil, BucketOutputAttrs{}},
+		{"Nil", nil, BucketObservation{}},
 		{"Val", testStorageBucketAttrs3, testBucketOutputAttrs},
 	}
 	for _, tt := range tests {
