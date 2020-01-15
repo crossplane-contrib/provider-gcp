@@ -26,6 +26,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimdefaulting"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimscheduling"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	storagev1alpha1 "github.com/crossplaneio/crossplane/apis/storage/v1alpha1"
 
@@ -53,7 +56,7 @@ func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) err
 			resource.HasNoClassReference(),
 			resource.HasNoManagedResourceReference(),
 		))).
-		Complete(resource.NewClaimSchedulingReconciler(mgr,
+		Complete(claimscheduling.NewReconciler(mgr,
 			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
 			resource.ClassKind(v1alpha3.BucketClassGroupVersionKind),
 		))
@@ -80,7 +83,7 @@ func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) err
 			resource.HasNoClassReference(),
 			resource.HasNoManagedResourceReference(),
 		))).
-		Complete(resource.NewClaimDefaultingReconciler(mgr,
+		Complete(claimdefaulting.NewReconciler(mgr,
 			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
 			resource.ClassKind(v1alpha3.BucketClassGroupVersionKind),
 		))
@@ -103,14 +106,14 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		resource.IsManagedKind(resource.ManagedKind(v1alpha3.BucketGroupVersionKind), mgr.GetScheme()),
 	))
 
-	r := resource.NewClaimReconciler(mgr,
+	r := claimbinding.NewReconciler(mgr,
 		resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
 		resource.ClassKind(v1alpha3.BucketClassGroupVersionKind),
 		resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
-		resource.WithManagedConfigurators(
-			resource.ManagedConfiguratorFn(ConfigureBucket),
-			resource.ManagedConfiguratorFn(resource.ConfigureReclaimPolicy),
-			resource.ManagedConfiguratorFn(resource.ConfigureNames),
+		claimbinding.WithManagedConfigurators(
+			claimbinding.ManagedConfiguratorFn(ConfigureBucket),
+			claimbinding.ManagedConfiguratorFn(claimbinding.ConfigureReclaimPolicy),
+			claimbinding.ManagedConfiguratorFn(claimbinding.ConfigureNames),
 		))
 
 	return ctrl.NewControllerManagedBy(mgr).

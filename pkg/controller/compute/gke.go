@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"time"
 
+	container "google.golang.org/api/container/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/container/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,6 +36,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	gcpcomputev1alpha3 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
@@ -76,8 +77,8 @@ var (
 // Reconciler reconciles a Provider object
 type Reconciler struct {
 	client.Client
-	publisher resource.ManagedConnectionPublisher
-	resolver  resource.ManagedReferenceResolver
+	publisher managed.ConnectionPublisher
+	resolver  managed.ReferenceResolver
 
 	connect func(*gcpcomputev1alpha3.GKECluster) (gke.Client, error)
 	create  func(*gcpcomputev1alpha3.GKECluster, gke.Client) (reconcile.Result, error)
@@ -94,8 +95,8 @@ type GKEClusterController struct{}
 func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	r := &Reconciler{
 		Client:    mgr.GetClient(),
-		publisher: resource.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme()),
-		resolver:  resource.NewAPIManagedReferenceResolver(mgr.GetClient()),
+		publisher: managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme()),
+		resolver:  managed.NewAPIReferenceResolver(mgr.GetClient()),
 	}
 	r.connect = r._connect
 	r.create = r._create
@@ -115,7 +116,7 @@ func (r *Reconciler) fail(instance *gcpcomputev1alpha3.GKECluster, err error) (r
 }
 
 // connectionSecret return secret object for cluster instance
-func connectionDetails(cluster *container.Cluster) (resource.ConnectionDetails, error) {
+func connectionDetails(cluster *container.Cluster) (managed.ConnectionDetails, error) {
 	config, err := gke.GenerateClientConfig(cluster)
 	if err != nil {
 		return nil, err
@@ -124,7 +125,7 @@ func connectionDetails(cluster *container.Cluster) (resource.ConnectionDetails, 
 	if err != nil {
 		return nil, err
 	}
-	cd := resource.ConnectionDetails{
+	cd := managed.ConnectionDetails{
 		runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(config.Clusters[cluster.Name].Server),
 		runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(config.AuthInfos[cluster.Name].Username),
 		runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(config.AuthInfos[cluster.Name].Password),
@@ -254,7 +255,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if !resource.IsConditionTrue(instance.GetCondition(runtimev1alpha1.TypeReferencesResolved)) {
 		if err := r.resolver.ResolveReferences(ctx, instance); err != nil {
 			condition := runtimev1alpha1.ReconcileError(err)
-			if resource.IsReferencesAccessError(err) {
+			if managed.IsReferencesAccessError(err) {
 				condition = runtimev1alpha1.ReferenceResolutionBlocked(err)
 			}
 

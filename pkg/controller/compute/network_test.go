@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
@@ -263,7 +264,7 @@ func TestNetworkExternal_Observe(t *testing.T) {
 		handler http.Handler
 		args    args
 		error   bool
-		obs     resource.ExternalObservation
+		obs     managed.ExternalObservation
 	}{
 		"SuccessfulExists": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -283,7 +284,7 @@ func TestNetworkExternal_Observe(t *testing.T) {
 					},
 				},
 			},
-			obs: resource.ExternalObservation{ResourceExists: true},
+			obs: managed.ExternalObservation{ResourceExists: true},
 		},
 		"SuccessfulDoesNotExist": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

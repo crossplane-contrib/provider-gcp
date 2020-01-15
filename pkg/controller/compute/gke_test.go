@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"testing"
 
+	container "google.golang.org/api/container/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/gomega"
-	"google.golang.org/api/container/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
@@ -172,8 +173,8 @@ func TestSyncPublishConnectionDetailsError(t *testing.T) {
 	testError := errors.New("publish-connection-details-error")
 	r := &Reconciler{
 		Client: NewFakeClient(tc),
-		publisher: resource.ManagedConnectionPublisherFns{
-			PublishConnectionFn: func(_ context.Context, _ resource.Managed, _ resource.ConnectionDetails) error {
+		publisher: managed.ConnectionPublisherFns{
+			PublishConnectionFn: func(_ context.Context, _ resource.Managed, _ managed.ConnectionDetails) error {
 				return testError
 			},
 		},
@@ -239,7 +240,7 @@ func TestSync(t *testing.T) {
 
 	r := &Reconciler{
 		Client:    NewFakeClient(tc),
-		publisher: resource.PublisherChain{},
+		publisher: managed.PublisherChain{},
 	}
 
 	called := false
@@ -505,7 +506,7 @@ func TestConnectionDetails(t *testing.T) {
 	config, _ := gke.GenerateClientConfig(cluster)
 	kubeconfig, _ := clientcmd.Write(config)
 
-	want := resource.ConnectionDetails{
+	want := managed.ConnectionDetails{
 		runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(fmt.Sprintf("https://%s", endpoint)),
 		runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(username),
 		runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(password),

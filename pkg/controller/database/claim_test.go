@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	databasev1alpha1 "github.com/crossplaneio/crossplane/apis/database/v1alpha1"
@@ -34,8 +35,8 @@ import (
 )
 
 var (
-	_ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigurePostgreSQLCloudSQLInstance)
-	_ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureMyCloudSQLInstance)
+	_ claimbinding.ManagedConfigurator = claimbinding.ManagedConfiguratorFn(ConfigurePostgreSQLCloudSQLInstance)
+	_ claimbinding.ManagedConfigurator = claimbinding.ManagedConfiguratorFn(ConfigureMyCloudSQLInstance)
 )
 
 func getString(s string) *string { return &s }

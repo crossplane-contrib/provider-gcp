@@ -35,6 +35,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
@@ -71,7 +72,7 @@ var (
 type Reconciler struct {
 	client.Client
 	factory
-	resource.ManagedReferenceResolver
+	managed.ReferenceResolver
 }
 
 // BucketController is responsible for adding the Bucket controller and its
@@ -82,9 +83,9 @@ type BucketController struct{}
 // The Manager will set fields on the Controller and Start it when the Manager is Started.
 func (c *BucketController) SetupWithManager(mgr ctrl.Manager) error {
 	r := &Reconciler{
-		Client:                   mgr.GetClient(),
-		factory:                  &bucketFactory{mgr.GetClient()},
-		ManagedReferenceResolver: resource.NewAPIManagedReferenceResolver(mgr.GetClient()),
+		Client:            mgr.GetClient(),
+		factory:           &bucketFactory{mgr.GetClient()},
+		ReferenceResolver: managed.NewAPIReferenceResolver(mgr.GetClient()),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -113,7 +114,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if !resource.IsConditionTrue(b.GetCondition(runtimev1alpha1.TypeReferencesResolved)) {
 		if err := r.ResolveReferences(ctx, b); err != nil {
 			condition := runtimev1alpha1.ReconcileError(err)
-			if resource.IsReferencesAccessError(err) {
+			if managed.IsReferencesAccessError(err) {
 				condition = runtimev1alpha1.ReferenceResolutionBlocked(err)
 			}
 

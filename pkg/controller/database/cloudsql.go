@@ -32,6 +32,7 @@ import (
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
@@ -62,9 +63,9 @@ type CloudSQLInstanceController struct{}
 // SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields
 // on the Controller and Start it when the Manager is Started.
 func (c *CloudSQLInstanceController) SetupWithManager(mgr ctrl.Manager) error {
-	r := resource.NewManagedReconciler(mgr,
+	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
-		resource.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}))
+		managed.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}))
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.CloudSQLInstanceKindAPIVersion, v1beta1.Group))
 
@@ -79,7 +80,7 @@ type cloudsqlConnector struct {
 	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*sqladmin.Service, error)
 }
 
-func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
 		return nil, errors.New(errNotCloudSQL)
@@ -111,14 +112,14 @@ type cloudsqlExternal struct {
 	projectID string
 }
 
-func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
-		return resource.ExternalObservation{}, errors.New(errNotCloudSQL)
+		return managed.ExternalObservation{}, errors.New(errNotCloudSQL)
 	}
 	instance, err := c.db.Get(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
-		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
 	}
 	cr.Status.AtProvider = cloudsql.GenerateObservation(*instance)
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
@@ -127,7 +128,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	// methods would make more sense.
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := c.kube.Update(ctx, cr); err != nil {
-			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
+			return managed.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 		}
 	}
 	switch cr.Status.AtProvider.State {
@@ -139,23 +140,23 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	case v1beta1.StateCreationFailed, v1beta1.StateSuspended, v1beta1.StateMaintenance, v1beta1.StateUnknownState:
 		cr.Status.SetConditions(v1alpha1.Unavailable())
 	}
-	return resource.ExternalObservation{
+	return managed.ExternalObservation{
 		ResourceExists:    true,
 		ResourceUpToDate:  cloudsql.IsUpToDate(&cr.Spec.ForProvider, *instance),
 		ConnectionDetails: getConnectionDetails(cr, instance),
 	}, nil
 }
 
-func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
-		return resource.ExternalCreation{}, errors.New(errNotCloudSQL)
+		return managed.ExternalCreation{}, errors.New(errNotCloudSQL)
 	}
 	cr.SetConditions(v1alpha1.Creating())
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	password, err := util.GeneratePassword(v1beta1.PasswordLength)
 	if err != nil {
-		return resource.ExternalCreation{}, errors.Wrap(err, errGeneratePassword)
+		return managed.ExternalCreation{}, errors.Wrap(err, errGeneratePassword)
 	}
 
 	instance.RootPassword = password
@@ -163,30 +164,30 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (res
 		// We don't want to return (and thus publish) our randomly generated
 		// password if we didn't actually successfully create a new instance.
 		if gcp.IsErrorAlreadyExists(err) {
-			return resource.ExternalCreation{}, errors.Wrap(err, errNameInUse)
+			return managed.ExternalCreation{}, errors.Wrap(err, errNameInUse)
 		}
-		return resource.ExternalCreation{}, errors.Wrap(err, errCreateFailed)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateFailed)
 	}
 
-	cd := resource.ConnectionDetails{
+	cd := managed.ConnectionDetails{
 		v1alpha1.ResourceCredentialsSecretPasswordKey: []byte(password),
 	}
-	return resource.ExternalCreation{ConnectionDetails: cd}, nil
+	return managed.ExternalCreation{ConnectionDetails: cd}, nil
 }
 
-func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*v1beta1.CloudSQLInstance)
 	if !ok {
-		return resource.ExternalUpdate{}, errors.New(errNotCloudSQL)
+		return managed.ExternalUpdate{}, errors.New(errNotCloudSQL)
 	}
 	if cr.Status.AtProvider.State == v1beta1.StateCreating {
-		return resource.ExternalUpdate{}, nil
+		return managed.ExternalUpdate{}, nil
 	}
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
 	// TODO(muvaf): the returned operation handle could help us not to send Patch
 	// request aggressively.
 	_, err := c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
-	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
+	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
 }
 
 func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) error {
@@ -202,8 +203,8 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	return errors.Wrap(err, errDeleteFailed)
 }
 
-func getConnectionDetails(cr *v1beta1.CloudSQLInstance, instance *sqladmin.DatabaseInstance) resource.ConnectionDetails {
-	m := resource.ConnectionDetails{
+func getConnectionDetails(cr *v1beta1.CloudSQLInstance, instance *sqladmin.DatabaseInstance) managed.ConnectionDetails {
+	m := managed.ConnectionDetails{
 		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
 	}
 

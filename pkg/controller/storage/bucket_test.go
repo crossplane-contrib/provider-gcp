@@ -287,7 +287,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Client:  tt.fields.client,
 				factory: tt.fields.factory,
 
-				ManagedReferenceResolver: &mockReferenceResolver{},
+				ReferenceResolver: &mockReferenceResolver{},
 			}
 			got, err := r.Reconcile(req)
 			if diff := cmp.Diff(tt.wantErr, err, test.EquateErrors()); diff != "" {

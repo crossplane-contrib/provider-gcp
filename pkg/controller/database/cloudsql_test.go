@@ -36,6 +36,7 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
@@ -123,8 +124,8 @@ func instance(im ...instanceModifier) *v1beta1.CloudSQLInstance {
 	return i
 }
 
-func connDetails(privateIP, publicIP string, additions ...map[string][]byte) resource.ConnectionDetails {
-	m := resource.ConnectionDetails{
+func connDetails(privateIP, publicIP string, additions ...map[string][]byte) managed.ConnectionDetails {
+	m := managed.ConnectionDetails{
 		runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
 	}
 	if publicIP != "" {
@@ -151,8 +152,8 @@ func gError(code int, message string) *googleapi.Error {
 	}
 }
 
-var _ resource.ExternalConnecter = &cloudsqlConnector{}
-var _ resource.ExternalClient = &cloudsqlExternal{}
+var _ managed.ExternalConnecter = &cloudsqlConnector{}
+var _ managed.ExternalClient = &cloudsqlExternal{}
 
 func TestConnect(t *testing.T) {
 	provider := gcpv1alpha3.Provider{
@@ -184,7 +185,7 @@ func TestConnect(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		conn resource.ExternalConnecter
+		conn managed.ExternalConnecter
 		args args
 		want want
 	}{
@@ -272,7 +273,7 @@ func TestObserve(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		obs resource.ExternalObservation
+		obs managed.ExternalObservation
 		err error
 	}
 
@@ -353,7 +354,7 @@ func TestObserve(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
 					ConnectionDetails: connDetails("", ""),
@@ -376,7 +377,7 @@ func TestObserve(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
 					ConnectionDetails: connDetails("", ""),
@@ -402,7 +403,7 @@ func TestObserve(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
 					ConnectionDetails: connDetails("", ""),
@@ -455,7 +456,7 @@ func TestCreate(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		cre resource.ExternalCreation
+		cre managed.ExternalCreation
 		err error
 	}
 
@@ -491,7 +492,7 @@ func TestCreate(t *testing.T) {
 			},
 			want: want{
 				mg: instance(withConditions(runtimev1alpha1.Creating())),
-				cre: resource.ExternalCreation{ConnectionDetails: resource.ConnectionDetails{
+				cre: managed.ExternalCreation{ConnectionDetails: managed.ConnectionDetails{
 					runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
 				}},
 				err: nil,
@@ -554,7 +555,7 @@ func TestCreate(t *testing.T) {
 					t.Errorf("Create(...): -want, +got:\n%s", diff)
 				}
 			}
-			if diff := cmp.Diff(tc.want.cre, cre, cmp.Comparer(func(a, b resource.ConnectionDetails) bool {
+			if diff := cmp.Diff(tc.want.cre, cre, cmp.Comparer(func(a, b managed.ConnectionDetails) bool {
 				// This special comparer considers two ConnectionDetails to be
 				// equal if one has the special password value wantRandom and
 				// the other has a non-zero password string. If neither has the
@@ -685,7 +686,7 @@ func TestUpdate(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		upd resource.ExternalUpdate
+		upd managed.ExternalUpdate
 		err error
 	}
 
@@ -740,7 +741,7 @@ func TestUpdate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				upd: resource.ExternalUpdate{
+				upd: managed.ExternalUpdate{
 					ConnectionDetails: map[string][]byte{
 						runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
 					},
@@ -802,7 +803,7 @@ func TestGetConnectionDetails(t *testing.T) {
 		i  *sqladmin.DatabaseInstance
 	}
 	type want struct {
-		conn resource.ConnectionDetails
+		conn managed.ConnectionDetails
 	}
 
 	cases := map[string]struct {
