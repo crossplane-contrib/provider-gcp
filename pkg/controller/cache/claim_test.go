@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	cachev1alpha1 "github.com/crossplaneio/crossplane/apis/cache/v1alpha1"
@@ -33,7 +34,7 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
 )
 
-var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance)
+var _ claimbinding.ManagedConfigurator = claimbinding.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance)
 
 func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 	type args struct {

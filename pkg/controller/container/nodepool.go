@@ -32,6 +32,7 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
@@ -57,9 +58,9 @@ type NodePoolController struct{}
 // SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func (c *NodePoolController) SetupWithManager(mgr ctrl.Manager) error {
-	r := resource.NewManagedReconciler(mgr,
+	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.NodePoolGroupVersionKind),
-		resource.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}))
+		managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}))
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha1.NodePoolKindAPIVersion, v1alpha1.Group))
 
@@ -74,7 +75,7 @@ type nodePoolConnector struct {
 	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*container.Service, error)
 }
 
-func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	i, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
 		return nil, errors.New(errNotNodePool)
@@ -103,15 +104,15 @@ type nodePoolExternal struct {
 	projectID string
 }
 
-func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) { // nolint:gocyclo
+func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
 	cr, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
-		return resource.ExternalObservation{}, errors.New(errNotNodePool)
+		return managed.ExternalObservation{}, errors.New(errNotNodePool)
 	}
 
 	existing, err := e.container.Projects.Locations.Clusters.NodePools.Get(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
-		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetNodePool)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetNodePool)
 	}
 
 	cr.Status.AtProvider = np.GenerateObservation(*existing)
@@ -119,7 +120,7 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (re
 	np.LateInitializeSpec(&cr.Spec.ForProvider, *existing)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.kube.Update(ctx, cr); err != nil {
-			return resource.ExternalObservation{}, errors.Wrap(err, errManagedNodePoolUpdateFailed)
+			return managed.ExternalObservation{}, errors.Wrap(err, errManagedNodePoolUpdateFailed)
 		}
 	}
 
@@ -135,22 +136,22 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (re
 
 	u, _ := np.IsUpToDate(&cr.Spec.ForProvider, *existing)
 
-	return resource.ExternalObservation{
+	return managed.ExternalObservation{
 		ResourceExists:   true,
 		ResourceUpToDate: u,
 	}, nil
 }
 
-func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
-		return resource.ExternalCreation{}, errors.New(errNotNodePool)
+		return managed.ExternalCreation{}, errors.New(errNotNodePool)
 	}
 	cr.SetConditions(runtimev1alpha1.Creating())
 
 	// Wait until creation is complete if already provisioning.
 	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateProvisioning {
-		return resource.ExternalCreation{}, nil
+		return managed.ExternalCreation{}, nil
 	}
 
 	// Generate GKE node pool from resource spec.
@@ -161,32 +162,32 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (res
 	}
 
 	if _, err := e.container.Projects.Locations.Clusters.NodePools.Create(cr.Spec.ForProvider.Cluster, create).Context(ctx).Do(); err != nil {
-		return resource.ExternalCreation{}, errors.Wrap(err, errCreateNodePool)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateNodePool)
 	}
 
-	return resource.ExternalCreation{}, nil
+	return managed.ExternalCreation{}, nil
 }
 
-func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*v1alpha1.NodePool)
 	if !ok {
-		return resource.ExternalUpdate{}, errors.New(errNotNodePool)
+		return managed.ExternalUpdate{}, errors.New(errNotNodePool)
 	}
 	// Do not issue another update until the node pool finishes the previous
 	// one.
 	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateReconciling || cr.Status.AtProvider.Status == v1alpha1.NodePoolStateProvisioning {
-		return resource.ExternalUpdate{}, nil
+		return managed.ExternalUpdate{}, nil
 	}
 
 	// We have to get the node pool again here to determine how to update.
 	existing, err := e.container.Projects.Locations.Clusters.NodePools.Get(np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
-		return resource.ExternalUpdate{}, errors.Wrap(err, errGetNodePool)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errGetNodePool)
 	}
 
 	u, fn := np.IsUpToDate(&cr.Spec.ForProvider, *existing)
 	if u {
-		return resource.ExternalUpdate{}, nil
+		return managed.ExternalUpdate{}, nil
 	}
 
 	// GKE uses different update methods depending on the field that is being
@@ -195,7 +196,7 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (res
 	// update, only one can be performed at a time. If it is not, then updates
 	// can be mass applied.
 	_, err = fn(ctx, e.container, np.GetFullyQualifiedName(cr.Spec.ForProvider, meta.GetExternalName(cr)))
-	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateNodePool)
+	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateNodePool)
 }
 
 func (e *nodePoolExternal) Delete(ctx context.Context, mg resource.Managed) error {

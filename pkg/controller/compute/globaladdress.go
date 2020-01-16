@@ -31,6 +31,7 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
@@ -57,10 +58,10 @@ func (c *GlobalAddressController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.GlobalAddressKindAPIVersion, v1alpha3.Group))).
 		For(&v1alpha3.GlobalAddress{}).
-		Complete(resource.NewManagedReconciler(mgr,
+		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha3.GlobalAddressGroupVersionKind),
-			resource.WithExternalConnecter(&gaConnector{client: mgr.GetClient(), newCompute: compute.NewService}),
-			resource.WithManagedConnectionPublishers()))
+			managed.WithExternalConnecter(&gaConnector{client: mgr.GetClient(), newCompute: compute.NewService}),
+			managed.WithConnectionPublishers()))
 }
 
 type gaConnector struct {
@@ -68,7 +69,7 @@ type gaConnector struct {
 	newCompute func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error)
 }
 
-func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	ga, ok := mg.(*v1alpha3.GlobalAddress)
 	if !ok {
 		return nil, errors.New(errNotGlobalAddress)
@@ -95,21 +96,21 @@ type gaExternal struct {
 	projectID string
 }
 
-func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	ga, ok := mg.(*v1alpha3.GlobalAddress)
 	if !ok {
-		return resource.ExternalObservation{}, errors.New(errNotGlobalAddress)
+		return managed.ExternalObservation{}, errors.New(errNotGlobalAddress)
 	}
 	observed, err := e.compute.GlobalAddresses.Get(e.projectID, ga.Spec.Name).Context(ctx).Do()
 	if gcp.IsErrorNotFound(err) {
-		return resource.ExternalObservation{ResourceExists: false}, nil
+		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 	if err != nil {
-		return resource.ExternalObservation{}, errors.Wrap(err, errGetAddress)
+		return managed.ExternalObservation{}, errors.Wrap(err, errGetAddress)
 	}
 
 	// Global addresses are always "up to date" because they can't be updated. ¯\_(ツ)_/¯
-	eo := resource.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}
+	eo := managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}
 
 	// NOTE(negz): We must update our parameters before our status to avoid
 	// client.Update overwriting our newly updated status with that most
@@ -122,21 +123,21 @@ func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (resource
 	return eo, errors.Wrap(err, errUpdateManaged)
 }
 
-func (e *gaExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+func (e *gaExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	ga, ok := mg.(*v1alpha3.GlobalAddress)
 	if !ok {
-		return resource.ExternalCreation{}, errors.New(errNotGlobalAddress)
+		return managed.ExternalCreation{}, errors.New(errNotGlobalAddress)
 	}
 
 	ga.Status.SetConditions(runtimev1alpha1.Creating())
 	address := globaladdress.FromParameters(ga.Spec.GlobalAddressParameters)
 	_, err := e.compute.GlobalAddresses.Insert(e.projectID, address).Context(ctx).Do()
-	return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateAddress)
+	return managed.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateAddress)
 }
 
-func (e *gaExternal) Update(_ context.Context, _ resource.Managed) (resource.ExternalUpdate, error) {
+func (e *gaExternal) Update(_ context.Context, _ resource.Managed) (managed.ExternalUpdate, error) {
 	// Global addresses cannot be updated.
-	return resource.ExternalUpdate{}, nil
+	return managed.ExternalUpdate{}, nil
 }
 
 func (e *gaExternal) Delete(ctx context.Context, mg resource.Managed) error {

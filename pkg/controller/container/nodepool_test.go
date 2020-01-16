@@ -24,10 +24,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
@@ -36,6 +32,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
 	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
@@ -114,7 +116,7 @@ func TestNodePoolConnect(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		conn resource.ExternalConnecter
+		conn managed.ExternalConnecter
 		args args
 		want want
 	}{
@@ -202,7 +204,7 @@ func TestNodePoolObserve(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		obs resource.ExternalObservation
+		obs managed.ExternalObservation
 		err error
 	}
 
@@ -284,7 +286,7 @@ func TestNodePoolObserve(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
@@ -306,7 +308,7 @@ func TestNodePoolObserve(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
@@ -331,7 +333,7 @@ func TestNodePoolObserve(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
@@ -363,7 +365,7 @@ func TestNodePoolObserve(t *testing.T) {
 				),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
@@ -413,7 +415,7 @@ func TestNodePoolCreate(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		cre resource.ExternalCreation
+		cre managed.ExternalCreation
 		err error
 	}
 
@@ -446,7 +448,7 @@ func TestNodePoolCreate(t *testing.T) {
 			},
 			want: want{
 				mg:  nodePool(npWithConditions(runtimev1alpha1.Creating())),
-				cre: resource.ExternalCreation{},
+				cre: managed.ExternalCreation{},
 				err: nil,
 			},
 		},
@@ -478,7 +480,7 @@ func TestNodePoolCreate(t *testing.T) {
 					npWithConditions(runtimev1alpha1.Creating()),
 					npWithProviderStatus(v1alpha1.NodePoolStateProvisioning),
 				),
-				cre: resource.ExternalCreation{},
+				cre: managed.ExternalCreation{},
 				err: nil,
 			},
 		},
@@ -670,7 +672,7 @@ func TestNodePoolUpdate(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		upd resource.ExternalUpdate
+		upd managed.ExternalUpdate
 		err error
 	}
 

@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
@@ -71,7 +72,7 @@ func TestConnect(t *testing.T) {
 		mg  resource.Managed
 	}
 	cases := map[string]struct {
-		ec   resource.ExternalConnecter
+		ec   managed.ExternalConnecter
 		args args
 		want error
 	}{
@@ -213,12 +214,12 @@ func TestObserve(t *testing.T) {
 	}
 
 	type want struct {
-		eo  resource.ExternalObservation
+		eo  managed.ExternalObservation
 		err error
 	}
 
 	cases := map[string]struct {
-		e    resource.ExternalClient
+		e    managed.ExternalClient
 		args args
 		want want
 	}{
@@ -258,7 +259,7 @@ func TestObserve(t *testing.T) {
 				mg:  conn(),
 			},
 			want: want{
-				eo: resource.ExternalObservation{
+				eo: managed.ExternalObservation{
 					ResourceExists: false,
 				},
 			},
@@ -296,7 +297,7 @@ func TestObserve(t *testing.T) {
 				mg:  conn(),
 			},
 			want: want{
-				eo: resource.ExternalObservation{
+				eo: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
@@ -324,12 +325,12 @@ func TestCreate(t *testing.T) {
 	}
 
 	type want struct {
-		ec  resource.ExternalCreation
+		ec  managed.ExternalCreation
 		err error
 	}
 
 	cases := map[string]struct {
-		e    resource.ExternalClient
+		e    managed.ExternalClient
 		args args
 		want want
 	}{
@@ -397,12 +398,12 @@ func TestUpdate(t *testing.T) {
 	}
 
 	type want struct {
-		eu  resource.ExternalUpdate
+		eu  managed.ExternalUpdate
 		err error
 	}
 
 	cases := map[string]struct {
-		e    resource.ExternalClient
+		e    managed.ExternalClient
 		args args
 		want want
 	}{
@@ -460,7 +461,7 @@ func TestDelete(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		e    resource.ExternalClient
+		e    managed.ExternalClient
 		args args
 		want error
 	}{

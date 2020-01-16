@@ -31,6 +31,7 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
@@ -55,10 +56,10 @@ type SubnetworkController struct{}
 // SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func (c *SubnetworkController) SetupWithManager(mgr ctrl.Manager) error {
-	r := resource.NewManagedReconciler(mgr,
+	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha3.SubnetworkGroupVersionKind),
-		resource.WithExternalConnecter(&subnetworkConnector{kube: mgr.GetClient()}),
-		resource.WithManagedConnectionPublishers())
+		managed.WithExternalConnecter(&subnetworkConnector{kube: mgr.GetClient()}),
+		managed.WithConnectionPublishers())
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.SubnetworkKindAPIVersion, v1alpha3.Group))
 
@@ -73,7 +74,7 @@ type subnetworkConnector struct {
 	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*googlecompute.Service, error)
 }
 
-func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
 		return nil, errors.New(errNotSubnetwork)
@@ -113,49 +114,49 @@ type subnetworkExternal struct {
 	projectID string
 }
 
-func (c *subnetworkExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+func (c *subnetworkExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
-		return resource.ExternalObservation{}, errors.New(errNotSubnetwork)
+		return managed.ExternalObservation{}, errors.New(errNotSubnetwork)
 	}
 	observed, err := c.Subnetworks.Get(c.projectID, cr.Spec.Region, cr.Spec.Name).Context(ctx).Do()
 	if clients.IsErrorNotFound(err) {
-		return resource.ExternalObservation{
+		return managed.ExternalObservation{
 			ResourceExists: false,
 		}, nil
 	}
 	if err != nil {
-		return resource.ExternalObservation{}, err
+		return managed.ExternalObservation{}, err
 	}
 	cr.Status.GCPSubnetworkStatus = subnetwork.GenerateGCPSubnetworkStatus(observed)
 	cr.Status.SetConditions(runtimev1alpha1.Available())
-	return resource.ExternalObservation{
+	return managed.ExternalObservation{
 		ResourceExists: true,
 	}, nil
 }
 
-func (c *subnetworkExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+func (c *subnetworkExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
-		return resource.ExternalCreation{}, errors.New(errNotSubnetwork)
+		return managed.ExternalCreation{}, errors.New(errNotSubnetwork)
 	}
 	_, err := c.Subnetworks.Insert(c.projectID, cr.Spec.Region, subnetwork.GenerateSubnetwork(cr.Spec.SubnetworkParameters)).
 		Context(ctx).
 		Do()
 	if clients.IsErrorAlreadyExists(err) {
-		return resource.ExternalCreation{}, nil
+		return managed.ExternalCreation{}, nil
 	}
 	cr.Status.SetConditions(runtimev1alpha1.Creating())
-	return resource.ExternalCreation{}, errors.Wrap(err, errCreateSubnetworkFailed)
+	return managed.ExternalCreation{}, errors.Wrap(err, errCreateSubnetworkFailed)
 }
 
-func (c *subnetworkExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+func (c *subnetworkExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*v1alpha3.Subnetwork)
 	if !ok {
-		return resource.ExternalUpdate{}, errors.New(errNotSubnetwork)
+		return managed.ExternalUpdate{}, errors.New(errNotSubnetwork)
 	}
 	if cr.Spec.IsSameAs(cr.Status.GCPSubnetworkStatus) {
-		return resource.ExternalUpdate{}, nil
+		return managed.ExternalUpdate{}, nil
 	}
 	subnetworkBody := subnetwork.GenerateSubnetwork(cr.Spec.SubnetworkParameters)
 	// Fingerprint from the last GET is required for updates.
@@ -164,7 +165,7 @@ func (c *subnetworkExternal) Update(ctx context.Context, mg resource.Managed) (r
 	subnetworkBody.Region = ""
 	subnetworkBody.Network = ""
 	_, err := c.Subnetworks.Patch(c.projectID, cr.Spec.Region, cr.Spec.Name, subnetworkBody).Context(ctx).Do()
-	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateSubnetworkFailed)
+	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSubnetworkFailed)
 }
 
 func (c *subnetworkExternal) Delete(ctx context.Context, mg resource.Managed) error {

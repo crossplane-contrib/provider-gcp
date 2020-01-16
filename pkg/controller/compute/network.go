@@ -31,6 +31,7 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
@@ -58,10 +59,10 @@ type NetworkController struct{}
 // SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func (c *NetworkController) SetupWithManager(mgr ctrl.Manager) error {
-	r := resource.NewManagedReconciler(mgr,
+	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha3.NetworkGroupVersionKind),
-		resource.WithExternalConnecter(&networkConnector{kube: mgr.GetClient()}),
-		resource.WithManagedConnectionPublishers())
+		managed.WithExternalConnecter(&networkConnector{kube: mgr.GetClient()}),
+		managed.WithConnectionPublishers())
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.NetworkKindAPIVersion, v1alpha3.Group))
 
@@ -76,7 +77,7 @@ type networkConnector struct {
 	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*googlecompute.Service, error)
 }
 
-func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*v1alpha3.Network)
 	if !ok {
 		return nil, errors.New(errNotNetwork)
@@ -116,50 +117,50 @@ type networkExternal struct {
 	projectID string
 }
 
-func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha3.Network)
 	if !ok {
-		return resource.ExternalObservation{}, errors.New(errNotNetwork)
+		return managed.ExternalObservation{}, errors.New(errNotNetwork)
 	}
 	observed, err := c.Networks.Get(c.projectID, cr.Spec.Name).Context(ctx).Do()
 	if clients.IsErrorNotFound(err) {
-		return resource.ExternalObservation{
+		return managed.ExternalObservation{
 			ResourceExists: false,
 		}, nil
 	}
 	if err != nil {
-		return resource.ExternalObservation{}, err
+		return managed.ExternalObservation{}, err
 	}
 	cr.Status.GCPNetworkStatus = network.GenerateGCPNetworkStatus(*observed)
 	// If the Network resource is retrieved, it is ready to be used
 	cr.Status.SetConditions(runtimev1alpha1.Available())
-	return resource.ExternalObservation{
+	return managed.ExternalObservation{
 		ResourceExists: true,
 	}, nil
 }
 
-func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha3.Network)
 	if !ok {
-		return resource.ExternalCreation{}, errors.New(errNotNetwork)
+		return managed.ExternalCreation{}, errors.New(errNotNetwork)
 	}
 	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(cr.Spec.NetworkParameters)).
 		Context(ctx).
 		Do()
 	if clients.IsErrorAlreadyExists(err) {
-		return resource.ExternalCreation{}, nil
+		return managed.ExternalCreation{}, nil
 	}
 	cr.Status.SetConditions(runtimev1alpha1.Creating())
-	return resource.ExternalCreation{}, errors.Wrap(err, errNetworkCreateFailed)
+	return managed.ExternalCreation{}, errors.Wrap(err, errNetworkCreateFailed)
 }
 
-func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*v1alpha3.Network)
 	if !ok {
-		return resource.ExternalUpdate{}, errors.New(errNotNetwork)
+		return managed.ExternalUpdate{}, errors.New(errNotNetwork)
 	}
 	if cr.Spec.IsSameAs(cr.Status.GCPNetworkStatus) {
-		return resource.ExternalUpdate{}, nil
+		return managed.ExternalUpdate{}, nil
 	}
 	// NOTE(muvaf): All parameters except routing config are
 	// immutable.
@@ -169,7 +170,7 @@ func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (reso
 		network.GenerateNetwork(cr.Spec.NetworkParameters)).
 		Context(ctx).
 		Do()
-	return resource.ExternalUpdate{}, errors.Wrap(err, errNetworkUpdateFailed)
+	return managed.ExternalUpdate{}, errors.Wrap(err, errNetworkUpdateFailed)
 }
 
 func (c *networkExternal) Delete(ctx context.Context, mg resource.Managed) error {

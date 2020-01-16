@@ -33,6 +33,7 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
@@ -88,10 +89,10 @@ func (c *ConnectionController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.ConnectionKindAPIVersion, v1alpha3.Group))).
 		For(&v1alpha3.Connection{}).
-		Complete(resource.NewManagedReconciler(mgr,
+		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha3.ConnectionGroupVersionKind),
-			resource.WithExternalConnecter(conn),
-			resource.WithManagedConnectionPublishers()))
+			managed.WithExternalConnecter(conn),
+			managed.WithConnectionPublishers()))
 }
 
 type connector struct {
@@ -100,7 +101,7 @@ type connector struct {
 	newServiceNetworking func(ctx context.Context, opts ...option.ClientOption) (*servicenetworking.APIService, error)
 }
 
-func (c *connector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	ga, ok := mg.(*v1alpha3.Connection)
 	if !ok {
 		return nil, errors.New(errNotConnection)
@@ -135,26 +136,26 @@ type external struct {
 	projectID string
 }
 
-func (e *external) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) {
+func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cn, ok := mg.(*v1alpha3.Connection)
 	if !ok {
-		return resource.ExternalObservation{}, errors.New(errNotConnection)
+		return managed.ExternalObservation{}, errors.New(errNotConnection)
 	}
 	r, err := e.sn.Services.Connections.List(cn.Spec.Parent).Network(cn.Spec.Network).Context(ctx).Do()
 	if err != nil {
-		return resource.ExternalObservation{}, errors.Wrap(err, errListConnections)
+		return managed.ExternalObservation{}, errors.Wrap(err, errListConnections)
 	}
 
 	o := connection.Observation{Connection: findConnection(r.Connections)}
 	if o.Connection == nil {
-		return resource.ExternalObservation{ResourceExists: false}, nil
+		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
 	if o.Network, err = e.compute.Networks.Get(e.projectID, path.Base(o.Connection.Network)).Context(ctx).Do(); err != nil {
-		return resource.ExternalObservation{}, errors.Wrap(err, errGetNetwork)
+		return managed.ExternalObservation{}, errors.Wrap(err, errGetNetwork)
 	}
 
-	eo := resource.ExternalObservation{
+	eo := managed.ExternalObservation{
 		ResourceExists:   true,
 		ResourceUpToDate: connection.UpToDate(cn.Spec.ConnectionParameters, o.Connection),
 	}
@@ -173,28 +174,28 @@ func findConnection(conns []*servicenetworking.Connection) *servicenetworking.Co
 	return nil
 }
 
-func (e *external) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cn, ok := mg.(*v1alpha3.Connection)
 	if !ok {
-		return resource.ExternalCreation{}, errors.New(errNotConnection)
+		return managed.ExternalCreation{}, errors.New(errNotConnection)
 	}
 
 	cn.Status.SetConditions(runtimev1alpha1.Creating())
 	conn := connection.FromParameters(cn.Spec.ConnectionParameters)
 	_, err := e.sn.Services.Connections.Create(cn.Spec.Parent, conn).Context(ctx).Do()
-	return resource.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateConnection)
+	return managed.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateConnection)
 }
 
-func (e *external) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cn, ok := mg.(*v1alpha3.Connection)
 	if !ok {
-		return resource.ExternalUpdate{}, errors.New(errNotConnection)
+		return managed.ExternalUpdate{}, errors.New(errNotConnection)
 	}
 
 	name := fmt.Sprintf("%s/connections/%s", cn.Spec.Parent, connection.PeeringName)
 	conn := connection.FromParameters(cn.Spec.ConnectionParameters)
 	_, err := e.sn.Services.Connections.Patch(name, conn).Context(ctx).Do()
-	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateConnection)
+	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateConnection)
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {

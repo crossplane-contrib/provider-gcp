@@ -38,6 +38,7 @@ import (
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
@@ -58,8 +59,8 @@ const (
 
 var errBoom = errors.New("boom")
 
-var _ resource.ExternalConnecter = &clusterConnector{}
-var _ resource.ExternalClient = &clusterExternal{}
+var _ managed.ExternalConnecter = &clusterConnector{}
+var _ managed.ExternalClient = &clusterExternal{}
 
 func gError(code int, message string) *googleapi.Error {
 	return &googleapi.Error{
@@ -149,7 +150,7 @@ func TestConnect(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		conn resource.ExternalConnecter
+		conn managed.ExternalConnecter
 		args args
 		want want
 	}{
@@ -237,7 +238,7 @@ func TestObserve(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		obs resource.ExternalObservation
+		obs managed.ExternalObservation
 		err error
 	}
 
@@ -323,7 +324,7 @@ func TestObserve(t *testing.T) {
 				mg: cluster(withUsername("admin")),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 					ConnectionDetails: connectionDetails(&container.Cluster{
@@ -352,7 +353,7 @@ func TestObserve(t *testing.T) {
 				mg: cluster(),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
 					ConnectionDetails: connectionDetails(&container.Cluster{}),
@@ -378,7 +379,7 @@ func TestObserve(t *testing.T) {
 				mg: cluster(),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
 					ConnectionDetails: connectionDetails(&container.Cluster{}),
@@ -411,7 +412,7 @@ func TestObserve(t *testing.T) {
 				),
 			},
 			want: want{
-				obs: resource.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
 					ConnectionDetails: connectionDetails(&container.Cluster{}),
@@ -464,7 +465,7 @@ func TestCreate(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		cre resource.ExternalCreation
+		cre managed.ExternalCreation
 		err error
 	}
 
@@ -497,7 +498,7 @@ func TestCreate(t *testing.T) {
 			},
 			want: want{
 				mg: cluster(withConditions(runtimev1alpha1.Creating())),
-				cre: resource.ExternalCreation{ConnectionDetails: resource.ConnectionDetails{
+				cre: managed.ExternalCreation{ConnectionDetails: managed.ConnectionDetails{
 					runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
 				}},
 				err: nil,
@@ -531,7 +532,7 @@ func TestCreate(t *testing.T) {
 					withConditions(runtimev1alpha1.Creating()),
 					withProviderStatus(v1beta1.ClusterStateProvisioning),
 				),
-				cre: resource.ExternalCreation{},
+				cre: managed.ExternalCreation{},
 				err: nil,
 			},
 		},
@@ -723,7 +724,7 @@ func TestUpdate(t *testing.T) {
 	}
 	type want struct {
 		mg  resource.Managed
-		upd resource.ExternalUpdate
+		upd managed.ExternalUpdate
 		err error
 	}
 
@@ -985,7 +986,7 @@ users:
 
 	cases := map[string]struct {
 		args *container.Cluster
-		want resource.ConnectionDetails
+		want managed.ConnectionDetails
 	}{
 		"Full": {
 			args: &container.Cluster{

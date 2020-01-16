@@ -34,6 +34,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
@@ -62,9 +63,9 @@ type GKEClusterController struct{}
 // SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
-	r := resource.NewManagedReconciler(mgr,
+	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind),
-		resource.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}))
+		managed.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}))
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.GKEClusterKindAPIVersion, v1beta1.Group))
 
@@ -79,7 +80,7 @@ type clusterConnector struct {
 	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*container.Service, error)
 }
 
-func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (resource.ExternalClient, error) {
+func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	i, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
 		return nil, errors.New(errNotCluster)
@@ -108,15 +109,15 @@ type clusterExternal struct {
 	projectID string
 }
 
-func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (resource.ExternalObservation, error) { // nolint:gocyclo
+func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
 	cr, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
-		return resource.ExternalObservation{}, errors.New(errNotCluster)
+		return managed.ExternalObservation{}, errors.New(errNotCluster)
 	}
 
 	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
-		return resource.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetCluster)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetCluster)
 	}
 
 	cr.Status.AtProvider = gke.GenerateObservation(*existing)
@@ -124,7 +125,7 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (res
 	gke.LateInitializeSpec(&cr.Spec.ForProvider, *existing)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.kube.Update(ctx, cr); err != nil {
-			return resource.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
+			return managed.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 		}
 	}
 
@@ -140,23 +141,23 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (res
 
 	u, _ := gke.IsUpToDate(&cr.Spec.ForProvider, *existing)
 
-	return resource.ExternalObservation{
+	return managed.ExternalObservation{
 		ResourceExists:    true,
 		ResourceUpToDate:  u,
 		ConnectionDetails: connectionDetails(existing),
 	}, nil
 }
 
-func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (resource.ExternalCreation, error) {
+func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
-		return resource.ExternalCreation{}, errors.New(errNotCluster)
+		return managed.ExternalCreation{}, errors.New(errNotCluster)
 	}
 	cr.SetConditions(v1alpha1.Creating())
 
 	// Wait until creation is complete if already provisioning.
 	if cr.Status.AtProvider.Status == v1beta1.ClusterStateProvisioning {
-		return resource.ExternalCreation{}, nil
+		return managed.ExternalCreation{}, nil
 	}
 
 	// Generate GKE cluster from resource spec.
@@ -173,30 +174,30 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (reso
 	}
 
 	if _, err := e.cluster.Projects.Locations.Clusters.Create(gke.GetFullyQualifiedParent(e.projectID, cr.Spec.ForProvider), create).Context(ctx).Do(); err != nil {
-		return resource.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
 	}
 
-	return resource.ExternalCreation{}, nil
+	return managed.ExternalCreation{}, nil
 }
 
-func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (resource.ExternalUpdate, error) {
+func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*v1beta1.GKECluster)
 	if !ok {
-		return resource.ExternalUpdate{}, errors.New(errNotCluster)
+		return managed.ExternalUpdate{}, errors.New(errNotCluster)
 	}
 	// Do not issue another update until the cluster finishes the previous one.
 	if cr.Status.AtProvider.Status == v1beta1.ClusterStateReconciling || cr.Status.AtProvider.Status == v1beta1.ClusterStateProvisioning {
-		return resource.ExternalUpdate{}, nil
+		return managed.ExternalUpdate{}, nil
 	}
 	// We have to get the cluster again here to determine how to update.
 	existing, err := e.cluster.Projects.Locations.Clusters.Get(gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
-		return resource.ExternalUpdate{}, errors.Wrap(err, errGetCluster)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errGetCluster)
 	}
 
 	u, fn := gke.IsUpToDate(&cr.Spec.ForProvider, *existing)
 	if u {
-		return resource.ExternalUpdate{}, nil
+		return managed.ExternalUpdate{}, nil
 	}
 
 	// GKE uses different update methods depending on the field that is being
@@ -205,7 +206,7 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (reso
 	// updated at a time, so if there are multiple diffs, the next one will be
 	// handled after the current one is completed.
 	_, err = fn(ctx, e.cluster, gke.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr)))
-	return resource.ExternalUpdate{}, errors.Wrap(err, errUpdateCluster)
+	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateCluster)
 }
 
 func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error {
@@ -224,7 +225,7 @@ func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error
 }
 
 // connectionSecret return secret object for cluster instance
-func connectionDetails(cluster *container.Cluster) resource.ConnectionDetails {
+func connectionDetails(cluster *container.Cluster) managed.ConnectionDetails {
 	config, err := gke.GenerateClientConfig(cluster)
 	if err != nil {
 		return nil
@@ -233,7 +234,7 @@ func connectionDetails(cluster *container.Cluster) resource.ConnectionDetails {
 	if err != nil {
 		return nil
 	}
-	cd := resource.ConnectionDetails{
+	cd := managed.ConnectionDetails{
 		runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(config.Clusters[cluster.Name].Server),
 		runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(config.AuthInfos[cluster.Name].Username),
 		runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(config.AuthInfos[cluster.Name].Password),

@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 	computev1alpha1 "github.com/crossplaneio/crossplane/apis/compute/v1alpha1"
@@ -33,7 +34,7 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 )
 
-var _ resource.ManagedConfigurator = resource.ManagedConfiguratorFn(ConfigureGKECluster)
+var _ claimbinding.ManagedConfigurator = claimbinding.ManagedConfiguratorFn(ConfigureGKECluster)
 
 func TestConfigureGKECluster(t *testing.T) {
 	type args struct {

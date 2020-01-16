@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
@@ -67,7 +68,7 @@ func TestGlobalAddressConnect(t *testing.T) {
 		mg  resource.Managed
 	}
 	cases := map[string]struct {
-		ec   resource.ExternalConnecter
+		ec   managed.ExternalConnecter
 		args args
 		want error
 	}{
@@ -182,12 +183,12 @@ func TestGlobalAddressObserve(t *testing.T) {
 	}
 
 	type want struct {
-		eo  resource.ExternalObservation
+		eo  managed.ExternalObservation
 		err error
 	}
 
 	cases := map[string]struct {
-		e    resource.ExternalClient
+		e    managed.ExternalClient
 		args args
 		want want
 	}{
@@ -223,7 +224,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 				mg:  globalAddress(),
 			},
 			want: want{
-				eo: resource.ExternalObservation{
+				eo: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
@@ -239,7 +240,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 				mg:  globalAddress(),
 			},
 			want: want{
-				eo: resource.ExternalObservation{
+				eo: managed.ExternalObservation{
 					ResourceExists: false,
 				},
 			},
@@ -261,7 +262,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 				mg:  globalAddress(),
 			},
 			want: want{
-				eo: resource.ExternalObservation{
+				eo: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
@@ -290,12 +291,12 @@ func TestGlobalAddressCreate(t *testing.T) {
 	}
 
 	type want struct {
-		ec  resource.ExternalCreation
+		ec  managed.ExternalCreation
 		err error
 	}
 
 	cases := map[string]struct {
-		e    resource.ExternalClient
+		e    managed.ExternalClient
 		args args
 		want want
 	}{
@@ -362,7 +363,7 @@ func TestGlobalAddressDelete(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		e    resource.ExternalClient
+		e    managed.ExternalClient
 		args args
 		want error
 	}{
