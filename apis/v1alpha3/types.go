@@ -24,7 +24,7 @@ import (
 
 // A ProviderSpec defines the desired state of a Provider.
 type ProviderSpec struct {
-	runtimev1alpha1.ProviderSpec `json:",inline'"`
+	runtimev1alpha1.ProviderSpec `json:",inline"`
 
 	// ProjectID is the project name (not numerical ID) of this GCP Provider.
 	ProjectID string `json:"projectID"`
