@@ -17,11 +17,10 @@ limitations under the License.
 package container
 
 import (
-	"fmt"
-	"strings"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/event"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/target"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane/apis/workload/v1alpha1"
@@ -29,22 +28,18 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 )
 
-// GKEClusterTargetController is responsible for adding the GKECluster target
-// controller and its corresponding reconciler to the manager with any runtime configuration.
-type GKEClusterTargetController struct{}
-
-// SetupWithManager adds a controller that propagates GKECluster connection
-// secrets to the connection secrets of their targets.
-func (c *GKEClusterTargetController) SetupWithManager(mgr ctrl.Manager) error {
-	p := resource.NewPredicates(resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind)))
-
-	r := target.NewReconciler(mgr,
-		resource.TargetKind(v1alpha1.KubernetesTargetGroupVersionKind),
-		resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind))
+// SetupGKEClusterTarget adds a controller that propagates GKECluster
+// connection secrets to the connection secrets of their targets.
+func SetupGKEClusterTarget(mgr ctrl.Manager, l logging.Logger) error {
+	name := target.ControllerName(v1beta1.GKEClusterKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("kubernetestarget.%s.%s", v1beta1.GKEClusterKind, v1beta1.Group))).
+		Named(name).
 		For(&v1alpha1.KubernetesTarget{}).
-		WithEventFilter(p).
-		Complete(r)
+		WithEventFilter(resource.NewPredicates(resource.HasManagedResourceReferenceKind(resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind)))).
+		Complete(target.NewReconciler(mgr,
+			resource.TargetKind(v1alpha1.KubernetesTargetGroupVersionKind),
+			resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind),
+			target.WithLogger(l.WithValues("controller", name)),
+			target.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

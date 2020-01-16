@@ -18,14 +18,14 @@ package storage
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/event"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimdefaulting"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimscheduling"
@@ -35,18 +35,11 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
 )
 
-// A BucketClaimSchedulingController reconciles Bucket claims that include a
-// class selector but omit their class and resource references by picking a
-// random matching GCS BucketClass, if any.
-type BucketClaimSchedulingController struct{}
-
-// SetupWithManager sets up the BucketClaimSchedulingController using the
-// supplied manager.
-func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
-	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
-		storagev1alpha1.BucketKind,
-		v1alpha3.BucketKind,
-		v1alpha3.Group))
+// SetupBucketClaimScheduling adds a controller that reconciles Bucket claims
+// that include a class selector but omit their class and resource references by
+// picking a random matching GCS BucketClass, if any.
+func SetupBucketClaimScheduling(mgr ctrl.Manager, l logging.Logger) error {
+	name := claimscheduling.ControllerName(storagev1alpha1.BucketKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -59,21 +52,16 @@ func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) err
 		Complete(claimscheduling.NewReconciler(mgr,
 			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
 			resource.ClassKind(v1alpha3.BucketClassGroupVersionKind),
+			claimscheduling.WithLogger(l.WithValues("controller", name)),
+			claimscheduling.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		))
 }
 
-// A BucketClaimDefaultingController reconciles Bucket claims that omit their
-// resource ref, class ref, and class selector by choosing a default GCS
-// BucketClass if one exists.
-type BucketClaimDefaultingController struct{}
-
-// SetupWithManager sets up the BucketClaimDefaultingController using the
-// supplied manager.
-func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
-	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
-		storagev1alpha1.BucketKind,
-		v1alpha3.BucketKind,
-		v1alpha3.Group))
+// SetupBucketClaimDefaulting adds a controller that reconciles Bucket claims
+// that omit their resource ref, class ref, and class selector by choosing a
+// default GCS BucketClass if one exists.
+func SetupBucketClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error {
+	name := claimdefaulting.ControllerName(storagev1alpha1.BucketKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -86,19 +74,15 @@ func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) err
 		Complete(claimdefaulting.NewReconciler(mgr,
 			resource.ClaimKind(storagev1alpha1.BucketGroupVersionKind),
 			resource.ClassKind(v1alpha3.BucketClassGroupVersionKind),
+			claimdefaulting.WithLogger(l.WithValues("controller", name)),
+			claimdefaulting.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		))
 }
 
-// A BucketClaimController reconciles Bucket claims with GCS Buckets,
-// dynamically provisioning them if needed.
-type BucketClaimController struct{}
-
-// SetupWithManager adds a controller that reconciles Bucket resource claims.
-func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
-	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
-		storagev1alpha1.BucketKind,
-		v1alpha3.BucketKind,
-		v1alpha3.Group))
+// SetupBucketClaimBinding adds a controller that reconciles Bucket claims with
+// GCS Buckets, dynamically provisioning them if needed.
+func SetupBucketClaimBinding(mgr ctrl.Manager, l logging.Logger) error {
+	name := claimbinding.ControllerName(storagev1alpha1.BucketKind)
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasClassReferenceKind(resource.ClassKind(v1alpha3.BucketClassGroupVersionKind)),
@@ -113,8 +97,9 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		claimbinding.WithManagedConfigurators(
 			claimbinding.ManagedConfiguratorFn(ConfigureBucket),
 			claimbinding.ManagedConfiguratorFn(claimbinding.ConfigureReclaimPolicy),
-			claimbinding.ManagedConfiguratorFn(claimbinding.ConfigureNames),
-		))
+			claimbinding.ManagedConfiguratorFn(claimbinding.ConfigureNames)),
+		claimbinding.WithLogger(l.WithValues("controller", name)),
+		claimbinding.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -124,9 +109,9 @@ func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// ConfigureBucket configures the supplied resource (presumed
-// to be a Bucket) using the supplied resource claim (presumed
-// to be a Bucket) and resource class.
+// ConfigureBucket configures the supplied resource (presumed to be a Bucket)
+// using the supplied resource claim (presumed to be a Bucket) and resource
+// class.
 func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.Class, mg resource.Managed) error {
 	bcm, cmok := cm.(*storagev1alpha1.Bucket)
 	if !cmok {

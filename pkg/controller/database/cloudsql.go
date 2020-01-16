@@ -18,8 +18,6 @@ package database
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -31,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/event"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -57,17 +57,16 @@ const (
 	errGeneratePassword = "cannot generate root password"
 )
 
-// CloudSQLInstanceController is the controller for CloudSQL CRD.
-type CloudSQLInstanceController struct{}
+// SetupCloudSQLInstance adds a controller that reconciles
+// CloudSQLInstance managed resources.
+func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(v1beta1.CloudSQLInstanceKind)
 
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields
-// on the Controller and Start it when the Manager is Started.
-func (c *CloudSQLInstanceController) SetupWithManager(mgr ctrl.Manager) error {
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
-		managed.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}))
-
-	name := strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.CloudSQLInstanceKindAPIVersion, v1beta1.Group))
+		managed.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}),
+		managed.WithLogger(l.WithValues("controller", name)),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"path"
-	"strings"
 
 	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
@@ -32,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/event"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -75,24 +76,24 @@ const (
 // presume this is dark Google magic that is not exposed to API callers.
 // https://cloud.google.com/service-infrastructure/docs/service-networking/reference/rest/v1/services.connections/list
 
-// ConnectionController is the controller for Connection CRD.
-type ConnectionController struct{}
-
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func (c *ConnectionController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupConnection adds a controller that reconciles Connection
+// managed resources.
+func SetupConnection(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(v1beta1.ConnectionKind)
 	conn := &connector{
 		client:               mgr.GetClient(),
 		newCompute:           compute.NewService,
 		newServiceNetworking: servicenetworking.NewService,
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.ConnectionKindAPIVersion, v1beta1.Group))).
+		Named(name).
 		For(&v1beta1.Connection{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.ConnectionGroupVersionKind),
 			managed.WithExternalConnecter(conn),
-			managed.WithConnectionPublishers()))
+			managed.WithConnectionPublishers(),
+			managed.WithLogger(l.WithValues("controller", name)),
+			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type connector struct {
