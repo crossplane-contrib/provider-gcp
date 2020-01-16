@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -49,19 +50,17 @@ const (
 	errUpdateManaged    = "cannot update managed resource"
 )
 
-// GlobalAddressController is the controller for GlobalAddress CRD.
-type GlobalAddressController struct{}
-
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func (c *GlobalAddressController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupGlobalAddressController adds a controller that reconciles
+// GlobalAddress managed resources.
+func SetupGlobalAddressController(mgr ctrl.Manager, l logging.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.GlobalAddressKindAPIVersion, v1alpha3.Group))).
 		For(&v1alpha3.GlobalAddress{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha3.GlobalAddressGroupVersionKind),
 			managed.WithExternalConnecter(&gaConnector{client: mgr.GetClient(), newCompute: compute.NewService}),
-			managed.WithConnectionPublishers()))
+			managed.WithConnectionPublishers(),
+			managed.WithLogger(l)))
 }
 
 type gaConnector struct {

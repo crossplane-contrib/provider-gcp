@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -53,16 +54,14 @@ const (
 	errNetworkDeleteFailed = "deletion of Network resource has failed"
 )
 
-// NetworkController is the controller for Network CRD.
-type NetworkController struct{}
-
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func (c *NetworkController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupNetworkController adds a controller that reconciles Network managed
+// resources.
+func SetupNetworkController(mgr ctrl.Manager, l logging.Logger) error {
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha3.NetworkGroupVersionKind),
 		managed.WithExternalConnecter(&networkConnector{kube: mgr.GetClient()}),
-		managed.WithConnectionPublishers())
+		managed.WithConnectionPublishers(),
+		managed.WithLogger(l))
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.NetworkKindAPIVersion, v1alpha3.Group))
 

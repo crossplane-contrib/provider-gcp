@@ -66,10 +66,6 @@ github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea/go.mod h1:E3G3o1h8I7cfc
 github.com/cpuguy83/go-md2man v1.0.10/go.mod h1:SmD6nW6nTyfqj6ABTjUi3V3JVMnlJmwcJI5acqYI6dE=
 github.com/crossplaneio/crossplane v0.6.0-rc.0.20191226165033-a452562456e0 h1:Sp1jDkEaEuJyXQzmU+fT4GVdlynzblXslHE/+DbJ3jg=
 github.com/crossplaneio/crossplane v0.6.0-rc.0.20191226165033-a452562456e0/go.mod h1:lW/xhJfNx5QQve/9xH2JszMqtSfVlEQBtKE0u96qlCI=
-github.com/crossplaneio/crossplane-runtime v0.3.0 h1:d3937o6XhVUcm/bqgUPUjTo/OjVlAjh1c7rx4VPJoV8=
-github.com/crossplaneio/crossplane-runtime v0.3.0/go.mod h1:aVLQmXiPeb/jhGGQFIxx4Rc1CFC6xq2BA6A3neLZIHA=
-github.com/crossplaneio/crossplane-runtime v0.3.1-0.20200115232149-cd8c52b483c3 h1:S7eTG5kLDUOp1ddUkO7wajPH8HEun1LZRyJLuKu/PhU=
-github.com/crossplaneio/crossplane-runtime v0.3.1-0.20200115232149-cd8c52b483c3/go.mod h1:UTemZ8u+bvHkQMHpdsZ2z/dTHC7tRkXc2K6Z9N26KQI=
 github.com/crossplaneio/crossplane-tools v0.0.0-20191023215726-61fa1eff2a2e h1:8Z29akSDYcbywc/brATpfeE425jBTMZdZQuD9eV6cCk=
 github.com/crossplaneio/crossplane-tools v0.0.0-20191023215726-61fa1eff2a2e/go.mod h1:fzQeWDvZvzaC4N8vPjTubQocGnwzQ4cuZM6949+T43U=
 github.com/crossplaneio/crossplane-tools v0.0.0-20191220202319-9033bd8a02ce h1:V7cUPRBxbJr0siRHn459gb6hfMXaEA+pGm0Yt5aXdhQ=
@@ -271,6 +267,10 @@ github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3Rllmb
 github.com/munnerz/goautoneg v0.0.0-20120707110453-a547fc61f48d/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
+github.com/negz/crossplane-runtime v0.0.0-20200115071002-a3ec02b06d64 h1:iart2CIjz/HousFQj7SnK0TJHhwMvi7rmdq96MlCOV0=
+github.com/negz/crossplane-runtime v0.0.0-20200115071002-a3ec02b06d64/go.mod h1:aVLQmXiPeb/jhGGQFIxx4Rc1CFC6xq2BA6A3neLZIHA=
+github.com/negz/crossplane-runtime v0.0.0-20200116060849-1883203e0348 h1:tc80zfspjv6UynmLh+773kkCZwHuoGnuX/TQrIJuvAg=
+github.com/negz/crossplane-runtime v0.0.0-20200116060849-1883203e0348/go.mod h1:UTemZ8u+bvHkQMHpdsZ2z/dTHC7tRkXc2K6Z9N26KQI=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.4.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=

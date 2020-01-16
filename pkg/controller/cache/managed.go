@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -52,20 +53,16 @@ const (
 	errDeleteInstance    = "cannot delete CloudMemorystore instance"
 )
 
-// CloudMemorystoreInstanceController is responsible for adding the Cloud Memorystore
-// controller and its corresponding reconciler to the manager with any runtime configuration.
-type CloudMemorystoreInstanceController struct{}
-
-// SetupWithManager creates a new CloudMemorystoreInstance Controller and adds it to the
-// Manager with default RBAC. The Manager will set fields on the Controller and
-// start it when the Manager is Started.
-func (c *CloudMemorystoreInstanceController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupCloudMemorystoreInstanceController adds a controller that reconciles
+// CloudMemorystoreInstances.
+func SetupCloudMemorystoreInstanceController(mgr ctrl.Manager, l logging.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.CloudMemorystoreInstanceKind, v1beta1.Group))).
 		For(&v1beta1.CloudMemorystoreInstance{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newCMS: cloudmemorystore.NewClient})))
+			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newCMS: cloudmemorystore.NewClient}),
+			managed.WithLogger(l)))
 }
 
 type connecter struct {

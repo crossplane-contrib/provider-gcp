@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -75,12 +76,9 @@ const (
 // presume this is dark Google magic that is not exposed to API callers.
 // https://cloud.google.com/service-infrastructure/docs/service-networking/reference/rest/v1/services.connections/list
 
-// ConnectionController is the controller for Connection CRD.
-type ConnectionController struct{}
-
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func (c *ConnectionController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupConnectionController adds a controller that reconciles Connection
+// managed resources.
+func SetupConnectionController(mgr ctrl.Manager, l logging.Logger) error {
 	conn := &connector{
 		client:               mgr.GetClient(),
 		newCompute:           compute.NewService,
@@ -92,7 +90,8 @@ func (c *ConnectionController) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha3.ConnectionGroupVersionKind),
 			managed.WithExternalConnecter(conn),
-			managed.WithConnectionPublishers()))
+			managed.WithConnectionPublishers(),
+			managed.WithLogger(l)))
 }
 
 type connector struct {

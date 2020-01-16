@@ -21,106 +21,43 @@ import (
 	"path/filepath"
 
 	"gopkg.in/alecthomas/kingpin.v2"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	runtimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
-
-	"github.com/crossplaneio/stack-gcp/apis"
-	"github.com/crossplaneio/stack-gcp/pkg/controller"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	crossplaneapis "github.com/crossplaneio/crossplane/apis"
+
+	"github.com/crossplaneio/stack-gcp/apis"
+	"github.com/crossplaneio/stack-gcp/pkg/controller"
 )
 
 func main() {
 	var (
-		log = logging.Logger
-
-		// top level app definition
-		app        = kingpin.New(filepath.Base(os.Args[0]), "An open source multicloud control plane.").DefaultEnvars()
+		app        = kingpin.New(filepath.Base(os.Args[0]), "GCP support for Crossplane.").DefaultEnvars()
 		debug      = app.Flag("debug", "Run with debug logging.").Short('d').Bool()
-		syncPeriod = app.Flag("sync", "Controller manager sync period duration such as 300ms, 1.5h or 2h45m").
-				Short('s').Default("1h").Duration()
-
-		// default crossplane command and args, this is the default main entry point for Crossplane's
-		// multi-cloud control plane functionality
-		crossplaneCmd = app.Command(filepath.Base(os.Args[0]), "An open source multicloud control plane.").Default()
+		syncPeriod = app.Flag("sync", "Controller manager sync period such as 300ms, 1.5h, or 2h45m").Short('s').Default("1h").Duration()
 	)
-	cmd := kingpin.MustParse(app.Parse(os.Args[1:]))
+	kingpin.MustParse(app.Parse(os.Args[1:]))
 
-	zl := runtimelog.ZapLogger(*debug)
-	logging.SetLogger(zl)
+	zl := zap.New(zap.UseDevMode(*debug))
+	log := logging.NewLogrLogger(zl)
 	if *debug {
 		// The controller-runtime runs with a no-op logger by default. It is
 		// *very* verbose even at info level, so we only provide it a real
 		// logger when we're running in debug mode.
-		runtimelog.SetLogger(zl)
+		ctrl.SetLogger(zl)
 	}
 
-	var setupWithManagerFunc func(manager.Manager) error
+	log.Debug("Starting stack-gcp", "syncPeriod", syncPeriod.String())
 
-	// Determine the command being called and execute the corresponding logic
-	switch cmd {
-	case crossplaneCmd.FullCommand():
-		// the default Crossplane command is being run, add all the regular controllers to the manager
-		setupWithManagerFunc = controllerSetupWithManager
-	default:
-		kingpin.FatalUsage("unknown command %s", cmd)
-	}
+	cfg, err := ctrl.GetConfig()
+	kingpin.FatalIfError(err, "Cannot get API server rest config")
 
-	// Get a config to talk to the apiserver
-	cfg, err := config.GetConfig()
-	if err != nil {
-		kingpin.FatalIfError(err, "Cannot get config")
-	}
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{SyncPeriod: syncPeriod})
+	kingpin.FatalIfError(err, "Cannot create controller manager")
 
-	log.Info("Sync period", "duration", syncPeriod.String())
-
-	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{SyncPeriod: syncPeriod})
-	if err != nil {
-		kingpin.FatalIfError(err, "Cannot create manager")
-	}
-
-	log.Info("Adding schemes")
-
-	// add all resources to the manager's runtime scheme
-	if err := addToScheme(mgr.GetScheme()); err != nil {
-		kingpin.FatalIfError(err, "Cannot add APIs to scheme")
-	}
-
-	log.Info("Adding controllers")
-
-	// Setup all Controllers
-	if err := setupWithManagerFunc(mgr); err != nil {
-		kingpin.FatalIfError(err, "Cannot add controllers to manager")
-	}
-
-	log.Info("Starting the manager")
-
-	// Start the Cmd
-	kingpin.FatalIfError(mgr.Start(signals.SetupSignalHandler()), "Cannot start controller")
-}
-
-func controllerSetupWithManager(mgr manager.Manager) error {
-	if err := (&controller.Controllers{}).SetupWithManager(mgr); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// addToScheme adds all resources to the runtime scheme.
-func addToScheme(scheme *runtime.Scheme) error {
-	if err := apis.AddToScheme(scheme); err != nil {
-		return err
-	}
-
-	if err := crossplaneapis.AddToScheme(scheme); err != nil {
-		return err
-	}
-
-	return nil
+	kingpin.FatalIfError(crossplaneapis.AddToScheme(mgr.GetScheme()), "Cannot add core Crossplane APIs to scheme")
+	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add GCP APIs to scheme")
+	kingpin.FatalIfError(controller.Setup(mgr, log), "Cannot setup GCP controllers")
+	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }

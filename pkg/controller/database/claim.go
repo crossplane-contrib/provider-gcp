@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimdefaulting"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimscheduling"
@@ -35,14 +36,11 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 )
 
-// A PostgreSQLInstanceClaimSchedulingController reconciles PostgreSQLInstance
-// claims that include a class selector but omit their class and resource
-// references by picking a random matching CloudSQLInstanceClass, if any.
-type PostgreSQLInstanceClaimSchedulingController struct{}
-
-// SetupWithManager sets up the
-// PostgreSQLInstanceClaimSchedulingController using the supplied manager.
-func (c *PostgreSQLInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupPostgreSQLInstanceClaimSchedulingController adds a controller that
+// reconciles PostgreSQLInstance claims that include a class selector but omit
+// their class and resource references by picking a random matching
+// CloudSQLInstanceClass, if any.
+func SetupPostgreSQLInstanceClaimSchedulingController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
 		databasev1alpha1.PostgreSQLInstanceKind,
 		v1beta1.CloudSQLInstanceKind,
@@ -62,14 +60,10 @@ func (c *PostgreSQLInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.
 		))
 }
 
-// A PostgreSQLInstanceClaimDefaultingController reconciles PostgreSQLInstance
-// claims that omit their resource ref, class ref, and class selector by
-// choosing a default CloudSQLInstanceClass if one exists.
-type PostgreSQLInstanceClaimDefaultingController struct{}
-
-// SetupWithManager sets up the PostgreSQLInstanceClaimDefaultingController
-// using the supplied manager.
-func (c *PostgreSQLInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupPostgreSQLInstanceClaimDefaultingController adds a controller that
+// reconciles PostgreSQLInstance claims that omit their resource ref, class ref,
+// and class selector by choosing a default CloudSQLInstanceClass if one exists.
+func SetupPostgreSQLInstanceClaimDefaultingController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
 		databasev1alpha1.PostgreSQLInstanceKind,
 		v1beta1.CloudSQLInstanceKind,
@@ -89,12 +83,10 @@ func (c *PostgreSQLInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.
 		))
 }
 
-// A PostgreSQLInstanceClaimController reconciles PostgreSQLInstance claims with
-// CloudSQLInstances, dynamically provisioning them if needed.
-type PostgreSQLInstanceClaimController struct{}
-
-// SetupWithManager adds a controller that reconciles PostgreSQLInstance instance claims.
-func (c *PostgreSQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupPostgreSQLInstanceClaimController adds a controller that reconciles
+// PostgreSQLInstance claims with CloudSQLInstances, dynamically provisioning
+// them if needed.
+func SetupPostgreSQLInstanceClaimController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		databasev1alpha1.PostgreSQLInstanceKind,
 		v1beta1.CloudSQLInstanceKind,
@@ -166,14 +158,11 @@ func ConfigurePostgreSQLCloudSQLInstance(_ context.Context, cm resource.Claim, c
 	return nil
 }
 
-// A MySQLInstanceClaimSchedulingController reconciles MySQLInstance claims that
-// include a class selector but omit their class and resource references by
-// picking a random matching CloudSQLInstanceClass, if any.
-type MySQLInstanceClaimSchedulingController struct{}
-
-// SetupWithManager sets up the MySQLInstanceClaimSchedulingController using the
-// supplied manager.
-func (c *MySQLInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupMySQLInstanceClaimSchedulingController adds a controller that reconciles
+// MySQLInstance claims that include a class selector but omit their class and
+// resource references by picking a random matching CloudSQLInstanceClass, if
+// any.
+func SetupMySQLInstanceClaimSchedulingController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
 		databasev1alpha1.MySQLInstanceKind,
 		v1beta1.CloudSQLInstanceKind,
@@ -193,14 +182,10 @@ func (c *MySQLInstanceClaimSchedulingController) SetupWithManager(mgr ctrl.Manag
 		))
 }
 
-// A MySQLInstanceClaimDefaultingController reconciles MySQLInstance claims that
-// omit their resource ref, class ref, and class selector by choosing a default
-// CloudSQLInstanceClass if one exists.
-type MySQLInstanceClaimDefaultingController struct{}
-
-// SetupWithManager sets up the MySQLInstanceClaimDefaultingController
-// using the supplied manager.
-func (c *MySQLInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupMySQLInstanceClaimDefaultingController adds a controller that reconciles
+// MySQLInstance claims that omit their resource ref, class ref, and class
+// selector by choosing a default CloudSQLInstanceClass if one exists.
+func SetupMySQLInstanceClaimDefaultingController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
 		databasev1alpha1.MySQLInstanceKind,
 		v1beta1.CloudSQLInstanceKind,
@@ -220,12 +205,10 @@ func (c *MySQLInstanceClaimDefaultingController) SetupWithManager(mgr ctrl.Manag
 		))
 }
 
-// A MySQLInstanceClaimController reconciles MySQLInstance claims with
-// CloudSQLInstances, dynamically provisioning them if needed.
-type MySQLInstanceClaimController struct{}
-
-// SetupWithManager adds a controller that reconciles MySQLInstance instance claims.
-func (c *MySQLInstanceClaimController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupMySQLInstanceClaimController adds a controller that reconciles
+// MySQLInstance claims with CloudSQLInstances, dynamically provisioning them if
+// needed.
+func SetupMySQLInstanceClaimController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		databasev1alpha1.MySQLInstanceKind,
 		v1beta1.CloudSQLInstanceKind,

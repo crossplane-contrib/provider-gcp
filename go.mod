@@ -2,6 +2,9 @@ module github.com/crossplaneio/stack-gcp
 
 go 1.12
 
+// TODO(negz): Remove this before merging.
+replace github.com/crossplaneio/crossplane-runtime => github.com/negz/crossplane-runtime v0.0.0-20200116060849-1883203e0348
+
 require (
 	cloud.google.com/go v0.45.1
 	github.com/crossplaneio/crossplane v0.6.0-rc.0.20191226165033-a452562456e0

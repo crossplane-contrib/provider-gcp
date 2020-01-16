@@ -19,6 +19,8 @@ package controller
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
+
 	"github.com/crossplaneio/stack-gcp/pkg/controller/cache"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/compute"
 	"github.com/crossplaneio/stack-gcp/pkg/controller/container"
@@ -27,46 +29,41 @@ import (
 	"github.com/crossplaneio/stack-gcp/pkg/controller/storage"
 )
 
-// Controllers passes down config and adds individual controllers to the manager.
-type Controllers struct{}
-
-// SetupWithManager adds all GCP controllers to the manager.
-func (c *Controllers) SetupWithManager(mgr ctrl.Manager) error {
-	// TODO(muvaf): Move this interface and logic to controller-runtime as it's common to all.
-	controllers := []interface {
-		SetupWithManager(ctrl.Manager) error
-	}{
-		&cache.CloudMemorystoreInstanceClaimSchedulingController{},
-		&cache.CloudMemorystoreInstanceClaimDefaultingController{},
-		&cache.CloudMemorystoreInstanceClaimController{},
-		&cache.CloudMemorystoreInstanceController{},
-		&compute.GlobalAddressController{},
-		&compute.GKEClusterClaimSchedulingController{},
-		&compute.GKEClusterClaimDefaultingController{},
-		&compute.GKEClusterClaimController{},
-		&compute.GKEClusterController{},
-		&compute.NetworkController{},
-		&compute.SubnetworkController{},
-		&container.GKEClusterClaimSchedulingController{},
-		&container.GKEClusterClaimDefaultingController{},
-		&container.GKEClusterClaimController{},
-		&container.GKEClusterController{},
-		&container.NodePoolController{},
-		&database.PostgreSQLInstanceClaimSchedulingController{},
-		&database.PostgreSQLInstanceClaimDefaultingController{},
-		&database.PostgreSQLInstanceClaimController{},
-		&database.MySQLInstanceClaimSchedulingController{},
-		&database.MySQLInstanceClaimDefaultingController{},
-		&database.MySQLInstanceClaimController{},
-		&database.CloudSQLInstanceController{},
-		&servicenetworking.ConnectionController{},
-		&storage.BucketClaimSchedulingController{},
-		&storage.BucketClaimDefaultingController{},
-		&storage.BucketClaimController{},
-		&storage.BucketController{},
+// Setup creates all GCP controllers with the supplied logger and adds them to
+// the supplied manager.
+func Setup(mgr ctrl.Manager, l logging.Logger) error {
+	controllers := []func(ctrl.Manager, logging.Logger) error{
+		cache.SetupCloudMemorystoreInstanceClaimSchedulingController,
+		cache.SetupCloudMemorystoreInstanceClaimDefaultingController,
+		cache.SetupCloudMemorystoreInstanceClaimController,
+		cache.SetupCloudMemorystoreInstanceController,
+		compute.SetupGlobalAddressController,
+		compute.SetupGKEClusterClaimSchedulingController,
+		compute.SetupGKEClusterClaimDefaultingController,
+		compute.SetupGKEClusterClaimController,
+		compute.SetupGKEClusterController,
+		compute.SetupNetworkController,
+		compute.SetupSubnetworkController,
+		container.SetupGKEClusterClaimSchedulingController,
+		container.SetupGKEClusterClaimDefaultingController,
+		container.SetupGKEClusterClaimController,
+		container.SetupGKEClusterController,
+		container.SetupNodePoolController,
+		database.SetupPostgreSQLInstanceClaimSchedulingController,
+		database.SetupPostgreSQLInstanceClaimDefaultingController,
+		database.SetupPostgreSQLInstanceClaimController,
+		database.SetupMySQLInstanceClaimSchedulingController,
+		database.SetupMySQLInstanceClaimDefaultingController,
+		database.SetupMySQLInstanceClaimController,
+		database.SetupCloudSQLInstanceController,
+		servicenetworking.SetupConnectionController,
+		storage.SetupBucketClaimSchedulingController,
+		storage.SetupBucketClaimDefaultingController,
+		storage.SetupBucketClaimController,
+		storage.SetupBucketController,
 	}
-	for _, c := range controllers {
-		if err := c.SetupWithManager(mgr); err != nil {
+	for _, fn := range controllers {
+		if err := fn(mgr, l); err != nil {
 			return err
 		}
 	}

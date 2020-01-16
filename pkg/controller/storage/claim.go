@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimdefaulting"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimscheduling"
@@ -35,14 +36,10 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
 )
 
-// A BucketClaimSchedulingController reconciles Bucket claims that include a
-// class selector but omit their class and resource references by picking a
-// random matching GCS BucketClass, if any.
-type BucketClaimSchedulingController struct{}
-
-// SetupWithManager sets up the BucketClaimSchedulingController using the
-// supplied manager.
-func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupBucketClaimSchedulingController adds a controller that reconciles Bucket
+// claims that include a class selector but omit their class and resource
+// references by picking a random matching GCS BucketClass, if any.
+func SetupBucketClaimSchedulingController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
 		storagev1alpha1.BucketKind,
 		v1alpha3.BucketKind,
@@ -62,14 +59,10 @@ func (c *BucketClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) err
 		))
 }
 
-// A BucketClaimDefaultingController reconciles Bucket claims that omit their
-// resource ref, class ref, and class selector by choosing a default GCS
-// BucketClass if one exists.
-type BucketClaimDefaultingController struct{}
-
-// SetupWithManager sets up the BucketClaimDefaultingController using the
-// supplied manager.
-func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupBucketClaimDefaultingController adds a controller that reconciles Bucket
+// claims that omit their resource ref, class ref, and class selector by
+// choosing a default GCS BucketClass if one exists.
+func SetupBucketClaimDefaultingController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
 		storagev1alpha1.BucketKind,
 		v1alpha3.BucketKind,
@@ -89,12 +82,9 @@ func (c *BucketClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) err
 		))
 }
 
-// A BucketClaimController reconciles Bucket claims with GCS Buckets,
-// dynamically provisioning them if needed.
-type BucketClaimController struct{}
-
-// SetupWithManager adds a controller that reconciles Bucket resource claims.
-func (c *BucketClaimController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupBucketClaimController adds a controller that reconciles Bucket claims
+// with GCS Buckets, dynamically provisioning them if needed.
+func SetupBucketClaimController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		storagev1alpha1.BucketKind,
 		v1alpha3.BucketKind,

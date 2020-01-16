@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimdefaulting"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimscheduling"
@@ -35,14 +36,10 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 )
 
-// A GKEClusterClaimSchedulingController reconciles KubernetesCluster claims
-// that include a class selector but omit their class and resource references by
-// picking a random matching GKEClusterClass, if any.
-type GKEClusterClaimSchedulingController struct{}
-
-// SetupWithManager sets up the GKEClusterClaimSchedulingController using the
-// supplied manager.
-func (c *GKEClusterClaimSchedulingController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupGKEClusterClaimSchedulingController adds a controller that reconciles
+// KubernetesCluster claims that include a class selector but omit their class
+// and resource references by picking a random matching GKEClusterClass, if any.
+func SetupGKEClusterClaimSchedulingController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("scheduler.%s.%s.%s",
 		computev1alpha1.KubernetesClusterKind,
 		v1beta1.GKEClusterKind,
@@ -62,14 +59,10 @@ func (c *GKEClusterClaimSchedulingController) SetupWithManager(mgr ctrl.Manager)
 		))
 }
 
-// A GKEClusterClaimDefaultingController reconciles KubernetesCluster claims
-// that omit their resource ref, class ref, and class selector by choosing a
-// default GKEClusterClass if one exists.
-type GKEClusterClaimDefaultingController struct{}
-
-// SetupWithManager sets up the GKEClusterClaimDefaultingController using the
-// supplied manager.
-func (c *GKEClusterClaimDefaultingController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupGKEClusterClaimDefaultingController adds a controller that reconciles
+// KubernetesCluster claims that omit their resource ref, class ref, and class
+// selector by choosing a default GKEClusterClass if one exists.
+func SetupGKEClusterClaimDefaultingController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("defaulter.%s.%s.%s",
 		computev1alpha1.KubernetesClusterKind,
 		v1beta1.GKEClusterKind,
@@ -89,12 +82,9 @@ func (c *GKEClusterClaimDefaultingController) SetupWithManager(mgr ctrl.Manager)
 		))
 }
 
-// A GKEClusterClaimController reconciles KubernetesCluster claims with
+// SetupGKEClusterClaimController reconciles KubernetesCluster claims with
 // GKEClusters, dynamically provisioning them if needed.
-type GKEClusterClaimController struct{}
-
-// SetupWithManager adds a controller that reconciles KubernetesCluster resource claims.
-func (c *GKEClusterClaimController) SetupWithManager(mgr ctrl.Manager) error {
+func SetupGKEClusterClaimController(mgr ctrl.Manager, _ logging.Logger) error {
 	name := strings.ToLower(fmt.Sprintf("%s.%s.%s",
 		computev1alpha1.KubernetesClusterKind,
 		v1beta1.GKEClusterClassKind,

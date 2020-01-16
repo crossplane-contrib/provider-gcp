@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
@@ -109,6 +110,7 @@ func TestSyncClusterGetError(t *testing.T) {
 	r := &Reconciler{
 		Client:   NewFakeClient(tc),
 		resolver: &mockReferenceResolver{},
+		log:      logging.NewNopLogger(),
 	}
 
 	called := false
@@ -137,6 +139,7 @@ func TestSyncErroredCluster(t *testing.T) {
 
 	r := &Reconciler{
 		Client: NewFakeClient(tc),
+		log:    logging.NewNopLogger(),
 	}
 
 	errorMessage := "Something went wrong on gcloud side."
@@ -178,6 +181,7 @@ func TestSyncPublishConnectionDetailsError(t *testing.T) {
 				return testError
 			},
 		},
+		log: logging.NewNopLogger(),
 	}
 
 	called := false
@@ -212,6 +216,7 @@ func TestSyncClusterNotReady(t *testing.T) {
 
 	r := &Reconciler{
 		Client: NewFakeClient(tc),
+		log:    logging.NewNopLogger(),
 	}
 
 	called := false
@@ -241,6 +246,7 @@ func TestSync(t *testing.T) {
 	r := &Reconciler{
 		Client:    NewFakeClient(tc),
 		publisher: managed.PublisherChain{},
+		log:       logging.NewNopLogger(),
 	}
 
 	called := false
@@ -278,6 +284,7 @@ func TestDeleteReclaimDelete(t *testing.T) {
 	r := &Reconciler{
 		Client:   NewFakeClient(tc),
 		resolver: &mockReferenceResolver{},
+		log:      logging.NewNopLogger(),
 	}
 
 	called := false
@@ -307,6 +314,7 @@ func TestDeleteReclaimRetain(t *testing.T) {
 	r := &Reconciler{
 		Client:   NewFakeClient(tc),
 		resolver: &mockReferenceResolver{},
+		log:      logging.NewNopLogger(),
 	}
 
 	called := false
@@ -338,6 +346,7 @@ func TestDeleteFailed(t *testing.T) {
 
 	r := &Reconciler{
 		Client: NewFakeClient(tc),
+		log:    logging.NewNopLogger(),
 	}
 
 	testError := errors.New("test-delete-error")
@@ -367,6 +376,7 @@ func TestReconcileObjectNotFound(t *testing.T) {
 
 	r := &Reconciler{
 		Client: NewFakeClient(),
+		log:    logging.NewNopLogger(),
 	}
 	rs, err := r.Reconcile(request)
 	g.Expect(rs).To(Equal(result))
@@ -386,6 +396,7 @@ func TestReconcileClientError(t *testing.T) {
 			called = true
 			return nil, testError
 		},
+		log: logging.NewNopLogger(),
 	}
 
 	// expected to have a failed condition
@@ -420,6 +431,7 @@ func TestReconcileDelete(t *testing.T) {
 			return result, nil
 		},
 		resolver: &mockReferenceResolver{},
+		log:      logging.NewNopLogger(),
 	}
 
 	rs, err := r.Reconcile(request)
@@ -444,6 +456,7 @@ func TestReconcileCreate(t *testing.T) {
 			return resultRequeue, nil
 		},
 		resolver: &mockReferenceResolver{},
+		log:      logging.NewNopLogger(),
 	}
 
 	rs, err := r.Reconcile(request)
@@ -471,6 +484,7 @@ func TestReconcileSync(t *testing.T) {
 			return resultRequeue, nil
 		},
 		resolver: &mockReferenceResolver{},
+		log:      logging.NewNopLogger(),
 	}
 
 	rs, err := r.Reconcile(request)

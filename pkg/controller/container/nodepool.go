@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -51,16 +52,13 @@ const (
 	errDeleteNodePool              = "cannot delete GKE node pool"
 )
 
-// NodePoolController is responsible for adding the NodePool
-// controller and its corresponding reconciler to the manager with any runtime configuration.
-type NodePoolController struct{}
-
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func (c *NodePoolController) SetupWithManager(mgr ctrl.Manager) error {
+// SetupNodePoolController adds a controller that reconciles NodePool managed
+// resources.
+func SetupNodePoolController(mgr ctrl.Manager, l logging.Logger) error {
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.NodePoolGroupVersionKind),
-		managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}))
+		managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}),
+		managed.WithLogger(l))
 
 	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha1.NodePoolKindAPIVersion, v1alpha1.Group))
 
