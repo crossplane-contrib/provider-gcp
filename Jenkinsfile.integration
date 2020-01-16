@@ -1,5 +1,9 @@
+String cron_string = BRANCH_NAME == "master" ? "0 22 * * *" : ""
+
 pipeline {
     agent { label 'upbound-gce' }
+
+    triggers { cron(cron_string) }
 
     options {
         disableConcurrentBuilds()
@@ -26,7 +30,10 @@ pipeline {
 
     post {
         always {
-            deleteDir()
+            script {
+                sh 'make -j\$(nproc) clean'
+                deleteDir()
+            }
         }
     }
 }

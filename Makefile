@@ -96,7 +96,7 @@ test-integration: $(KIND) $(KUBECTL)
 	@$(OK) integration tests passed
 
 go-integration: 
-	GO_TEST_FLAGS=-v GO_TAGS=integration $(MAKE) go.test.integration
+	GO_TEST_FLAGS="-timeout 1h -v" GO_TAGS=integration $(MAKE) go.test.integration
 
 # Update the submodules, such as the common build scripts.
 submodules:
