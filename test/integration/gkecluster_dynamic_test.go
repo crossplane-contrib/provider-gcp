@@ -70,7 +70,7 @@ func TestGKEClusterDynamic(t *testing.T) {
 						t.Error(err)
 					}
 
-					waitFor(context.Background(), 10*time.Second, func(ch chan error) {
+					if err := waitFor(context.Background(), 10*time.Second, func(ch chan error) {
 						gcl := &containerv1beta1.GKEClusterList{}
 						if err := c.List(context.Background(), gcl); err != nil {
 							ch <- err
@@ -79,7 +79,9 @@ func TestGKEClusterDynamic(t *testing.T) {
 						if len(gcl.Items) == 0 {
 							ch <- nil
 						}
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 
 					if err := c.Delete(context.Background(), p); err != nil {
 						t.Error(err)

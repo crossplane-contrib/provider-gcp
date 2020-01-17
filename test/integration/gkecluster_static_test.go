@@ -59,7 +59,7 @@ func TestGKEClusterStatic(t *testing.T) {
 				}
 
 				defer func() {
-					waitFor(context.Background(), 10*time.Second, func(ch chan error) {
+					if err := waitFor(context.Background(), 10*time.Second, func(ch chan error) {
 						err := c.Delete(context.Background(), g)
 
 						if kerrors.IsNotFound(err) {
@@ -69,7 +69,9 @@ func TestGKEClusterStatic(t *testing.T) {
 						if err != nil {
 							ch <- err
 						}
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 
 					if err := c.Delete(context.Background(), p); err != nil {
 						t.Error(err)
