@@ -70,15 +70,17 @@ func TestGKEClusterDynamic(t *testing.T) {
 						t.Error(err)
 					}
 
-					if err := waitFor(context.Background(), 10*time.Second, func(ch chan error) {
+					if err := waitFor(context.Background(), 10*time.Second, func() (bool, error) {
 						gcl := &containerv1beta1.GKEClusterList{}
 						if err := c.List(context.Background(), gcl); err != nil {
-							ch <- err
+							return true, err
 						}
 
 						if len(gcl.Items) == 0 {
-							ch <- nil
+							return true, nil
 						}
+
+						return false, nil
 					}); err != nil {
 						t.Error(err)
 					}
@@ -100,22 +102,24 @@ func TestGKEClusterDynamic(t *testing.T) {
 					return err
 				}
 
-				return waitFor(ctx, 10*time.Second, func(ch chan error) {
+				return waitFor(ctx, 10*time.Second, func() (bool, error) {
 					to := &v1alpha1.KubernetesCluster{}
 					if err := c.Get(ctx, types.NamespacedName{Name: kc.Name, Namespace: kc.Namespace}, to); err != nil {
-						ch <- err
+						return true, err
 					}
 
 					if to.GetResourceReference() != nil {
 						ref := &containerv1beta1.GKECluster{}
 						if err := c.Get(ctx, types.NamespacedName{Name: to.GetResourceReference().Name}, ref); err != nil && !kerrors.IsNotFound(err) {
-							ch <- err
+							return true, err
 						}
 
 						if ref.Status.AtProvider.Status == containerv1beta1.ClusterStateRunning && ref.GetBindingPhase() == runtimev1alpha1.BindingPhaseBound {
-							ch <- nil
+							return true, nil
 						}
 					}
+
+					return false, nil
 				})
 			},
 		},
