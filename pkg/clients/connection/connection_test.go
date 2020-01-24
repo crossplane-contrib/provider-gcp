@@ -26,7 +26,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1beta1"
 )
 
 func TestFromParameters(t *testing.T) {
@@ -34,12 +34,12 @@ func TestFromParameters(t *testing.T) {
 	ranges := []string{"coolRange", "coolerRange"}
 
 	cases := map[string]struct {
-		p    v1alpha3.ConnectionParameters
+		p    v1beta1.ConnectionParameters
 		want *servicenetworking.Connection
 	}{
 		"Simple": {
-			p: v1alpha3.ConnectionParameters{
-				Network:               network,
+			p: v1beta1.ConnectionParameters{
+				Network:               &network,
 				ReservedPeeringRanges: ranges,
 			},
 			want: &servicenetworking.Connection{
@@ -59,19 +59,19 @@ func TestFromParameters(t *testing.T) {
 		})
 	}
 }
-func TestUpToDate(t *testing.T) {
+func TestIsUpToDate(t *testing.T) {
 	cases := map[string]struct {
-		p        v1alpha3.ConnectionParameters
+		p        v1beta1.ConnectionParameters
 		observed *servicenetworking.Connection
 		want     bool
 	}{
 		"UpToDate": {
-			p:        v1alpha3.ConnectionParameters{ReservedPeeringRanges: []string{"a", "b"}},
+			p:        v1beta1.ConnectionParameters{ReservedPeeringRanges: []string{"a", "b"}},
 			observed: &servicenetworking.Connection{ReservedPeeringRanges: []string{"b", "a"}},
 			want:     true,
 		},
 		"NotUpToDate": {
-			p:        v1alpha3.ConnectionParameters{ReservedPeeringRanges: []string{"a", "c"}},
+			p:        v1beta1.ConnectionParameters{ReservedPeeringRanges: []string{"a", "c"}},
 			observed: &servicenetworking.Connection{ReservedPeeringRanges: []string{"b", "a"}},
 			want:     false,
 		},
@@ -79,7 +79,7 @@ func TestUpToDate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := UpToDate(tc.p, tc.observed)
+			got := IsUpToDate(tc.p, tc.observed)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Errorf("UpToDate(...): -want, +got:\n%s", diff)
 			}
@@ -92,12 +92,12 @@ func TestUpdateStatus(t *testing.T) {
 	service := "coolService"
 
 	cases := map[string]struct {
-		s    *v1alpha3.ConnectionStatus
+		s    *v1beta1.ConnectionStatus
 		o    Observation
-		want *v1alpha3.ConnectionStatus
+		want *v1beta1.ConnectionStatus
 	}{
 		"PeeringActive": {
-			s: &v1alpha3.ConnectionStatus{},
+			s: &v1beta1.ConnectionStatus{},
 			o: Observation{
 				Connection: &servicenetworking.Connection{
 					Peering: peering,
@@ -110,18 +110,20 @@ func TestUpdateStatus(t *testing.T) {
 					}},
 				},
 			},
-			want: &v1alpha3.ConnectionStatus{
+			want: &v1beta1.ConnectionStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Available()},
 					},
 				},
-				Peering: peering,
-				Service: service,
+				AtProvider: v1beta1.ConnectionObservation{
+					Peering: peering,
+					Service: service,
+				},
 			},
 		},
 		"PeeringInactive": {
-			s: &v1alpha3.ConnectionStatus{},
+			s: &v1beta1.ConnectionStatus{},
 			o: Observation{
 				Connection: &servicenetworking.Connection{
 					Peering: peering,
@@ -134,18 +136,20 @@ func TestUpdateStatus(t *testing.T) {
 					}},
 				},
 			},
-			want: &v1alpha3.ConnectionStatus{
+			want: &v1beta1.ConnectionStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Unavailable()},
 					},
 				},
-				Peering: peering,
-				Service: service,
+				AtProvider: v1beta1.ConnectionObservation{
+					Peering: peering,
+					Service: service,
+				},
 			},
 		},
 		"PeeringDoesNotExist": {
-			s: &v1alpha3.ConnectionStatus{},
+			s: &v1beta1.ConnectionStatus{},
 			o: Observation{
 				Connection: &servicenetworking.Connection{
 					Peering: peering,
@@ -153,14 +157,16 @@ func TestUpdateStatus(t *testing.T) {
 				},
 				Network: &compute.Network{},
 			},
-			want: &v1alpha3.ConnectionStatus{
+			want: &v1beta1.ConnectionStatus{
 				ResourceStatus: runtimev1alpha1.ResourceStatus{
 					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
 						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Unavailable()},
 					},
 				},
-				Peering: peering,
-				Service: service,
+				AtProvider: v1beta1.ConnectionObservation{
+					Peering: peering,
+					Service: service,
+				},
 			},
 		},
 	}

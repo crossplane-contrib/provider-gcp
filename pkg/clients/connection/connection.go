@@ -17,14 +17,15 @@ limitations under the License.
 package connection
 
 import (
-	"sort"
-
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	compute "google.golang.org/api/compute/v1"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1beta1"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
 // PeeringName of the peering created when a service networking connection is
@@ -39,7 +40,7 @@ const (
 
 // FromParameters converts the supplied ConnectionParameters into an
 // Address suitable for use with the Google Compute API.
-func FromParameters(p v1alpha3.ConnectionParameters) *servicenetworking.Connection {
+func FromParameters(p v1beta1.ConnectionParameters) *servicenetworking.Connection {
 	// Kubernetes API conventions dictate that optional, unspecified fields must
 	// be nil. GCP API clients omit any field set to its zero value, using
 	// NullFields and ForceSendFields to handle edge cases around unsetting
@@ -47,29 +48,16 @@ func FromParameters(p v1alpha3.ConnectionParameters) *servicenetworking.Connecti
 	// does not support updates, so we can safely convert any nil pointer to
 	// string or int64 to their zero values.
 	return &servicenetworking.Connection{
-		Network:               p.Network,
+		Network:               gcp.StringValue(p.Network),
 		ReservedPeeringRanges: p.ReservedPeeringRanges,
 		ForceSendFields:       []string{"ReservedPeeringRanges"},
 	}
 }
 
-// UpToDate returns true if the observed Connection is up to date with the
+// IsUpToDate returns true if the observed Connection is up to date with the
 // supplied ConnectionParameters.
-func UpToDate(p v1alpha3.ConnectionParameters, observed *servicenetworking.Connection) bool {
-	if len(p.ReservedPeeringRanges) != len(observed.ReservedPeeringRanges) {
-		return false
-	}
-
-	sort.Strings(p.ReservedPeeringRanges)
-	sort.Strings(observed.ReservedPeeringRanges)
-
-	for i := range p.ReservedPeeringRanges {
-		if p.ReservedPeeringRanges[i] != observed.ReservedPeeringRanges[i] {
-			return false
-		}
-	}
-
-	return true
+func IsUpToDate(p v1beta1.ConnectionParameters, observed *servicenetworking.Connection) bool {
+	return cmp.Equal(p.ReservedPeeringRanges, observed.ReservedPeeringRanges, cmpopts.SortSlices(func(i, j string) bool { return i < j }))
 }
 
 // An Observation of a service networking Connection and the Network it pertains
@@ -82,9 +70,9 @@ type Observation struct {
 
 // UpdateStatus updates any fields of the supplied ConnectionStatus to
 // reflect the state of the supplied Address.
-func UpdateStatus(s *v1alpha3.ConnectionStatus, o Observation) {
-	s.Peering = o.Connection.Peering
-	s.Service = o.Connection.Service
+func UpdateStatus(s *v1beta1.ConnectionStatus, o Observation) {
+	s.AtProvider.Peering = o.Connection.Peering
+	s.AtProvider.Service = o.Connection.Service
 
 	if len(o.Network.Peerings) == 0 {
 		s.SetConditions(runtimev1alpha1.Unavailable())

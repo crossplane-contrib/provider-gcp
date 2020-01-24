@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	"github.com/pkg/errors"
@@ -26,12 +26,6 @@ import (
 
 	computev1alpha1 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
 )
-
-// A ConnectionSpec defines the desired state of a Connection.
-type ConnectionSpec struct {
-	v1alpha1.ResourceSpec `json:",inline"`
-	ConnectionParameters  `json:",inline"`
-}
 
 // Error strings
 const (
@@ -51,7 +45,7 @@ func (v *NetworkURIReferencerForConnection) Assign(res resource.CanReference, va
 		return errors.New(errResourceIsNotConnection)
 	}
 
-	conn.Spec.Network = value
+	conn.Spec.ForProvider.Network = &value
 	return nil
 }
 
@@ -68,13 +62,13 @@ func (v *GlobalAddressNameReferencerForConnection) Assign(res resource.CanRefere
 		return errors.New(errResourceIsNotConnection)
 	}
 
-	for _, r := range conn.Spec.ReservedPeeringRanges {
+	for _, r := range conn.Spec.ForProvider.ReservedPeeringRanges {
 		if r == value {
 			return nil
 		}
 	}
 
-	conn.Spec.ReservedPeeringRanges = append(conn.Spec.ReservedPeeringRanges, value)
+	conn.Spec.ForProvider.ReservedPeeringRanges = append(conn.Spec.ForProvider.ReservedPeeringRanges, value)
 	return nil
 }
 
@@ -85,6 +79,7 @@ type ConnectionParameters struct {
 	// Parent: The service that is managing peering connectivity for a service
 	// producer's organization. For Google services that support this
 	// functionality, this value is services/servicenetworking.googleapis.com.
+	// +immutable
 	Parent string `json:"parent"`
 
 	// Network: The name of service consumer's VPC network that's connected
@@ -93,9 +88,11 @@ type ConnectionParameters struct {
 	// `{project}` is a project number, such as in `12345` that includes
 	// the VPC service consumer's VPC network. `{network}` is the name of
 	// the service consumer's VPC network.
-	Network string `json:"network,omitempty"`
+	// +optional
+	Network *string `json:"network,omitempty"`
 
 	// NetworkRef references to a Network and retrieves its URI
+	// +optional
 	NetworkRef *NetworkURIReferencerForConnection `json:"networkRef,omitempty" resource:"attributereferencer"`
 
 	// ReservedPeeringRanges: The name of one or more allocated IP address
@@ -104,13 +101,12 @@ type ConnectionParameters struct {
 	ReservedPeeringRanges []string `json:"reservedPeeringRanges,omitempty"`
 
 	// ReservedPeeringRangeRefs is a set of references to GlobalAddress objects
+	// +optional
 	ReservedPeeringRangeRefs []*GlobalAddressNameReferencerForConnection `json:"reservedPeeringRangeRefs,omitempty" resource:"attributereferencer"`
 }
 
-// A ConnectionStatus represents the observed state of a Connection.
-type ConnectionStatus struct {
-	v1alpha1.ResourceStatus `json:",inline"`
-
+// ConnectionObservation is used to show the observed state of the Connection.
+type ConnectionObservation struct {
 	// Peering: The name of the VPC Network Peering connection that was created
 	// by the service producer.
 	Peering string `json:"peering,omitempty"`
@@ -118,6 +114,18 @@ type ConnectionStatus struct {
 	// Service: The name of the peering service that's associated with this
 	// connection, in the following format: `services/{service name}`.
 	Service string `json:"service,omitempty"`
+}
+
+// A ConnectionSpec defines the desired state of a Connection.
+type ConnectionSpec struct {
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           ConnectionParameters `json:"forProvider"`
+}
+
+// A ConnectionStatus represents the observed state of a Connection.
+type ConnectionStatus struct {
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              ConnectionObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

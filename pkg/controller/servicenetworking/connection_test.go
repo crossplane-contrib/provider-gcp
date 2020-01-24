@@ -38,7 +38,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1beta1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/connection"
 )
@@ -54,12 +54,16 @@ var (
 	unexpected resource.Managed
 )
 
-func conn() *v1alpha3.Connection {
-	return &v1alpha3.Connection{
-		Spec: v1alpha3.ConnectionSpec{
+func conn() *v1beta1.Connection {
+	return &v1beta1.Connection{
+		Spec: v1beta1.ConnectionSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{}},
 		},
-		Status: v1alpha3.ConnectionStatus{Peering: connection.PeeringName},
+		Status: v1beta1.ConnectionStatus{
+			AtProvider: v1beta1.ConnectionObservation{
+				Peering: connection.PeeringName,
+			},
+		},
 	}
 }
 
@@ -567,8 +571,9 @@ type FakeServiceNetworkingService struct {
 
 func (s FakeServiceNetworkingService) Serve(t *testing.T) *servicenetworking.APIService {
 	// NOTE(negz): We never close this httptest.Server because returning only a
-	// compute.Service makes for a simpler test fake API. We create one server
-	// per test case, but they only live for the invocation of the test run.
+	// servicenetworking.APIService makes for a simpler test fake API. We create
+	// one server per test case, but they only live for the invocation of the
+	// test run.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 
