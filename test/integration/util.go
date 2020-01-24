@@ -26,18 +26,22 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func waitFor(ctx context.Context, interval time.Duration, check func(chan error)) error {
-	ch := make(chan error, 1)
-	go func() {
-		for {
-			check(ch)
+func waitFor(ctx context.Context, interval time.Duration, check func() (bool, error)) error {
+	ticker := time.NewTicker(interval)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			// check functions return both a boolean and error to demonstrate
+			// whether an error has occurred and whether the function should
+			// continue to be called. waitFor will only exit when the check
+			// function returns true.
+			if done, err := check(); done {
+				return err
+			}
 		}
-	}()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case err := <-ch:
-		return err
 	}
 }
 

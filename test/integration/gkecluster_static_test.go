@@ -59,16 +59,18 @@ func TestGKEClusterStatic(t *testing.T) {
 				}
 
 				defer func() {
-					if err := waitFor(context.Background(), 10*time.Second, func(ch chan error) {
+					if err := waitFor(context.Background(), 10*time.Second, func() (bool, error) {
 						err := c.Delete(context.Background(), g)
 
 						if kerrors.IsNotFound(err) {
-							ch <- nil
+							return true, nil
 						}
 
 						if err != nil {
-							ch <- err
+							return true, err
 						}
+
+						return false, nil
 					}); err != nil {
 						t.Error(err)
 					}
@@ -86,15 +88,17 @@ func TestGKEClusterStatic(t *testing.T) {
 					return err
 				}
 
-				return waitFor(ctx, 10*time.Second, func(ch chan error) {
+				return waitFor(ctx, 10*time.Second, func() (bool, error) {
 					to := &containerv1beta1.GKECluster{}
 					if err := c.Get(ctx, types.NamespacedName{Name: g.Name}, to); err != nil {
-						ch <- err
+						return true, err
 					}
 
 					if to.Status.AtProvider.Status == containerv1beta1.ClusterStateRunning {
-						ch <- nil
+						return true, nil
 					}
+
+					return false, nil
 				})
 			},
 		},
