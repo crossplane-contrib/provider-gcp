@@ -114,27 +114,56 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            network:
-              description: 'Network: The name of service consumer''s VPC network that''s
-                connected with service producer network, in the following format:
-                `projects/{project}/global/networks/{network}`. `{project}` is a project
-                number, such as in `12345` that includes the VPC service consumer''s
-                VPC network. `{network}` is the name of the service consumer''s VPC
-                network.'
-              type: string
-            networkRef:
-              description: NetworkRef references to a Network and retrieves its URI
+            forProvider:
+              description: 'ConnectionParameters define the desired state of a Google
+                Cloud Service Networking Connection. Most fields map direct to a Connection:
+                https://cloud.google.com/service-infrastructure/docs/service-networking/reference/rest/v1/services.connections#Connection'
               properties:
-                name:
-                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                network:
+                  description: 'Network: The name of service consumer''s VPC network
+                    that''s connected with service producer network, in the following
+                    format: `projects/{project}/global/networks/{network}`. `{project}`
+                    is a project number, such as in `12345` that includes the VPC
+                    service consumer''s VPC network. `{network}` is the name of the
+                    service consumer''s VPC network.'
                   type: string
+                networkRef:
+                  description: NetworkRef references to a Network and retrieves its
+                    URI
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                parent:
+                  description: 'Parent: The service that is managing peering connectivity
+                    for a service producer''s organization. For Google services that
+                    support this functionality, this value is services/servicenetworking.googleapis.com.'
+                  type: string
+                reservedPeeringRangeRefs:
+                  description: ReservedPeeringRangeRefs is a set of references to
+                    GlobalAddress objects
+                  items:
+                    description: GlobalAddressNameReferencerForConnection is an attribute
+                      referencer that resolves name from a referenced GlobalAddress
+                      and assigns it to a Connection
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                  type: array
+                reservedPeeringRanges:
+                  description: 'ReservedPeeringRanges: The name of one or more allocated
+                    IP address ranges for this service producer of type `PEERING`.'
+                  items:
+                    type: string
+                  type: array
+              required:
+              - parent
               type: object
-            parent:
-              description: 'Parent: The service that is managing peering connectivity
-                for a service producer''s organization. For Google services that support
-                this functionality, this value is services/servicenetworking.googleapis.com.'
-              type: string
             providerRef:
               description: ProviderReference specifies the provider that will be used
                 to create, observe, update, and delete this managed resource.
@@ -187,26 +216,6 @@ spec:
               - Retain
               - Delete
               type: string
-            reservedPeeringRangeRefs:
-              description: ReservedPeeringRangeRefs is a set of references to GlobalAddress
-                objects
-              items:
-                description: GlobalAddressNameReferencerForConnection is an attribute
-                  referencer that resolves name from a referenced GlobalAddress and
-                  assigns it to a Connection
-                properties:
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      TODO: Add other useful fields. apiVersion, kind, uid?'
-                    type: string
-                type: object
-              type: array
-            reservedPeeringRanges:
-              description: 'ReservedPeeringRanges: The name of one or more allocated
-                IP address ranges for this service producer of type `PEERING`.'
-              items:
-                type: string
-              type: array
             writeConnectionSecretToRef:
               description: WriteConnectionSecretToReference specifies the namespace
                 and name of a Secret to which any connection details for this managed
@@ -225,12 +234,26 @@ spec:
               - namespace
               type: object
           required:
-          - parent
+          - forProvider
           - providerRef
           type: object
         status:
           description: A ConnectionStatus represents the observed state of a Connection.
           properties:
+            atProvider:
+              description: ConnectionObservation is used to show the observed state
+                of the Connection.
+              properties:
+                peering:
+                  description: 'Peering: The name of the VPC Network Peering connection
+                    that was created by the service producer.'
+                  type: string
+                service:
+                  description: 'Service: The name of the peering service that''s associated
+                    with this connection, in the following format: `services/{service
+                    name}`.'
+                  type: string
+              type: object
             bindingPhase:
               description: Phase represents the binding phase of a managed resource
                 or claim. Unbindable resources cannot be bound, typically because
@@ -276,22 +299,13 @@ spec:
                 - type
                 type: object
               type: array
-            peering:
-              description: 'Peering: The name of the VPC Network Peering connection
-                that was created by the service producer.'
-              type: string
-            service:
-              description: 'Service: The name of the peering service that''s associated
-                with this connection, in the following format: `services/{service
-                name}`.'
-              type: string
           type: object
       required:
       - spec
       type: object
-  version: v1alpha3
+  version: v1beta1
   versions:
-  - name: v1alpha3
+  - name: v1beta1
     served: true
     storage: true
 status:

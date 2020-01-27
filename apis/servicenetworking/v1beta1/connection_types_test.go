@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	"testing"
@@ -66,7 +66,7 @@ func TestGlobalAddressNameReferencerForConnection(t *testing.T) {
 			want: want{
 				res: &Connection{
 					Spec: ConnectionSpec{
-						ConnectionParameters: ConnectionParameters{ReservedPeeringRanges: []string{value}},
+						ForProvider: ConnectionParameters{ReservedPeeringRanges: []string{value}},
 					},
 				},
 				err: nil,
@@ -77,7 +77,7 @@ func TestGlobalAddressNameReferencerForConnection(t *testing.T) {
 			args: args{
 				res: &Connection{
 					Spec: ConnectionSpec{
-						ConnectionParameters: ConnectionParameters{ReservedPeeringRanges: []string{value}},
+						ForProvider: ConnectionParameters{ReservedPeeringRanges: []string{value}},
 					},
 				},
 				value: value,
@@ -85,7 +85,7 @@ func TestGlobalAddressNameReferencerForConnection(t *testing.T) {
 			want: want{
 				res: &Connection{
 					Spec: ConnectionSpec{
-						ConnectionParameters: ConnectionParameters{ReservedPeeringRanges: []string{value}},
+						ForProvider: ConnectionParameters{ReservedPeeringRanges: []string{value}},
 					},
 				},
 				err: nil,
@@ -120,17 +120,17 @@ func TestNetworkURIReferencerForConnection_AssignInvalidType_ReturnsErr(t *testi
 }
 
 func TestNetworkURIReferencerForConnection_AssignValidType_ReturnsExpected(t *testing.T) {
-
+	mv := "mockValue"
 	r := &NetworkURIReferencerForConnection{}
 	res := &Connection{}
 	var expectedErr error
 
-	err := r.Assign(res, "mockValue")
+	err := r.Assign(res, mv)
 	if diff := cmp.Diff(expectedErr, err, test.EquateErrors()); diff != "" {
 		t.Errorf("Assign(...): -want error, +got error:\n%s", diff)
 	}
 
-	if diff := cmp.Diff(res.Spec.Network, "mockValue"); diff != "" {
+	if diff := cmp.Diff(res.Spec.ForProvider.Network, &mv); diff != "" {
 		t.Errorf("Assign(...): -want value, +got value:\n%s", diff)
 	}
 }

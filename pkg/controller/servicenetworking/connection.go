@@ -36,7 +36,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1beta1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/connection"
@@ -87,10 +87,10 @@ func (c *ConnectionController) SetupWithManager(mgr ctrl.Manager) error {
 		newServiceNetworking: servicenetworking.NewService,
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.ConnectionKindAPIVersion, v1alpha3.Group))).
-		For(&v1alpha3.Connection{}).
+		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.ConnectionKindAPIVersion, v1beta1.Group))).
+		For(&v1beta1.Connection{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1alpha3.ConnectionGroupVersionKind),
+			resource.ManagedKind(v1beta1.ConnectionGroupVersionKind),
 			managed.WithExternalConnecter(conn),
 			managed.WithConnectionPublishers()))
 }
@@ -102,7 +102,7 @@ type connector struct {
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	ga, ok := mg.(*v1alpha3.Connection)
+	ga, ok := mg.(*v1beta1.Connection)
 	if !ok {
 		return nil, errors.New(errNotConnection)
 	}
@@ -137,11 +137,11 @@ type external struct {
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cn, ok := mg.(*v1alpha3.Connection)
+	cn, ok := mg.(*v1beta1.Connection)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotConnection)
 	}
-	r, err := e.sn.Services.Connections.List(cn.Spec.Parent).Network(cn.Spec.Network).Context(ctx).Do()
+	r, err := e.sn.Services.Connections.List(cn.Spec.ForProvider.Parent).Network(gcp.StringValue(cn.Spec.ForProvider.Network)).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errListConnections)
 	}
@@ -157,7 +157,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	eo := managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: connection.UpToDate(cn.Spec.ConnectionParameters, o.Connection),
+		ResourceUpToDate: connection.IsUpToDate(cn.Spec.ForProvider, o.Connection),
 	}
 
 	connection.UpdateStatus(&cn.Status, o)
@@ -175,37 +175,37 @@ func findConnection(conns []*servicenetworking.Connection) *servicenetworking.Co
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cn, ok := mg.(*v1alpha3.Connection)
+	cn, ok := mg.(*v1beta1.Connection)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotConnection)
 	}
 
 	cn.Status.SetConditions(runtimev1alpha1.Creating())
-	conn := connection.FromParameters(cn.Spec.ConnectionParameters)
-	_, err := e.sn.Services.Connections.Create(cn.Spec.Parent, conn).Context(ctx).Do()
+	conn := connection.FromParameters(cn.Spec.ForProvider)
+	_, err := e.sn.Services.Connections.Create(cn.Spec.ForProvider.Parent, conn).Context(ctx).Do()
 	return managed.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateConnection)
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cn, ok := mg.(*v1alpha3.Connection)
+	cn, ok := mg.(*v1beta1.Connection)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotConnection)
 	}
 
-	name := fmt.Sprintf("%s/connections/%s", cn.Spec.Parent, connection.PeeringName)
-	conn := connection.FromParameters(cn.Spec.ConnectionParameters)
+	name := fmt.Sprintf("%s/connections/%s", cn.Spec.ForProvider.Parent, connection.PeeringName)
+	conn := connection.FromParameters(cn.Spec.ForProvider)
 	_, err := e.sn.Services.Connections.Patch(name, conn).Context(ctx).Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateConnection)
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cn, ok := mg.(*v1alpha3.Connection)
+	cn, ok := mg.(*v1beta1.Connection)
 	if !ok {
 		return errors.New(errNotConnection)
 	}
 
 	cn.Status.SetConditions(runtimev1alpha1.Deleting())
-	rm := &compute.NetworksRemovePeeringRequest{Name: cn.Status.Peering}
-	_, err := e.compute.Networks.RemovePeering(e.projectID, path.Base(cn.Spec.Network), rm).Context(ctx).Do()
+	rm := &compute.NetworksRemovePeeringRequest{Name: cn.Status.AtProvider.Peering}
+	_, err := e.compute.Networks.RemovePeering(e.projectID, path.Base(gcp.StringValue(cn.Spec.ForProvider.Network)), rm).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteConnection)
 }
