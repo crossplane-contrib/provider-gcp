@@ -29,7 +29,7 @@ import (
 
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	computev1beta1 "github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
@@ -1444,7 +1444,7 @@ func TestIsUpToDate(t *testing.T) {
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.NetworkRef = &v1beta1.NetworkURIReferencerForGKECluster{
-						NetworkURIReferencer: v1alpha3.NetworkURIReferencer{
+						NetworkURIReferencer: computev1beta1.NetworkURIReferencer{
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: "my-network",
 							},

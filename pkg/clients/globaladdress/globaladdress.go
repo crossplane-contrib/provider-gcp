@@ -19,22 +19,13 @@ package globaladdress
 import (
 	compute "google.golang.org/api/compute/v1"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
-// Known Address statuses.
-const (
-	StatusInUse     = "IN_USE"
-	StatusReserved  = "RESERVED"
-	StatusReserving = "RESERVING"
-)
-
-// FromParameters converts the supplied GlobalAddressParameters into an
+// GenerateGlobalAddress converts the supplied GlobalAddressParameters into an
 // Address suitable for use with the Google Compute API.
-func FromParameters(p v1alpha3.GlobalAddressParameters) *compute.Address {
+func GenerateGlobalAddress(p v1beta1.GlobalAddressParameters, name string) *compute.Address {
 	// Kubernetes API conventions dictate that optional, unspecified fields must
 	// be nil. GCP API clients omit any field set to its zero value, using
 	// NullFields and ForceSendFields to handle edge cases around unsetting
@@ -44,8 +35,9 @@ func FromParameters(p v1alpha3.GlobalAddressParameters) *compute.Address {
 	return &compute.Address{
 		Address:      gcp.StringValue(p.Address),
 		AddressType:  gcp.StringValue(p.AddressType),
+		Description:  gcp.StringValue(p.Description),
 		IpVersion:    gcp.StringValue(p.IPVersion),
-		Name:         p.Name,
+		Name:         name,
 		Network:      gcp.StringValue(p.Network),
 		PrefixLength: gcp.Int64Value(p.PrefixLength),
 		Purpose:      gcp.StringValue(p.Purpose),
@@ -53,11 +45,13 @@ func FromParameters(p v1alpha3.GlobalAddressParameters) *compute.Address {
 	}
 }
 
-// UpdateParameters updates any unset (i.e. nil) optional fields of the supplied
-// GlobalAddressParameters that are set (i.e. non-zero) on the supplied Address.
-func UpdateParameters(p *v1alpha3.GlobalAddressParameters, observed *compute.Address) {
+// LateInitializeSpec updates any unset (i.e. nil) optional fields of the
+// supplied GlobalAddressParameters that are set (i.e. non-zero) on the supplied
+// GlobalAddress.
+func LateInitializeSpec(p *v1beta1.GlobalAddressParameters, observed compute.Address) {
 	p.Address = gcp.LateInitializeString(p.Address, observed.Address)
 	p.AddressType = gcp.LateInitializeString(p.AddressType, observed.AddressType)
+	p.Description = gcp.LateInitializeString(p.Description, observed.Description)
 	p.IPVersion = gcp.LateInitializeString(p.IPVersion, observed.IpVersion)
 	p.Network = gcp.LateInitializeString(p.Network, observed.Network)
 	p.PrefixLength = gcp.LateInitializeInt64(p.PrefixLength, observed.PrefixLength)
@@ -65,19 +59,14 @@ func UpdateParameters(p *v1alpha3.GlobalAddressParameters, observed *compute.Add
 	p.Subnetwork = gcp.LateInitializeString(p.Subnetwork, observed.Subnetwork)
 }
 
-// UpdateStatus updates any fields of the supplied GlobalAddressStatus to
-// reflect the state of the supplied Address.
-func UpdateStatus(s *v1alpha3.GlobalAddressStatus, observed *compute.Address) {
-	switch observed.Status {
-	case StatusReserving:
-		s.SetConditions(runtimev1alpha1.Creating())
-	case StatusInUse, StatusReserved:
-		s.SetConditions(runtimev1alpha1.Available())
+// GenerateGlobalAddressObservation takes a compute.Address and returns
+// *GlobalAddressObservation.
+func GenerateGlobalAddressObservation(observed compute.Address) v1beta1.GlobalAddressObservation {
+	return v1beta1.GlobalAddressObservation{
+		CreationTimestamp: observed.CreationTimestamp,
+		ID:                observed.Id,
+		SelfLink:          observed.SelfLink,
+		Status:            observed.Status,
+		Users:             observed.Users,
 	}
-
-	s.CreationTimestamp = observed.CreationTimestamp
-	s.ID = observed.Id
-	s.SelfLink = observed.SelfLink
-	s.Status = observed.Status
-	s.Users = observed.Users
 }

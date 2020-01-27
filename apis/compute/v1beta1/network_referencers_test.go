@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,17 +34,31 @@ import (
 )
 
 const (
-	mockSubnetworkURI = "projects/mockProj/global/networks/mockNetwork"
+	mockName       = "mockName"
+	mockNetworkURI = "projects/mockProj/global/networks/mockNetwork"
 )
 
-func TestSubnetworkURIReferencerGetStatus(t *testing.T) {
+var (
+	errBoom = errors.New("boom")
+)
+
+type mockReader struct {
+	client.Reader
+	readFn func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error
+}
+
+func (m *mockReader) Get(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+	return m.readFn(ctx, key, obj)
+}
+
+func TestNetworkURIReferencerGetStatus(t *testing.T) {
 
 	errResourceNotFound := &kerrors.StatusError{ErrStatus: metav1.Status{Reason: metav1.StatusReasonNotFound}}
 
-	readyResource := Subnetwork{
-		Status: SubnetworkStatus{
-			GCPSubnetworkStatus: GCPSubnetworkStatus{
-				SelfLink: URIPrefix + mockSubnetworkURI,
+	readyResource := Network{
+		Status: NetworkStatus{
+			AtProvider: NetworkObservation{
+				SelfLink: URIPrefix + mockNetworkURI,
 			},
 		},
 	}
@@ -94,7 +109,7 @@ func TestSubnetworkURIReferencerGetStatus(t *testing.T) {
 		"ReferenceReady_ReturnsExpected": {
 			input: input{
 				readerFn: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
-					p := obj.(*Subnetwork)
+					p := obj.(*Network)
 					p.Status = readyResource.Status
 					return nil
 				},
@@ -105,7 +120,7 @@ func TestSubnetworkURIReferencerGetStatus(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			r := SubnetworkURIReferencer{LocalObjectReference: corev1.LocalObjectReference{Name: mockName}}
+			r := NetworkURIReferencer{LocalObjectReference: corev1.LocalObjectReference{Name: mockName}}
 
 			reader := &mockReader{readFn: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 				if diff := cmp.Diff(key, client.ObjectKey{Name: mockName}); diff != "" {
@@ -126,7 +141,7 @@ func TestSubnetworkURIReferencerGetStatus(t *testing.T) {
 	}
 }
 
-func TestSubnetworkURIReferencerBuild(t *testing.T) {
+func TestNetworkURIReferencerBuild(t *testing.T) {
 	type input struct {
 		readerFn func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error
 	}
@@ -151,18 +166,18 @@ func TestSubnetworkURIReferencerBuild(t *testing.T) {
 		"ReferenceRetrieved_ReturnsExpected": {
 			input: input{
 				readerFn: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
-					p := obj.(*Subnetwork)
-					p.Status.SelfLink = URIPrefix + mockSubnetworkURI
+					p := obj.(*Network)
+					p.Status.AtProvider.SelfLink = URIPrefix + mockNetworkURI
 					return nil
 				},
 			},
 			expected: expected{
-				value: mockSubnetworkURI,
+				value: mockNetworkURI,
 			},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			r := SubnetworkURIReferencer{LocalObjectReference: corev1.LocalObjectReference{Name: mockName}}
+			r := NetworkURIReferencer{LocalObjectReference: corev1.LocalObjectReference{Name: mockName}}
 
 			reader := &mockReader{readFn: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 				if diff := cmp.Diff(key, client.ObjectKey{Name: mockName}); diff != "" {

@@ -19,7 +19,7 @@ package compute
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,433 +27,618 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/globaladdress"
+)
+
+const (
+	testGAName = "test-name"
 )
 
 var (
-	unexpected resource.Managed
+	errBoom = errors.New("boom")
 )
 
-var (
-	errBoom           = errors.New("boom")
-	errGoogleNotFound = &googleapi.Error{Code: http.StatusNotFound, Message: "boom"}
-	errGoogleConflict = &googleapi.Error{Code: http.StatusConflict, Message: "boom"}
-	errGoogleOther    = &googleapi.Error{Code: http.StatusInternalServerError, Message: "boom"}
-)
+var _ managed.ExternalConnecter = &gaConnector{}
+var _ managed.ExternalClient = &gaExternal{}
 
-func globalAddress() *v1alpha3.GlobalAddress {
-	return &v1alpha3.GlobalAddress{
-		Spec: v1alpha3.GlobalAddressSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{}},
+type addressModifier func(*v1beta1.GlobalAddress)
+
+func addressWithConditions(c ...runtimev1alpha1.Condition) addressModifier {
+	return func(i *v1beta1.GlobalAddress) { i.Status.SetConditions(c...) }
+}
+
+func addressWithDescription(d string) addressModifier {
+	return func(i *v1beta1.GlobalAddress) { i.Spec.ForProvider.Description = &d }
+}
+
+func addressWithStatus(status string) addressModifier {
+	return func(i *v1beta1.GlobalAddress) { i.Status.AtProvider.Status = status }
+}
+
+func addressObj(im ...addressModifier) *v1beta1.GlobalAddress {
+	i := &v1beta1.GlobalAddress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testNetworkName,
+			Finalizers: []string{},
+			Annotations: map[string]string{
+				meta.ExternalNameAnnotationKey: testGAName,
+			},
+		},
+		Spec: v1beta1.GlobalAddressSpec{
+			ResourceSpec: runtimev1alpha1.ResourceSpec{
+				ProviderReference: &corev1.ObjectReference{Name: providerName},
+			},
+			ForProvider: v1beta1.GlobalAddressParameters{},
 		},
 	}
+
+	for _, m := range im {
+		m(i)
+	}
+
+	return i
 }
 
 func TestGlobalAddressConnect(t *testing.T) {
-	var service *compute.Service
+	provider := gcpv1alpha3.Provider{
+		ObjectMeta: metav1.ObjectMeta{Name: providerName},
+		Spec: gcpv1alpha3.ProviderSpec{
+			ProjectID: projectID,
+			ProviderSpec: runtimev1alpha1.ProviderSpec{
+				CredentialsSecretRef: runtimev1alpha1.SecretKeySelector{
+					SecretReference: runtimev1alpha1.SecretReference{
+						Namespace: namespace,
+						Name:      providerSecretName,
+					},
+					Key: providerSecretKey,
+				},
+			},
+		},
+	}
+
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
+		Data:       map[string][]byte{providerSecretKey: []byte("super-secret")},
+	}
 
 	type args struct {
-		ctx context.Context
-		mg  resource.Managed
+		mg resource.Managed
 	}
+	type want struct {
+		err error
+	}
+
 	cases := map[string]struct {
-		ec   managed.ExternalConnecter
+		conn managed.ExternalConnecter
 		args args
-		want error
+		want want
 	}{
-		"NotGlobalAddressError": {
-			ec: &gaConnector{},
+		"NotGlobalAddress": {
+			conn: &gaConnector{},
 			args: args{
-				ctx: context.Background(),
-				mg:  unexpected,
+				mg: &v1beta1.Subnetwork{},
 			},
-			want: errors.New(errNotGlobalAddress),
+			want: want{
+				err: errors.New(errNotGlobalAddress),
+			},
 		},
-		"GetProviderError": {
-			ec: &gaConnector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-							return errBoom
-						case *corev1.Secret:
-						default:
-							return errors.New("unexpected resource kind")
-						}
-						return nil
-					}),
+		"Connected": {
+			conn: &gaConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						*obj.(*corev1.Secret) = secret
+					}
+					return nil
+				}},
+				newServiceFn: func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error) {
+					return &compute.Service{}, nil
 				},
 			},
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
 			},
-			want: errors.Wrap(errBoom, errProviderNotRetrieved),
+			want: want{
+				err: nil,
+			},
 		},
-		"GetProviderSecretError": {
-			ec: &gaConnector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-						case *corev1.Secret:
-							return errBoom
-						default:
-							return errors.New("unexpected resource kind")
-						}
-						return nil
-					}),
-				},
+		"FailedToGetProvider": {
+			conn: &gaConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					return errBoom
+				}},
 			},
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
 			},
-			want: errors.Wrap(errBoom, errProviderSecretNotRetrieved),
+			want: want{
+				err: errors.Wrap(errBoom, errProviderNotRetrieved),
+			},
 		},
-		"GetComputeServiceError": {
-			ec: &gaConnector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-						case *corev1.Secret:
-						default:
-							return errors.New("unexpected resource kind")
-						}
-						return nil
-					}),
-				},
-				newCompute: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) { return nil, errBoom },
+		"FailedToGetProviderSecret": {
+			conn: &gaConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						return errBoom
+					}
+					return nil
+				}},
 			},
-			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
-			},
-			want: errors.Wrap(errBoom, errNewClient),
+			args: args{mg: addressObj()},
+			want: want{err: errors.Wrap(errBoom, errProviderSecretNotRetrieved)},
 		},
-		"Successful": {
-			ec: &gaConnector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-						case *corev1.Secret:
-						default:
-							return errors.Errorf("unexpected resource kind %T", obj)
-						}
-						return nil
-					}),
-				},
-				newCompute: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) { return service, nil },
+		"FailedToCreateComputeClient": {
+			conn: &gaConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						*obj.(*corev1.Secret) = secret
+					}
+					return nil
+				}},
+				newServiceFn: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) { return nil, errBoom },
 			},
-			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
-			},
+			args: args{mg: addressObj()},
+			want: want{err: errors.Wrap(errBoom, errNewClient)},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := tc.ec.Connect(tc.args.ctx, tc.args.mg)
-			if diff := cmp.Diff(tc.want, err, test.EquateErrors()); diff != "" {
-				t.Errorf("Connect(...): -want error, +got error:\n%s", diff)
+			_, err := tc.conn.Connect(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.conn.Connect(...): want error != got error:\n%s", diff)
 			}
 		})
 	}
 }
 
 func TestGlobalAddressObserve(t *testing.T) {
-
 	type args struct {
-		ctx context.Context
-		mg  resource.Managed
+		mg resource.Managed
 	}
-
 	type want struct {
-		eo  managed.ExternalObservation
+		mg  resource.Managed
+		obs managed.ExternalObservation
 		err error
 	}
 
 	cases := map[string]struct {
-		e    managed.ExternalClient
-		args args
-		want want
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
 	}{
-		"NotGlobalAddressError": {
-			e: &gaExternal{},
+		"NotGlobalAddress": {
+			handler: nil,
 			args: args{
-				ctx: context.Background(),
-				mg:  unexpected,
+				mg: &v1beta1.Subnetwork{},
 			},
 			want: want{
+				mg:  &v1beta1.Subnetwork{},
 				err: errors.New(errNotGlobalAddress),
 			},
 		},
-		"ErrorGetAddress": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodGet, ReturnError: errGoogleOther}.Serve(t),
-			},
+		"NotFound": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusNotFound)
+				_ = json.NewEncoder(w).Encode(&compute.Address{})
+			}),
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
 			},
 			want: want{
-				err: errors.Wrap(errGoogleOther, errGetAddress),
+				mg:  addressObj(),
+				err: nil,
 			},
 		},
-		"ErrorUpdateGlobalAddress": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodGet}.Serve(t),
-				client:  &test.MockClient{MockUpdate: test.NewMockUpdateFn(errBoom)},
-			},
+		"GetFailed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&compute.Address{})
+			}),
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
 			},
 			want: want{
-				eo: managed.ExternalObservation{
+				mg:  addressObj(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetAddress),
+			},
+		},
+		"NotUpToDateSpecUpdateFailed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := addressObj()
+				gn := globaladdress.GenerateGlobalAddress(c.Spec.ForProvider, testGAName)
+				gn.Description = "a very interesting description"
+				_ = json.NewEncoder(w).Encode(gn)
+			}),
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(errBoom),
+			},
+			args: args{
+				mg: addressObj(),
+			},
+			want: want{
+				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				err: errors.Wrap(errBoom, errUpdateManaged),
+				mg:  addressObj(addressWithDescription("a very interesting description")),
+				err: errors.Wrap(errBoom, errManagedAddressUpdate),
 			},
 		},
-		"AddressDoesNotExist": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodGet, ReturnError: errGoogleNotFound}.Serve(t),
+		"ReservingUnbound": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := globaladdress.GenerateGlobalAddress(addressObj().Spec.ForProvider, testGAName)
+				c.Status = v1beta1.StatusReserving
+				_ = json.NewEncoder(w).Encode(c)
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
 			},
 			want: want{
-				eo: managed.ExternalObservation{
-					ResourceExists: false,
-				},
-			},
-		},
-		"AddressExists": {
-			e: &gaExternal{
-				client: &test.MockClient{
-					MockUpdate: test.NewMockUpdateFn(nil, func(obj runtime.Object) error {
-						if _, ok := obj.(*v1alpha3.GlobalAddress); !ok {
-							return errors.Errorf("unexpected resource kind %T", obj)
-						}
-						return nil
-					}),
-				},
-				compute: FakeComputeService{WantMethod: http.MethodGet}.Serve(t),
-			},
-			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
-			},
-			want: want{
-				eo: managed.ExternalObservation{
+				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
+				mg: addressObj(
+					addressWithConditions(runtimev1alpha1.Creating()),
+					addressWithStatus(v1beta1.StatusReserving),
+				),
+			},
+		},
+		"AvailableUnbound": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := globaladdress.GenerateGlobalAddress(addressObj().Spec.ForProvider, testGAName)
+				c.Status = v1beta1.StatusReserved
+				_ = json.NewEncoder(w).Encode(c)
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: addressObj(),
+			},
+			want: want{
+				obs: managed.ExternalObservation{
+					ResourceExists:   true,
+					ResourceUpToDate: true,
+				},
+				mg: addressObj(
+					addressWithConditions(runtimev1alpha1.Available()),
+					addressWithStatus(v1beta1.StatusReserved),
+				),
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, err := tc.e.Observe(tc.args.ctx, tc.args.mg)
-			if diff := cmp.Diff(tc.want.eo, got); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := gaExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				Service:   s,
 			}
+			obs, err := e.Observe(context.Background(), tc.args.mg)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
+				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
 func TestGlobalAddressCreate(t *testing.T) {
-
 	type args struct {
 		ctx context.Context
 		mg  resource.Managed
 	}
-
 	type want struct {
-		ec  managed.ExternalCreation
+		mg  resource.Managed
+		cre managed.ExternalCreation
 		err error
 	}
 
 	cases := map[string]struct {
-		e    managed.ExternalClient
-		args args
-		want want
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
 	}{
-		"NotGlobalAddressError": {
-			e: &gaExternal{},
+		"NotGlobalAddress": {
+			handler: nil,
 			args: args{
-				ctx: context.Background(),
-				mg:  unexpected,
+				mg: &v1beta1.Subnetwork{},
 			},
 			want: want{
+				mg:  &v1beta1.Subnetwork{},
 				err: errors.New(errNotGlobalAddress),
 			},
 		},
-		"ErrorInsertAddress": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodPost, ReturnError: errGoogleOther}.Serve(t),
-			},
+		"Successful": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				i := &compute.Address{}
+				b, err := ioutil.ReadAll(r.Body)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				err = json.Unmarshal(b, i)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = r.Body.Close()
+				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+			}),
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
 			},
 			want: want{
-				err: errors.Wrap(errGoogleOther, errCreateAddress),
+				mg:  addressObj(addressWithConditions(runtimev1alpha1.Creating())),
+				cre: managed.ExternalCreation{},
+				err: nil,
 			},
 		},
-		"AddressAlreadyExists": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodPost, ReturnError: errGoogleConflict}.Serve(t),
-			},
+		"AlreadyExists": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusConflict)
+				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+			}),
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
+			},
+			want: want{
+				mg:  addressObj(addressWithConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateAddress),
 			},
 		},
-		"AddressInserted": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodPost}.Serve(t),
-			},
+		"Failed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+			}),
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
+			},
+			want: want{
+				mg:  addressObj(addressWithConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateAddress),
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, err := tc.e.Create(tc.args.ctx, tc.args.mg)
-			if diff := cmp.Diff(tc.want.ec, got); diff != "" {
-				t.Errorf("Create(...): -want, +got:\n%s", diff)
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := gaExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				Service:   s,
 			}
+			_, err := e.Create(tc.args.ctx, tc.args.mg)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Create(...): -want error, +got error:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
 func TestGlobalAddressDelete(t *testing.T) {
-
 	type args struct {
-		ctx context.Context
+		mg resource.Managed
+	}
+	type want struct {
 		mg  resource.Managed
+		err error
 	}
 
 	cases := map[string]struct {
-		e    managed.ExternalClient
-		args args
-		want error
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
 	}{
-		"NotGlobalAddressError": {
-			e: &gaExternal{},
+		"NotGlobalAddress": {
+			handler: nil,
 			args: args{
-				ctx: context.Background(),
-				mg:  unexpected,
+				mg: &v1beta1.Subnetwork{},
 			},
-			want: errors.New(errNotGlobalAddress),
-		},
-		"ErrorDeleteAddress": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodDelete, ReturnError: errGoogleOther}.Serve(t),
-			},
-			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
-			},
-			want: errors.Wrap(errGoogleOther, errDeleteAddress),
-		},
-		"AddressDoesNotExist": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodDelete, ReturnError: errGoogleNotFound}.Serve(t),
-			},
-			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+			want: want{
+				mg:  &v1beta1.Subnetwork{},
+				err: errors.New(errNotGlobalAddress),
 			},
 		},
-		"AddressDeleted": {
-			e: &gaExternal{
-				compute: FakeComputeService{WantMethod: http.MethodDelete}.Serve(t),
-			},
+		"Successful": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+			}),
 			args: args{
-				ctx: context.Background(),
-				mg:  globalAddress(),
+				mg: addressObj(),
+			},
+			want: want{
+				mg:  addressObj(addressWithConditions(runtimev1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"AlreadyGone": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusNotFound)
+				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+			}),
+			args: args{
+				mg: addressObj(),
+			},
+			want: want{
+				mg:  addressObj(addressWithConditions(runtimev1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"Failed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+			}),
+			args: args{
+				mg: addressObj(),
+			},
+			want: want{
+				mg:  addressObj(addressWithConditions(runtimev1alpha1.Deleting())),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteAddress),
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			err := tc.e.Delete(tc.args.ctx, tc.args.mg)
-			if diff := cmp.Diff(tc.want, err, test.EquateErrors()); diff != "" {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := gaExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				Service:   s,
+			}
+			err := e.Delete(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Delete(...): -want error, +got error:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
-type FakeComputeService struct {
-	WantMethod  string
-	ReturnError error
-}
-
-func (s FakeComputeService) Serve(t *testing.T) *compute.Service {
-	// NOTE(negz): We never close this httptest.Server because returning only a
-	// compute.Service makes for a simpler test fake API. We create one server
-	// per test case, but they only live for the invocation of the test run.
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = r.Body.Close()
-
-		if r.Method != s.WantMethod {
-			http.Error(w, fmt.Sprintf("want HTTP method %s, got %s", s.WantMethod, r.Method), http.StatusBadRequest)
-			return
-		}
-
-		if gae, ok := s.ReturnError.(*googleapi.Error); ok {
-			w.WriteHeader(gae.Code)
-			_ = json.NewEncoder(w).Encode(struct {
-				Error *googleapi.Error `json:"error"`
-			}{Error: gae})
-			return
-		}
-
-		if s.ReturnError != nil {
-			http.Error(w, s.ReturnError.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(&compute.Operation{})
-	}))
-
-	c, err := compute.NewService(context.Background(),
-		option.WithEndpoint(srv.URL),
-		option.WithoutAuthentication())
-	if err != nil {
-		t.Fatal(err)
+func TestGlobalAddressUpdate(t *testing.T) {
+	type args struct {
+		mg resource.Managed
 	}
-	return c
+	type want struct {
+		mg  resource.Managed
+		upd managed.ExternalUpdate
+		err error
+	}
+
+	cases := map[string]struct {
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
+	}{
+		"Noop": {
+			handler: nil,
+			args:    args{},
+			want: want{
+				upd: managed.ExternalUpdate{},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := gaExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				Service:   s,
+			}
+			upd, err := e.Update(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Update(...): -want error, +got error:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Update(...): -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
+				t.Errorf("Update(...): -want, +got:\n%s", diff)
+			}
+
+		})
+	}
 }

@@ -32,7 +32,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	computev1alpha3 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	computev1beta1 "github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/connection"
 )
 
@@ -88,10 +88,10 @@ func TestNetworkURIReferencerForCloudSQLInstanceGetStatus(t *testing.T) {
 			args: args{
 				c: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						n := &computev1alpha3.Network{
-							Status: computev1alpha3.NetworkStatus{
-								GCPNetworkStatus: computev1alpha3.GCPNetworkStatus{
-									Peerings: []*computev1alpha3.GCPNetworkPeering{
+						n := &computev1beta1.Network{
+							Status: computev1beta1.NetworkStatus{
+								AtProvider: computev1beta1.NetworkObservation{
+									Peerings: []*computev1beta1.NetworkPeering{
 										{Name: connection.PeeringName, State: connection.PeeringStateActive},
 									},
 								},
@@ -99,7 +99,7 @@ func TestNetworkURIReferencerForCloudSQLInstanceGetStatus(t *testing.T) {
 						}
 						n.SetConditions(runtimev1alpha1.Unavailable())
 
-						*(obj.(*computev1alpha3.Network)) = *n
+						*(obj.(*computev1beta1.Network)) = *n
 						return nil
 					}),
 				},
@@ -114,10 +114,10 @@ func TestNetworkURIReferencerForCloudSQLInstanceGetStatus(t *testing.T) {
 			args: args{
 				c: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						n := &computev1alpha3.Network{}
+						n := &computev1beta1.Network{}
 						n.SetConditions(runtimev1alpha1.Available())
 
-						*(obj.(*computev1alpha3.Network)) = *n
+						*(obj.(*computev1beta1.Network)) = *n
 						return nil
 					}),
 				},
@@ -132,10 +132,10 @@ func TestNetworkURIReferencerForCloudSQLInstanceGetStatus(t *testing.T) {
 			args: args{
 				c: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						n := &computev1alpha3.Network{
-							Status: computev1alpha3.NetworkStatus{
-								GCPNetworkStatus: computev1alpha3.GCPNetworkStatus{
-									Peerings: []*computev1alpha3.GCPNetworkPeering{
+						n := &computev1beta1.Network{
+							Status: computev1beta1.NetworkStatus{
+								AtProvider: computev1beta1.NetworkObservation{
+									Peerings: []*computev1beta1.NetworkPeering{
 										{Name: connection.PeeringName, State: connection.PeeringStateActive},
 									},
 								},
@@ -143,7 +143,7 @@ func TestNetworkURIReferencerForCloudSQLInstanceGetStatus(t *testing.T) {
 						}
 						n.SetConditions(runtimev1alpha1.Available())
 
-						*(obj.(*computev1alpha3.Network)) = *n
+						*(obj.(*computev1beta1.Network)) = *n
 						return nil
 					}),
 				},
@@ -202,10 +202,10 @@ func TestNetworkURIReferencerForCloudSQLInstanceBuild(t *testing.T) {
 			args: args{
 				c: &test.MockClient{
 					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						*(obj.(*computev1alpha3.Network)) = computev1alpha3.Network{
-							Status: computev1alpha3.NetworkStatus{
-								GCPNetworkStatus: computev1alpha3.GCPNetworkStatus{
-									SelfLink: computev1alpha3.URIPrefix + value,
+						*(obj.(*computev1beta1.Network)) = computev1beta1.Network{
+							Status: computev1beta1.NetworkStatus{
+								AtProvider: computev1beta1.NetworkObservation{
+									SelfLink: computev1beta1.URIPrefix + value,
 								},
 							},
 						}

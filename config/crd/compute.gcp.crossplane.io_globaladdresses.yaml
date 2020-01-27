@@ -37,14 +37,6 @@ spec:
         spec:
           description: A GlobalAddressSpec defines the desired state of a GlobalAddress.
           properties:
-            address:
-              description: 'Address: The static IP address represented by this resource.'
-              type: string
-            addressType:
-              description: "AddressType: The type of address to reserve, either INTERNAL
-                or EXTERNAL. If unspecified, defaults to EXTERNAL. \n Possible values:
-                \  \"EXTERNAL\"   \"INTERNAL\"   \"UNSPECIFIED_TYPE\""
-              type: string
             claimRef:
               description: ClaimReference specifies the resource claim to which this
                 managed resource will be bound. ClaimReference is set automatically
@@ -122,41 +114,86 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            description:
-              description: 'Description: An optional description of this resource.'
-              type: string
-            ipVersion:
-              description: "IPVersion: The IP version that will be used by this address.
-                Valid options are IPV4 or IPV6. \n Possible values:   \"IPV4\"   \"IPV6\"
-                \  \"UNSPECIFIED_VERSION\""
-              type: string
-            name:
-              description: Name of the resource. The name must be 1-63 characters
-                long, and comply with RFC1035. Specifically, the name must be 1-63
-                characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?`.
-                The first character must be a lowercase letter, and all following
-                characters (except for the last character) must be a dash, lowercase
-                letter, or digit. The last character must be a lowercase letter or
-                digit.
-              type: string
-            network:
-              description: 'Network: The URL of the network in which to reserve the
-                address. This field can only be used with INTERNAL type with the VPC_PEERING
-                purpose.'
-              type: string
-            networkRef:
-              description: NetworkRef references to a Network and retrieves its URI
+            forProvider:
+              description: 'GlobalAddressParameters define the desired state of a
+                Google Compute Engine Global Address. Most fields map directly to
+                an Address: https://cloud.google.com/compute/docs/reference/rest/v1/globalAddresses'
               properties:
-                name:
-                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                address:
+                  description: 'Address: The static IP address represented by this
+                    resource.'
                   type: string
+                addressType:
+                  description: "AddressType: The type of address to reserve, either
+                    INTERNAL or EXTERNAL. If unspecified, defaults to EXTERNAL. \n
+                    Possible values:   \"EXTERNAL\"   \"INTERNAL\"   \"UNSPECIFIED_TYPE\""
+                  enum:
+                  - EXTERNAL
+                  - INTERNAL
+                  - UNSPECIFIED_TYPE
+                  type: string
+                description:
+                  description: 'Description: An optional description of this resource.'
+                  type: string
+                ipVersion:
+                  description: "IPVersion: The IP version that will be used by this
+                    address. Valid options are IPV4 or IPV6. \n Possible values:   \"IPV4\"
+                    \  \"IPV6\"   \"UNSPECIFIED_VERSION\""
+                  enum:
+                  - IPV6
+                  - IPV4
+                  - UNSPECIFIED_VERSION
+                  type: string
+                network:
+                  description: 'Network: The URL of the network in which to reserve
+                    the address. This field can only be used with INTERNAL type with
+                    the VPC_PEERING purpose.'
+                  type: string
+                networkRef:
+                  description: NetworkRef references to a Network and retrieves its
+                    URI
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                prefixLength:
+                  description: 'PrefixLength: The prefix length if the resource represents
+                    an IP range.'
+                  format: int64
+                  type: integer
+                purpose:
+                  description: "Purpose: The purpose of this resource, which can be
+                    one of the following values: - `GCE_ENDPOINT` for addresses that
+                    are used by VM instances, alias IP ranges, internal load balancers,
+                    and similar resources. - `DNS_RESOLVER` for a DNS resolver address
+                    in a subnetwork - `VPC_PEERING` for addresses that are reserved
+                    for VPC peer networks. - `NAT_AUTO` for addresses that are external
+                    IP addresses automatically reserved for Cloud NAT. \n Possible
+                    values:   \"DNS_RESOLVER\"   \"GCE_ENDPOINT\"   \"NAT_AUTO\"   \"VPC_PEERING\""
+                  enum:
+                  - DNS_RESOLVER
+                  - GCE_ENDPOINT
+                  - NAT_AUTO
+                  - VPC_PEERING
+                  type: string
+                subnetwork:
+                  description: 'Subnetwork: The URL of the subnetwork in which to
+                    reserve the address. If an IP address is specified, it must be
+                    within the subnetwork''s IP range. This field can only be used
+                    with INTERNAL type with a GCE_ENDPOINT or DNS_RESOLVER purpose.'
+                  type: string
+                subnetworkRef:
+                  description: SubnetworkRef references to a Subnetwork and retrieves
+                    its URI
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
               type: object
-            prefixLength:
-              description: 'PrefixLength: The prefix length if the resource represents
-                an IP range.'
-              format: int64
-              type: integer
             providerRef:
               description: ProviderReference specifies the provider that will be used
                 to create, observe, update, and delete this managed resource.
@@ -194,16 +231,6 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            purpose:
-              description: "Purpose: The purpose of this resource, which can be one
-                of the following values: - `GCE_ENDPOINT` for addresses that are used
-                by VM instances, alias IP ranges, internal load balancers, and similar
-                resources. - `DNS_RESOLVER` for a DNS resolver address in a subnetwork
-                - `VPC_PEERING` for addresses that are reserved for VPC peer networks.
-                - `NAT_AUTO` for addresses that are external IP addresses automatically
-                reserved for Cloud NAT. \n Possible values:   \"DNS_RESOLVER\"   \"GCE_ENDPOINT\"
-                \  \"NAT_AUTO\"   \"VPC_PEERING\""
-              type: string
             reclaimPolicy:
               description: ReclaimPolicy specifies what will happen to this managed
                 resource when its resource claim is deleted, and what will happen
@@ -218,12 +245,6 @@ spec:
               enum:
               - Retain
               - Delete
-              type: string
-            subnetwork:
-              description: 'Subnetwork: The URL of the subnetwork in which to reserve
-                the address. If an IP address is specified, it must be within the
-                subnetwork''s IP range. This field can only be used with INTERNAL
-                type with a GCE_ENDPOINT or DNS_RESOLVER purpose.'
               type: string
             writeConnectionSecretToRef:
               description: WriteConnectionSecretToReference specifies the namespace
@@ -243,12 +264,41 @@ spec:
               - namespace
               type: object
           required:
-          - name
+          - forProvider
           - providerRef
           type: object
         status:
-          description: A GlobalAddressStatus reflects the observed state of a GlobalAddress.
+          description: A GlobalAddressStatus represents the observed state of a GlobalAddress.
           properties:
+            atProvider:
+              description: A GlobalAddressObservation reflects the observed state
+                of a GlobalAddress on GCP.
+              properties:
+                creationTimestamp:
+                  description: CreationTimestamp in RFC3339 text format.
+                  type: string
+                id:
+                  description: ID for the resource. This identifier is defined by
+                    the server.
+                  format: int64
+                  type: integer
+                selfLink:
+                  description: 'SelfLink: Server-defined URL for the resource.'
+                  type: string
+                status:
+                  description: "Status of the address, which can be one of RESERVING,
+                    RESERVED, or IN_USE. An address that is RESERVING is currently
+                    in the process of being reserved. A RESERVED address is currently
+                    reserved and available to use. An IN_USE address is currently
+                    being used by another resource and is not available. \n Possible
+                    values:   \"IN_USE\"   \"RESERVED\"   \"RESERVING\""
+                  type: string
+                users:
+                  description: Users that are using this address.
+                  items:
+                    type: string
+                  type: array
+              type: object
             bindingPhase:
               description: Phase represents the binding phase of a managed resource
                 or claim. Unbindable resources cannot be bound, typically because
@@ -294,37 +344,13 @@ spec:
                 - type
                 type: object
               type: array
-            creationTimestamp:
-              description: CreationTimestamp in RFC3339 text format.
-              type: string
-            id:
-              description: ID for the resource. This identifier is defined by the
-                server.
-              format: int64
-              type: integer
-            selfLink:
-              description: 'SelfLink: Server-defined URL for the resource.'
-              type: string
-            status:
-              description: "Status of the address, which can be one of RESERVING,
-                RESERVED, or IN_USE. An address that is RESERVING is currently in
-                the process of being reserved. A RESERVED address is currently reserved
-                and available to use. An IN_USE address is currently being used by
-                another resource and is not available. \n Possible values:   \"IN_USE\"
-                \  \"RESERVED\"   \"RESERVING\""
-              type: string
-            users:
-              description: Users that are using this address.
-              items:
-                type: string
-              type: array
           type: object
       required:
       - spec
       type: object
-  version: v1alpha3
+  version: v1beta1
   versions:
-  - name: v1alpha3
+  - name: v1beta1
     served: true
     storage: true
 status:

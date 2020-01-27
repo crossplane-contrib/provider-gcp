@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,14 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+)
+
+// Known Address statuses.
+const (
+	StatusInUse     = "IN_USE"
+	StatusReserved  = "RESERVED"
+	StatusReserving = "RESERVING"
 )
 
 // Error strings
@@ -42,14 +50,25 @@ func (v *NetworkURIReferencerForGlobalAddress) Assign(res resource.CanReference,
 		return errors.New(errResourceIsNotGlobalAddress)
 	}
 
-	ga.Spec.Network = &value
+	ga.Spec.ForProvider.Network = &value
 	return nil
 }
 
-// A GlobalAddressSpec defines the desired state of a GlobalAddress.
-type GlobalAddressSpec struct {
-	v1alpha1.ResourceSpec   `json:",inline"`
-	GlobalAddressParameters `json:",inline"`
+// SubnetworkURIReferencerForGlobalAddress is an attribute referencer that resolves
+// subnetwork uri from a referenced Subnetwork and assigns it to a global address object
+type SubnetworkURIReferencerForGlobalAddress struct {
+	SubnetworkURIReferencer `json:",inline"`
+}
+
+// Assign assigns the retrieved network uri to a global address object
+func (v *SubnetworkURIReferencerForGlobalAddress) Assign(res resource.CanReference, value string) error {
+	ga, ok := res.(*GlobalAddress)
+	if !ok {
+		return errors.New(errResourceIsNotGlobalAddress)
+	}
+
+	ga.Spec.ForProvider.Subnetwork = &value
+	return nil
 }
 
 // GlobalAddressParameters define the desired state of a Google Compute Engine
@@ -58,6 +77,7 @@ type GlobalAddressSpec struct {
 type GlobalAddressParameters struct {
 	// Address: The static IP address represented by this resource.
 	// +optional
+	// +immutable
 	Address *string `json:"address,omitempty"`
 
 	// AddressType: The type of address to reserve, either INTERNAL or
@@ -68,10 +88,13 @@ type GlobalAddressParameters struct {
 	//   "INTERNAL"
 	//   "UNSPECIFIED_TYPE"
 	// +optional
+	// +immutable
+	// +kubebuilder:validation:Enum=EXTERNAL;INTERNAL;UNSPECIFIED_TYPE
 	AddressType *string `json:"addressType,omitempty"`
 
 	// Description: An optional description of this resource.
 	// +optional
+	// +immutable
 	Description *string `json:"description,omitempty"`
 
 	// IPVersion: The IP version that will be used by this address. Valid
@@ -82,28 +105,26 @@ type GlobalAddressParameters struct {
 	//   "IPV6"
 	//   "UNSPECIFIED_VERSION"
 	// +optional
+	// +immutable
+	// +kubebuilder:validation:Enum=IPV6;IPV4;UNSPECIFIED_VERSION
 	IPVersion *string `json:"ipVersion,omitempty"`
-
-	// Name of the resource. The name must be 1-63 characters long, and comply
-	// with RFC1035. Specifically, the name must be 1-63 characters long and
-	// match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?`. The first
-	// character must be a lowercase letter, and all following characters
-	// (except for the last character) must be a dash, lowercase letter, or
-	// digit. The last character must be a lowercase letter or digit.
-	Name string `json:"name"`
 
 	// Network: The URL of the network in which to reserve the address. This
 	// field can only be used with INTERNAL type with the VPC_PEERING
 	// purpose.
 	// +optional
+	// +immutable
 	Network *string `json:"network,omitempty"`
 
 	// NetworkRef references to a Network and retrieves its URI
+	// +optional
+	// +immutable
 	NetworkRef *NetworkURIReferencerForGlobalAddress `json:"networkRef,omitempty" resource:"attributereferencer"`
 
 	// PrefixLength: The prefix length if the resource represents an IP
 	// range.
 	// +optional
+	// +immutable
 	PrefixLength *int64 `json:"prefixLength,omitempty"`
 
 	// Purpose: The purpose of this resource, which can be one of the
@@ -122,6 +143,8 @@ type GlobalAddressParameters struct {
 	//   "NAT_AUTO"
 	//   "VPC_PEERING"
 	// +optional
+	// +immutable
+	// +kubebuilder:validation:Enum=DNS_RESOLVER;GCE_ENDPOINT;NAT_AUTO;VPC_PEERING
 	Purpose *string `json:"purpose,omitempty"`
 
 	// Subnetwork: The URL of the subnetwork in which to reserve the
@@ -129,13 +152,17 @@ type GlobalAddressParameters struct {
 	// subnetwork's IP range. This field can only be used with INTERNAL type
 	// with a GCE_ENDPOINT or DNS_RESOLVER purpose.
 	// +optional
+	// +immutable
 	Subnetwork *string `json:"subnetwork,omitempty"`
+
+	// SubnetworkRef references to a Subnetwork and retrieves its URI
+	// +optional
+	// +immutable
+	SubnetworkRef *SubnetworkURIReferencerForGlobalAddress `json:"subnetworkRef,omitempty" resource:"attributereferencer"`
 }
 
-// A GlobalAddressStatus reflects the observed state of a GlobalAddress.
-type GlobalAddressStatus struct {
-	v1alpha1.ResourceStatus `json:",inline"`
-
+// A GlobalAddressObservation reflects the observed state of a GlobalAddress on GCP.
+type GlobalAddressObservation struct {
 	// CreationTimestamp in RFC3339 text format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
@@ -159,6 +186,18 @@ type GlobalAddressStatus struct {
 
 	// Users that are using this address.
 	Users []string `json:"users,omitempty"`
+}
+
+// A GlobalAddressSpec defines the desired state of a GlobalAddress.
+type GlobalAddressSpec struct {
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           GlobalAddressParameters `json:"forProvider"`
+}
+
+// A GlobalAddressStatus represents the observed state of a GlobalAddress.
+type GlobalAddressStatus struct {
+	runtimev1alpha1.ResourceStatus `json:",inline"`
+	AtProvider                     GlobalAddressObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -162,11 +162,8 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 		NodePool: pool,
 	}
 
-	if _, err := e.container.Projects.Locations.Clusters.NodePools.Create(cr.Spec.ForProvider.Cluster, create).Context(ctx).Do(); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateNodePool)
-	}
-
-	return managed.ExternalCreation{}, nil
+	_, err := e.container.Projects.Locations.Clusters.NodePools.Create(cr.Spec.ForProvider.Cluster, create).Context(ctx).Do()
+	return managed.ExternalCreation{}, errors.Wrap(err, errCreateNodePool)
 }
 
 func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {

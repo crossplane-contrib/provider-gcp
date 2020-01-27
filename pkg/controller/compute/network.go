@@ -19,6 +19,7 @@ package compute
 import (
 	"context"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	googlecompute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
@@ -34,9 +35,9 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
-	apisv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	clients "github.com/crossplaneio/stack-gcp/pkg/clients"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	apiv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/network"
 )
 
@@ -44,9 +45,10 @@ const (
 	// Error strings.
 	errNewClient                  = "cannot create new Compute Service"
 	errNotNetwork                 = "managed resource is not a Network resource"
-	errInsufficientNetworkSpec    = "name for network external resource is not provided"
+	errGetNetwork                 = "cannot get GCP network"
 	errProviderNotRetrieved       = "provider could not be retrieved"
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
+	errManagedNetworkUpdate       = "unable to update Network managed resource"
 
 	errNetworkUpdateFailed = "update of Network resource has failed"
 	errNetworkCreateFailed = "creation of Network resource has failed"
@@ -56,13 +58,13 @@ const (
 // SetupNetwork adds a controller that reconciles Network managed
 // resources.
 func SetupNetwork(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha3.NetworkGroupKind)
+	name := managed.ControllerName(v1beta1.NetworkGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&v1alpha3.Network{}).
+		For(&v1beta1.Network{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1alpha3.NetworkGroupVersionKind),
+			resource.ManagedKind(v1beta1.NetworkGroupVersionKind),
 			managed.WithExternalConnecter(&networkConnector{kube: mgr.GetClient()}),
 			managed.WithConnectionPublishers(),
 			managed.WithLogger(l.WithValues("controller", name)),
@@ -75,19 +77,12 @@ type networkConnector struct {
 }
 
 func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1alpha3.Network)
+	cr, ok := mg.(*v1beta1.Network)
 	if !ok {
 		return nil, errors.New(errNotNetwork)
 	}
-	// TODO(muvaf): we do not yet have a way for configure the Spec with defaults for statically provisioned resources
-	// such as this. Setting it directly here does not work since managed reconciler issues updates only to
-	// `status` subresource. We require name to be given until we have a pre-process hook like configurator in Claim
-	// reconciler
-	if cr.Spec.Name == "" {
-		return nil, errors.New(errInsufficientNetworkSpec)
-	}
 
-	provider := &apisv1alpha3.Provider{}
+	provider := &apiv1alpha3.Provider{}
 	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), provider); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
@@ -106,81 +101,83 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (ma
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	return &networkExternal{Service: s, projectID: provider.Spec.ProjectID}, nil
+	return &networkExternal{Service: s, kube: c.kube, projectID: provider.Spec.ProjectID}, nil
 }
 
 type networkExternal struct {
+	kube client.Client
 	*googlecompute.Service
 	projectID string
 }
 
 func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha3.Network)
+	cr, ok := mg.(*v1beta1.Network)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotNetwork)
 	}
-	observed, err := c.Networks.Get(c.projectID, cr.Spec.Name).Context(ctx).Do()
-	if clients.IsErrorNotFound(err) {
-		return managed.ExternalObservation{
-			ResourceExists: false,
-		}, nil
-	}
+	observed, err := c.Networks.Get(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, err
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetNetwork)
 	}
-	cr.Status.GCPNetworkStatus = network.GenerateGCPNetworkStatus(*observed)
-	// If the Network resource is retrieved, it is ready to be used
+
+	currentSpec := cr.Spec.ForProvider.DeepCopy()
+	network.LateInitializeSpec(&cr.Spec.ForProvider, *observed)
+	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
+		if err := c.kube.Update(ctx, cr); err != nil {
+			return managed.ExternalObservation{}, errors.Wrap(err, errManagedNetworkUpdate)
+		}
+	}
+
+	cr.Status.AtProvider = network.GenerateNetworkObservation(*observed)
+
 	cr.Status.SetConditions(runtimev1alpha1.Available())
+
+	u := network.IsUpToDate(&cr.Spec.ForProvider, *observed)
+
 	return managed.ExternalObservation{
-		ResourceExists: true,
+		ResourceExists:   true,
+		ResourceUpToDate: u,
 	}, nil
 }
 
 func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha3.Network)
+	cr, ok := mg.(*v1beta1.Network)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotNetwork)
 	}
-	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(cr.Spec.NetworkParameters)).
+
+	cr.Status.SetConditions(runtimev1alpha1.Creating())
+	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(cr.Spec.ForProvider, meta.GetExternalName(cr))).
 		Context(ctx).
 		Do()
-	if clients.IsErrorAlreadyExists(err) {
-		return managed.ExternalCreation{}, nil
-	}
-	cr.Status.SetConditions(runtimev1alpha1.Creating())
 	return managed.ExternalCreation{}, errors.Wrap(err, errNetworkCreateFailed)
 }
 
 func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha3.Network)
+	cr, ok := mg.(*v1beta1.Network)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotNetwork)
-	}
-	if cr.Spec.IsSameAs(cr.Status.GCPNetworkStatus) {
-		return managed.ExternalUpdate{}, nil
 	}
 	// NOTE(muvaf): All parameters except routing config are
 	// immutable.
 	_, err := c.Networks.Patch(
 		c.projectID,
-		cr.Spec.Name,
-		network.GenerateNetwork(cr.Spec.NetworkParameters)).
+		meta.GetExternalName(cr),
+		network.GenerateNetwork(cr.Spec.ForProvider, meta.GetExternalName(cr))).
 		Context(ctx).
 		Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errNetworkUpdateFailed)
 }
 
 func (c *networkExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha3.Network)
+	cr, ok := mg.(*v1beta1.Network)
 	if !ok {
 		return errors.New(errNotNetwork)
 	}
-	_, err := c.Networks.Delete(c.projectID, cr.Spec.Name).
+
+	cr.Status.SetConditions(runtimev1alpha1.Deleting())
+	_, err := c.Networks.Delete(c.projectID, meta.GetExternalName(cr)).
 		Context(ctx).
 		Do()
-	if clients.IsErrorNotFound(err) {
-		return nil
-	}
-	cr.Status.SetConditions(runtimev1alpha1.Deleting())
-	return errors.Wrap(err, errNetworkDeleteFailed)
+	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errNetworkDeleteFailed)
 }

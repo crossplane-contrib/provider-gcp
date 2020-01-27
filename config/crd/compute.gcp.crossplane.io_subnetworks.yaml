@@ -114,53 +114,87 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
-            description:
-              description: 'Description: An optional description of this resource.
-                Provide this property when you create the resource. This field can
-                be set only at resource creation time.'
-              type: string
-            enableFlowLogs:
-              description: 'EnableFlowLogs: Whether to enable flow logging for this
-                subnetwork. If this field is not explicitly set, it will not appear
-                in get listings. If not set the default behavior is to disable flow
-                logging.'
-              type: boolean
-            ipCidrRange:
-              description: 'IPCIDRRange: The range of internal addresses that are
-                owned by this subnetwork. Provide this property when you create the
-                subnetwork. For example, 10.0.0.0/8 or 192.168.0.0/16. Ranges must
-                be unique and non-overlapping within a network. Only IPv4 is supported.
-                This field can be set only at resource creation time.'
-              type: string
-            name:
-              description: 'Name: The name of the resource, provided by the client
-                when initially creating the resource. The name must be 1-63 characters
-                long, and comply with RFC1035. Specifically, the name must be 1-63
-                characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?`
-                which means the first character must be a lowercase letter, and all
-                following characters must be a dash, lowercase letter, or digit, except
-                the last character, which cannot be a dash.'
-              type: string
-            network:
-              description: 'Network: The URL of the network to which this subnetwork
-                belongs, provided by the client when initially creating the subnetwork.
-                Only networks that are in the distributed mode can have subnetworks.
-                This field can be set only at resource creation time.'
-              type: string
-            networkRef:
-              description: NetworkRef references to a Network and retrieves its URI
+            forProvider:
+              description: 'SubnetworkParameters define the desired state of a Google
+                Compute Engine VPC Subnetwork. Most fields map directly to a Subnetwork:
+                https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks'
               properties:
-                name:
-                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                description:
+                  description: 'Description: An optional description of this resource.
+                    Provide this property when you create the resource. This field
+                    can be set only at resource creation time.'
                   type: string
+                enableFlowLogs:
+                  description: 'EnableFlowLogs: Whether to enable flow logging for
+                    this subnetwork. If this field is not explicitly set, it will
+                    not appear in get listings. If not set the default behavior is
+                    to disable flow logging.'
+                  type: boolean
+                ipCidrRange:
+                  description: 'IPCIDRRange: The range of internal addresses that
+                    are owned by this subnetwork. Provide this property when you create
+                    the subnetwork. For example, 10.0.0.0/8 or 192.168.0.0/16. Ranges
+                    must be unique and non-overlapping within a network. Only IPv4
+                    is supported. This field can be set only at resource creation
+                    time.'
+                  type: string
+                network:
+                  description: 'Network: The URL of the network to which this subnetwork
+                    belongs, provided by the client when initially creating the subnetwork.
+                    Only networks that are in the distributed mode can have subnetworks.
+                    This field can be set only at resource creation time.'
+                  type: string
+                networkRef:
+                  description: NetworkRef references to a Network and retrieves its
+                    URI
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                privateIpGoogleAccess:
+                  description: 'PrivateIPGoogleAccess: Whether the VMs in this subnet
+                    can access Google services without assigned external IP addresses.
+                    This field can be both set at resource creation time and updated
+                    using setPrivateIPGoogleAccess.'
+                  type: boolean
+                region:
+                  description: 'Region: URL of the region where the Subnetwork resides.
+                    This field can be set only at resource creation time.'
+                  type: string
+                secondaryIpRanges:
+                  description: 'SecondaryIPRanges: An array of configurations for
+                    secondary IP ranges for VM instances contained in this subnetwork.
+                    The primary IP of such VM must belong to the primary ipCidrRange
+                    of the subnetwork. The alias IPs may belong to either primary
+                    or secondary ranges. This field can be updated with a patch request.'
+                  items:
+                    description: A SubnetworkSecondaryRange defines the state of a
+                      Google Compute Engine VPC Subnetwork secondary range.
+                    properties:
+                      ipCidrRange:
+                        description: 'IPCIDRRange: The range of IP addresses belonging
+                          to this subnetwork secondary range. Provide this property
+                          when you create the subnetwork. Ranges must be unique and
+                          non-overlapping with all primary and secondary IP ranges
+                          within a network. Only IPv4 is supported.'
+                        type: string
+                      rangeName:
+                        description: 'RangeName: The name associated with this subnetwork
+                          secondary range, used when adding an alias IP range to a
+                          VM instance. The name must be 1-63 characters long, and
+                          comply with RFC1035. The name must be unique within the
+                          subnetwork.'
+                        type: string
+                    required:
+                    - ipCidrRange
+                    - rangeName
+                    type: object
+                  type: array
+              required:
+              - ipCidrRange
               type: object
-            privateIpGoogleAccess:
-              description: 'PrivateIPGoogleAccess: Whether the VMs in this subnet
-                can access Google services without assigned external IP addresses.
-                This field can be both set at resource creation time and updated using
-                setPrivateIPGoogleAccess.'
-              type: boolean
             providerRef:
               description: ProviderReference specifies the provider that will be used
                 to create, observe, update, and delete this managed resource.
@@ -213,38 +247,6 @@ spec:
               - Retain
               - Delete
               type: string
-            region:
-              description: 'Region: URL of the region where the Subnetwork resides.
-                This field can be set only at resource creation time.'
-              type: string
-            secondaryIpRanges:
-              description: 'SecondaryIPRanges: An array of configurations for secondary
-                IP ranges for VM instances contained in this subnetwork. The primary
-                IP of such VM must belong to the primary ipCidrRange of the subnetwork.
-                The alias IPs may belong to either primary or secondary ranges. This
-                field can be updated with a patch request.'
-              items:
-                description: A GCPSubnetworkSecondaryRange defines the state of a
-                  Google Compute Engine VPC Subnetwork secondary range.
-                properties:
-                  ipCidrRange:
-                    description: 'IPCIDRRange: The range of IP addresses belonging
-                      to this subnetwork secondary range. Provide this property when
-                      you create the subnetwork. Ranges must be unique and non-overlapping
-                      with all primary and secondary IP ranges within a network. Only
-                      IPv4 is supported.'
-                    type: string
-                  rangeName:
-                    description: 'RangeName: The name associated with this subnetwork
-                      secondary range, used when adding an alias IP range to a VM
-                      instance. The name must be 1-63 characters long, and comply
-                      with RFC1035. The name must be unique within the subnetwork.'
-                    type: string
-                required:
-                - ipCidrRange
-                - rangeName
-                type: object
-              type: array
             writeConnectionSecretToRef:
               description: WriteConnectionSecretToReference specifies the namespace
                 and name of a Secret to which any connection details for this managed
@@ -263,13 +265,42 @@ spec:
               - namespace
               type: object
           required:
-          - ipCidrRange
-          - name
+          - forProvider
           - providerRef
           type: object
         status:
           description: A SubnetworkStatus represents the observed state of a Subnetwork.
           properties:
+            atProvider:
+              description: A SubnetworkObservation represents the observed state of
+                a Google Compute Engine VPC Subnetwork.
+              properties:
+                creationTimestamp:
+                  description: 'CreationTimestamp: Creation timestamp in RFC3339 text
+                    format.'
+                  type: string
+                fingerprint:
+                  description: "Fingerprint: Fingerprint of this resource. A hash
+                    of the contents stored in this object. This field is used in optimistic
+                    locking. This field will be ignored when inserting a Subnetwork.
+                    An up-to-date fingerprint must be provided in order to update
+                    the Subnetwork, otherwise the request will fail with error 412
+                    conditionNotMet. \n To see the latest fingerprint, make a get()
+                    request to retrieve a Subnetwork."
+                  type: string
+                gatewayAddress:
+                  description: 'GatewayAddress: The gateway address for default routes
+                    to reach destination addresses outside this subnetwork.'
+                  type: string
+                id:
+                  description: 'Id: The unique identifier for the resource. This identifier
+                    is defined by the server.'
+                  format: int64
+                  type: integer
+                selfLink:
+                  description: 'SelfLink: Server-defined URL for the resource.'
+                  type: string
+              type: object
             bindingPhase:
               description: Phase represents the binding phase of a managed resource
                 or claim. Unbindable resources cannot be bound, typically because
@@ -315,112 +346,13 @@ spec:
                 - type
                 type: object
               type: array
-            creationTimestamp:
-              description: 'CreationTimestamp: Creation timestamp in RFC3339 text
-                format.'
-              type: string
-            description:
-              description: 'Description: An optional description of this resource.
-                Provide this property when you create the resource. This field can
-                be set only at resource creation time.'
-              type: string
-            enableFlowLogs:
-              description: 'EnableFlowLogs: Whether to enable flow logging for this
-                subnetwork. If this field is not explicitly set, it will not appear
-                in get listings. If not set the default behavior is to disable flow
-                logging.'
-              type: boolean
-            fingerprint:
-              description: "Fingerprint: Fingerprint of this resource. A hash of the
-                contents stored in this object. This field is used in optimistic locking.
-                This field will be ignored when inserting a Subnetwork. An up-to-date
-                fingerprint must be provided in order to update the Subnetwork, otherwise
-                the request will fail with error 412 conditionNotMet. \n To see the
-                latest fingerprint, make a get() request to retrieve a Subnetwork."
-              type: string
-            gatewayAddress:
-              description: 'GatewayAddress: The gateway address for default routes
-                to reach destination addresses outside this subnetwork.'
-              type: string
-            id:
-              description: 'Id: The unique identifier for the resource. This identifier
-                is defined by the server.'
-              format: int64
-              type: integer
-            ipCidrRange:
-              description: 'IPCIDRRange: The range of internal addresses that are
-                owned by this subnetwork. Provide this property when you create the
-                subnetwork. For example, 10.0.0.0/8 or 192.168.0.0/16. Ranges must
-                be unique and non-overlapping within a network. Only IPv4 is supported.
-                This field can be set only at resource creation time.'
-              type: string
-            kind:
-              description: 'Kind: Type of the resource. Always compute#subnetwork
-                for Subnetwork resources.'
-              type: string
-            name:
-              description: 'Name: The name of the resource, provided by the client
-                when initially creating the resource. The name must be 1-63 characters
-                long, and comply with RFC1035. Specifically, the name must be 1-63
-                characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?`
-                which means the first character must be a lowercase letter, and all
-                following characters must be a dash, lowercase letter, or digit, except
-                the last character, which cannot be a dash.'
-              type: string
-            network:
-              description: 'Network: The URL of the network to which this subnetwork
-                belongs, provided by the client when initially creating the subnetwork.
-                Only networks that are in the distributed mode can have subnetworks.
-                This field can be set only at resource creation time.'
-              type: string
-            privateIpGoogleAccess:
-              description: 'PrivateIPGoogleAccess: Whether the VMs in this subnet
-                can access Google services without assigned external IP addresses.
-                This field can be both set at resource creation time and updated using
-                setPrivateIPGoogleAccess.'
-              type: boolean
-            region:
-              description: 'Region: URL of the region where the Subnetwork resides.
-                This field can be set only at resource creation time.'
-              type: string
-            secondaryIpRanges:
-              description: 'SecondaryIPRanges: An array of configurations for secondary
-                IP ranges for VM instances contained in this subnetwork. The primary
-                IP of such VM must belong to the primary ipCidrRange of the subnetwork.
-                The alias IPs may belong to either primary or secondary ranges. This
-                field can be updated with a patch request.'
-              items:
-                description: A GCPSubnetworkSecondaryRange defines the state of a
-                  Google Compute Engine VPC Subnetwork secondary range.
-                properties:
-                  ipCidrRange:
-                    description: 'IPCIDRRange: The range of IP addresses belonging
-                      to this subnetwork secondary range. Provide this property when
-                      you create the subnetwork. Ranges must be unique and non-overlapping
-                      with all primary and secondary IP ranges within a network. Only
-                      IPv4 is supported.'
-                    type: string
-                  rangeName:
-                    description: 'RangeName: The name associated with this subnetwork
-                      secondary range, used when adding an alias IP range to a VM
-                      instance. The name must be 1-63 characters long, and comply
-                      with RFC1035. The name must be unique within the subnetwork.'
-                    type: string
-                required:
-                - ipCidrRange
-                - rangeName
-                type: object
-              type: array
-            selfLink:
-              description: 'SelfLink: Server-defined URL for the resource.'
-              type: string
           type: object
       required:
       - spec
       type: object
-  version: v1alpha3
+  version: v1beta1
   versions:
-  - name: v1alpha3
+  - name: v1beta1
     served: true
     storage: true
 status:

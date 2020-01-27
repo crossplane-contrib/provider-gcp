@@ -53,34 +53,7 @@ var (
 	GKEClusterClassGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterClassKind)
 )
 
-// Network type metadata.
-var (
-	NetworkKind             = reflect.TypeOf(Network{}).Name()
-	NetworkGroupKind        = schema.GroupKind{Group: Group, Kind: NetworkKind}.String()
-	NetworkKindAPIVersion   = NetworkKind + "." + SchemeGroupVersion.String()
-	NetworkGroupVersionKind = SchemeGroupVersion.WithKind(NetworkKind)
-)
-
-// Subnetwork type metadata.
-var (
-	SubnetworkKind             = reflect.TypeOf(Subnetwork{}).Name()
-	SubnetworkGroupKind        = schema.GroupKind{Group: Group, Kind: SubnetworkKind}.String()
-	SubnetworkKindAPIVersion   = SubnetworkKind + "." + SchemeGroupVersion.String()
-	SubnetworkGroupVersionKind = SchemeGroupVersion.WithKind(SubnetworkKind)
-)
-
-// GlobalAddress type metadata.
-var (
-	GlobalAddressKind             = reflect.TypeOf(GlobalAddress{}).Name()
-	GlobalAddressGroupKind        = schema.GroupKind{Group: Group, Kind: GlobalAddressKind}.String()
-	GlobalAddressKindAPIVersion   = GlobalAddressKind + "." + SchemeGroupVersion.String()
-	GlobalAddressGroupVersionKind = SchemeGroupVersion.WithKind(GlobalAddressKind)
-)
-
 func init() {
 	SchemeBuilder.Register(&GKECluster{}, &GKEClusterList{})
 	SchemeBuilder.Register(&GKEClusterClass{}, &GKEClusterClassList{})
-	SchemeBuilder.Register(&Network{}, &NetworkList{})
-	SchemeBuilder.Register(&Subnetwork{}, &SubnetworkList{})
-	SchemeBuilder.Register(&GlobalAddress{}, &GlobalAddressList{})
 }

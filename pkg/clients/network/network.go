@@ -17,53 +17,49 @@ limitations under the License.
 package network
 
 import (
-	googlecompute "google.golang.org/api/compute/v1"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	compute "google.golang.org/api/compute/v1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
-// GenerateNetwork takes a *NetworkParameters and returns *googlecompute.Network.
+// GenerateNetwork takes a *NetworkParameters and returns *compute.Network.
 // It assigns only the fields that are writable, i.e. not labelled as [Output Only]
 // in Google's reference.
-func GenerateNetwork(in v1alpha3.NetworkParameters) *googlecompute.Network {
-	n := &googlecompute.Network{}
-	n.IPv4Range = in.IPv4Range
+func GenerateNetwork(in v1beta1.NetworkParameters, name string) *compute.Network {
+	n := &compute.Network{
+		Name:        name,
+		Description: gcp.StringValue(in.Description),
+	}
 	if in.AutoCreateSubnetworks != nil {
 		n.AutoCreateSubnetworks = *in.AutoCreateSubnetworks
 		if !n.AutoCreateSubnetworks {
 			n.ForceSendFields = []string{"AutoCreateSubnetworks"}
 		}
 	}
-	n.Description = in.Description
-	n.Name = in.Name
 	if in.RoutingConfig != nil {
-		n.RoutingConfig = &googlecompute.NetworkRoutingConfig{
+		n.RoutingConfig = &compute.NetworkRoutingConfig{
 			RoutingMode: in.RoutingConfig.RoutingMode,
 		}
 	}
 	return n
 }
 
-// GenerateGCPNetworkStatus takes a googlecompute.Network and returns *GCPNetworkStatus
-// It assings all the fields.
-func GenerateGCPNetworkStatus(in googlecompute.Network) v1alpha3.GCPNetworkStatus {
-	gn := v1alpha3.GCPNetworkStatus{
-		IPv4Range:             in.IPv4Range,
-		AutoCreateSubnetworks: in.AutoCreateSubnetworks,
-		CreationTimestamp:     in.CreationTimestamp,
-		Description:           in.Description,
-		GatewayIPv4:           in.GatewayIPv4,
-		ID:                    in.Id,
-		SelfLink:              in.SelfLink,
-		Subnetworks:           in.Subnetworks,
-	}
-	if in.RoutingConfig != nil {
-		gn.RoutingConfig = &v1alpha3.GCPNetworkRoutingConfig{
-			RoutingMode: in.RoutingConfig.RoutingMode,
-		}
+// GenerateNetworkObservation takes a compute.Network and returns *NetworkObservation.
+func GenerateNetworkObservation(in compute.Network) v1beta1.NetworkObservation {
+	gn := v1beta1.NetworkObservation{
+		CreationTimestamp: in.CreationTimestamp,
+		GatewayIPv4:       in.GatewayIPv4,
+		ID:                in.Id,
+		SelfLink:          in.SelfLink,
+		Subnetworks:       in.Subnetworks,
 	}
 	for _, p := range in.Peerings {
-		gp := &v1alpha3.GCPNetworkPeering{
+		gp := &v1beta1.NetworkPeering{
 			Name:                 p.Name,
 			Network:              p.Network,
 			State:                p.State,
@@ -74,4 +70,24 @@ func GenerateGCPNetworkStatus(in googlecompute.Network) v1alpha3.GCPNetworkStatu
 		gn.Peerings = append(gn.Peerings, gp)
 	}
 	return gn
+}
+
+// LateInitializeSpec fills unassigned fields with the values in compute.Network object.
+func LateInitializeSpec(spec *v1beta1.NetworkParameters, in compute.Network) {
+	spec.AutoCreateSubnetworks = gcp.LateInitializeBool(spec.AutoCreateSubnetworks, in.AutoCreateSubnetworks)
+	if in.RoutingConfig != nil && spec.RoutingConfig == nil {
+		spec.RoutingConfig = &v1beta1.NetworkRoutingConfig{
+			RoutingMode: in.RoutingConfig.RoutingMode,
+		}
+	}
+
+	spec.Description = gcp.LateInitializeString(spec.Description, in.Description)
+}
+
+// IsUpToDate checks whether current state is up-to-date compared to the given
+// set of parameters.
+func IsUpToDate(in *v1beta1.NetworkParameters, current compute.Network) bool {
+	currentParams := &v1beta1.NetworkParameters{}
+	LateInitializeSpec(currentParams, current)
+	return cmp.Equal(in, currentParams, cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}))
 }

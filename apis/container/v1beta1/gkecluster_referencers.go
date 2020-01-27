@@ -43,9 +43,9 @@ type GKEClusterURIReferencer struct {
 
 // GetStatus implements GetStatus method of AttributeReferencer interface
 func (v *GKEClusterURIReferencer) GetStatus(ctx context.Context, _ resource.CanReference, reader client.Reader) ([]resource.ReferenceStatus, error) {
-	cluster := GKECluster{}
+	cluster := &GKECluster{}
 	nn := types.NamespacedName{Name: v.Name}
-	if err := reader.Get(ctx, nn, &cluster); err != nil {
+	if err := reader.Get(ctx, nn, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotFound}}, nil
 		}

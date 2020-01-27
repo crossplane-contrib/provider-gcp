@@ -38,15 +38,13 @@ const (
 	PeeringStateInactive = "INACTIVE"
 )
 
-// FromParameters converts the supplied ConnectionParameters into an
-// Address suitable for use with the Google Compute API.
+// FromParameters converts the supplied ConnectionParameters into a Connection
+// suitable for use with the Google Compute API.
 func FromParameters(p v1beta1.ConnectionParameters) *servicenetworking.Connection {
 	// Kubernetes API conventions dictate that optional, unspecified fields must
 	// be nil. GCP API clients omit any field set to its zero value, using
 	// NullFields and ForceSendFields to handle edge cases around unsetting
-	// previously set values, or forcing zero values to be set. The Address API
-	// does not support updates, so we can safely convert any nil pointer to
-	// string or int64 to their zero values.
+	// previously set values, or forcing zero values to be set.
 	return &servicenetworking.Connection{
 		Network:               gcp.StringValue(p.Network),
 		ReservedPeeringRanges: p.ReservedPeeringRanges,

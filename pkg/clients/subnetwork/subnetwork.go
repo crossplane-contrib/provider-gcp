@@ -17,21 +17,29 @@ limitations under the License.
 package subnetwork
 
 import (
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/api/compute/v1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
+var equateSecondaryRange = func(i, j *v1beta1.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
+
 // GenerateSubnetwork creates a *googlecompute.Subnetwork object using SubnetworkParameters.
-func GenerateSubnetwork(s v1alpha3.SubnetworkParameters) *compute.Subnetwork {
-	sn := &compute.Subnetwork{}
-	sn.Name = s.Name
-	sn.Description = s.Description
-	sn.EnableFlowLogs = s.EnableFlowLogs
-	sn.IpCidrRange = s.IPCidrRange
-	sn.Network = s.Network
-	sn.PrivateIpGoogleAccess = s.PrivateIPGoogleAccess
-	sn.Region = s.Region
+func GenerateSubnetwork(s v1beta1.SubnetworkParameters, name string) *compute.Subnetwork {
+	sn := &compute.Subnetwork{
+		Name:                  name,
+		Description:           gcp.StringValue(s.Description),
+		EnableFlowLogs:        gcp.BoolValue(s.EnableFlowLogs),
+		IpCidrRange:           s.IPCidrRange,
+		Network:               gcp.StringValue(s.Network),
+		PrivateIpGoogleAccess: gcp.BoolValue(s.PrivateIPGoogleAccess),
+		Region:                s.Region,
+	}
 	for _, val := range s.SecondaryIPRanges {
 		obj := &compute.SubnetworkSecondaryRange{
 			IpCidrRange: val.IPCidrRange,
@@ -42,28 +50,73 @@ func GenerateSubnetwork(s v1alpha3.SubnetworkParameters) *compute.Subnetwork {
 	return sn
 }
 
-// GenerateGCPSubnetworkStatus creates a GCPSubnetworkStatus object using *googlecompute.Subnetwork.
-func GenerateGCPSubnetworkStatus(in *compute.Subnetwork) v1alpha3.GCPSubnetworkStatus {
-	s := v1alpha3.GCPSubnetworkStatus{}
-	s.Name = in.Name
-	s.Description = in.Description
-	s.EnableFlowLogs = in.EnableFlowLogs
-	s.Fingerprint = in.Fingerprint
-	s.IPCIDRRange = in.IpCidrRange
-	s.Network = in.Network
-	s.PrivateIPGoogleAccess = in.PrivateIpGoogleAccess
-	s.Region = in.Region
-	for _, val := range in.SecondaryIpRanges {
-		obj := &v1alpha3.GCPSubnetworkSecondaryRange{
-			IPCidrRange: val.IpCidrRange,
+// GenerateSubnetworkForUpdate creates a *googlecompute.Subnetwork object using
+// SubnetworkParameters with fields disallowed by the GCP API removed. If a
+// field can be included in the GCP API but will result in an error if the value
+// is changed, it will still be included here such that users are notified of
+// invalid updates.
+func GenerateSubnetworkForUpdate(s v1beta1.Subnetwork, name string) *compute.Subnetwork {
+	sn := &compute.Subnetwork{
+		Name:                  name,
+		Description:           gcp.StringValue(s.Spec.ForProvider.Description),
+		EnableFlowLogs:        gcp.BoolValue(s.Spec.ForProvider.EnableFlowLogs),
+		IpCidrRange:           s.Spec.ForProvider.IPCidrRange,
+		PrivateIpGoogleAccess: gcp.BoolValue(s.Spec.ForProvider.PrivateIPGoogleAccess),
+		Fingerprint:           s.Status.AtProvider.Fingerprint,
+	}
+	for _, val := range s.Spec.ForProvider.SecondaryIPRanges {
+		obj := &compute.SubnetworkSecondaryRange{
+			IpCidrRange: val.IPCidrRange,
 			RangeName:   val.RangeName,
 		}
-		s.SecondaryIPRanges = append(s.SecondaryIPRanges, obj)
+		sn.SecondaryIpRanges = append(sn.SecondaryIpRanges, obj)
 	}
-	s.CreationTimestamp = in.CreationTimestamp
-	s.GatewayAddress = in.GatewayAddress
-	s.ID = in.Id
-	s.Kind = in.Kind
-	s.SelfLink = in.SelfLink
-	return s
+	return sn
+}
+
+// GenerateSubnetworkObservation creates a SubnetworkObservation object using *googlecompute.Subnetwork.
+func GenerateSubnetworkObservation(in compute.Subnetwork) v1beta1.SubnetworkObservation {
+	return v1beta1.SubnetworkObservation{
+		CreationTimestamp: in.CreationTimestamp,
+		Fingerprint:       in.Fingerprint,
+		GatewayAddress:    in.GatewayAddress,
+		ID:                in.Id,
+		SelfLink:          in.SelfLink,
+	}
+}
+
+// LateInitializeSpec fills unassigned fields with the values in compute.Subnetwork object.
+func LateInitializeSpec(spec *v1beta1.SubnetworkParameters, in compute.Subnetwork) {
+	if spec.IPCidrRange == "" {
+		spec.IPCidrRange = in.IpCidrRange
+	}
+
+	if spec.Region == "" {
+		spec.Region = in.Region
+	}
+
+	spec.Network = gcp.LateInitializeString(spec.Network, in.Network)
+	spec.Description = gcp.LateInitializeString(spec.Description, in.Description)
+	spec.EnableFlowLogs = gcp.LateInitializeBool(spec.EnableFlowLogs, in.EnableFlowLogs)
+	spec.PrivateIPGoogleAccess = gcp.LateInitializeBool(spec.PrivateIPGoogleAccess, in.PrivateIpGoogleAccess)
+	if len(in.SecondaryIpRanges) != 0 && len(spec.SecondaryIPRanges) == 0 {
+		spec.SecondaryIPRanges = make([]*v1beta1.SubnetworkSecondaryRange, len(in.SecondaryIpRanges))
+		for i, r := range in.SecondaryIpRanges {
+			spec.SecondaryIPRanges[i] = &v1beta1.SubnetworkSecondaryRange{
+				IPCidrRange: r.IpCidrRange,
+				RangeName:   r.RangeName,
+			}
+		}
+	}
+}
+
+// IsUpToDate checks whether current state is up-to-date compared to the given
+// set of parameters.
+func IsUpToDate(in *v1beta1.SubnetworkParameters, current compute.Subnetwork) (upToDate bool, privateAccess bool) {
+	currentParams := &v1beta1.SubnetworkParameters{}
+	LateInitializeSpec(currentParams, current)
+	if !cmp.Equal(in.PrivateIPGoogleAccess, currentParams.PrivateIPGoogleAccess) {
+		return false, true
+	}
+	return cmp.Equal(in, currentParams, cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}), cmpopts.SortSlices(equateSecondaryRange)), false
 }

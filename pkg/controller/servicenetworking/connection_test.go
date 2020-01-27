@@ -368,7 +368,9 @@ func TestCreate(t *testing.T) {
 				ctx: context.Background(),
 				mg:  conn(),
 			},
-			want: want{},
+			want: want{
+				err: errors.Wrap(errGoogleConflict, errCreateConnection),
+			},
 		},
 		"ConnectionCreated": {
 			e: &external{

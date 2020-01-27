@@ -19,6 +19,7 @@ package compute
 import (
 	"context"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	googlecompute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
@@ -34,32 +35,34 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	gcpapis "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	clients "github.com/crossplaneio/stack-gcp/pkg/clients"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/subnetwork"
 )
 
 const (
 	// Error strings.
-	errNotSubnetwork              = "managed resource is not a Subnetwork resource"
-	errInsufficientSubnetworkSpec = "name or region for network external resource is not provided"
+	errNotSubnetwork           = "managed resource is not a Subnetwork resource"
+	errManagedSubnetworkUpdate = "unable to update Subnetwork managed resource"
 
-	errUpdateSubnetworkFailed = "update of Subnetwork resource has failed"
-	errCreateSubnetworkFailed = "creation of Subnetwork resource has failed"
-	errDeleteSubnetworkFailed = "deletion of Subnetwork resource has failed"
+	errGetSubnetwork            = "unable to get GCP Subnetwork"
+	errUpdateSubnetworkFailed   = "update of GCP Subnetwork has failed"
+	errUpdateSubnetworkPAFailed = "unable to update GCP Subnetwork Private IP Google Access"
+	errCreateSubnetworkFailed   = "creation of GCP Subnetwork resource has failed"
+	errDeleteSubnetworkFailed   = "deletion of GCP Subnetwork resource has failed"
 )
 
 // SetupSubnetwork adds a controller that reconciles Subnetwork
 // managed resources.
 func SetupSubnetwork(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha3.SubnetworkGroupKind)
+	name := managed.ControllerName(v1beta1.SubnetworkGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&v1alpha3.Subnetwork{}).
+		For(&v1beta1.Subnetwork{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1alpha3.SubnetworkGroupVersionKind),
+			resource.ManagedKind(v1beta1.SubnetworkGroupVersionKind),
 			managed.WithExternalConnecter(&subnetworkConnector{kube: mgr.GetClient()}),
 			managed.WithConnectionPublishers(),
 			managed.WithLogger(l.WithValues("controller", name)),
@@ -72,16 +75,9 @@ type subnetworkConnector struct {
 }
 
 func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1alpha3.Subnetwork)
+	cr, ok := mg.(*v1beta1.Subnetwork)
 	if !ok {
 		return nil, errors.New(errNotSubnetwork)
-	}
-	// TODO(muvaf): we do not yet have a way for configure the Spec with defaults for statically provisioned resources
-	// such as this. Setting it directly here does not work since managed reconciler issues updates only to
-	// `status` subresource. We require name to be given until we have a pre-process hook like configurator in Claim
-	// reconciler
-	if cr.Spec.Name == "" || cr.Spec.Region == "" {
-		return nil, errors.New(errInsufficientSubnetworkSpec)
 	}
 
 	provider := &gcpapis.Provider{}
@@ -103,77 +99,90 @@ func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) 
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	return &subnetworkExternal{Service: s, projectID: provider.Spec.ProjectID}, nil
+	return &subnetworkExternal{Service: s, kube: c.kube, projectID: provider.Spec.ProjectID}, nil
 }
 
 type subnetworkExternal struct {
+	kube client.Client
 	*googlecompute.Service
 	projectID string
 }
 
 func (c *subnetworkExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha3.Subnetwork)
+	cr, ok := mg.(*v1beta1.Subnetwork)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotSubnetwork)
 	}
-	observed, err := c.Subnetworks.Get(c.projectID, cr.Spec.Region, cr.Spec.Name).Context(ctx).Do()
-	if clients.IsErrorNotFound(err) {
-		return managed.ExternalObservation{
-			ResourceExists: false,
-		}, nil
-	}
+	observed, err := c.Subnetworks.Get(c.projectID, cr.Spec.ForProvider.Region, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, err
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetSubnetwork)
 	}
-	cr.Status.GCPSubnetworkStatus = subnetwork.GenerateGCPSubnetworkStatus(observed)
+
+	currentSpec := cr.Spec.ForProvider.DeepCopy()
+	subnetwork.LateInitializeSpec(&cr.Spec.ForProvider, *observed)
+	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
+		if err := c.kube.Update(ctx, cr); err != nil {
+			return managed.ExternalObservation{}, errors.Wrap(err, errManagedSubnetworkUpdate)
+		}
+	}
+
+	cr.Status.AtProvider = subnetwork.GenerateSubnetworkObservation(*observed)
+
+	u, _ := subnetwork.IsUpToDate(&cr.Spec.ForProvider, *observed)
+
 	cr.Status.SetConditions(runtimev1alpha1.Available())
 	return managed.ExternalObservation{
-		ResourceExists: true,
+		ResourceExists:   true,
+		ResourceUpToDate: u,
 	}, nil
 }
 
 func (c *subnetworkExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha3.Subnetwork)
+	cr, ok := mg.(*v1beta1.Subnetwork)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotSubnetwork)
 	}
-	_, err := c.Subnetworks.Insert(c.projectID, cr.Spec.Region, subnetwork.GenerateSubnetwork(cr.Spec.SubnetworkParameters)).
+
+	cr.Status.SetConditions(runtimev1alpha1.Creating())
+	_, err := c.Subnetworks.Insert(c.projectID, cr.Spec.ForProvider.Region, subnetwork.GenerateSubnetwork(cr.Spec.ForProvider, meta.GetExternalName(cr))).
 		Context(ctx).
 		Do()
-	if clients.IsErrorAlreadyExists(err) {
-		return managed.ExternalCreation{}, nil
-	}
-	cr.Status.SetConditions(runtimev1alpha1.Creating())
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateSubnetworkFailed)
 }
 
 func (c *subnetworkExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha3.Subnetwork)
+	cr, ok := mg.(*v1beta1.Subnetwork)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotSubnetwork)
 	}
-	if cr.Spec.IsSameAs(cr.Status.GCPSubnetworkStatus) {
+
+	observed, err := c.Subnetworks.Get(c.projectID, cr.Spec.ForProvider.Region, meta.GetExternalName(cr)).Context(ctx).Do()
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetSubnetwork)
+	}
+
+	upToDate, privateAccess := subnetwork.IsUpToDate(&cr.Spec.ForProvider, *observed)
+	if upToDate {
 		return managed.ExternalUpdate{}, nil
 	}
-	subnetworkBody := subnetwork.GenerateSubnetwork(cr.Spec.SubnetworkParameters)
-	// Fingerprint from the last GET is required for updates.
-	subnetworkBody.Fingerprint = cr.Status.Fingerprint
-	// The API rejects region and network to be updated, in fact, it rejects the update when this field is even included. Calm down.
-	subnetworkBody.Region = ""
-	subnetworkBody.Network = ""
-	_, err := c.Subnetworks.Patch(c.projectID, cr.Spec.Region, cr.Spec.Name, subnetworkBody).Context(ctx).Do()
+	if privateAccess {
+		update := &googlecompute.SubnetworksSetPrivateIpGoogleAccessRequest{PrivateIpGoogleAccess: *cr.Spec.ForProvider.PrivateIPGoogleAccess}
+		_, err = c.Subnetworks.SetPrivateIpGoogleAccess(c.projectID, cr.Spec.ForProvider.Region, meta.GetExternalName(cr), update).Context(ctx).Do()
+		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSubnetworkPAFailed)
+	}
+
+	subnetUpdate := subnetwork.GenerateSubnetworkForUpdate(*cr, meta.GetExternalName(cr))
+	_, err = c.Subnetworks.Patch(c.projectID, cr.Spec.ForProvider.Region, meta.GetExternalName(cr), subnetUpdate).Context(ctx).Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSubnetworkFailed)
 }
 
 func (c *subnetworkExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha3.Subnetwork)
+	cr, ok := mg.(*v1beta1.Subnetwork)
 	if !ok {
 		return errors.New(errNotSubnetwork)
 	}
-	_, err := c.Subnetworks.Delete(c.projectID, cr.Spec.Region, cr.Spec.Name).Context(ctx).Do()
-	if clients.IsErrorNotFound(err) {
-		return nil
-	}
+
 	cr.Status.SetConditions(runtimev1alpha1.Deleting())
-	return errors.Wrap(err, errDeleteSubnetworkFailed)
+	_, err := c.Subnetworks.Delete(c.projectID, cr.Spec.ForProvider.Region, meta.GetExternalName(cr)).Context(ctx).Do()
+	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteSubnetworkFailed)
 }

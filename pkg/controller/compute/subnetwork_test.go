@@ -19,6 +19,7 @@ package compute
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,309 +28,294 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	corev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
-	gcpapis "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/pkg/clients/subnetwork"
 )
 
 const (
-	testSubnetworkName        = "test-subnetwork"
-	testSubnetworkDescription = "test-subnetwork"
-	testSubnetworkRegion      = "test-region"
+	testSubnetworkName = "test-subnetwork"
 )
 
-func TestSubnetworkConnector_Connect(t *testing.T) {
-	type args struct {
-		cr resource.Managed
-		c  *subnetworkConnector
-		ns func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error)
+var _ managed.ExternalConnecter = &subnetworkConnector{}
+var _ managed.ExternalClient = &subnetworkExternal{}
+
+type subnetworkModifier func(*v1beta1.Subnetwork)
+
+func subnetworkWithConditions(c ...runtimev1alpha1.Condition) subnetworkModifier {
+	return func(i *v1beta1.Subnetwork) { i.Status.SetConditions(c...) }
+}
+
+func subnetworkWithDescription(d string) subnetworkModifier {
+	return func(i *v1beta1.Subnetwork) { i.Spec.ForProvider.Description = &d }
+}
+
+func subnetworkWithPrivateAccess(p bool) subnetworkModifier {
+	return func(i *v1beta1.Subnetwork) { i.Spec.ForProvider.PrivateIPGoogleAccess = &p }
+}
+
+func subnetworkObj(im ...subnetworkModifier) *v1beta1.Subnetwork {
+	i := &v1beta1.Subnetwork{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testSubnetworkName,
+			Finalizers: []string{},
+			Annotations: map[string]string{
+				meta.ExternalNameAnnotationKey: testSubnetworkName,
+			},
+		},
+		Spec: v1beta1.SubnetworkSpec{
+			ResourceSpec: runtimev1alpha1.ResourceSpec{
+				ProviderReference: &corev1.ObjectReference{Name: providerName},
+			},
+			ForProvider: v1beta1.SubnetworkParameters{},
+		},
 	}
 
-	fakeErr := errors.New("i reject to work")
-	testProvider := &gcpapis.Provider{
-		Spec: gcpapis.ProviderSpec{
-			ProviderSpec: corev1alpha1.ProviderSpec{
-				CredentialsSecretRef: corev1alpha1.SecretKeySelector{
-					SecretReference: corev1alpha1.SecretReference{
-						Namespace: testNamespace,
-						Name:      "test-secret-name",
+	for _, m := range im {
+		m(i)
+	}
+
+	return i
+}
+
+func TestSubnetworkConnect(t *testing.T) {
+	provider := gcpv1alpha3.Provider{
+		ObjectMeta: metav1.ObjectMeta{Name: providerName},
+		Spec: gcpv1alpha3.ProviderSpec{
+			ProjectID: projectID,
+			ProviderSpec: runtimev1alpha1.ProviderSpec{
+				CredentialsSecretRef: runtimev1alpha1.SecretKeySelector{
+					SecretReference: runtimev1alpha1.SecretReference{
+						Namespace: namespace,
+						Name:      providerSecretName,
 					},
-					Key: "test-key",
+					Key: providerSecretKey,
 				},
 			},
 		},
 	}
-	testSecret := &v1.Secret{
-		Data: map[string][]byte{
-			testProvider.Spec.CredentialsSecretRef.Key: []byte(testGCPCredentialsJSON),
-		},
+
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
+		Data:       map[string][]byte{providerSecretKey: []byte("super-secret")},
+	}
+
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		err error
 	}
 
 	cases := map[string]struct {
+		conn managed.ExternalConnecter
 		args args
-		err  error
+		want want
 	}{
-		"Successful": {
+		"NotSubnetwork": {
+			conn: &subnetworkConnector{},
 			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						ResourceSpec: corev1alpha1.ResourceSpec{
-							ProviderReference: &v1.ObjectReference{
-								Name: testProviderName,
-							},
-						},
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name:   testSubnetworkName,
-							Region: testSubnetworkRegion,
-						},
-					},
-				},
-				c: &subnetworkConnector{
-					kube: &test.MockClient{
-						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-							switch o := obj.(type) {
-							case *gcpapis.Provider:
-								if diff := cmp.Diff(types.NamespacedName{Name: testProviderName}, key); diff != "" {
-									t.Errorf("r: -want, +got:\n%s", diff)
-								}
-								testProvider.DeepCopyInto(o)
-								return nil
-							case *v1.Secret:
-								testSecret.DeepCopyInto(o)
-								return nil
-							}
-							return nil
-						},
-					},
-				},
-				ns: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) {
-					return nil, nil
-				},
+				mg: &v1beta1.Network{},
+			},
+			want: want{
+				err: errors.New(errNotSubnetwork),
 			},
 		},
-		"SubnetworkResourceWithNoName": {
-			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Region: testSubnetworkRegion,
-						},
-					},
+		"Connected": {
+			conn: &subnetworkConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						*obj.(*corev1.Secret) = secret
+					}
+					return nil
+				}},
+				newServiceFn: func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error) {
+					return &compute.Service{}, nil
 				},
-				c: &subnetworkConnector{},
 			},
-			err: errors.New(errInsufficientSubnetworkSpec),
+			args: args{
+				mg: subnetworkObj(),
+			},
+			want: want{
+				err: nil,
+			},
 		},
-		"SubnetworkResourceWithNoRegion": {
-			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name: testSubnetworkName,
-						},
-					},
-				},
-				c: &subnetworkConnector{},
+		"FailedToGetProvider": {
+			conn: &subnetworkConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					return errBoom
+				}},
 			},
-			err: errors.New(errInsufficientSubnetworkSpec),
+			args: args{
+				mg: subnetworkObj(),
+			},
+			want: want{
+				err: errors.Wrap(errBoom, errProviderNotRetrieved),
+			},
 		},
-		"ProviderRetrievalFailed": {
-			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						ResourceSpec: corev1alpha1.ResourceSpec{
-							ProviderReference: &v1.ObjectReference{
-								Name: testProviderName,
-							},
-						},
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name:   testSubnetworkName,
-							Region: testSubnetworkRegion,
-						},
-					},
-				},
-				c: &subnetworkConnector{
-					kube: &test.MockClient{
-						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-							return fakeErr
-						},
-					},
-				},
+		"FailedToGetProviderSecret": {
+			conn: &subnetworkConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						return errBoom
+					}
+					return nil
+				}},
 			},
-			err: errors.Wrap(fakeErr, errProviderNotRetrieved),
+			args: args{mg: subnetworkObj()},
+			want: want{err: errors.Wrap(errBoom, errProviderSecretNotRetrieved)},
 		},
-		"CredFromSecretRetrievalFailed": {
-			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						ResourceSpec: corev1alpha1.ResourceSpec{
-							ProviderReference: &v1.ObjectReference{
-								Name: testProviderName,
-							},
-						},
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name:   testSubnetworkName,
-							Region: testSubnetworkRegion,
-						},
-					},
-				},
-				c: &subnetworkConnector{
-					kube: &test.MockClient{
-						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-							switch o := obj.(type) {
-							case *gcpapis.Provider:
-								if diff := cmp.Diff(types.NamespacedName{Name: testProviderName}, key); diff != "" {
-									t.Errorf("r: -want, +got:\n%s", diff)
-								}
-								testProvider.DeepCopyInto(o)
-								return nil
-							case *v1.Secret:
-								return fakeErr
-							}
-							return nil
-						},
-					},
-				},
+		"FailedToCreateComputeClient": {
+			conn: &subnetworkConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						*obj.(*corev1.Secret) = secret
+					}
+					return nil
+				}},
+				newServiceFn: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) { return nil, errBoom },
 			},
-			err: errors.Wrap(fakeErr, errProviderSecretNotRetrieved),
-		},
-		"NewServiceFailed": {
-			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						ResourceSpec: corev1alpha1.ResourceSpec{
-							ProviderReference: &v1.ObjectReference{
-								Name: testProviderName,
-							},
-						},
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name:   testSubnetworkName,
-							Region: testSubnetworkRegion,
-						},
-					},
-				},
-				c: &subnetworkConnector{
-					kube: &test.MockClient{
-						MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-							switch o := obj.(type) {
-							case *gcpapis.Provider:
-								if diff := cmp.Diff(types.NamespacedName{Name: testProviderName}, key); diff != "" {
-									t.Errorf("r: -want, +got:\n%s", diff)
-								}
-								testProvider.DeepCopyInto(o)
-								return nil
-							case *v1.Secret:
-								testSecret.DeepCopyInto(o)
-								return nil
-							}
-							return nil
-						},
-					},
-				},
-				ns: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) {
-					return nil, fakeErr
-				},
-			},
-			err: errors.Wrap(fakeErr, errNewClient),
-		},
-		"DifferentType": {
-			args: args{
-				cr: &v1alpha3.Network{},
-				c:  &subnetworkConnector{},
-			},
-			err: errors.New(errNotSubnetwork),
+			args: args{mg: subnetworkObj()},
+			want: want{err: errors.Wrap(errBoom, errNewClient)},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			tc.args.c.newServiceFn = tc.args.ns
-			_, err := tc.args.c.Connect(context.Background(), tc.args.cr)
-			if diff := cmp.Diff(tc.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
+			_, err := tc.conn.Connect(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.conn.Connect(...): want error != got error:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestSubsubnetworkExternal_Observe(t *testing.T) {
+func TestSubnetworkObserve(t *testing.T) {
 	type args struct {
-		cr resource.Managed
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		obs managed.ExternalObservation
+		err error
 	}
 
 	cases := map[string]struct {
 		handler http.Handler
+		kube    client.Client
 		args    args
-		error   bool
-		obs     managed.ExternalObservation
+		want    want
 	}{
-		"SuccessfulExists": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
-			}),
+		"NotSubnetwork": {
+			handler: nil,
 			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name: testSubnetworkName,
-						},
-					},
-				},
+				mg: &v1beta1.Network{},
 			},
-			obs: managed.ExternalObservation{ResourceExists: true},
+			want: want{
+				mg:  &v1beta1.Network{},
+				err: errors.New(errNotSubnetwork),
+			},
 		},
-		"SuccessfulDoesNotExist": {
+		"NotFound": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				_ = json.NewEncoder(w).Encode(&compute.Subnetwork{})
 			}),
 			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name: testSubnetworkName,
-						},
-					},
-				},
+				mg: subnetworkObj(),
+			},
+			want: want{
+				mg:  subnetworkObj(),
+				err: nil,
 			},
 		},
-		"Failed": {
+		"GetFailed": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("GET", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				_ = json.NewEncoder(w).Encode(&compute.Subnetwork{})
 			}),
 			args: args{
-				cr: &v1alpha3.Subnetwork{},
+				mg: subnetworkObj(),
 			},
-			error: true,
+			want: want{
+				mg:  subnetworkObj(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetSubnetwork),
+			},
 		},
-		"DifferentType": {
-			args: args{
-				cr: &v1alpha3.Network{},
+		"NotUpToDateSpecUpdateFailed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := subnetworkObj()
+				gn := subnetwork.GenerateSubnetwork(c.Spec.ForProvider, testSubnetworkName)
+				gn.Description = "a very interesting description"
+				_ = json.NewEncoder(w).Encode(gn)
+			}),
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(errBoom),
 			},
-			error: true,
+			args: args{
+				mg: subnetworkObj(),
+			},
+			want: want{
+				mg:  subnetworkObj(subnetworkWithDescription("a very interesting description")),
+				err: errors.Wrap(errBoom, errManagedSubnetworkUpdate),
+			},
+		},
+		"RunnableUnbound": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				c := subnetwork.GenerateSubnetwork(subnetworkObj().Spec.ForProvider, testSubnetworkName)
+				_ = json.NewEncoder(w).Encode(c)
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: subnetworkObj(),
+			},
+			want: want{
+				obs: managed.ExternalObservation{
+					ResourceExists:   true,
+					ResourceUpToDate: true,
+				},
+				mg: subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Available())),
+			},
 		},
 	}
 
@@ -339,82 +325,111 @@ func TestSubsubnetworkExternal_Observe(t *testing.T) {
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			e := subnetworkExternal{
-				projectID: testGoogleProjectID,
+				kube:      tc.kube,
+				projectID: projectID,
 				Service:   s,
 			}
-			obs, err := e.Observe(context.Background(), tc.args.cr)
-			if diff := cmp.Diff(tc.error, err != nil); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
+			obs, err := e.Observe(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.obs, obs); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
+			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
+				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestSubsubnetworkExternal_Create(t *testing.T) {
+func TestSubnetworkCreate(t *testing.T) {
 	type args struct {
-		cr resource.Managed
+		ctx context.Context
+		mg  resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		cre managed.ExternalCreation
+		err error
 	}
 
 	cases := map[string]struct {
 		handler http.Handler
+		kube    client.Client
 		args    args
-		error   bool
+		want    want
 	}{
+		"NotSubnetwork": {
+			handler: nil,
+			args: args{
+				mg: &v1beta1.Network{},
+			},
+			want: want{
+				mg:  &v1beta1.Network{},
+				err: errors.New(errNotSubnetwork),
+			},
+		},
 		"Successful": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff("POST", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				i := &compute.Subnetwork{}
+				b, err := ioutil.ReadAll(r.Body)
+				if diff := cmp.Diff(err, nil); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				err = json.Unmarshal(b, i)
+				if diff := cmp.Diff(err, nil); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
-			}),
-			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name:        testSubnetworkName,
-							Description: testSubnetworkDescription,
-						},
-					},
-				},
-			},
-		},
-		"Failed": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("POST", r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusBadRequest)
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha3.Subnetwork{},
+				mg: subnetworkObj(),
 			},
-			error: true,
+			want: want{
+				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Creating())),
+				cre: managed.ExternalCreation{},
+				err: nil,
+			},
 		},
 		"AlreadyExists": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("POST", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusConflict)
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha3.Subnetwork{},
+				mg: subnetworkObj(),
+			},
+			want: want{
+				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateSubnetworkFailed),
 			},
 		},
-		"DifferentType": {
+		"Failed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+			}),
 			args: args{
-				cr: &v1alpha3.Network{},
+				mg: subnetworkObj(),
 			},
-			error: true,
+			want: want{
+				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Creating())),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateSubnetworkFailed),
+			},
 		},
 	}
 
@@ -424,167 +439,96 @@ func TestSubsubnetworkExternal_Create(t *testing.T) {
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			e := subnetworkExternal{
-				projectID: testGoogleProjectID,
+				kube:      tc.kube,
+				projectID: projectID,
 				Service:   s,
 			}
-			_, err := e.Create(context.Background(), tc.args.cr)
-			if diff := cmp.Diff(tc.error, err != nil); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
+			_, err := e.Create(tc.args.ctx, tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Create(...): -want error, +got error:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestSubsubnetworkExternal_Update(t *testing.T) {
+func TestSubnetworkDelete(t *testing.T) {
 	type args struct {
-		cr resource.Managed
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		err error
 	}
 
 	cases := map[string]struct {
 		handler http.Handler
+		kube    client.Client
 		args    args
-		error   bool
+		want    want
 	}{
+		"NotSubnetwork": {
+			handler: nil,
+			args: args{
+				mg: &v1beta1.Network{},
+			},
+			want: want{
+				mg:  &v1beta1.Network{},
+				err: errors.New(errNotSubnetwork),
+			},
+		},
 		"Successful": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("PATCH", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name:        testSubnetworkName,
-							Description: testSubnetworkDescription,
-						},
-					},
-				},
+				mg: subnetworkObj(),
+			},
+			want: want{
+				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Deleting())),
+				err: nil,
 			},
 		},
-		"Failed": {
+		"AlreadyGone": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
-				if diff := cmp.Diff("PATCH", r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
-			}),
-			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name:        testSubnetworkName,
-							Description: testSubnetworkDescription,
-						},
-					},
-					Status: v1alpha3.SubnetworkStatus{
-						GCPSubnetworkStatus: v1alpha3.GCPSubnetworkStatus{
-							Name:        testSubnetworkName,
-							Description: "changed description!",
-						},
-					},
-				},
-			},
-			error: true,
-		},
-		"DifferentType": {
-			args: args{
-				cr: &v1alpha3.Network{},
-			},
-			error: true,
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			server := httptest.NewServer(tc.handler)
-			defer server.Close()
-			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := subnetworkExternal{
-				projectID: testGoogleProjectID,
-				Service:   s,
-			}
-			_, err := e.Update(context.Background(), tc.args.cr)
-			if diff := cmp.Diff(tc.error, err != nil); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
-		})
-	}
-	// Type test
-	e := subnetworkExternal{}
-	_, err := e.Update(context.Background(), &v1alpha3.Network{})
-	if diff := cmp.Diff(errors.New(errNotSubnetwork).Error(), err.Error()); diff != "" {
-		t.Errorf("r: -want, +got:\n%s", diff)
-	}
-}
-
-func TestSubsubnetworkExternal_Delete(t *testing.T) {
-	type args struct {
-		cr resource.Managed
-	}
-
-	cases := map[string]struct {
-		handler http.Handler
-		args    args
-		error   bool
-	}{
-		"Successful": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff("DELETE", r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
-			}),
-			args: args{
-				cr: &v1alpha3.Subnetwork{
-					Spec: v1alpha3.SubnetworkSpec{
-						SubnetworkParameters: v1alpha3.SubnetworkParameters{
-							Name:        testSubnetworkName,
-							Description: testSubnetworkDescription,
-						},
-					},
-				},
-			},
-		},
-		"Failed": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff("DELETE", r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
-			}),
-			args: args{
-				cr: &v1alpha3.Subnetwork{},
-			},
-			error: true,
-		},
-		"NotFound": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff("DELETE", r.Method); diff != "" {
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				cr: &v1alpha3.Subnetwork{},
+				mg: subnetworkObj(),
+			},
+			want: want{
+				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Deleting())),
+				err: nil,
 			},
 		},
-		"DifferentType": {
+		"Failed": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+			}),
 			args: args{
-				cr: &v1alpha3.Network{},
+				mg: subnetworkObj(),
 			},
-			error: true,
+			want: want{
+				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Deleting())),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteSubnetworkFailed),
+			},
 		},
 	}
 
@@ -594,13 +538,204 @@ func TestSubsubnetworkExternal_Delete(t *testing.T) {
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			e := subnetworkExternal{
-				projectID: testGoogleProjectID,
+				kube:      tc.kube,
+				projectID: projectID,
 				Service:   s,
 			}
-			err := e.Delete(context.Background(), tc.args.cr)
-			if diff := cmp.Diff(tc.error, err != nil); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
+			err := e.Delete(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Delete(...): -want error, +got error:\n%s", diff)
 			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestSubnetworkUpdate(t *testing.T) {
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		upd managed.ExternalUpdate
+		err error
+	}
+
+	cases := map[string]struct {
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
+	}{
+		"NotSubnetwork": {
+			handler: nil,
+			args: args{
+				mg: &v1beta1.Network{},
+			},
+			want: want{
+				mg:  &v1beta1.Network{},
+				err: errors.New(errNotSubnetwork),
+			},
+		},
+		"GetExternalFails": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Subnetwork{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: subnetworkObj(),
+			},
+			want: want{
+				mg:  subnetworkObj(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetSubnetwork),
+			},
+		},
+		"Successful": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Subnetwork{
+						Description: "not the one I want",
+					})
+				case http.MethodPatch:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: subnetworkObj(subnetworkWithDescription("a new description")),
+			},
+			want: want{
+				mg:  subnetworkObj(subnetworkWithDescription("a new description")),
+				err: nil,
+			},
+		},
+		"SuccessfulPrivateAccess": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Subnetwork{
+						PrivateIpGoogleAccess: false,
+					})
+				case http.MethodPost:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: subnetworkObj(subnetworkWithPrivateAccess(true)),
+			},
+			want: want{
+				mg:  subnetworkObj(subnetworkWithPrivateAccess(true)),
+				err: nil,
+			},
+		},
+		"UpdateGeneralFails": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Subnetwork{})
+				case http.MethodPatch:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				default:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				// Must include field that causes update.
+				mg: subnetworkObj(subnetworkWithDescription("a new description")),
+			},
+			want: want{
+				mg:  subnetworkObj(subnetworkWithDescription("a new description")),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateSubnetworkFailed),
+			},
+		},
+		"UpdatePrivateAccessFails": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Subnetwork{
+						PrivateIpGoogleAccess: false,
+					})
+				case http.MethodPost:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: subnetworkObj(subnetworkWithPrivateAccess(true)),
+			},
+			want: want{
+				mg:  subnetworkObj(subnetworkWithPrivateAccess(true)),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateSubnetworkPAFailed),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := subnetworkExternal{
+				kube:      tc.kube,
+				projectID: projectID,
+				Service:   s,
+			}
+			upd, err := e.Update(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Update(...): -want error, +got error:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Update(...): -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
+				t.Errorf("Update(...): -want, +got:\n%s", diff)
+			}
+
 		})
 	}
 }
