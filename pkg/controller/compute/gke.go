@@ -68,7 +68,6 @@ const (
 )
 
 var (
-	log           = logging.Logger.WithName("controller." + controllerName)
 	ctx           = context.Background()
 	result        = reconcile.Result{}
 	resultRequeue = reconcile.Result{Requeue: true}
@@ -79,6 +78,7 @@ type Reconciler struct {
 	client.Client
 	publisher managed.ConnectionPublisher
 	resolver  managed.ReferenceResolver
+	log       logging.Logger
 
 	connect func(*gcpcomputev1alpha3.GKECluster) (gke.Client, error)
 	create  func(*gcpcomputev1alpha3.GKECluster, gke.Client) (reconcile.Result, error)
@@ -86,25 +86,25 @@ type Reconciler struct {
 	delete  func(*gcpcomputev1alpha3.GKECluster, gke.Client) (reconcile.Result, error)
 }
 
-// GKEClusterController is responsible for adding the GKECluster
-// controller and its corresponding reconciler to the manager with any runtime configuration.
-type GKEClusterController struct{}
+// SetupGKECluster returns a reconciler that reconciles GKECluster
+// managed resources.
+func SetupGKECluster(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(gcpcomputev1alpha3.GKEClusterKind)
 
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func (c *GKEClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	r := &Reconciler{
 		Client:    mgr.GetClient(),
 		publisher: managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme()),
 		resolver:  managed.NewAPIReferenceResolver(mgr.GetClient()),
+		log:       l.WithValues("controller", name),
 	}
+
 	r.connect = r._connect
 	r.create = r._create
 	r.sync = r._sync
 	r.delete = r._delete
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(controllerName).
+		Named(name).
 		For(&gcpcomputev1alpha3.GKECluster{}).
 		Complete(r)
 }
@@ -235,7 +235,7 @@ func (r *Reconciler) _delete(instance *gcpcomputev1alpha3.GKECluster, client gke
 // Reconcile reads that state of the cluster for a Provider object and makes changes based on the state read
 // and what is in the Provider.Spec
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.V(logging.Debug).Info("reconciling", "kind", gcpcomputev1alpha3.GKEClusterKindAPIVersion, "request", request)
+	r.log.Debug("Reconciling", "request", request)
 	// Fetch the Provider instance
 	instance := &gcpcomputev1alpha3.GKECluster{}
 	err := r.Get(ctx, request.NamespacedName, instance)

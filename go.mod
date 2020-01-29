@@ -5,7 +5,7 @@ go 1.13
 require (
 	cloud.google.com/go v0.45.1
 	github.com/crossplaneio/crossplane v0.7.0
-	github.com/crossplaneio/crossplane-runtime v0.4.0
+	github.com/crossplaneio/crossplane-runtime v0.4.1-0.20200127052939-8661974d35bd
 	github.com/crossplaneio/crossplane-tools v0.0.0-20191220202319-9033bd8a02ce
 	github.com/google/go-cmp v0.3.1
 	github.com/googleapis/gax-go v1.0.3

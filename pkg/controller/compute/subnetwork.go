@@ -18,8 +18,6 @@ package compute
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	googlecompute "google.golang.org/api/compute/v1"
@@ -30,6 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/event"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -50,23 +50,20 @@ const (
 	errDeleteSubnetworkFailed = "deletion of Subnetwork resource has failed"
 )
 
-// SubnetworkController is the controller for Subnetwork CRD.
-type SubnetworkController struct{}
-
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func (c *SubnetworkController) SetupWithManager(mgr ctrl.Manager) error {
-	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha3.SubnetworkGroupVersionKind),
-		managed.WithExternalConnecter(&subnetworkConnector{kube: mgr.GetClient()}),
-		managed.WithConnectionPublishers())
-
-	name := strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.SubnetworkKindAPIVersion, v1alpha3.Group))
+// SetupSubnetwork adds a controller that reconciles Subnetwork
+// managed resources.
+func SetupSubnetwork(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(v1alpha3.SubnetworkKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&v1alpha3.Subnetwork{}).
-		Complete(r)
+		Complete(managed.NewReconciler(mgr,
+			resource.ManagedKind(v1alpha3.SubnetworkGroupVersionKind),
+			managed.WithExternalConnecter(&subnetworkConnector{kube: mgr.GetClient()}),
+			managed.WithConnectionPublishers(),
+			managed.WithLogger(l.WithValues("controller", name)),
+			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type subnetworkConnector struct {

@@ -18,9 +18,7 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -30,6 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/event"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -52,20 +52,19 @@ const (
 	errDeleteInstance    = "cannot delete CloudMemorystore instance"
 )
 
-// CloudMemorystoreInstanceController is responsible for adding the Cloud Memorystore
-// controller and its corresponding reconciler to the manager with any runtime configuration.
-type CloudMemorystoreInstanceController struct{}
+// SetupCloudMemorystoreInstance adds a controller that reconciles
+// CloudMemorystoreInstances.
+func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(v1beta1.CloudMemorystoreInstanceKind)
 
-// SetupWithManager creates a new CloudMemorystoreInstance Controller and adds it to the
-// Manager with default RBAC. The Manager will set fields on the Controller and
-// start it when the Manager is Started.
-func (c *CloudMemorystoreInstanceController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1beta1.CloudMemorystoreInstanceKind, v1beta1.Group))).
+		Named(name).
 		For(&v1beta1.CloudMemorystoreInstance{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newCMS: cloudmemorystore.NewClient})))
+			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newCMS: cloudmemorystore.NewClient}),
+			managed.WithLogger(l.WithValues("controller", name)),
+			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type connecter struct {

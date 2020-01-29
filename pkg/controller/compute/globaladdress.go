@@ -18,8 +18,6 @@ package compute
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
@@ -30,6 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/event"
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
@@ -49,19 +49,20 @@ const (
 	errUpdateManaged    = "cannot update managed resource"
 )
 
-// GlobalAddressController is the controller for GlobalAddress CRD.
-type GlobalAddressController struct{}
+// SetupGlobalAddress adds a controller that reconciles
+// GlobalAddress managed resources.
+func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(v1alpha3.GlobalAddressKind)
 
-// SetupWithManager creates a new Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func (c *GlobalAddressController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(strings.ToLower(fmt.Sprintf("%s.%s", v1alpha3.GlobalAddressKindAPIVersion, v1alpha3.Group))).
+		Named(name).
 		For(&v1alpha3.GlobalAddress{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha3.GlobalAddressGroupVersionKind),
 			managed.WithExternalConnecter(&gaConnector{client: mgr.GetClient(), newCompute: compute.NewService}),
-			managed.WithConnectionPublishers()))
+			managed.WithConnectionPublishers(),
+			managed.WithLogger(l.WithValues("controller", name)),
+			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type gaConnector struct {

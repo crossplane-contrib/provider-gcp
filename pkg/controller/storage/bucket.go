@@ -64,8 +64,6 @@ const (
 var (
 	resultRequeue    = reconcile.Result{Requeue: true}
 	requeueOnSuccess = reconcile.Result{RequeueAfter: requeueAfterOnSuccess}
-
-	log = logging.Logger.WithName("controller." + controllerName)
 )
 
 // Reconciler reconciles a GCP storage bucket bucket
@@ -73,23 +71,23 @@ type Reconciler struct {
 	client.Client
 	factory
 	managed.ReferenceResolver
+	log logging.Logger
 }
 
-// BucketController is responsible for adding the Bucket controller and its
-// corresponding reconciler to the manager with any runtime configuration.
-type BucketController struct{}
+// SetupBucket adds a controller that reconciles Bucket managed
+// resources.
+func SetupBucket(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(v1alpha3.BucketKind)
 
-// SetupWithManager creates a newSyncDeleter Controller and adds it to the Manager with default RBAC.
-// The Manager will set fields on the Controller and Start it when the Manager is Started.
-func (c *BucketController) SetupWithManager(mgr ctrl.Manager) error {
 	r := &Reconciler{
 		Client:            mgr.GetClient(),
 		factory:           &bucketFactory{mgr.GetClient()},
 		ReferenceResolver: managed.NewAPIReferenceResolver(mgr.GetClient()),
+		log:               l.WithValues("controller", name),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Named(controllerName).
+		Named(name).
 		For(&v1alpha3.Bucket{}).
 		Owns(&corev1.Secret{}).
 		Complete(r)
@@ -98,7 +96,7 @@ func (c *BucketController) SetupWithManager(mgr ctrl.Manager) error {
 // Reconcile reads that state of the cluster for a Provider bucket and makes changes based on the state read
 // and what is in the Provider.Spec
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.V(logging.Debug).Info("reconciling", "kind", v1alpha3.BucketKindAPIVersion, "request", request)
+	r.log.Debug("Reconciling", "kind", "request", request)
 
 	ctx, cancel := context.WithTimeout(context.Background(), reconcileTimeout)
 	defer cancel()
