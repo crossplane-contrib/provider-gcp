@@ -43,7 +43,7 @@ import (
 // class and resource references by picking a random matching
 // CloudMemorystoreInstanceClass, if any.
 func SetupCloudMemorystoreInstanceClaimScheduling(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimscheduling.ControllerName(v1beta1.CloudMemorystoreInstanceKind)
+	name := claimscheduling.ControllerName(cachev1alpha1.RedisClusterKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -66,7 +66,7 @@ func SetupCloudMemorystoreInstanceClaimScheduling(mgr ctrl.Manager, l logging.Lo
 // class selector by choosing a default CloudMemorystoreInstanceClass if one
 // exists.
 func SetupCloudMemorystoreInstanceClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimdefaulting.ControllerName(v1beta1.CloudMemorystoreInstanceKind)
+	name := claimdefaulting.ControllerName(cachev1alpha1.RedisClusterKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -88,7 +88,7 @@ func SetupCloudMemorystoreInstanceClaimDefaulting(mgr ctrl.Manager, l logging.Lo
 // RedisCluster claims with CloudMemorystoreInstances, dynamically provisioning
 // them if needed.
 func SetupCloudMemorystoreInstanceClaimBinding(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimbinding.ControllerName(v1beta1.CloudMemorystoreInstanceKind)
+	name := claimbinding.ControllerName(cachev1alpha1.RedisClusterKind)
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudMemorystoreInstanceClassGroupVersionKind)),
