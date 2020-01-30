@@ -39,7 +39,7 @@ import (
 // KubernetesCluster claims that include a class selector but omit their class
 // and resource references by picking a random matching GKEClusterClass, if any.
 func SetupGKEClusterClaimScheduling(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimscheduling.ControllerName(v1alpha3.GKEClusterKind)
+	name := claimscheduling.ControllerName(computev1alpha1.KubernetesClusterKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -61,7 +61,7 @@ func SetupGKEClusterClaimScheduling(mgr ctrl.Manager, l logging.Logger) error {
 // KubernetesCluster claims that omit their resource ref, class ref, and class
 // selector by choosing a default GKEClusterClass if one exists.
 func SetupGKEClusterClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimdefaulting.ControllerName(v1alpha3.GKEClusterKind)
+	name := claimdefaulting.ControllerName(computev1alpha1.KubernetesClusterKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -83,7 +83,7 @@ func SetupGKEClusterClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error {
 // KubernetesCluster claims with GKEClusters, dynamically provisioning them if
 // needed.
 func SetupGKEClusterClaimBinding(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimbinding.ControllerName(v1alpha3.GKEClusterKind)
+	name := claimbinding.ControllerName(computev1alpha1.KubernetesClusterKind)
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasClassReferenceKind(resource.ClassKind(v1alpha3.GKEClusterClassGroupVersionKind)),
