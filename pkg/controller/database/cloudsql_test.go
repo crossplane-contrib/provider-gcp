@@ -53,8 +53,6 @@ const (
 	providerName       = "gcp-provider"
 	providerSecretName = "gcp-creds"
 	providerSecretKey  = "creds"
-
-	password = "my_PassWord123!"
 )
 
 var errBoom = errors.New("boom")
@@ -791,12 +789,6 @@ func TestGetConnectionDetails(t *testing.T) {
 	publicIP := "243.2.220.2"
 	cert := "My-precious-cert"
 	commonName := "And-its-precious-common-name"
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
-		Data: map[string][]byte{
-			runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(password),
-		},
-	}
 
 	type args struct {
 		cr *v1beta1.CloudSQLInstance
@@ -807,17 +799,10 @@ func TestGetConnectionDetails(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		kube client.Client
 		args args
 		want want
 	}{
 		"Successful": {
-			kube: &test.MockClient{
-				MockGet: func(_ context.Context, _ client.ObjectKey, obj runtime.Object) error {
-					secret.DeepCopyInto(obj.(*corev1.Secret))
-					return nil
-				},
-			},
 			args: args{
 				cr: instance(
 					withPublicIP(publicIP),
