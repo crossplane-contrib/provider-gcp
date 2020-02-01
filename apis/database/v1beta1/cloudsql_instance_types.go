@@ -61,8 +61,6 @@ const (
 	PostgresqlDBVersionPrefix = "POSTGRES"
 	PostgresqlDefaultUser     = "postgres"
 
-	PasswordLength = 20
-
 	PrivateIPType = "PRIVATE"
 	PublicIPType  = "PRIMARY"
 

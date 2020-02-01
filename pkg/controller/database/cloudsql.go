@@ -32,9 +32,9 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/event"
 	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplaneio/crossplane-runtime/pkg/password"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 	apisv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
@@ -153,12 +153,12 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (man
 	}
 	cr.SetConditions(v1alpha1.Creating())
 	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
-	password, err := util.GeneratePassword(v1beta1.PasswordLength)
+	pw, err := password.Generate()
 	if err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errGeneratePassword)
 	}
 
-	instance.RootPassword = password
+	instance.RootPassword = pw
 	if _, err := c.db.Insert(c.projectID, instance).Context(ctx).Do(); err != nil {
 		// We don't want to return (and thus publish) our randomly generated
 		// password if we didn't actually successfully create a new instance.
@@ -169,7 +169,7 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (man
 	}
 
 	cd := managed.ConnectionDetails{
-		v1alpha1.ResourceCredentialsSecretPasswordKey: []byte(password),
+		v1alpha1.ResourceCredentialsSecretPasswordKey: []byte(pw),
 	}
 	return managed.ExternalCreation{ConnectionDetails: cd}, nil
 }
