@@ -17,14 +17,14 @@ limitations under the License.
 package v1alpha3
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 
 	"cloud.google.com/go/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/crossplaneio/crossplane-runtime/pkg/util"
 )
 
 // ProjectTeam is the project team associated with the entity, if any.
@@ -847,7 +847,13 @@ type Bucket struct {
 //   4. NameFormat = "foo-%s", BucketName = "foo-test-uid"
 //   5. NameFormat = "foo-%s-bar-%s", BucketName = "foo-test-uid-bar-%!s(MISSING)"
 func (b *Bucket) GetBucketName() string {
-	return util.ConditionalStringFormat(b.Spec.NameFormat, string(b.GetUID()))
+	if b.Spec.NameFormat == "" {
+		return string(b.GetUID())
+	}
+	if strings.Contains(b.Spec.NameFormat, "%s") {
+		return fmt.Sprintf(b.Spec.NameFormat, string(b.GetUID()))
+	}
+	return b.Spec.NameFormat
 }
 
 // +kubebuilder:object:root=true
