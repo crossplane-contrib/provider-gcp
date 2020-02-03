@@ -51,6 +51,8 @@ const (
 	CloudSQLSecretServerCACertificateExpirationTimeKey   = "serverCACertificateExpirationTime"
 	CloudSQLSecretServerCACertificateInstanceKey         = "serverCACertificateInstance"
 	CloudSQLSecretServerCACertificateSha1FingerprintKey  = "serverCACertificateSha1Fingerprint"
+
+	CloudSQLSecretConnectionName = "connectionName"
 )
 
 // CloudSQL version prefixes.

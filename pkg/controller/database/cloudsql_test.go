@@ -53,6 +53,8 @@ const (
 	providerName       = "gcp-provider"
 	providerSecretName = "gcp-creds"
 	providerSecretKey  = "creds"
+
+	connectionName = "some:connection:name"
 )
 
 var errBoom = errors.New("boom")
@@ -86,6 +88,12 @@ func withPrivateIP(ip string) instanceModifier {
 			IPAddress: ip,
 			Type:      v1beta1.PrivateIPType,
 		})
+	}
+}
+
+func withConnectionName(cn string) instanceModifier {
+	return func(i *v1beta1.CloudSQLInstance) {
+		i.Status.AtProvider.ConnectionName = cn
 	}
 }
 
@@ -125,6 +133,7 @@ func instance(im ...instanceModifier) *v1beta1.CloudSQLInstance {
 func connDetails(privateIP, publicIP string, additions ...map[string][]byte) managed.ConnectionDetails {
 	m := managed.ConnectionDetails{
 		runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
+		v1beta1.CloudSQLSecretConnectionName:             []byte(""),
 	}
 	if publicIP != "" {
 		m[v1beta1.PublicIPKey] = []byte(publicIP)
@@ -391,6 +400,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
+				db.ConnectionName = connectionName
 				db.State = v1beta1.StateRunnable
 				_ = json.NewEncoder(w).Encode(db)
 			}),
@@ -404,12 +414,13 @@ func TestObserve(t *testing.T) {
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
-					ConnectionDetails: connDetails("", ""),
+					ConnectionDetails: connDetails("", "", map[string][]byte{v1beta1.CloudSQLSecretConnectionName: []byte(connectionName)}),
 				},
 				mg: instance(
 					withProviderState(v1beta1.StateRunnable),
 					withConditions(runtimev1alpha1.Available()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
+					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound),
+					withConnectionName(connectionName)),
 			},
 		},
 	}
@@ -824,6 +835,7 @@ func TestGetConnectionDetails(t *testing.T) {
 					v1beta1.CloudSQLSecretServerCACertificateCreateTimeKey:       []byte(""),
 					v1beta1.CloudSQLSecretServerCACertificateInstanceKey:         []byte(""),
 					v1beta1.CloudSQLSecretServerCACertificateSha1FingerprintKey:  []byte(""),
+					v1beta1.CloudSQLSecretConnectionName:                         []byte(""),
 				}),
 			},
 		},
