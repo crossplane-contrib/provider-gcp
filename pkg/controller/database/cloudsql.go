@@ -205,6 +205,7 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 func getConnectionDetails(cr *v1beta1.CloudSQLInstance, instance *sqladmin.DatabaseInstance) managed.ConnectionDetails {
 	m := managed.ConnectionDetails{
 		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
+		v1beta1.CloudSQLSecretConnectionName:      []byte(instance.ConnectionName),
 	}
 
 	// TODO(muvaf): There might be cases where more than 1 private and/or public IP address has been assigned. We should
