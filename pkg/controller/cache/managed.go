@@ -113,9 +113,6 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetInstance)
 	}
-
-	cr.Status.AtProvider = cloudmemorystore.GenerateObservation(*existing)
-
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	cloudmemorystore.LateInitializeSpec(&cr.Spec.ForProvider, *existing)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
@@ -123,7 +120,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 			return managed.ExternalObservation{}, errors.Wrap(err, errUpdateCR)
 		}
 	}
-
+	cr.Status.AtProvider = cloudmemorystore.GenerateObservation(*existing)
 	conn := managed.ConnectionDetails{}
 	switch cr.Status.AtProvider.State {
 	case cloudmemorystore.StateReady:

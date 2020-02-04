@@ -120,7 +120,6 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
 	}
-	cr.Status.AtProvider = cloudsql.GenerateObservation(*instance)
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	cloudsql.LateInitializeSpec(&cr.Spec.ForProvider, *instance)
 	// TODO(muvaf): reflection in production code might cause performance bottlenecks. Generating comparison
@@ -130,6 +129,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 			return managed.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 		}
 	}
+	cr.Status.AtProvider = cloudsql.GenerateObservation(*instance)
 	switch cr.Status.AtProvider.State {
 	case v1beta1.StateRunnable:
 		cr.Status.SetConditions(v1alpha1.Available())
