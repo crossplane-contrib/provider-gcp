@@ -138,84 +138,9 @@ func (v *NetworkURIReferencerForCloudSQLInstance) Assign(res resource.CanReferen
 	return nil
 }
 
-// CloudSQLInstanceObservation is used to show the observed state of the Cloud SQL resource on GCP.
-type CloudSQLInstanceObservation struct {
-	// BackendType: FIRST_GEN: First Generation instance. MySQL
-	// only.
-	// SECOND_GEN: Second Generation instance or PostgreSQL
-	// instance.
-	// EXTERNAL: A database server that is not managed by Google.
-	// This property is read-only; use the tier property in the settings
-	// object to determine the database type and Second or First Generation.
-	BackendType string `json:"backendType,omitempty"`
-
-	// CurrentDiskSize: The current disk usage of the instance in bytes.
-	// This property has been deprecated. Users should use the
-	// "cloudsql.googleapis.com/database/disk/bytes_used" metric in Cloud
-	// Monitoring API instead. Please see this announcement for details.
-	CurrentDiskSize int64 `json:"currentDiskSize,omitempty"`
-
-	// ConnectionName: Connection name of the Cloud SQL instance used in
-	// connection strings.
-	ConnectionName string `json:"connectionName,omitempty"`
-
-	// DiskEncryptionStatus: Disk encryption status specific to an instance.
-	// Applies only to Second Generation instances.
-	DiskEncryptionStatus *DiskEncryptionStatus `json:"diskEncryptionStatus,omitempty"`
-
-	// FailoverReplica: The name and status of the failover replica. This
-	// property is applicable only to Second Generation instances.
-	FailoverReplica *DatabaseInstanceFailoverReplicaStatus `json:"failoverReplica,omitempty"`
-
-	// GceZone: The Compute Engine zone that the instance is currently
-	// serving from. This value could be different from the zone that was
-	// specified when the instance was created if the instance has failed
-	// over to its secondary zone.
-	GceZone string `json:"gceZone,omitempty"`
-
-	// IPAddresses: The assigned IP addresses for the instance.
-	IPAddresses []*IPMapping `json:"ipAddresses,omitempty"`
-
-	// IPv6Address: The IPv6 address assigned to the instance. This property
-	// is applicable only to First Generation instances.
-	IPv6Address string `json:"ipv6Address,omitempty"`
-
-	// Project: The project ID of the project containing the Cloud SQL
-	// instance. The Google apps domain is prefixed if applicable.
-	Project string `json:"project,omitempty"`
-
-	// SelfLink: The URI of this resource.
-	SelfLink string `json:"selfLink,omitempty"`
-
-	// ServiceAccountEmailAddress: The service account email address
-	// assigned to the instance. This property is applicable only to Second
-	// Generation instances.
-	ServiceAccountEmailAddress string `json:"serviceAccountEmailAddress,omitempty"`
-
-	// State: The current serving state of the Cloud SQL instance. This can
-	// be one of the following.
-	// RUNNABLE: The instance is running, or is ready to run when
-	// accessed.
-	// SUSPENDED: The instance is not available, for example due to problems
-	// with billing.
-	// PENDING_CREATE: The instance is being created.
-	// MAINTENANCE: The instance is down for maintenance.
-	// FAILED: The instance creation failed.
-	// UNKNOWN_STATE: The state of the instance is unknown.
-	State string `json:"state,omitempty"`
-
-	// NOTE(muvaf): This comes from Settings sub-struct, not directly from
-	// DatabaseInstance struct.
-
-	// SettingsVersion: The version of instance settings. This is a required
-	// field for update method to make sure concurrent updates are handled
-	// properly. During update, use the most recent settingsVersion value
-	// for this instance and do not try to update this value.
-	SettingsVersion int64 `json:"settingsVersion,omitempty"`
-}
-
 // CloudSQLInstanceParameters define the desired state of a Google CloudSQL
-// instance.
+// instance. Most of its fields are direct mirror of GCP DatabaseInstance object.
+// See https://cloud.google.com/sql/docs/mysql/admin-api/rest/v1beta4/instances#DatabaseInstance
 type CloudSQLInstanceParameters struct {
 	// Region: The geographical region. Can be us-central (FIRST_GEN
 	// instances only), us-central1 (SECOND_GEN instances only), asia-east1
@@ -543,6 +468,82 @@ type OnPremisesConfiguration struct {
 	// HostPort: The host and port of the on-premises instance in host:port
 	// format
 	HostPort string `json:"hostPort"`
+}
+
+// CloudSQLInstanceObservation is used to show the observed state of the Cloud SQL resource on GCP.
+type CloudSQLInstanceObservation struct {
+	// BackendType: FIRST_GEN: First Generation instance. MySQL
+	// only.
+	// SECOND_GEN: Second Generation instance or PostgreSQL
+	// instance.
+	// EXTERNAL: A database server that is not managed by Google.
+	// This property is read-only; use the tier property in the settings
+	// object to determine the database type and Second or First Generation.
+	BackendType string `json:"backendType,omitempty"`
+
+	// CurrentDiskSize: The current disk usage of the instance in bytes.
+	// This property has been deprecated. Users should use the
+	// "cloudsql.googleapis.com/database/disk/bytes_used" metric in Cloud
+	// Monitoring API instead. Please see this announcement for details.
+	CurrentDiskSize int64 `json:"currentDiskSize,omitempty"`
+
+	// ConnectionName: Connection name of the Cloud SQL instance used in
+	// connection strings.
+	ConnectionName string `json:"connectionName,omitempty"`
+
+	// DiskEncryptionStatus: Disk encryption status specific to an instance.
+	// Applies only to Second Generation instances.
+	DiskEncryptionStatus *DiskEncryptionStatus `json:"diskEncryptionStatus,omitempty"`
+
+	// FailoverReplica: The name and status of the failover replica. This
+	// property is applicable only to Second Generation instances.
+	FailoverReplica *DatabaseInstanceFailoverReplicaStatus `json:"failoverReplica,omitempty"`
+
+	// GceZone: The Compute Engine zone that the instance is currently
+	// serving from. This value could be different from the zone that was
+	// specified when the instance was created if the instance has failed
+	// over to its secondary zone.
+	GceZone string `json:"gceZone,omitempty"`
+
+	// IPAddresses: The assigned IP addresses for the instance.
+	IPAddresses []*IPMapping `json:"ipAddresses,omitempty"`
+
+	// IPv6Address: The IPv6 address assigned to the instance. This property
+	// is applicable only to First Generation instances.
+	IPv6Address string `json:"ipv6Address,omitempty"`
+
+	// Project: The project ID of the project containing the Cloud SQL
+	// instance. The Google apps domain is prefixed if applicable.
+	Project string `json:"project,omitempty"`
+
+	// SelfLink: The URI of this resource.
+	SelfLink string `json:"selfLink,omitempty"`
+
+	// ServiceAccountEmailAddress: The service account email address
+	// assigned to the instance. This property is applicable only to Second
+	// Generation instances.
+	ServiceAccountEmailAddress string `json:"serviceAccountEmailAddress,omitempty"`
+
+	// State: The current serving state of the Cloud SQL instance. This can
+	// be one of the following.
+	// RUNNABLE: The instance is running, or is ready to run when
+	// accessed.
+	// SUSPENDED: The instance is not available, for example due to problems
+	// with billing.
+	// PENDING_CREATE: The instance is being created.
+	// MAINTENANCE: The instance is down for maintenance.
+	// FAILED: The instance creation failed.
+	// UNKNOWN_STATE: The state of the instance is unknown.
+	State string `json:"state,omitempty"`
+
+	// NOTE(muvaf): This comes from Settings sub-struct, not directly from
+	// DatabaseInstance struct.
+
+	// SettingsVersion: The version of instance settings. This is a required
+	// field for update method to make sure concurrent updates are handled
+	// properly. During update, use the most recent settingsVersion value
+	// for this instance and do not try to update this value.
+	SettingsVersion int64 `json:"settingsVersion,omitempty"`
 }
 
 // IPMapping is database instance IP Mapping.

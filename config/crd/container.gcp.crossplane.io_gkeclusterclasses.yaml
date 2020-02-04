@@ -50,7 +50,8 @@ spec:
           properties:
             forProvider:
               description: GKEClusterParameters define the desired state of a Google
-                Kubernetes Engine cluster.
+                Kubernetes Engine cluster. Most of its fields are direct mirror of
+                GCP Cluster object. See https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters#Cluster
               properties:
                 addonsConfig:
                   description: 'AddonsConfig: Configurations for the various addons
