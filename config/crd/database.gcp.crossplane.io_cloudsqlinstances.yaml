@@ -132,7 +132,8 @@ spec:
               type: object
             forProvider:
               description: CloudSQLInstanceParameters define the desired state of
-                a Google CloudSQL instance.
+                a Google CloudSQL instance. Most of its fields are direct mirror of
+                GCP DatabaseInstance object. See https://cloud.google.com/sql/docs/mysql/admin-api/rest/v1beta4/instances#DatabaseInstance
               properties:
                 databaseVersion:
                   description: 'DatabaseVersion: The database engine type and version.

@@ -81,151 +81,9 @@ func (v *SubnetworkURIReferencerForGKECluster) Assign(res resource.CanReference,
 	return nil
 }
 
-// GKEClusterObservation is used to show the observed state of the GKE cluster resource on GCP.
-type GKEClusterObservation struct {
-	// Conditions: Which conditions caused the current cluster state.
-	Conditions []*StatusCondition `json:"conditions,omitempty"`
-
-	// CreateTime: The time the cluster was created,
-	// in
-	// [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text format.
-	CreateTime string `json:"createTime,omitempty"`
-
-	// CurrentMasterVersion: The current software version of
-	// the master endpoint.
-	CurrentMasterVersion string `json:"currentMasterVersion,omitempty"`
-
-	// CurrentNodeCount:  The number of nodes currently in the
-	// cluster. Deprecated.
-	// Call Kubernetes API directly to retrieve node information.
-	CurrentNodeCount int64 `json:"currentNodeCount,omitempty"`
-
-	// CurrentNodeVersion: Deprecated,
-	// use
-	// [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/proj
-	// ects.zones.clusters.nodePools)
-	// instead. The current version of the node software components. If they
-	// are
-	// currently at multiple versions because they're in the process of
-	// being
-	// upgraded, this reflects the minimum version of all nodes.
-	CurrentNodeVersion string `json:"currentNodeVersion,omitempty"`
-
-	// Endpoint: The IP address of this cluster's master
-	// endpoint.
-	// The endpoint can be accessed from the internet
-	// at
-	// `https://username:password@endpoint/`.
-	//
-	// See the `masterAuth` property of this resource for username
-	// and
-	// password information.
-	Endpoint string `json:"endpoint,omitempty"`
-
-	// ExpireTime: The time the cluster will be
-	// automatically
-	// deleted in [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text
-	// format.
-	ExpireTime string `json:"expireTime,omitempty"`
-
-	// Location: The name of the Google Compute
-	// Engine
-	// [zone](/compute/docs/regions-zones/regions-zones#available)
-	// or
-	// [region](/compute/docs/regions-zones/regions-zones#available) in
-	// which
-	// the cluster resides.
-	Location string `json:"location"`
-
-	// MaintenancePolicy: Configure the maintenance policy for this cluster.
-	MaintenancePolicy *MaintenancePolicyStatus `json:"maintenancePolicy,omitempty"`
-
-	// NetworkConfig: Configuration for cluster networking.
-	NetworkConfig *NetworkConfigStatus `json:"networkConfig,omitempty"`
-
-	// NodeIpv4CidrSize: The size of the address space on each
-	// node for hosting
-	// containers. This is provisioned from within the
-	// `container_ipv4_cidr`
-	// range. This field will only be set when cluster is in route-based
-	// network
-	// mode.
-	NodeIpv4CidrSize int64 `json:"nodeIpv4CidrSize,omitempty"`
-
-	// PrivateClusterConfig: Configuration for private cluster.
-	PrivateClusterConfig *PrivateClusterConfigStatus `json:"privateClusterConfig,omitempty"`
-
-	// NOTE(hasheddan): node pools are modelled in status only because
-	// management of node pools is handled by the stack-gcp NodePool object.
-
-	// NodePools: The node pools associated with this cluster.
-	// This field should not be set if "node_config" or "initial_node_count"
-	// are
-	// specified.
-	NodePools []*NodePoolClusterStatus `json:"nodePools,omitempty"`
-
-	// SelfLink: Server-defined URL for the resource.
-	SelfLink string `json:"selfLink,omitempty"`
-
-	// ServicesIpv4Cidr: The IP address range of the
-	// Kubernetes services in
-	// this cluster,
-	// in
-	// [CIDR](http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
-	//
-	// notation (e.g. `1.2.3.4/29`). Service addresses are
-	// typically put in the last `/16` from the container CIDR.
-	ServicesIpv4Cidr string `json:"servicesIpv4Cidr,omitempty"`
-
-	// Status: The current status of this cluster.
-	//
-	// Possible values:
-	//   "STATUS_UNSPECIFIED" - Not set.
-	//   "PROVISIONING" - The PROVISIONING state indicates the cluster is
-	// being created.
-	//   "RUNNING" - The RUNNING state indicates the cluster has been
-	// created and is fully
-	// usable.
-	//   "RECONCILING" - The RECONCILING state indicates that some work is
-	// actively being done on
-	// the cluster, such as upgrading the master or node software. Details
-	// can
-	// be found in the `statusMessage` field.
-	//   "STOPPING" - The STOPPING state indicates the cluster is being
-	// deleted.
-	//   "ERROR" - The ERROR state indicates the cluster may be unusable.
-	// Details
-	// can be found in the `statusMessage` field.
-	//   "DEGRADED" - The DEGRADED state indicates the cluster requires user
-	// action to restore
-	// full functionality. Details can be found in the `statusMessage`
-	// field.
-	Status string `json:"status,omitempty"`
-
-	// StatusMessage: Additional information about the current
-	// status of this
-	// cluster, if available.
-	StatusMessage string `json:"statusMessage,omitempty"`
-
-	// TpuIpv4CidrBlock: The IP address range of the Cloud
-	// TPUs in this cluster,
-	// in
-	// [CIDR](http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
-	//
-	// notation (e.g. `1.2.3.4/29`).
-	TpuIpv4CidrBlock string `json:"tpuIpv4CidrBlock,omitempty"`
-
-	// Zone: The name of the Google Compute
-	// Engine
-	// [zone](/compute/docs/zones#available) in which the
-	// cluster
-	// resides.
-	// This field is deprecated, use location instead.
-	Zone string `json:"zone,omitempty"`
-}
-
 // GKEClusterParameters define the desired state of a Google Kubernetes Engine
-// cluster.
+// cluster. Most of its fields are direct mirror of GCP Cluster object.
+// See https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters#Cluster
 type GKEClusterParameters struct {
 	// NOTE(hasheddan): Location is labelled as Output Only by GCP but is required
 	// to create a cluster. It is not included in the actual cluster object
@@ -488,6 +346,149 @@ type GKEClusterParameters struct {
 	// policies.
 	// +optional
 	WorkloadIdentityConfig *WorkloadIdentityConfig `json:"workloadIdentityConfig,omitempty"`
+}
+
+// GKEClusterObservation is used to show the observed state of the GKE cluster resource on GCP.
+type GKEClusterObservation struct {
+	// Conditions: Which conditions caused the current cluster state.
+	Conditions []*StatusCondition `json:"conditions,omitempty"`
+
+	// CreateTime: The time the cluster was created,
+	// in
+	// [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text format.
+	CreateTime string `json:"createTime,omitempty"`
+
+	// CurrentMasterVersion: The current software version of
+	// the master endpoint.
+	CurrentMasterVersion string `json:"currentMasterVersion,omitempty"`
+
+	// CurrentNodeCount:  The number of nodes currently in the
+	// cluster. Deprecated.
+	// Call Kubernetes API directly to retrieve node information.
+	CurrentNodeCount int64 `json:"currentNodeCount,omitempty"`
+
+	// CurrentNodeVersion: Deprecated,
+	// use
+	// [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/proj
+	// ects.zones.clusters.nodePools)
+	// instead. The current version of the node software components. If they
+	// are
+	// currently at multiple versions because they're in the process of
+	// being
+	// upgraded, this reflects the minimum version of all nodes.
+	CurrentNodeVersion string `json:"currentNodeVersion,omitempty"`
+
+	// Endpoint: The IP address of this cluster's master
+	// endpoint.
+	// The endpoint can be accessed from the internet
+	// at
+	// `https://username:password@endpoint/`.
+	//
+	// See the `masterAuth` property of this resource for username
+	// and
+	// password information.
+	Endpoint string `json:"endpoint,omitempty"`
+
+	// ExpireTime: The time the cluster will be
+	// automatically
+	// deleted in [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text
+	// format.
+	ExpireTime string `json:"expireTime,omitempty"`
+
+	// Location: The name of the Google Compute
+	// Engine
+	// [zone](/compute/docs/regions-zones/regions-zones#available)
+	// or
+	// [region](/compute/docs/regions-zones/regions-zones#available) in
+	// which
+	// the cluster resides.
+	Location string `json:"location"`
+
+	// MaintenancePolicy: Configure the maintenance policy for this cluster.
+	MaintenancePolicy *MaintenancePolicyStatus `json:"maintenancePolicy,omitempty"`
+
+	// NetworkConfig: Configuration for cluster networking.
+	NetworkConfig *NetworkConfigStatus `json:"networkConfig,omitempty"`
+
+	// NodeIpv4CidrSize: The size of the address space on each
+	// node for hosting
+	// containers. This is provisioned from within the
+	// `container_ipv4_cidr`
+	// range. This field will only be set when cluster is in route-based
+	// network
+	// mode.
+	NodeIpv4CidrSize int64 `json:"nodeIpv4CidrSize,omitempty"`
+
+	// PrivateClusterConfig: Configuration for private cluster.
+	PrivateClusterConfig *PrivateClusterConfigStatus `json:"privateClusterConfig,omitempty"`
+
+	// NOTE(hasheddan): node pools are modelled in status only because
+	// management of node pools is handled by the stack-gcp NodePool object.
+
+	// NodePools: The node pools associated with this cluster.
+	// This field should not be set if "node_config" or "initial_node_count"
+	// are
+	// specified.
+	NodePools []*NodePoolClusterStatus `json:"nodePools,omitempty"`
+
+	// SelfLink: Server-defined URL for the resource.
+	SelfLink string `json:"selfLink,omitempty"`
+
+	// ServicesIpv4Cidr: The IP address range of the
+	// Kubernetes services in
+	// this cluster,
+	// in
+	// [CIDR](http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
+	//
+	// notation (e.g. `1.2.3.4/29`). Service addresses are
+	// typically put in the last `/16` from the container CIDR.
+	ServicesIpv4Cidr string `json:"servicesIpv4Cidr,omitempty"`
+
+	// Status: The current status of this cluster.
+	//
+	// Possible values:
+	//   "STATUS_UNSPECIFIED" - Not set.
+	//   "PROVISIONING" - The PROVISIONING state indicates the cluster is
+	// being created.
+	//   "RUNNING" - The RUNNING state indicates the cluster has been
+	// created and is fully
+	// usable.
+	//   "RECONCILING" - The RECONCILING state indicates that some work is
+	// actively being done on
+	// the cluster, such as upgrading the master or node software. Details
+	// can
+	// be found in the `statusMessage` field.
+	//   "STOPPING" - The STOPPING state indicates the cluster is being
+	// deleted.
+	//   "ERROR" - The ERROR state indicates the cluster may be unusable.
+	// Details
+	// can be found in the `statusMessage` field.
+	//   "DEGRADED" - The DEGRADED state indicates the cluster requires user
+	// action to restore
+	// full functionality. Details can be found in the `statusMessage`
+	// field.
+	Status string `json:"status,omitempty"`
+
+	// StatusMessage: Additional information about the current
+	// status of this
+	// cluster, if available.
+	StatusMessage string `json:"statusMessage,omitempty"`
+
+	// TpuIpv4CidrBlock: The IP address range of the Cloud
+	// TPUs in this cluster,
+	// in
+	// [CIDR](http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
+	//
+	// notation (e.g. `1.2.3.4/29`).
+	TpuIpv4CidrBlock string `json:"tpuIpv4CidrBlock,omitempty"`
+
+	// Zone: The name of the Google Compute
+	// Engine
+	// [zone](/compute/docs/zones#available) in which the
+	// cluster
+	// resides.
+	// This field is deprecated, use location instead.
+	Zone string `json:"zone,omitempty"`
 }
 
 // AddonsConfig is configuration for the addons that can be automatically
