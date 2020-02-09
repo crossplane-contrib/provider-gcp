@@ -55,6 +55,7 @@ const (
 	errUpdateFailed     = "cannot update the CloudSQL instance"
 	errGetFailed        = "cannot get the CloudSQL instance"
 	errGeneratePassword = "cannot generate root password"
+	errCheckUpToDate    = "cannot determine if CloudSQL instance is up to date"
 )
 
 // SetupCloudSQLInstance adds a controller that reconciles
@@ -139,9 +140,14 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	case v1beta1.StateCreationFailed, v1beta1.StateSuspended, v1beta1.StateMaintenance, v1beta1.StateUnknownState:
 		cr.Status.SetConditions(v1alpha1.Unavailable())
 	}
+
+	upToDate, err := cloudsql.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, instance)
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
+	}
 	return managed.ExternalObservation{
 		ResourceExists:    true,
-		ResourceUpToDate:  cloudsql.IsUpToDate(&cr.Spec.ForProvider, *instance),
+		ResourceUpToDate:  upToDate,
 		ConnectionDetails: getConnectionDetails(cr, instance),
 	}, nil
 }
@@ -152,7 +158,8 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalCreation{}, errors.New(errNotCloudSQL)
 	}
 	cr.SetConditions(v1alpha1.Creating())
-	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	instance := &sqladmin.DatabaseInstance{}
+	cloudsql.GenerateDatabaseInstance(meta.GetExternalName(cr), cr.Spec.ForProvider, instance)
 	pw, err := password.Generate()
 	if err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errGeneratePassword)
@@ -182,7 +189,8 @@ func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (man
 	if cr.Status.AtProvider.State == v1beta1.StateCreating {
 		return managed.ExternalUpdate{}, nil
 	}
-	instance := cloudsql.GenerateDatabaseInstance(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	instance := &sqladmin.DatabaseInstance{}
+	cloudsql.GenerateDatabaseInstance(meta.GetExternalName(cr), cr.Spec.ForProvider, instance)
 	// TODO(muvaf): the returned operation handle could help us not to send Patch
 	// request aggressively.
 	_, err := c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
