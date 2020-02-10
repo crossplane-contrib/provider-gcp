@@ -135,7 +135,7 @@ func TestGKEClusterStatic(t *testing.T) {
 	}
 
 	zl := zap.New(zap.UseDevMode(true))
-	log := logging.NewLogrLogger(zl.WithName("stack-gcp"))
+	log := logging.NewLogrLogger(zl.WithName("stack-gcp-gkecluster_static_test"))
 	if err := controller.Setup(i, log); err != nil {
 		t.Fatal(err)
 	}
