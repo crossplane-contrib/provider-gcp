@@ -24,12 +24,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test/integration"
 	crossplaneapis "github.com/crossplaneio/crossplane/apis"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/crossplaneio/stack-gcp/apis"
 	containerv1beta1 "github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
@@ -132,7 +134,9 @@ func TestGKEClusterStatic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := (&controller.Controllers{}).SetupWithManager(i); err != nil {
+	zl := zap.New(zap.UseDevMode(true))
+	log := logging.NewLogrLogger(zl.WithName("stack-gcp-gkecluster_static_test"))
+	if err := controller.Setup(i, log); err != nil {
 		t.Fatal(err)
 	}
 

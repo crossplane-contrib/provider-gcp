@@ -24,10 +24,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test/integration"
 	crossplaneapis "github.com/crossplaneio/crossplane/apis"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/yaml"
 
 	"github.com/crossplaneio/stack-gcp/apis"
@@ -222,7 +224,9 @@ func TestCreateAllClasses(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := (&controller.Controllers{}).SetupWithManager(i); err != nil {
+	zl := zap.New(zap.UseDevMode(true))
+	log := logging.NewLogrLogger(zl.WithName("stack-gcp-create_classes_test"))
+	if err := controller.Setup(i, log); err != nil {
 		t.Fatal(err)
 	}
 
