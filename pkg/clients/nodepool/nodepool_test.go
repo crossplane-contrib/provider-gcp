@@ -193,8 +193,8 @@ func TestGenerateNodePool(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			nodePool := GenerateNodePool(*tc.args.params, tc.args.name)
-			if diff := cmp.Diff(tc.want, nodePool); diff != "" {
+			GenerateNodePool(tc.args.name, *tc.args.params, tc.args.nodePool)
+			if diff := cmp.Diff(tc.want, tc.args.nodePool); diff != "" {
 				t.Errorf("GenerateNodePool(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -521,7 +521,10 @@ func TestLateInitializeSpec(t *testing.T) {
 }
 
 func TestIsUpToDate(t *testing.T) {
+	falseVal := false
+
 	type args struct {
+		name     string
 		nodePool *container.NodePool
 		params   *v1alpha1.NodePoolParameters
 	}
@@ -534,7 +537,18 @@ func TestIsUpToDate(t *testing.T) {
 	}{
 		"UpToDate": {
 			args: args{
+				name:     name,
 				nodePool: nodePool(),
+				params:   params(),
+			},
+			want: want{
+				upToDate: true,
+			},
+		},
+		"UpToDateWithOutputFields": {
+			args: args{
+				name:     name,
+				nodePool: nodePool(addOutputFields),
 				params:   params(),
 			},
 			want: want{
@@ -543,6 +557,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"UpToDateIgnoreRefs": {
 			args: args{
+				name:     name,
 				nodePool: nodePool(),
 				params: params(func(p *v1alpha1.NodePoolParameters) {
 					p.ClusterRef = &v1alpha1.GKEClusterURIReferencerForNodePool{
@@ -561,6 +576,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"NeedsUpdate": {
 			args: args{
+				name: name,
 				nodePool: nodePool(func(n *container.NodePool) {
 					n.Autoscaling = &container.NodePoolAutoscaling{
 						Autoprovisioned: true,
@@ -569,7 +585,11 @@ func TestIsUpToDate(t *testing.T) {
 						MinNodeCount:    3,
 					}
 				}),
-				params: params(),
+				params: params(func(p *v1alpha1.NodePoolParameters) {
+					p.Autoscaling = &v1alpha1.NodePoolAutoscaling{
+						Autoprovisioned: &falseVal,
+					}
+				}),
 			},
 			want: want{
 				upToDate: false,
@@ -578,7 +598,7 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, _ := IsUpToDate(tc.args.params, *tc.args.nodePool)
+			r, _, _ := IsUpToDate(tc.args.name, tc.args.params, tc.args.nodePool)
 			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
 				t.Errorf("IsUpToDate(...): -want upToDate, +got upToDate:\n%s", diff)
 			}

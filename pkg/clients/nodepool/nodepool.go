@@ -22,10 +22,9 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/mitchellh/copystructure"
+	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
-
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/container/v1alpha1"
 	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
@@ -35,119 +34,122 @@ import (
 const (
 	// NodePoolNameFormat is the format for the fully qualified name of a node pool.
 	NodePoolNameFormat = "%s/nodePools/%s"
+
+	errCheckUpToDate = "unable to determine if external resource is up to date"
 )
 
 // GenerateNodePool generates *container.NodePool instance from NodePoolParameters.
-func GenerateNodePool(in v1alpha1.NodePoolParameters, name string) *container.NodePool { // nolint:gocyclo
-	pool := &container.NodePool{
-		InitialNodeCount: gcp.Int64Value(in.InitialNodeCount),
-		Locations:        in.Locations,
-		Name:             name,
-		Version:          gcp.StringValue(in.Version),
-	}
+func GenerateNodePool(name string, in v1alpha1.NodePoolParameters, pool *container.NodePool) { // nolint:gocyclo
+	pool.InitialNodeCount = gcp.Int64Value(in.InitialNodeCount)
+	pool.Locations = in.Locations
+	pool.Name = name
+	pool.Version = gcp.StringValue(in.Version)
 
 	GenerateAutoscaling(in.Autoscaling, pool)
 	GenerateConfig(in.Config, pool)
 	GenerateManagement(in.Management, pool)
 	GenerateMaxPodsConstraint(in.MaxPodsConstraint, pool)
-
-	return pool
 }
 
 // GenerateAutoscaling generates *container.Autoscaling from *Autoscaling.
 func GenerateAutoscaling(in *v1alpha1.NodePoolAutoscaling, pool *container.NodePool) {
 	if in != nil {
-		out := &container.NodePoolAutoscaling{
-			Autoprovisioned: gcp.BoolValue(in.Autoprovisioned),
-			Enabled:         gcp.BoolValue(in.Enabled),
-			MaxNodeCount:    gcp.Int64Value(in.MaxNodeCount),
-			MinNodeCount:    gcp.Int64Value(in.MinNodeCount),
+		if pool.Autoscaling == nil {
+			pool.Autoscaling = &container.NodePoolAutoscaling{}
 		}
-
-		pool.Autoscaling = out
+		pool.Autoscaling.Autoprovisioned = gcp.BoolValue(in.Autoprovisioned)
+		pool.Autoscaling.Enabled = gcp.BoolValue(in.Enabled)
+		pool.Autoscaling.MaxNodeCount = gcp.Int64Value(in.MaxNodeCount)
+		pool.Autoscaling.MinNodeCount = gcp.Int64Value(in.MinNodeCount)
 	}
 }
 
 // GenerateConfig generates *container.Config from *NodeConfig.
-func GenerateConfig(in *v1alpha1.NodeConfig, pool *container.NodePool) {
+func GenerateConfig(in *v1alpha1.NodeConfig, pool *container.NodePool) { // nolint:gocyclo
 	if in != nil {
-		out := &container.NodeConfig{
-			DiskSizeGb:     gcp.Int64Value(in.DiskSizeGb),
-			DiskType:       gcp.StringValue(in.DiskType),
-			ImageType:      gcp.StringValue(in.ImageType),
-			Labels:         in.Labels,
-			LocalSsdCount:  gcp.Int64Value(in.LocalSsdCount),
-			MachineType:    gcp.StringValue(in.MachineType),
-			Metadata:       in.Metadata,
-			MinCpuPlatform: gcp.StringValue(in.MinCPUPlatform),
-			OauthScopes:    in.OauthScopes,
-			Preemptible:    gcp.BoolValue(in.Preemptible),
-			ServiceAccount: gcp.StringValue(in.ServiceAccount),
-			Tags:           in.Tags,
+		if pool.Config == nil {
+			pool.Config = &container.NodeConfig{}
 		}
+		pool.Config.DiskSizeGb = gcp.Int64Value(in.DiskSizeGb)
+		pool.Config.DiskType = gcp.StringValue(in.DiskType)
+		pool.Config.ImageType = gcp.StringValue(in.ImageType)
+		pool.Config.Labels = in.Labels
+		pool.Config.LocalSsdCount = gcp.Int64Value(in.LocalSsdCount)
+		pool.Config.MachineType = gcp.StringValue(in.MachineType)
+		pool.Config.Metadata = in.Metadata
+		pool.Config.MinCpuPlatform = gcp.StringValue(in.MinCPUPlatform)
+		pool.Config.OauthScopes = in.OauthScopes
+		pool.Config.Preemptible = gcp.BoolValue(in.Preemptible)
+		pool.Config.ServiceAccount = gcp.StringValue(in.ServiceAccount)
+		pool.Config.Tags = in.Tags
 
-		for _, a := range in.Accelerators {
+		if len(in.Accelerators) > 0 {
+			pool.Config.Accelerators = make([]*container.AcceleratorConfig, len(in.Accelerators))
+		}
+		for i, a := range in.Accelerators {
 			if a != nil {
-				out.Accelerators = append(out.Accelerators, &container.AcceleratorConfig{
+				pool.Config.Accelerators[i] = &container.AcceleratorConfig{
 					AcceleratorCount: a.AcceleratorCount,
 					AcceleratorType:  a.AcceleratorType,
-				})
+				}
 			}
 		}
 
 		if in.SandboxConfig != nil {
-			out.SandboxConfig = &container.SandboxConfig{
-				SandboxType: in.SandboxConfig.SandboxType,
+			if pool.Config.SandboxConfig == nil {
+				pool.Config.SandboxConfig = &container.SandboxConfig{}
 			}
+			pool.Config.SandboxConfig.SandboxType = in.SandboxConfig.SandboxType
 		}
 
 		if in.ShieldedInstanceConfig != nil {
-			out.ShieldedInstanceConfig = &container.ShieldedInstanceConfig{
-				EnableIntegrityMonitoring: gcp.BoolValue(in.ShieldedInstanceConfig.EnableIntegrityMonitoring),
-				EnableSecureBoot:          gcp.BoolValue(in.ShieldedInstanceConfig.EnableSecureBoot),
+			if pool.Config.ShieldedInstanceConfig == nil {
+				pool.Config.ShieldedInstanceConfig = &container.ShieldedInstanceConfig{}
 			}
+			pool.Config.ShieldedInstanceConfig.EnableIntegrityMonitoring = gcp.BoolValue(in.ShieldedInstanceConfig.EnableIntegrityMonitoring)
+			pool.Config.ShieldedInstanceConfig.EnableSecureBoot = gcp.BoolValue(in.ShieldedInstanceConfig.EnableSecureBoot)
 		}
 
-		for _, t := range in.Taints {
+		if len(in.Taints) > 0 {
+			pool.Config.Taints = make([]*container.NodeTaint, len(in.Taints))
+		}
+		for i, t := range in.Taints {
 			if t != nil {
-				out.Taints = append(out.Taints, &container.NodeTaint{
+				pool.Config.Taints[i] = &container.NodeTaint{
 					Effect: t.Effect,
 					Key:    t.Key,
 					Value:  t.Value,
-				})
+				}
 			}
 		}
 
 		if in.WorkloadMetadataConfig != nil {
-			out.WorkloadMetadataConfig = &container.WorkloadMetadataConfig{
-				NodeMetadata: in.WorkloadMetadataConfig.NodeMetadata,
+			if pool.Config.WorkloadMetadataConfig == nil {
+				pool.Config.WorkloadMetadataConfig = &container.WorkloadMetadataConfig{}
 			}
+			pool.Config.WorkloadMetadataConfig.NodeMetadata = in.WorkloadMetadataConfig.NodeMetadata
 		}
-
-		pool.Config = out
 	}
 }
 
 // GenerateManagement generates *container.NodeManagement from *NodeManagementSpec.
 func GenerateManagement(in *v1alpha1.NodeManagementSpec, pool *container.NodePool) {
 	if in != nil {
-		out := &container.NodeManagement{
-			AutoRepair:  gcp.BoolValue(in.AutoRepair),
-			AutoUpgrade: gcp.BoolValue(in.AutoUpgrade),
+		if pool.Management == nil {
+			pool.Management = &container.NodeManagement{}
 		}
-
-		pool.Management = out
+		pool.Management.AutoRepair = gcp.BoolValue(in.AutoRepair)
+		pool.Management.AutoUpgrade = gcp.BoolValue(in.AutoUpgrade)
 	}
 }
 
 // GenerateMaxPodsConstraint generates *container.MaxPodsConstraint from *MaxPodsConstraint.
 func GenerateMaxPodsConstraint(in *v1beta1.MaxPodsConstraint, pool *container.NodePool) {
 	if in != nil {
-		out := &container.MaxPodsConstraint{
-			MaxPodsPerNode: in.MaxPodsPerNode,
+		if pool.MaxPodsConstraint == nil {
+			pool.MaxPodsConstraint = &container.MaxPodsConstraint{}
 		}
-
-		pool.MaxPodsConstraint = out
+		pool.MaxPodsConstraint.MaxPodsPerNode = in.MaxPodsPerNode
 	}
 }
 
@@ -339,23 +341,26 @@ type UpdateFn func(context.Context, *container.Service, string) (*container.Oper
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(in *v1alpha1.NodePoolParameters, currentState container.NodePool) (bool, UpdateFn) {
-	currentParams := &v1alpha1.NodePoolParameters{}
-	LateInitializeSpec(currentParams, currentState)
-	if !cmp.Equal(in.Autoscaling, currentParams.Autoscaling) {
-		return false, newAutoscalingUpdateFn(in.Autoscaling)
+func IsUpToDate(name string, in *v1alpha1.NodePoolParameters, observed *container.NodePool) (bool, UpdateFn, error) {
+	generated, err := copystructure.Copy(observed)
+	if err != nil {
+		return true, noOpUpdate, errors.Wrap(err, errCheckUpToDate)
 	}
-	if !cmp.Equal(in.Management, currentParams.Management) {
-		return false, newManagementUpdateFn(in.Management)
+	desired, ok := generated.(*container.NodePool)
+	if !ok {
+		return true, noOpUpdate, errors.New(errCheckUpToDate)
 	}
-	// Ignore references, Cluster and InitialNodeCount because they are not
-	// reflected in the container.NodePool object.
-	if !cmp.Equal(in, currentParams,
-		cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}),
-		cmpopts.IgnoreFields(v1alpha1.NodePoolParameters{}, "Cluster", "InitialNodeCount")) {
-		return false, newGeneralUpdateFn(in)
+	GenerateNodePool(name, *in, desired)
+	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling) {
+		return false, newAutoscalingUpdateFn(in.Autoscaling), nil
 	}
-	return true, noOpUpdate
+	if !cmp.Equal(desired.Management, observed.Management) {
+		return false, newManagementUpdateFn(in.Management), nil
+	}
+	if !cmp.Equal(desired, observed) {
+		return false, newGeneralUpdateFn(in), nil
+	}
+	return true, noOpUpdate, nil
 }
 
 // GetFullyQualifiedName builds the fully qualified name of the cluster.

@@ -50,6 +50,7 @@ const (
 	errCreateInstance    = "cannot create CloudMemorystore instance"
 	errUpdateInstance    = "cannot update CloudMemorystore instance"
 	errDeleteInstance    = "cannot delete CloudMemorystore instance"
+	errCheckUpToDate     = "cannot determine if CloudMemorystore instance is up to date"
 )
 
 // SetupCloudMemorystoreInstance adds a controller that reconciles
@@ -99,7 +100,7 @@ type external struct {
 	projectID string
 }
 
-func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
+func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
 	cr, ok := mg.(*v1beta1.CloudMemorystoreInstance)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotInstance)
@@ -136,9 +137,14 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
 	}
 
+	u, err := cloudmemorystore.IsUpToDate(id, &cr.Spec.ForProvider, existing)
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
+	}
+
 	o := managed.ExternalObservation{
 		ResourceExists:    true,
-		ResourceUpToDate:  cloudmemorystore.IsUpToDate(cr, existing),
+		ResourceUpToDate:  u,
 		ConnectionDetails: conn,
 	}
 

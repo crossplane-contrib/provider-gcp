@@ -19,10 +19,12 @@ package cloudmemorystore
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	redisv1 "cloud.google.com/go/redis/apiv1"
+	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
+	"github.com/mitchellh/copystructure"
+	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -35,6 +37,8 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
+
+const errCheckUpToDate = "unable to determine if external resource is up to date"
 
 // Cloud Memorystore instance states. Only the subset that is used
 // is listed.
@@ -98,20 +102,18 @@ func (id InstanceID) Name() string {
 
 // GenerateRedisInstance is used to convert Crossplane CloudMemorystoreInstanceParameters
 // to GCP's Redis Instance object.
-func GenerateRedisInstance(id InstanceID, s v1beta1.CloudMemorystoreInstanceParameters) *redisv1pb.Instance {
-	return &redisv1pb.Instance{
-		Name:                  id.Name(),
-		Tier:                  redisv1pb.Instance_Tier(redisv1pb.Instance_Tier_value[s.Tier]),
-		MemorySizeGb:          s.MemorySizeGB,
-		Labels:                s.Labels,
-		RedisConfigs:          s.RedisConfigs,
-		DisplayName:           gcp.StringValue(s.DisplayName),
-		LocationId:            gcp.StringValue(s.LocationID),
-		AlternativeLocationId: gcp.StringValue(s.AlternativeLocationID),
-		RedisVersion:          gcp.StringValue(s.RedisVersion),
-		ReservedIpRange:       gcp.StringValue(s.ReservedIPRange),
-		AuthorizedNetwork:     gcp.StringValue(s.AuthorizedNetwork),
-	}
+func GenerateRedisInstance(id InstanceID, s v1beta1.CloudMemorystoreInstanceParameters, r *redisv1pb.Instance) {
+	r.Name = id.Name()
+	r.Tier = redisv1pb.Instance_Tier(redisv1pb.Instance_Tier_value[s.Tier])
+	r.MemorySizeGb = s.MemorySizeGB
+	r.Labels = s.Labels
+	r.RedisConfigs = s.RedisConfigs
+	r.DisplayName = gcp.StringValue(s.DisplayName)
+	r.LocationId = gcp.StringValue(s.LocationID)
+	r.AlternativeLocationId = gcp.StringValue(s.AlternativeLocationID)
+	r.RedisVersion = gcp.StringValue(s.RedisVersion)
+	r.ReservedIpRange = gcp.StringValue(s.ReservedIPRange)
+	r.AuthorizedNetwork = gcp.StringValue(s.AuthorizedNetwork)
 }
 
 // GenerateObservation is used to produce an observation object from GCP's Redis
@@ -154,44 +156,56 @@ func LateInitializeSpec(spec *v1beta1.CloudMemorystoreInstanceParameters, r redi
 // NewCreateInstanceRequest creates a request to create an instance suitable for
 // use with the GCP API.
 func NewCreateInstanceRequest(id InstanceID, i *v1beta1.CloudMemorystoreInstance) *redisv1pb.CreateInstanceRequest {
+	r := &redisv1pb.Instance{}
+	GenerateRedisInstance(id, i.Spec.ForProvider, r)
 	return &redisv1pb.CreateInstanceRequest{
 		Parent:     id.Parent(),
 		InstanceId: id.Instance,
-		Instance:   GenerateRedisInstance(id, i.Spec.ForProvider),
+		Instance:   r,
 	}
 }
 
 // NewUpdateInstanceRequest creates a request to update an instance suitable for
 // use with the GCP API.
 func NewUpdateInstanceRequest(id InstanceID, i *v1beta1.CloudMemorystoreInstance) *redisv1pb.UpdateInstanceRequest {
+	r := &redisv1pb.Instance{}
+	GenerateRedisInstance(id, i.Spec.ForProvider, r)
 	return &redisv1pb.UpdateInstanceRequest{
 		// These are the only fields we're concerned with that can be updated.
 		// The documentation is incorrect regarding field masks - they must be
 		// specified as snake case rather than camel case.
 		// https://godoc.org/google.golang.org/genproto/googleapis/cloud/redis/v1#UpdateInstanceRequest
 		UpdateMask: &field_mask.FieldMask{Paths: []string{"memory_size_gb", "redis_configs", "labels", "display_name"}},
-		Instance:   GenerateRedisInstance(id, i.Spec.ForProvider),
+		Instance:   r,
 	}
 }
 
 // IsUpToDate returns true if the supplied Kubernetes resource differs from the
 // supplied GCP resource. It considers only fields that can be modified in
 // place without deleting and recreating the instance.
-func IsUpToDate(i *v1beta1.CloudMemorystoreInstance, gcp *redisv1pb.Instance) bool {
-	desired := GenerateRedisInstance(InstanceID{}, i.Spec.ForProvider)
-	if desired.MemorySizeGb != gcp.MemorySizeGb {
-		return false
+func IsUpToDate(id InstanceID, in *v1beta1.CloudMemorystoreInstanceParameters, observed *redisv1pb.Instance) (bool, error) {
+	generated, err := copystructure.Copy(observed)
+	if err != nil {
+		return true, errors.Wrap(err, errCheckUpToDate)
 	}
-	if desired.DisplayName != gcp.DisplayName {
-		return false
+	desired, ok := generated.(*redisv1pb.Instance)
+	if !ok {
+		return true, errors.New(errCheckUpToDate)
 	}
-	if !reflect.DeepEqual(desired.RedisConfigs, gcp.RedisConfigs) {
-		return false
+	GenerateRedisInstance(id, *in, desired)
+	if desired.MemorySizeGb != observed.MemorySizeGb {
+		return false, nil
 	}
-	if !reflect.DeepEqual(desired.Labels, gcp.Labels) {
-		return false
+	if desired.DisplayName != observed.DisplayName {
+		return false, nil
 	}
-	return true
+	if !cmp.Equal(desired.RedisConfigs, observed.RedisConfigs) {
+		return false, nil
+	}
+	if !cmp.Equal(desired.Labels, observed.Labels) {
+		return false, nil
+	}
+	return true, nil
 }
 
 // NewDeleteInstanceRequest creates a request to delete an instance suitable for

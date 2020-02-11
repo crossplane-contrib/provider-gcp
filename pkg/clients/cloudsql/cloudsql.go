@@ -17,8 +17,9 @@ limitations under the License.
 package cloudsql
 
 import (
-	"errors"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -28,6 +29,8 @@ import (
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
+
+const errCheckUpToDate = "unable to determine if external resource is up to date"
 
 // Cyclomatic complexity test is disabled for translation methods
 // because all they do is simple comparison & assignment without
@@ -100,15 +103,14 @@ func GenerateDatabaseInstance(name string, in v1beta1.CloudSQLInstanceParameters
 		db.Settings.IpConfiguration.ForceSendFields = []string{"Ipv4Enabled"}
 
 		if len(in.Settings.IPConfiguration.AuthorizedNetworks) > 0 {
-			db.Settings.IpConfiguration.AuthorizedNetworks = []*sqladmin.AclEntry{}
+			db.Settings.IpConfiguration.AuthorizedNetworks = make([]*sqladmin.AclEntry, len(in.Settings.IPConfiguration.AuthorizedNetworks))
 		}
-		for _, val := range in.Settings.IPConfiguration.AuthorizedNetworks {
-			acl := &sqladmin.AclEntry{
+		for i, val := range in.Settings.IPConfiguration.AuthorizedNetworks {
+			db.Settings.IpConfiguration.AuthorizedNetworks[i] = &sqladmin.AclEntry{
 				ExpirationTime: gcp.StringValue(val.ExpirationTime),
 				Name:           gcp.StringValue(val.Name),
 				Value:          gcp.StringValue(val.Value),
 			}
-			db.Settings.IpConfiguration.AuthorizedNetworks = append(db.Settings.IpConfiguration.AuthorizedNetworks, acl)
 		}
 	}
 	if in.Settings.LocationPreference != nil {
@@ -127,13 +129,13 @@ func GenerateDatabaseInstance(name string, in v1beta1.CloudSQLInstanceParameters
 		db.Settings.MaintenanceWindow.UpdateTrack = gcp.StringValue(in.Settings.MaintenanceWindow.UpdateTrack)
 	}
 	if len(in.Settings.DatabaseFlags) > 0 {
-		db.Settings.DatabaseFlags = []*sqladmin.DatabaseFlags{}
+		db.Settings.DatabaseFlags = make([]*sqladmin.DatabaseFlags, len(in.Settings.DatabaseFlags))
 	}
-	for _, val := range in.Settings.DatabaseFlags {
-		db.Settings.DatabaseFlags = append(db.Settings.DatabaseFlags, &sqladmin.DatabaseFlags{
+	for i, val := range in.Settings.DatabaseFlags {
+		db.Settings.DatabaseFlags[i] = &sqladmin.DatabaseFlags{
 			Name:  val.Name,
 			Value: val.Value,
-		})
+		}
 	}
 }
 
@@ -296,17 +298,17 @@ func LateInitializeSpec(spec *v1beta1.CloudSQLInstanceParameters, in sqladmin.Da
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(name string, in *v1beta1.CloudSQLInstanceParameters, currentState *sqladmin.DatabaseInstance) (bool, error) {
-	genState, err := copystructure.Copy(currentState)
+func IsUpToDate(name string, in *v1beta1.CloudSQLInstanceParameters, observed *sqladmin.DatabaseInstance) (bool, error) {
+	generated, err := copystructure.Copy(observed)
 	if err != nil {
-		return false, err
+		return true, errors.Wrap(err, errCheckUpToDate)
 	}
-	_, ok := genState.(*sqladmin.DatabaseInstance)
+	desired, ok := generated.(*sqladmin.DatabaseInstance)
 	if !ok {
-		return false, errors.New("unable to type case deepcopy to *sqladmin.DatabaseInstance")
+		return true, errors.New(errCheckUpToDate)
 	}
-	GenerateDatabaseInstance(name, *in, genState.(*sqladmin.DatabaseInstance))
-	return cmp.Equal(genState, currentState, cmpopts.IgnoreFields(sqladmin.DatabaseInstance{}, "Settings.IpConfiguration.ForceSendFields")), nil
+	GenerateDatabaseInstance(name, *in, desired)
+	return cmp.Equal(desired, observed, cmpopts.IgnoreFields(sqladmin.DatabaseInstance{}, "Settings.IpConfiguration.ForceSendFields")), nil
 }
 
 // DatabaseUserName returns default database user name base on database version
