@@ -350,7 +350,7 @@ func TestCreate(t *testing.T) {
 		},
 		"ErrorCreateConnection": {
 			e: &external{
-				sn: FakeServiceNetworkingService{WantMethod: http.MethodPost, ReturnError: errGoogleOther}.Serve(t),
+				sn: FakeServiceNetworkingService{WantMethod: http.MethodPatch, ReturnError: errGoogleOther}.Serve(t),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -362,7 +362,7 @@ func TestCreate(t *testing.T) {
 		},
 		"ConnectionAlreadyExists": {
 			e: &external{
-				sn: FakeServiceNetworkingService{WantMethod: http.MethodPost, ReturnError: errGoogleConflict}.Serve(t),
+				sn: FakeServiceNetworkingService{WantMethod: http.MethodPatch, ReturnError: errGoogleConflict}.Serve(t),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -372,7 +372,7 @@ func TestCreate(t *testing.T) {
 		},
 		"ConnectionCreated": {
 			e: &external{
-				sn: FakeServiceNetworkingService{WantMethod: http.MethodPost, Return: &servicenetworking.Operation{}}.Serve(t),
+				sn: FakeServiceNetworkingService{WantMethod: http.MethodPatch, Return: &servicenetworking.Operation{}}.Serve(t),
 			},
 			args: args{
 				ctx: context.Background(),
