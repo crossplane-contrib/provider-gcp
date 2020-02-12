@@ -77,7 +77,7 @@ type Reconciler struct {
 // SetupBucket adds a controller that reconciles Bucket managed
 // resources.
 func SetupBucket(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha3.BucketKind)
+	name := managed.ControllerName(v1alpha3.BucketGroupKind)
 
 	r := &Reconciler{
 		Client:            mgr.GetClient(),

@@ -42,7 +42,7 @@ import (
 // and resource references by picking a random matching CloudSQLInstanceClass,
 // if any.
 func SetupPostgreSQLInstanceClaimScheduling(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimscheduling.ControllerName(databasev1alpha1.PostgreSQLInstanceKind)
+	name := claimscheduling.ControllerName(databasev1alpha1.PostgreSQLInstanceGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -64,7 +64,7 @@ func SetupPostgreSQLInstanceClaimScheduling(mgr ctrl.Manager, l logging.Logger) 
 // PostgreSQLInstance claims that omit their resource ref, class ref, and class
 // selector by choosing a default CloudSQLInstanceClass if one exists.
 func SetupPostgreSQLInstanceClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimdefaulting.ControllerName(databasev1alpha1.PostgreSQLInstanceKind)
+	name := claimdefaulting.ControllerName(databasev1alpha1.PostgreSQLInstanceGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -86,7 +86,7 @@ func SetupPostgreSQLInstanceClaimDefaulting(mgr ctrl.Manager, l logging.Logger) 
 // PostgreSQLInstance claims with CloudSQLInstances, dynamically provisioning
 // them if needed.
 func SetupPostgreSQLInstanceClaimBinding(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimbinding.ControllerName(databasev1alpha1.PostgreSQLInstanceKind)
+	name := claimbinding.ControllerName(databasev1alpha1.PostgreSQLInstanceGroupKind)
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind)),
@@ -160,7 +160,7 @@ func ConfigurePostgreSQLCloudSQLInstance(_ context.Context, cm resource.Claim, c
 // resource references by picking a random matching CloudSQLInstanceClass, if
 // any.
 func SetupMySQLInstanceClaimScheduling(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimscheduling.ControllerName(databasev1alpha1.MySQLInstanceKind)
+	name := claimscheduling.ControllerName(databasev1alpha1.MySQLInstanceGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -182,7 +182,7 @@ func SetupMySQLInstanceClaimScheduling(mgr ctrl.Manager, l logging.Logger) error
 // MySQLInstance claims that omit their resource ref, class ref, and class
 // selector by choosing a default CloudSQLInstanceClass if one exists.
 func SetupMySQLInstanceClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimdefaulting.ControllerName(databasev1alpha1.MySQLInstanceKind)
+	name := claimdefaulting.ControllerName(databasev1alpha1.MySQLInstanceGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -204,7 +204,7 @@ func SetupMySQLInstanceClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error
 // MySQLInstance claims with CloudSQLInstances, dynamically provisioning them if
 // needed.
 func SetupMySQLInstanceClaimBinding(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimbinding.ControllerName(databasev1alpha1.MySQLInstanceKind)
+	name := claimbinding.ControllerName(databasev1alpha1.MySQLInstanceGroupKind)
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasClassReferenceKind(resource.ClassKind(v1beta1.CloudSQLInstanceClassGroupVersionKind)),

@@ -89,7 +89,7 @@ type Reconciler struct {
 // SetupGKECluster returns a reconciler that reconciles GKECluster
 // managed resources.
 func SetupGKECluster(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(gcpcomputev1alpha3.GKEClusterKind)
+	name := managed.ControllerName(gcpcomputev1alpha3.GKEClusterGroupKind)
 
 	r := &Reconciler{
 		Client:    mgr.GetClient(),

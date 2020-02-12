@@ -56,7 +56,7 @@ const (
 // SetupNetwork adds a controller that reconciles Network managed
 // resources.
 func SetupNetwork(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha3.NetworkKind)
+	name := managed.ControllerName(v1alpha3.NetworkGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

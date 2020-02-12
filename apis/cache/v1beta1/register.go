@@ -40,6 +40,7 @@ var (
 // CloudMemorystoreInstance type metadata.
 var (
 	CloudMemorystoreInstanceKind             = reflect.TypeOf(CloudMemorystoreInstance{}).Name()
+	CloudMemorystoreInstanceGroupKind        = schema.GroupKind{Group: Group, Kind: CloudMemorystoreInstanceKind}.String()
 	CloudMemorystoreInstanceKindAPIVersion   = CloudMemorystoreInstanceKind + "." + SchemeGroupVersion.String()
 	CloudMemorystoreInstanceGroupVersionKind = SchemeGroupVersion.WithKind(CloudMemorystoreInstanceKind)
 )
@@ -47,6 +48,7 @@ var (
 // CloudMemorystoreInstanceClass type metadata.
 var (
 	CloudMemorystoreInstanceClassKind             = reflect.TypeOf(CloudMemorystoreInstanceClass{}).Name()
+	CloudMemorystoreInstanceClassGroupKind        = schema.GroupKind{Group: Group, Kind: CloudMemorystoreInstanceClassKind}.String()
 	CloudMemorystoreInstanceClassKindAPIVersion   = CloudMemorystoreInstanceClassKind + "." + SchemeGroupVersion.String()
 	CloudMemorystoreInstanceClassGroupVersionKind = SchemeGroupVersion.WithKind(CloudMemorystoreInstanceClassKind)
 )

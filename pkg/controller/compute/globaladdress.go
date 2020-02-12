@@ -52,7 +52,7 @@ const (
 // SetupGlobalAddress adds a controller that reconciles
 // GlobalAddress managed resources.
 func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha3.GlobalAddressKind)
+	name := managed.ControllerName(v1alpha3.GlobalAddressGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

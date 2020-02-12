@@ -53,7 +53,7 @@ const (
 // SetupSubnetwork adds a controller that reconciles Subnetwork
 // managed resources.
 func SetupSubnetwork(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha3.SubnetworkKind)
+	name := managed.ControllerName(v1alpha3.SubnetworkGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

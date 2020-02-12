@@ -40,6 +40,7 @@ var (
 // GKECluster type metadata.
 var (
 	GKEClusterKind             = reflect.TypeOf(GKECluster{}).Name()
+	GKEClusterGroupKind        = schema.GroupKind{Group: Group, Kind: GKEClusterKind}.String()
 	GKEClusterKindAPIVersion   = GKEClusterKind + "." + SchemeGroupVersion.String()
 	GKEClusterGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterKind)
 )
@@ -47,6 +48,7 @@ var (
 // GKEClusterClass type metadata.
 var (
 	GKEClusterClassKind             = reflect.TypeOf(GKEClusterClass{}).Name()
+	GKEClusterClassGroupKind        = schema.GroupKind{Group: Group, Kind: GKEClusterClassKind}.String()
 	GKEClusterClassKindAPIVersion   = GKEClusterClassKind + "." + SchemeGroupVersion.String()
 	GKEClusterClassGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterClassKind)
 )

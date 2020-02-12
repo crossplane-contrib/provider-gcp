@@ -55,7 +55,7 @@ const (
 // SetupNodePool adds a controller that reconciles NodePool managed
 // resources.
 func SetupNodePool(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha1.NodePoolKind)
+	name := managed.ControllerName(v1alpha1.NodePoolGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

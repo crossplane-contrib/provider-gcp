@@ -79,7 +79,7 @@ const (
 // SetupConnection adds a controller that reconciles Connection
 // managed resources.
 func SetupConnection(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1beta1.ConnectionKind)
+	name := managed.ControllerName(v1beta1.ConnectionGroupKind)
 	conn := &connector{
 		client:               mgr.GetClient(),
 		newCompute:           compute.NewService,

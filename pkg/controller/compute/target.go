@@ -31,7 +31,7 @@ import (
 // SetupGKEClusterTarget adds a controller that propagates GKECluster
 // connection secrets to the connection secrets of their targets.
 func SetupGKEClusterTarget(mgr ctrl.Manager, l logging.Logger) error {
-	name := target.ControllerName(v1alpha3.GKEClusterKind)
+	name := target.ControllerName(v1alpha3.GKEClusterGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

@@ -60,7 +60,7 @@ const (
 // SetupGKECluster adds a controller that reconciles GKECluster
 // managed resources.
 func SetupGKECluster(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1beta1.GKEClusterKind)
+	name := managed.ControllerName(v1beta1.GKEClusterGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

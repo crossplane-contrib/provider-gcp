@@ -40,6 +40,7 @@ var (
 // Connection type metadata.
 var (
 	ConnectionKind             = reflect.TypeOf(Connection{}).Name()
+	ConnectionGroupKind        = schema.GroupKind{Group: Group, Kind: ConnectionKind}.String()
 	ConnectionKindAPIVersion   = ConnectionKind + "." + SchemeGroupVersion.String()
 	ConnectionGroupVersionKind = SchemeGroupVersion.WithKind(ConnectionKind)
 )
