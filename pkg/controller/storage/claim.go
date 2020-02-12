@@ -39,7 +39,7 @@ import (
 // that include a class selector but omit their class and resource references by
 // picking a random matching GCS BucketClass, if any.
 func SetupBucketClaimScheduling(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimscheduling.ControllerName(storagev1alpha1.BucketKind)
+	name := claimscheduling.ControllerName(storagev1alpha1.BucketGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -61,7 +61,7 @@ func SetupBucketClaimScheduling(mgr ctrl.Manager, l logging.Logger) error {
 // that omit their resource ref, class ref, and class selector by choosing a
 // default GCS BucketClass if one exists.
 func SetupBucketClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimdefaulting.ControllerName(storagev1alpha1.BucketKind)
+	name := claimdefaulting.ControllerName(storagev1alpha1.BucketGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -82,7 +82,7 @@ func SetupBucketClaimDefaulting(mgr ctrl.Manager, l logging.Logger) error {
 // SetupBucketClaimBinding adds a controller that reconciles Bucket claims with
 // GCS Buckets, dynamically provisioning them if needed.
 func SetupBucketClaimBinding(mgr ctrl.Manager, l logging.Logger) error {
-	name := claimbinding.ControllerName(storagev1alpha1.BucketKind)
+	name := claimbinding.ControllerName(storagev1alpha1.BucketGroupKind)
 
 	p := resource.NewPredicates(resource.AnyOf(
 		resource.HasClassReferenceKind(resource.ClassKind(v1alpha3.BucketClassGroupVersionKind)),

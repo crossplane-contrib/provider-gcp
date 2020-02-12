@@ -60,7 +60,7 @@ const (
 // SetupCloudSQLInstance adds a controller that reconciles
 // CloudSQLInstance managed resources.
 func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1beta1.CloudSQLInstanceKind)
+	name := managed.ControllerName(v1beta1.CloudSQLInstanceGroupKind)
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),

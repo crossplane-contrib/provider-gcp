@@ -55,7 +55,7 @@ const (
 // SetupCloudMemorystoreInstance adds a controller that reconciles
 // CloudMemorystoreInstances.
 func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1beta1.CloudMemorystoreInstanceKind)
+	name := managed.ControllerName(v1beta1.CloudMemorystoreInstanceGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

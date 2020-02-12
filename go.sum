@@ -66,9 +66,8 @@ github.com/coreos/go-semver v0.3.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3Ee
 github.com/coreos/go-systemd v0.0.0-20180511133405-39ca1b05acc7/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
 github.com/cpuguy83/go-md2man v1.0.10/go.mod h1:SmD6nW6nTyfqj6ABTjUi3V3JVMnlJmwcJI5acqYI6dE=
-github.com/crossplaneio/crossplane v0.7.0 h1:uOA3ze2+5/xU2gzkIVf9F99S9KCHyJoBpDhMqLKlO5k=
-github.com/crossplaneio/crossplane v0.7.0/go.mod h1:rTeJGonGZuzi5HXq9FsXKn2Uh7Pbo7UgsfvQOrcG704=
-github.com/crossplaneio/crossplane-runtime v0.4.0/go.mod h1:UTemZ8u+bvHkQMHpdsZ2z/dTHC7tRkXc2K6Z9N26KQI=
+github.com/crossplaneio/crossplane v0.7.0-rc.0.20200211212229-e3c5715e39d8 h1:uPesNWwW+cR8veRgRoCxoKUquwP9jW4CPCGslgVEXjM=
+github.com/crossplaneio/crossplane v0.7.0-rc.0.20200211212229-e3c5715e39d8/go.mod h1:w1DahP4gWrRfZgRDc4jKLZsA3vyRLOmBevk03xdW/5g=
 github.com/crossplaneio/crossplane-runtime v0.4.1-0.20200201005410-a6bb086be888 h1:vO/7jO4Vz1+1IxNximywy5Sr/dj5vwFKhii9x4pyz+Q=
 github.com/crossplaneio/crossplane-runtime v0.4.1-0.20200201005410-a6bb086be888/go.mod h1:97hx6LIBkjI0fjfMGPRCOGI7Pm6qUhoN9zTCWrP4XvU=
 github.com/crossplaneio/crossplane-tools v0.0.0-20191220202319-9033bd8a02ce h1:V7cUPRBxbJr0siRHn459gb6hfMXaEA+pGm0Yt5aXdhQ=
@@ -240,6 +239,7 @@ github.com/json-iterator/go v1.1.7 h1:KfgG9LzI+pYjr4xvmz/5H4FXjokeP+rlHLhv3iH62F
 github.com/json-iterator/go v1.1.7/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/json-iterator/go v1.1.8 h1:QiWkFLKq0T7mpzwOTu6BzNDbfTE8OLrYhVKYMLF46Ok=
 github.com/json-iterator/go v1.1.8/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
+github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024 h1:rBMNdlhTLzJjJSDIjNEXX1Pz3Hmwmz91v+zycvx9PJc=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=

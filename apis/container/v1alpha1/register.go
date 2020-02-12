@@ -40,6 +40,7 @@ var (
 // NodePool type metadata.
 var (
 	NodePoolKind             = reflect.TypeOf(NodePool{}).Name()
+	NodePoolGroupKind        = schema.GroupKind{Group: Group, Kind: NodePoolKind}.String()
 	NodePoolKindAPIVersion   = NodePoolKind + "." + SchemeGroupVersion.String()
 	NodePoolGroupVersionKind = SchemeGroupVersion.WithKind(NodePoolKind)
 )
@@ -47,6 +48,7 @@ var (
 // NodePoolClass type metadata.
 var (
 	NodePoolClassKind             = reflect.TypeOf(NodePoolClass{}).Name()
+	NodePoolClassGroupKind        = schema.GroupKind{Group: Group, Kind: NodePoolClassKind}.String()
 	NodePoolClassKindAPIVersion   = NodePoolClassKind + "." + SchemeGroupVersion.String()
 	NodePoolClassGroupVersionKind = SchemeGroupVersion.WithKind(NodePoolClassKind)
 )

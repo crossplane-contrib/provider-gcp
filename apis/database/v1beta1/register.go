@@ -40,6 +40,7 @@ var (
 // CloudSQLInstance type metadata.
 var (
 	CloudSQLInstanceKind             = reflect.TypeOf(CloudSQLInstance{}).Name()
+	CloudSQLInstanceGroupKind        = schema.GroupKind{Group: Group, Kind: CloudSQLInstanceKind}.String()
 	CloudSQLInstanceKindAPIVersion   = CloudSQLInstanceKind + "." + SchemeGroupVersion.String()
 	CloudSQLInstanceGroupVersionKind = SchemeGroupVersion.WithKind(CloudSQLInstanceKind)
 )
@@ -47,6 +48,7 @@ var (
 // CloudSQLInstanceClass type metadata.
 var (
 	CloudSQLInstanceClassKind             = reflect.TypeOf(CloudSQLInstanceClass{}).Name()
+	CloudSQLInstanceGroupClassKind        = schema.GroupKind{Group: Group, Kind: CloudSQLInstanceClassKind}.String()
 	CloudSQLInstanceClassKindAPIVersion   = CloudSQLInstanceClassKind + "." + SchemeGroupVersion.String()
 	CloudSQLInstanceClassGroupVersionKind = SchemeGroupVersion.WithKind(CloudSQLInstanceClassKind)
 )

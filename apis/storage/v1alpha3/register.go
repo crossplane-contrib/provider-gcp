@@ -40,6 +40,7 @@ var (
 // Bucket type metadata.
 var (
 	BucketKind             = reflect.TypeOf(Bucket{}).Name()
+	BucketGroupKind        = schema.GroupKind{Group: Group, Kind: BucketKind}.String()
 	BucketKindAPIVersion   = BucketKind + "." + SchemeGroupVersion.String()
 	BucketGroupVersionKind = SchemeGroupVersion.WithKind(BucketKind)
 )
@@ -47,6 +48,7 @@ var (
 // BucketClass type metadata.
 var (
 	BucketClassKind             = reflect.TypeOf(BucketClass{}).Name()
+	BucketClassGroupKind        = schema.GroupKind{Group: Group, Kind: BucketClassKind}.String()
 	BucketClassKindAPIVersion   = BucketClassKind + "." + SchemeGroupVersion.String()
 	BucketClassGroupVersionKind = SchemeGroupVersion.WithKind(BucketClassKind)
 )
