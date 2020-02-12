@@ -19,15 +19,18 @@ package cloudsql
 import (
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/mitchellh/copystructure"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
-
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
+
+const errCheckUpToDate = "unable to determine if external resource is up to date"
 
 // Cyclomatic complexity test is disabled for translation methods
 // because all they do is simple comparison & assignment without
@@ -35,93 +38,105 @@ import (
 // complexity rate.
 
 // GenerateDatabaseInstance generates *sqladmin.DatabaseInstance instance from CloudSQLInstanceParameters.
-func GenerateDatabaseInstance(in v1beta1.CloudSQLInstanceParameters, name string) *sqladmin.DatabaseInstance { // nolint:gocyclo
-	db := &sqladmin.DatabaseInstance{
-		DatabaseVersion:    gcp.StringValue(in.DatabaseVersion),
-		GceZone:            gcp.StringValue(in.GceZone),
-		InstanceType:       gcp.StringValue(in.InstanceType),
-		MasterInstanceName: gcp.StringValue(in.MasterInstanceName),
-		MaxDiskSize:        gcp.Int64Value(in.MaxDiskSize),
-		Name:               name,
-		Region:             in.Region,
-		ReplicaNames:       in.ReplicaNames,
-		SuspensionReason:   in.SuspensionReason,
-	}
+func GenerateDatabaseInstance(name string, in v1beta1.CloudSQLInstanceParameters, db *sqladmin.DatabaseInstance) { // nolint:gocyclo
+	db.DatabaseVersion = gcp.StringValue(in.DatabaseVersion)
+	db.GceZone = gcp.StringValue(in.GceZone)
+	db.InstanceType = gcp.StringValue(in.InstanceType)
+	db.MasterInstanceName = gcp.StringValue(in.MasterInstanceName)
+	db.MaxDiskSize = gcp.Int64Value(in.MaxDiskSize)
+	db.Name = name
+	db.Region = in.Region
+	db.ReplicaNames = in.ReplicaNames
+	db.SuspensionReason = in.SuspensionReason
 	if in.DiskEncryptionConfiguration != nil {
-		db.DiskEncryptionConfiguration = &sqladmin.DiskEncryptionConfiguration{
-			KmsKeyName: in.DiskEncryptionConfiguration.KmsKeyName,
+		if db.DiskEncryptionConfiguration == nil {
+			db.DiskEncryptionConfiguration = &sqladmin.DiskEncryptionConfiguration{}
 		}
+		db.DiskEncryptionConfiguration.KmsKeyName = in.DiskEncryptionConfiguration.KmsKeyName
 	}
 	if in.FailoverReplica != nil {
-		db.FailoverReplica = &sqladmin.DatabaseInstanceFailoverReplica{
-			Name: in.FailoverReplica.Name,
+		if db.FailoverReplica == nil {
+			db.FailoverReplica = &sqladmin.DatabaseInstanceFailoverReplica{}
 		}
+		db.FailoverReplica.Name = in.FailoverReplica.Name
 	}
 	if in.OnPremisesConfiguration != nil {
-		db.OnPremisesConfiguration = &sqladmin.OnPremisesConfiguration{
-			HostPort: in.OnPremisesConfiguration.HostPort,
+		if db.OnPremisesConfiguration == nil {
+			db.OnPremisesConfiguration = &sqladmin.OnPremisesConfiguration{}
 		}
+		db.OnPremisesConfiguration.HostPort = in.OnPremisesConfiguration.HostPort
 	}
-	db.Settings = &sqladmin.Settings{
-		ActivationPolicy:            gcp.StringValue(in.Settings.ActivationPolicy),
-		AuthorizedGaeApplications:   in.Settings.AuthorizedGaeApplications,
-		AvailabilityType:            gcp.StringValue(in.Settings.AvailabilityType),
-		CrashSafeReplicationEnabled: gcp.BoolValue(in.Settings.CrashSafeReplicationEnabled),
-		DataDiskSizeGb:              gcp.Int64Value(in.Settings.DataDiskSizeGb),
-		DataDiskType:                gcp.StringValue(in.Settings.DataDiskType),
-		DatabaseReplicationEnabled:  gcp.BoolValue(in.Settings.DatabaseReplicationEnabled),
-		PricingPlan:                 gcp.StringValue(in.Settings.PricingPlan),
-		ReplicationType:             gcp.StringValue(in.Settings.ReplicationType),
-		StorageAutoResize:           in.Settings.StorageAutoResize,
-		StorageAutoResizeLimit:      gcp.Int64Value(in.Settings.StorageAutoResizeLimit),
-		Tier:                        in.Settings.Tier,
-		UserLabels:                  in.Settings.UserLabels,
+	if db.Settings == nil {
+		db.Settings = &sqladmin.Settings{}
 	}
+	db.Settings.ActivationPolicy = gcp.StringValue(in.Settings.ActivationPolicy)
+	db.Settings.AuthorizedGaeApplications = in.Settings.AuthorizedGaeApplications
+	db.Settings.AvailabilityType = gcp.StringValue(in.Settings.AvailabilityType)
+	db.Settings.CrashSafeReplicationEnabled = gcp.BoolValue(in.Settings.CrashSafeReplicationEnabled)
+	db.Settings.DataDiskSizeGb = gcp.Int64Value(in.Settings.DataDiskSizeGb)
+	db.Settings.DataDiskType = gcp.StringValue(in.Settings.DataDiskType)
+	db.Settings.DatabaseReplicationEnabled = gcp.BoolValue(in.Settings.DatabaseReplicationEnabled)
+	db.Settings.PricingPlan = gcp.StringValue(in.Settings.PricingPlan)
+	db.Settings.ReplicationType = gcp.StringValue(in.Settings.ReplicationType)
+	db.Settings.StorageAutoResize = in.Settings.StorageAutoResize
+	db.Settings.StorageAutoResizeLimit = gcp.Int64Value(in.Settings.StorageAutoResizeLimit)
+	db.Settings.Tier = in.Settings.Tier
+	db.Settings.UserLabels = in.Settings.UserLabels
+
 	if in.Settings.BackupConfiguration != nil {
-		db.Settings.BackupConfiguration = &sqladmin.BackupConfiguration{
-			BinaryLogEnabled:               gcp.BoolValue(in.Settings.BackupConfiguration.BinaryLogEnabled),
-			Enabled:                        gcp.BoolValue(in.Settings.BackupConfiguration.Enabled),
-			Location:                       gcp.StringValue(in.Settings.BackupConfiguration.Location),
-			ReplicationLogArchivingEnabled: gcp.BoolValue(in.Settings.BackupConfiguration.ReplicationLogArchivingEnabled),
-			StartTime:                      gcp.StringValue(in.Settings.BackupConfiguration.StartTime),
+		if db.Settings.BackupConfiguration == nil {
+			db.Settings.BackupConfiguration = &sqladmin.BackupConfiguration{}
 		}
+		db.Settings.BackupConfiguration.BinaryLogEnabled = gcp.BoolValue(in.Settings.BackupConfiguration.BinaryLogEnabled)
+		db.Settings.BackupConfiguration.Enabled = gcp.BoolValue(in.Settings.BackupConfiguration.Enabled)
+		db.Settings.BackupConfiguration.Location = gcp.StringValue(in.Settings.BackupConfiguration.Location)
+		db.Settings.BackupConfiguration.ReplicationLogArchivingEnabled = gcp.BoolValue(in.Settings.BackupConfiguration.ReplicationLogArchivingEnabled)
+		db.Settings.BackupConfiguration.StartTime = gcp.StringValue(in.Settings.BackupConfiguration.StartTime)
 	}
 	if in.Settings.IPConfiguration != nil {
-		db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
-			Ipv4Enabled:     gcp.BoolValue(in.Settings.IPConfiguration.Ipv4Enabled),
-			PrivateNetwork:  gcp.StringValue(in.Settings.IPConfiguration.PrivateNetwork),
-			RequireSsl:      gcp.BoolValue(in.Settings.IPConfiguration.RequireSsl),
-			ForceSendFields: []string{"Ipv4Enabled"},
+		if db.Settings.IpConfiguration == nil {
+			db.Settings.IpConfiguration = &sqladmin.IpConfiguration{}
 		}
-		for _, val := range in.Settings.IPConfiguration.AuthorizedNetworks {
-			acl := &sqladmin.AclEntry{
+		db.Settings.IpConfiguration.Ipv4Enabled = gcp.BoolValue(in.Settings.IPConfiguration.Ipv4Enabled)
+		db.Settings.IpConfiguration.PrivateNetwork = gcp.StringValue(in.Settings.IPConfiguration.PrivateNetwork)
+		db.Settings.IpConfiguration.RequireSsl = gcp.BoolValue(in.Settings.IPConfiguration.RequireSsl)
+		db.Settings.IpConfiguration.ForceSendFields = []string{"Ipv4Enabled"}
+
+		if len(in.Settings.IPConfiguration.AuthorizedNetworks) > 0 {
+			db.Settings.IpConfiguration.AuthorizedNetworks = make([]*sqladmin.AclEntry, len(in.Settings.IPConfiguration.AuthorizedNetworks))
+		}
+		for i, val := range in.Settings.IPConfiguration.AuthorizedNetworks {
+			db.Settings.IpConfiguration.AuthorizedNetworks[i] = &sqladmin.AclEntry{
 				ExpirationTime: gcp.StringValue(val.ExpirationTime),
 				Name:           gcp.StringValue(val.Name),
 				Value:          gcp.StringValue(val.Value),
 			}
-			db.Settings.IpConfiguration.AuthorizedNetworks = append(db.Settings.IpConfiguration.AuthorizedNetworks, acl)
 		}
 	}
 	if in.Settings.LocationPreference != nil {
-		db.Settings.LocationPreference = &sqladmin.LocationPreference{
-			FollowGaeApplication: gcp.StringValue(in.Settings.LocationPreference.FollowGaeApplication),
-			Zone:                 gcp.StringValue(in.Settings.LocationPreference.Zone),
+		if db.Settings.LocationPreference == nil {
+			db.Settings.LocationPreference = &sqladmin.LocationPreference{}
 		}
+		db.Settings.LocationPreference.FollowGaeApplication = gcp.StringValue(in.Settings.LocationPreference.FollowGaeApplication)
+		db.Settings.LocationPreference.Zone = gcp.StringValue(in.Settings.LocationPreference.Zone)
 	}
 	if in.Settings.MaintenanceWindow != nil {
-		db.Settings.MaintenanceWindow = &sqladmin.MaintenanceWindow{
-			Day:         gcp.Int64Value(in.Settings.MaintenanceWindow.Day),
-			Hour:        gcp.Int64Value(in.Settings.MaintenanceWindow.Hour),
-			UpdateTrack: gcp.StringValue(in.Settings.MaintenanceWindow.UpdateTrack),
+		if db.Settings.MaintenanceWindow == nil {
+			db.Settings.MaintenanceWindow = &sqladmin.MaintenanceWindow{}
 		}
+		db.Settings.MaintenanceWindow.Day = gcp.Int64Value(in.Settings.MaintenanceWindow.Day)
+		db.Settings.MaintenanceWindow.Hour = gcp.Int64Value(in.Settings.MaintenanceWindow.Hour)
+		db.Settings.MaintenanceWindow.UpdateTrack = gcp.StringValue(in.Settings.MaintenanceWindow.UpdateTrack)
 	}
-	for _, val := range in.Settings.DatabaseFlags {
-		db.Settings.DatabaseFlags = append(db.Settings.DatabaseFlags, &sqladmin.DatabaseFlags{
+	if len(in.Settings.DatabaseFlags) > 0 {
+		db.Settings.DatabaseFlags = make([]*sqladmin.DatabaseFlags, len(in.Settings.DatabaseFlags))
+	}
+	for i, val := range in.Settings.DatabaseFlags {
+		db.Settings.DatabaseFlags[i] = &sqladmin.DatabaseFlags{
 			Name:  val.Name,
 			Value: val.Value,
-		})
+		}
 	}
-	return db
 }
 
 // GenerateObservation produces CloudSQLInstanceObservation object from *sqladmin.DatabaseInstance object.
@@ -283,10 +298,17 @@ func LateInitializeSpec(spec *v1beta1.CloudSQLInstanceParameters, in sqladmin.Da
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(in *v1beta1.CloudSQLInstanceParameters, currentState sqladmin.DatabaseInstance) bool {
-	currentParams := &v1beta1.CloudSQLInstanceParameters{}
-	LateInitializeSpec(currentParams, currentState)
-	return cmp.Equal(in, currentParams, cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}))
+func IsUpToDate(name string, in *v1beta1.CloudSQLInstanceParameters, observed *sqladmin.DatabaseInstance) (bool, error) {
+	generated, err := copystructure.Copy(observed)
+	if err != nil {
+		return true, errors.Wrap(err, errCheckUpToDate)
+	}
+	desired, ok := generated.(*sqladmin.DatabaseInstance)
+	if !ok {
+		return true, errors.New(errCheckUpToDate)
+	}
+	GenerateDatabaseInstance(name, *in, desired)
+	return cmp.Equal(desired, observed, cmpopts.IgnoreFields(sqladmin.DatabaseInstance{}, "Settings.IpConfiguration.ForceSendFields")), nil
 }
 
 // DatabaseUserName returns default database user name base on database version

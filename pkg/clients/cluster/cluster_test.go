@@ -18,11 +18,11 @@ package cluster
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -294,8 +294,8 @@ func TestGenerateCluster(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			cluster := GenerateCluster(*tc.args.params, tc.args.name)
-			if diff := cmp.Diff(tc.want, cluster); diff != "" {
+			GenerateCluster(tc.args.name, *tc.args.params, tc.args.cluster)
+			if diff := cmp.Diff(tc.args.cluster, tc.want); diff != "" {
 				t.Errorf("GenerateCluster(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -1404,7 +1404,10 @@ func TestLateInitializeSpec(t *testing.T) {
 }
 
 func TestIsUpToDate(t *testing.T) {
+	falseVal := false
+
 	type args struct {
+		name    string
 		cluster *container.Cluster
 		params  *v1beta1.GKEClusterParameters
 	}
@@ -1417,7 +1420,18 @@ func TestIsUpToDate(t *testing.T) {
 	}{
 		"UpToDate": {
 			args: args{
+				name:    name,
 				cluster: cluster(),
+				params:  params(),
+			},
+			want: want{
+				upToDate: true,
+			},
+		},
+		"UpToDateWithOutputFields": {
+			args: args{
+				name:    name,
+				cluster: cluster(addOutputFields),
 				params:  params(),
 			},
 			want: want{
@@ -1426,6 +1440,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"UpToDateIgnoreRefs": {
 			args: args{
+				name:    name,
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.NetworkRef = &v1beta1.NetworkURIReferencerForGKECluster{
@@ -1443,6 +1458,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"NeedsUpdate": {
 			args: args{
+				name: name,
 				cluster: cluster(func(c *container.Cluster) {
 					c.AddonsConfig = &container.AddonsConfig{
 						HttpLoadBalancing: &container.HttpLoadBalancing{
@@ -1453,7 +1469,13 @@ func TestIsUpToDate(t *testing.T) {
 						ClusterIpv4CidrBlock: "0.0.0.0/0",
 					}
 				}),
-				params: params(),
+				params: params(func(p *v1beta1.GKEClusterParameters) {
+					p.AddonsConfig = &v1beta1.AddonsConfig{
+						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
+							Disabled: &falseVal,
+						},
+					}
+				}),
 			},
 			want: want{
 				upToDate: false,
@@ -1461,6 +1483,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"NoUpdateNotBootstrapNodePool": {
 			args: args{
+				name: name,
 				cluster: cluster(func(c *container.Cluster) {
 					sc := &container.StatusCondition{
 						Code:    "cool-code",
@@ -1480,6 +1503,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"NeedsUpdateBootstrapNodePool": {
 			args: args{
+				name: name,
 				cluster: cluster(func(c *container.Cluster) {
 					sc := &container.StatusCondition{
 						Code:    "cool-code",
@@ -1500,7 +1524,7 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, _ := IsUpToDate(tc.args.params, *tc.args.cluster)
+			r, _, _ := IsUpToDate(tc.args.name, tc.args.params, tc.args.cluster)
 			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
 				t.Errorf("IsUpToDate(...): -want upToDate, +got upToDate:\n%s", diff)
 			}

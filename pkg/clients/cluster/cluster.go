@@ -19,10 +19,11 @@ package cluster
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/mitchellh/copystructure"
+	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
@@ -46,7 +47,8 @@ const (
 )
 
 const (
-	errNoSecretInfo = "missing secret information for GKE cluster"
+	errNoSecretInfo  = "missing secret information for GKE cluster"
+	errCheckUpToDate = "unable to determine if external resource is up to date"
 )
 
 // AddNodePoolForCreate inserts the default node pool into *container.Cluster so
@@ -60,22 +62,20 @@ func AddNodePoolForCreate(in *container.Cluster) {
 }
 
 // GenerateCluster generates *container.Cluster instance from GKEClusterParameters.
-func GenerateCluster(in v1beta1.GKEClusterParameters, name string) *container.Cluster { // nolint:gocyclo
-	cluster := &container.Cluster{
-		ClusterIpv4Cidr:       gcp.StringValue(in.ClusterIpv4Cidr),
-		Description:           gcp.StringValue(in.Description),
-		EnableKubernetesAlpha: gcp.BoolValue(in.EnableKubernetesAlpha),
-		EnableTpu:             gcp.BoolValue(in.EnableTpu),
-		InitialClusterVersion: gcp.StringValue(in.InitialClusterVersion),
-		LabelFingerprint:      gcp.StringValue(in.LabelFingerprint),
-		Locations:             in.Locations,
-		LoggingService:        gcp.StringValue(in.LoggingService),
-		MonitoringService:     gcp.StringValue(in.MonitoringService),
-		Name:                  name,
-		Network:               gcp.StringValue(in.Network),
-		ResourceLabels:        in.ResourceLabels,
-		Subnetwork:            gcp.StringValue(in.Subnetwork),
-	}
+func GenerateCluster(name string, in v1beta1.GKEClusterParameters, cluster *container.Cluster) { // nolint:gocyclo
+	cluster.ClusterIpv4Cidr = gcp.StringValue(in.ClusterIpv4Cidr)
+	cluster.Description = gcp.StringValue(in.Description)
+	cluster.EnableKubernetesAlpha = gcp.BoolValue(in.EnableKubernetesAlpha)
+	cluster.EnableTpu = gcp.BoolValue(in.EnableTpu)
+	cluster.InitialClusterVersion = gcp.StringValue(in.InitialClusterVersion)
+	cluster.LabelFingerprint = gcp.StringValue(in.LabelFingerprint)
+	cluster.Locations = in.Locations
+	cluster.LoggingService = gcp.StringValue(in.LoggingService)
+	cluster.MonitoringService = gcp.StringValue(in.MonitoringService)
+	cluster.Name = name
+	cluster.Network = gcp.StringValue(in.Network)
+	cluster.ResourceLabels = in.ResourceLabels
+	cluster.Subnetwork = gcp.StringValue(in.Subnetwork)
 
 	GenerateAddonsConfig(in.AddonsConfig, cluster)
 	GenerateAuthenticatorGroupsConfig(in.AuthenticatorGroupsConfig, cluster)
@@ -96,88 +96,98 @@ func GenerateCluster(in v1beta1.GKEClusterParameters, name string) *container.Cl
 	GenerateTierSettings(in.TierSettings, cluster)
 	GenerateVerticalPodAutoscaling(in.VerticalPodAutoscaling, cluster)
 	GenerateWorkloadIdentityConfig(in.WorkloadIdentityConfig, cluster)
-
-	return cluster
 }
 
 // GenerateAddonsConfig generates *container.AddonsConfig from *AddonsConfig.
-func GenerateAddonsConfig(in *v1beta1.AddonsConfig, cluster *container.Cluster) {
+func GenerateAddonsConfig(in *v1beta1.AddonsConfig, cluster *container.Cluster) { // nolint:gocyclo
 	if in != nil {
-		out := &container.AddonsConfig{}
+		if cluster.AddonsConfig == nil {
+			cluster.AddonsConfig = &container.AddonsConfig{}
+		}
 		if in.CloudRunConfig != nil {
-			out.CloudRunConfig = &container.CloudRunConfig{
-				Disabled:        gcp.BoolValue(in.CloudRunConfig.Disabled),
-				ForceSendFields: []string{"Disabled"},
+			if cluster.AddonsConfig.CloudRunConfig == nil {
+				cluster.AddonsConfig.CloudRunConfig = &container.CloudRunConfig{}
 			}
+			cluster.AddonsConfig.CloudRunConfig.Disabled = gcp.BoolValue(in.CloudRunConfig.Disabled)
+			cluster.AddonsConfig.CloudRunConfig.ForceSendFields = []string{"Disabled"}
 		}
 		if in.HorizontalPodAutoscaling != nil {
-			out.HorizontalPodAutoscaling = &container.HorizontalPodAutoscaling{
-				Disabled:        gcp.BoolValue(in.HorizontalPodAutoscaling.Disabled),
-				ForceSendFields: []string{"Disabled"},
+			if cluster.AddonsConfig.HorizontalPodAutoscaling == nil {
+				cluster.AddonsConfig.HorizontalPodAutoscaling = &container.HorizontalPodAutoscaling{}
 			}
+			cluster.AddonsConfig.HorizontalPodAutoscaling.Disabled = gcp.BoolValue(in.HorizontalPodAutoscaling.Disabled)
+			cluster.AddonsConfig.HorizontalPodAutoscaling.ForceSendFields = []string{"Disabled"}
 		}
 		if in.HTTPLoadBalancing != nil && in.HTTPLoadBalancing.Disabled != nil {
-			out.HttpLoadBalancing = &container.HttpLoadBalancing{
-				Disabled:        gcp.BoolValue(in.HTTPLoadBalancing.Disabled),
-				ForceSendFields: []string{"Disabled"},
+			if cluster.AddonsConfig.HttpLoadBalancing == nil {
+				cluster.AddonsConfig.HttpLoadBalancing = &container.HttpLoadBalancing{}
 			}
+			cluster.AddonsConfig.HttpLoadBalancing.Disabled = gcp.BoolValue(in.HTTPLoadBalancing.Disabled)
+			cluster.AddonsConfig.HttpLoadBalancing.ForceSendFields = []string{"Disabled"}
 		}
 		if in.IstioConfig != nil {
-			out.IstioConfig = &container.IstioConfig{
-				Auth:            gcp.StringValue(in.IstioConfig.Auth),
-				Disabled:        gcp.BoolValue(in.IstioConfig.Disabled),
-				ForceSendFields: []string{"Disabled"},
+			if cluster.AddonsConfig.IstioConfig == nil {
+				cluster.AddonsConfig.IstioConfig = &container.IstioConfig{}
 			}
+			cluster.AddonsConfig.IstioConfig.Auth = gcp.StringValue(in.IstioConfig.Auth)
+			cluster.AddonsConfig.IstioConfig.Disabled = gcp.BoolValue(in.IstioConfig.Disabled)
+			cluster.AddonsConfig.IstioConfig.ForceSendFields = []string{"Disabled"}
 		}
 		if in.KubernetesDashboard != nil {
-			out.KubernetesDashboard = &container.KubernetesDashboard{
-				Disabled:        gcp.BoolValue(in.KubernetesDashboard.Disabled),
-				ForceSendFields: []string{"Disabled"},
+			if cluster.AddonsConfig.KubernetesDashboard == nil {
+				cluster.AddonsConfig.KubernetesDashboard = &container.KubernetesDashboard{}
 			}
+			cluster.AddonsConfig.KubernetesDashboard.Disabled = gcp.BoolValue(in.KubernetesDashboard.Disabled)
+			cluster.AddonsConfig.KubernetesDashboard.ForceSendFields = []string{"Disabled"}
 		}
 		if in.NetworkPolicyConfig != nil {
-			out.NetworkPolicyConfig = &container.NetworkPolicyConfig{
-				Disabled:        gcp.BoolValue(in.NetworkPolicyConfig.Disabled),
-				ForceSendFields: []string{"Disabled"},
+			if cluster.AddonsConfig.NetworkPolicyConfig == nil {
+				cluster.AddonsConfig.NetworkPolicyConfig = &container.NetworkPolicyConfig{}
 			}
+			cluster.AddonsConfig.NetworkPolicyConfig.Disabled = gcp.BoolValue(in.NetworkPolicyConfig.Disabled)
+			cluster.AddonsConfig.NetworkPolicyConfig.ForceSendFields = []string{"Disabled"}
 		}
-
-		cluster.AddonsConfig = out
 	}
 }
 
 // GenerateAuthenticatorGroupsConfig generates *container.AuthenticatorGroupsConfig from *AuthenticatorGroupsConfig.
 func GenerateAuthenticatorGroupsConfig(in *v1beta1.AuthenticatorGroupsConfig, cluster *container.Cluster) {
 	if in != nil {
-		cluster.AuthenticatorGroupsConfig = &container.AuthenticatorGroupsConfig{
-			Enabled:       gcp.BoolValue(in.Enabled),
-			SecurityGroup: gcp.StringValue(in.SecurityGroup),
+		if cluster.AuthenticatorGroupsConfig == nil {
+			cluster.AuthenticatorGroupsConfig = &container.AuthenticatorGroupsConfig{}
 		}
+		cluster.AuthenticatorGroupsConfig.Enabled = gcp.BoolValue(in.Enabled)
+		cluster.AuthenticatorGroupsConfig.SecurityGroup = gcp.StringValue(in.SecurityGroup)
 	}
 }
 
 // GenerateAutoscaling generates *container.ClusterAutoscaling from *ClusterAutoscaling.
 func GenerateAutoscaling(in *v1beta1.ClusterAutoscaling, cluster *container.Cluster) {
 	if in != nil {
-		cluster.Autoscaling = &container.ClusterAutoscaling{
-			AutoprovisioningLocations:  in.AutoprovisioningLocations,
-			EnableNodeAutoprovisioning: gcp.BoolValue(in.EnableNodeAutoprovisioning),
+		if cluster.Autoscaling == nil {
+			cluster.Autoscaling = &container.ClusterAutoscaling{}
 		}
+		cluster.Autoscaling.AutoprovisioningLocations = in.AutoprovisioningLocations
+		cluster.Autoscaling.EnableNodeAutoprovisioning = gcp.BoolValue(in.EnableNodeAutoprovisioning)
 
 		if in.AutoprovisioningNodePoolDefaults != nil {
-			cluster.Autoscaling.AutoprovisioningNodePoolDefaults = &container.AutoprovisioningNodePoolDefaults{
-				OauthScopes:    in.AutoprovisioningNodePoolDefaults.OauthScopes,
-				ServiceAccount: gcp.StringValue(in.AutoprovisioningNodePoolDefaults.ServiceAccount),
+			if cluster.Autoscaling.AutoprovisioningNodePoolDefaults == nil {
+				cluster.Autoscaling.AutoprovisioningNodePoolDefaults = &container.AutoprovisioningNodePoolDefaults{}
 			}
+			cluster.Autoscaling.AutoprovisioningNodePoolDefaults.OauthScopes = in.AutoprovisioningNodePoolDefaults.OauthScopes
+			cluster.Autoscaling.AutoprovisioningNodePoolDefaults.ServiceAccount = gcp.StringValue(in.AutoprovisioningNodePoolDefaults.ServiceAccount)
 		}
 
-		for _, limit := range in.ResourceLimits {
+		if len(in.ResourceLimits) > 0 {
+			cluster.Autoscaling.ResourceLimits = make([]*container.ResourceLimit, len(in.ResourceLimits))
+		}
+		for i, limit := range in.ResourceLimits {
 			if limit != nil {
-				cluster.Autoscaling.ResourceLimits = append(cluster.Autoscaling.ResourceLimits, &container.ResourceLimit{
+				cluster.Autoscaling.ResourceLimits[i] = &container.ResourceLimit{
 					Maximum:      gcp.Int64Value(limit.Maximum),
 					Minimum:      gcp.Int64Value(limit.Minimum),
 					ResourceType: gcp.StringValue(limit.ResourceType),
-				})
+				}
 			}
 		}
 	}
@@ -186,82 +196,92 @@ func GenerateAutoscaling(in *v1beta1.ClusterAutoscaling, cluster *container.Clus
 // GenerateBinaryAuthorization generates *container.BinaryAuthorization from *BinaryAuthorization.
 func GenerateBinaryAuthorization(in *v1beta1.BinaryAuthorization, cluster *container.Cluster) {
 	if in != nil {
-		cluster.BinaryAuthorization = &container.BinaryAuthorization{
-			Enabled: in.Enabled,
+		if cluster.BinaryAuthorization == nil {
+			cluster.BinaryAuthorization = &container.BinaryAuthorization{}
 		}
+		cluster.BinaryAuthorization.Enabled = in.Enabled
 	}
 }
 
 // GenerateDatabaseEncryption generates *container.DatabaseEncryption from *DatabaseEncryption.
 func GenerateDatabaseEncryption(in *v1beta1.DatabaseEncryption, cluster *container.Cluster) {
 	if in != nil {
-		cluster.DatabaseEncryption = &container.DatabaseEncryption{
-			KeyName: gcp.StringValue(in.KeyName),
-			State:   gcp.StringValue(in.State),
+		if cluster.DatabaseEncryption == nil {
+			cluster.DatabaseEncryption = &container.DatabaseEncryption{}
 		}
+		cluster.DatabaseEncryption.KeyName = gcp.StringValue(in.KeyName)
+		cluster.DatabaseEncryption.State = gcp.StringValue(in.State)
 	}
 }
 
 // GenerateDefaultMaxPodsConstraint generates *container.MaxPodsConstraint from *DefaultMaxPodsConstraint.
 func GenerateDefaultMaxPodsConstraint(in *v1beta1.MaxPodsConstraint, cluster *container.Cluster) {
 	if in != nil {
-		cluster.DefaultMaxPodsConstraint = &container.MaxPodsConstraint{
-			MaxPodsPerNode: in.MaxPodsPerNode,
+		if cluster.DefaultMaxPodsConstraint == nil {
+			cluster.DefaultMaxPodsConstraint = &container.MaxPodsConstraint{}
 		}
+		cluster.DefaultMaxPodsConstraint.MaxPodsPerNode = in.MaxPodsPerNode
 	}
 }
 
 // GenerateIPAllocationPolicy generates *container.MaxPodsConstraint from *IpAllocationPolicy.
 func GenerateIPAllocationPolicy(in *v1beta1.IPAllocationPolicy, cluster *container.Cluster) {
 	if in != nil {
-		cluster.IpAllocationPolicy = &container.IPAllocationPolicy{
-			AllowRouteOverlap:          gcp.BoolValue(in.AllowRouteOverlap),
-			ClusterIpv4CidrBlock:       gcp.StringValue(in.ClusterIpv4CidrBlock),
-			ClusterSecondaryRangeName:  gcp.StringValue(in.ClusterSecondaryRangeName),
-			CreateSubnetwork:           gcp.BoolValue(in.CreateSubnetwork),
-			NodeIpv4CidrBlock:          gcp.StringValue(in.NodeIpv4CidrBlock),
-			ServicesIpv4CidrBlock:      gcp.StringValue(in.ServicesIpv4CidrBlock),
-			ServicesSecondaryRangeName: gcp.StringValue(in.DeepCopy().ServicesSecondaryRangeName),
-			SubnetworkName:             gcp.StringValue(in.SubnetworkName),
-			TpuIpv4CidrBlock:           gcp.StringValue(in.TpuIpv4CidrBlock),
-			UseIpAliases:               gcp.BoolValue(in.UseIPAliases),
+		if cluster.IpAllocationPolicy == nil {
+			cluster.IpAllocationPolicy = &container.IPAllocationPolicy{}
 		}
+		cluster.IpAllocationPolicy.AllowRouteOverlap = gcp.BoolValue(in.AllowRouteOverlap)
+		cluster.IpAllocationPolicy.ClusterIpv4CidrBlock = gcp.StringValue(in.ClusterIpv4CidrBlock)
+		cluster.IpAllocationPolicy.ClusterSecondaryRangeName = gcp.StringValue(in.ClusterSecondaryRangeName)
+		cluster.IpAllocationPolicy.CreateSubnetwork = gcp.BoolValue(in.CreateSubnetwork)
+		cluster.IpAllocationPolicy.NodeIpv4CidrBlock = gcp.StringValue(in.NodeIpv4CidrBlock)
+		cluster.IpAllocationPolicy.ServicesIpv4CidrBlock = gcp.StringValue(in.ServicesIpv4CidrBlock)
+		cluster.IpAllocationPolicy.ServicesSecondaryRangeName = gcp.StringValue(in.DeepCopy().ServicesSecondaryRangeName)
+		cluster.IpAllocationPolicy.SubnetworkName = gcp.StringValue(in.SubnetworkName)
+		cluster.IpAllocationPolicy.TpuIpv4CidrBlock = gcp.StringValue(in.TpuIpv4CidrBlock)
+		cluster.IpAllocationPolicy.UseIpAliases = gcp.BoolValue(in.UseIPAliases)
 	}
 }
 
 // GenerateLegacyAbac generates *container.LegacyAbac from *LegacyAbac.
 func GenerateLegacyAbac(in *v1beta1.LegacyAbac, cluster *container.Cluster) {
 	if in != nil {
-		cluster.LegacyAbac = &container.LegacyAbac{
-			Enabled: in.Enabled,
+		if cluster.LegacyAbac == nil {
+			cluster.LegacyAbac = &container.LegacyAbac{}
 		}
+		cluster.LegacyAbac.Enabled = in.Enabled
 	}
 }
 
 // GenerateMaintenancePolicy generates *container.MaintenancePolicy from *MaintenancePolicy.
 func GenerateMaintenancePolicy(in *v1beta1.MaintenancePolicySpec, cluster *container.Cluster) {
 	if in != nil {
-		cluster.MaintenancePolicy = &container.MaintenancePolicy{
-			Window: &container.MaintenanceWindow{
-				DailyMaintenanceWindow: &container.DailyMaintenanceWindow{
-					StartTime: in.Window.DailyMaintenanceWindow.StartTime,
-				},
-			},
+		if cluster.MaintenancePolicy == nil {
+			cluster.MaintenancePolicy = &container.MaintenancePolicy{}
 		}
+		if cluster.MaintenancePolicy.Window == nil {
+			cluster.MaintenancePolicy.Window = &container.MaintenanceWindow{}
+		}
+		if cluster.MaintenancePolicy.Window.DailyMaintenanceWindow == nil {
+			cluster.MaintenancePolicy.Window.DailyMaintenanceWindow = &container.DailyMaintenanceWindow{}
+		}
+		cluster.MaintenancePolicy.Window.DailyMaintenanceWindow.StartTime = in.Window.DailyMaintenanceWindow.StartTime
 	}
 }
 
 // GenerateMasterAuth generates *container.MasterAuth from *MasterAuth.
 func GenerateMasterAuth(in *v1beta1.MasterAuth, cluster *container.Cluster) {
 	if in != nil {
-		cluster.MasterAuth = &container.MasterAuth{
-			Username: gcp.StringValue(in.Username),
+		if cluster.MasterAuth == nil {
+			cluster.MasterAuth = &container.MasterAuth{}
 		}
+		cluster.MasterAuth.Username = gcp.StringValue(in.Username)
 
 		if in.ClientCertificateConfig != nil {
-			cluster.MasterAuth.ClientCertificateConfig = &container.ClientCertificateConfig{
-				IssueClientCertificate: in.ClientCertificateConfig.IssueClientCertificate,
+			if cluster.MasterAuth.ClientCertificateConfig == nil {
+				cluster.MasterAuth.ClientCertificateConfig = &container.ClientCertificateConfig{}
 			}
+			cluster.MasterAuth.ClientCertificateConfig.IssueClientCertificate = in.ClientCertificateConfig.IssueClientCertificate
 		}
 	}
 }
@@ -269,16 +289,20 @@ func GenerateMasterAuth(in *v1beta1.MasterAuth, cluster *container.Cluster) {
 // GenerateMasterAuthorizedNetworksConfig generates *container.MasterAuthorizedNetworksConfig from *MasterAuthorizedNetworksConfig.
 func GenerateMasterAuthorizedNetworksConfig(in *v1beta1.MasterAuthorizedNetworksConfig, cluster *container.Cluster) {
 	if in != nil {
-		cluster.MasterAuthorizedNetworksConfig = &container.MasterAuthorizedNetworksConfig{
-			Enabled: gcp.BoolValue(in.Enabled),
+		if cluster.MasterAuthorizedNetworksConfig == nil {
+			cluster.MasterAuthorizedNetworksConfig = &container.MasterAuthorizedNetworksConfig{}
 		}
+		cluster.MasterAuthorizedNetworksConfig.Enabled = gcp.BoolValue(in.Enabled)
 
-		for _, cidr := range in.CidrBlocks {
+		if len(in.CidrBlocks) > 0 {
+			cluster.MasterAuthorizedNetworksConfig.CidrBlocks = make([]*container.CidrBlock, len(in.CidrBlocks))
+		}
+		for i, cidr := range in.CidrBlocks {
 			if cidr != nil {
-				cluster.MasterAuthorizedNetworksConfig.CidrBlocks = append(cluster.MasterAuthorizedNetworksConfig.CidrBlocks, &container.CidrBlock{
+				cluster.MasterAuthorizedNetworksConfig.CidrBlocks[i] = &container.CidrBlock{
 					CidrBlock:   cidr.CidrBlock,
 					DisplayName: gcp.StringValue(cidr.DisplayName),
-				})
+				}
 			}
 		}
 	}
@@ -287,60 +311,67 @@ func GenerateMasterAuthorizedNetworksConfig(in *v1beta1.MasterAuthorizedNetworks
 // GenerateNetworkConfig generates *container.NetworkConfig from *NetworkConfig.
 func GenerateNetworkConfig(in *v1beta1.NetworkConfigSpec, cluster *container.Cluster) {
 	if in != nil {
-		cluster.NetworkConfig = &container.NetworkConfig{
-			EnableIntraNodeVisibility: in.EnableIntraNodeVisibility,
+		if cluster.NetworkConfig == nil {
+			cluster.NetworkConfig = &container.NetworkConfig{}
 		}
+		cluster.NetworkConfig.EnableIntraNodeVisibility = in.EnableIntraNodeVisibility
 	}
 }
 
 // GenerateNetworkPolicy generates *container.NetworkPolicy from *NetworkPolicy.
 func GenerateNetworkPolicy(in *v1beta1.NetworkPolicy, cluster *container.Cluster) {
 	if in != nil {
-		cluster.NetworkPolicy = &container.NetworkPolicy{
-			Enabled:  gcp.BoolValue(in.Enabled),
-			Provider: gcp.StringValue(in.Provider),
+		if cluster.NetworkPolicy == nil {
+			cluster.NetworkPolicy = &container.NetworkPolicy{}
 		}
+		cluster.NetworkPolicy.Enabled = gcp.BoolValue(in.Enabled)
+		cluster.NetworkPolicy.Provider = gcp.StringValue(in.Provider)
 	}
 }
 
 // GeneratePodSecurityPolicyConfig generates *container.PodSecurityPolicyConfig from *PodSecurityPolicyConfig.
 func GeneratePodSecurityPolicyConfig(in *v1beta1.PodSecurityPolicyConfig, cluster *container.Cluster) {
 	if in != nil {
-		cluster.PodSecurityPolicyConfig = &container.PodSecurityPolicyConfig{
-			Enabled: in.Enabled,
+		if cluster.PodSecurityPolicyConfig == nil {
+			cluster.PodSecurityPolicyConfig = &container.PodSecurityPolicyConfig{}
 		}
+		cluster.PodSecurityPolicyConfig.Enabled = in.Enabled
 	}
 }
 
 // GeneratePrivateClusterConfig generates *container.PrivateClusterConfig from *PrivateClusterConfig.
 func GeneratePrivateClusterConfig(in *v1beta1.PrivateClusterConfigSpec, cluster *container.Cluster) {
 	if in != nil {
-		cluster.PrivateClusterConfig = &container.PrivateClusterConfig{
-			EnablePeeringRouteSharing: gcp.BoolValue(in.EnablePeeringRouteSharing),
-			EnablePrivateEndpoint:     gcp.BoolValue(in.EnablePrivateEndpoint),
-			EnablePrivateNodes:        gcp.BoolValue(in.EnablePrivateNodes),
-			MasterIpv4CidrBlock:       gcp.StringValue(in.MasterIpv4CidrBlock),
+		if cluster.PrivateClusterConfig == nil {
+			cluster.PrivateClusterConfig = &container.PrivateClusterConfig{}
 		}
+		cluster.PrivateClusterConfig.EnablePeeringRouteSharing = gcp.BoolValue(in.EnablePeeringRouteSharing)
+		cluster.PrivateClusterConfig.EnablePrivateEndpoint = gcp.BoolValue(in.EnablePrivateEndpoint)
+		cluster.PrivateClusterConfig.EnablePrivateNodes = gcp.BoolValue(in.EnablePrivateNodes)
+		cluster.PrivateClusterConfig.MasterIpv4CidrBlock = gcp.StringValue(in.MasterIpv4CidrBlock)
 	}
 }
 
 // GenerateResourceUsageExportConfig generates *container.ResourceUsageExportConfig from *ResourceUsageExportConfig.
 func GenerateResourceUsageExportConfig(in *v1beta1.ResourceUsageExportConfig, cluster *container.Cluster) {
 	if in != nil {
-		cluster.ResourceUsageExportConfig = &container.ResourceUsageExportConfig{
-			EnableNetworkEgressMetering: gcp.BoolValue(in.EnableNetworkEgressMetering),
+		if cluster.ResourceUsageExportConfig == nil {
+			cluster.ResourceUsageExportConfig = &container.ResourceUsageExportConfig{}
 		}
+		cluster.ResourceUsageExportConfig.EnableNetworkEgressMetering = gcp.BoolValue(in.EnableNetworkEgressMetering)
 
 		if in.BigqueryDestination != nil {
-			cluster.ResourceUsageExportConfig.BigqueryDestination = &container.BigQueryDestination{
-				DatasetId: in.BigqueryDestination.DatasetID,
+			if cluster.ResourceUsageExportConfig.BigqueryDestination == nil {
+				cluster.ResourceUsageExportConfig.BigqueryDestination = &container.BigQueryDestination{}
 			}
+			cluster.ResourceUsageExportConfig.BigqueryDestination.DatasetId = in.BigqueryDestination.DatasetID
 		}
 
 		if in.ConsumptionMeteringConfig != nil {
-			cluster.ResourceUsageExportConfig.ConsumptionMeteringConfig = &container.ConsumptionMeteringConfig{
-				Enabled: in.ConsumptionMeteringConfig.Enabled,
+			if cluster.ResourceUsageExportConfig.ConsumptionMeteringConfig == nil {
+				cluster.ResourceUsageExportConfig.ConsumptionMeteringConfig = &container.ConsumptionMeteringConfig{}
 			}
+			cluster.ResourceUsageExportConfig.ConsumptionMeteringConfig.Enabled = in.ConsumptionMeteringConfig.Enabled
 		}
 	}
 }
@@ -348,27 +379,30 @@ func GenerateResourceUsageExportConfig(in *v1beta1.ResourceUsageExportConfig, cl
 // GenerateTierSettings generates *container.TierSettings from *TierSettings.
 func GenerateTierSettings(in *v1beta1.TierSettings, cluster *container.Cluster) {
 	if in != nil {
-		cluster.TierSettings = &container.TierSettings{
-			Tier: in.Tier,
+		if cluster.TierSettings == nil {
+			cluster.TierSettings = &container.TierSettings{}
 		}
+		cluster.TierSettings.Tier = in.Tier
 	}
 }
 
 // GenerateVerticalPodAutoscaling generates *container.VerticalPodAutoscaling from *VerticalPodAutoscaling.
 func GenerateVerticalPodAutoscaling(in *v1beta1.VerticalPodAutoscaling, cluster *container.Cluster) {
 	if in != nil {
-		cluster.VerticalPodAutoscaling = &container.VerticalPodAutoscaling{
-			Enabled: in.Enabled,
+		if cluster.VerticalPodAutoscaling == nil {
+			cluster.VerticalPodAutoscaling = &container.VerticalPodAutoscaling{}
 		}
+		cluster.VerticalPodAutoscaling.Enabled = in.Enabled
 	}
 }
 
 // GenerateWorkloadIdentityConfig generates *container.WorkloadIdentityConfig from *WorkloadIdentityConfig.
 func GenerateWorkloadIdentityConfig(in *v1beta1.WorkloadIdentityConfig, cluster *container.Cluster) {
 	if in != nil {
-		cluster.WorkloadIdentityConfig = &container.WorkloadIdentityConfig{
-			IdentityNamespace: in.IdentityNamespace,
+		if cluster.WorkloadIdentityConfig == nil {
+			cluster.WorkloadIdentityConfig = &container.WorkloadIdentityConfig{}
 		}
+		cluster.WorkloadIdentityConfig.IdentityNamespace = in.IdentityNamespace
 	}
 }
 
@@ -1008,7 +1042,7 @@ func noOpUpdate(ctx context.Context, s *container.Service, name string) (*contai
 
 // checkForBootstrapNodePool checks if the bootstrap node pool exists for the
 // cluster.
-func checkForBootstrapNodePool(c container.Cluster) bool {
+func checkForBootstrapNodePool(c *container.Cluster) bool {
 	for _, pool := range c.NodePools {
 		if pool == nil || pool.Name != BootstrapNodePoolName {
 			continue
@@ -1023,67 +1057,74 @@ func checkForBootstrapNodePool(c container.Cluster) bool {
 // NOTE(hasheddan): This function is significantly above our cyclomatic
 // complexity limit, but is necessary due to the fact that the GKE API only
 // allows for update of one field at a time.
-func IsUpToDate(in *v1beta1.GKEClusterParameters, currentState container.Cluster) (bool, UpdateFn) { // nolint:gocyclo
-	currentParams := &v1beta1.GKEClusterParameters{}
-	LateInitializeSpec(currentParams, currentState)
-	if checkForBootstrapNodePool(currentState) {
-		return false, deleteBootstrapNodePoolFn()
+func IsUpToDate(name string, in *v1beta1.GKEClusterParameters, observed *container.Cluster) (bool, UpdateFn, error) { // nolint:gocyclo
+	generated, err := copystructure.Copy(observed)
+	if err != nil {
+		return true, noOpUpdate, errors.Wrap(err, errCheckUpToDate)
 	}
-	if !cmp.Equal(in.AddonsConfig, currentParams.AddonsConfig) {
-		return false, newAddonsConfigUpdateFn(in.AddonsConfig)
+	desired, ok := generated.(*container.Cluster)
+	if !ok {
+		return true, noOpUpdate, errors.New(errCheckUpToDate)
 	}
-	if !cmp.Equal(in.Autoscaling, currentParams.Autoscaling) {
-		return false, newAutoscalingUpdateFn(in.Autoscaling)
+	GenerateCluster(name, *in, desired)
+	if checkForBootstrapNodePool(observed) {
+		return false, deleteBootstrapNodePoolFn(), nil
 	}
-	if !cmp.Equal(in.BinaryAuthorization, currentParams.BinaryAuthorization) {
-		return false, newBinaryAuthorizationUpdateFn(in.BinaryAuthorization)
+	if !cmp.Equal(desired.AddonsConfig, observed.AddonsConfig) {
+		return false, newAddonsConfigUpdateFn(in.AddonsConfig), nil
 	}
-	if !cmp.Equal(in.DatabaseEncryption, currentParams.DatabaseEncryption) {
-		return false, newDatabaseEncryptionUpdateFn(in.DatabaseEncryption)
+	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling) {
+		return false, newAutoscalingUpdateFn(in.Autoscaling), nil
 	}
-	if !cmp.Equal(in.LegacyAbac, currentParams.LegacyAbac) {
-		return false, newLegacyAbacUpdateFn(in.LegacyAbac)
+	if !cmp.Equal(desired.BinaryAuthorization, observed.BinaryAuthorization) {
+		return false, newBinaryAuthorizationUpdateFn(in.BinaryAuthorization), nil
 	}
-	if !cmp.Equal(in.Locations, currentParams.Locations) {
-		return false, newLocationsUpdateFn(in.Locations)
+	if !cmp.Equal(desired.DatabaseEncryption, observed.DatabaseEncryption) {
+		return false, newDatabaseEncryptionUpdateFn(in.DatabaseEncryption), nil
 	}
-	if !cmp.Equal(in.LoggingService, currentParams.LoggingService) {
-		return false, newLoggingServiceUpdateFn(in.LoggingService)
+	if !cmp.Equal(desired.LegacyAbac, observed.LegacyAbac) {
+		return false, newLegacyAbacUpdateFn(in.LegacyAbac), nil
 	}
-	if !cmp.Equal(in.MaintenancePolicy, currentParams.MaintenancePolicy) {
-		return false, newMaintenancePolicyUpdateFn(in.MaintenancePolicy)
+	if !cmp.Equal(desired.Locations, observed.Locations) {
+		return false, newLocationsUpdateFn(in.Locations), nil
 	}
-	if !cmp.Equal(in.MasterAuthorizedNetworksConfig, currentParams.MasterAuthorizedNetworksConfig) {
-		return false, newMasterAuthorizedNetworksConfigUpdateFn(in.MasterAuthorizedNetworksConfig)
+	if !cmp.Equal(desired.LoggingService, observed.LoggingService) {
+		return false, newLoggingServiceUpdateFn(in.LoggingService), nil
 	}
-	if !cmp.Equal(in.MonitoringService, currentParams.MonitoringService) {
-		return false, newMonitoringServiceUpdateFn(in.MonitoringService)
+	if !cmp.Equal(desired.MaintenancePolicy, observed.MaintenancePolicy) {
+		return false, newMaintenancePolicyUpdateFn(in.MaintenancePolicy), nil
 	}
-	if !cmp.Equal(in.NetworkConfig, currentParams.NetworkConfig) {
-		return false, newNetworkConfigUpdateFn(in.NetworkConfig)
+	if !cmp.Equal(desired.MasterAuthorizedNetworksConfig, observed.MasterAuthorizedNetworksConfig) {
+		return false, newMasterAuthorizedNetworksConfigUpdateFn(in.MasterAuthorizedNetworksConfig), nil
 	}
-	if !cmp.Equal(in.NetworkPolicy, currentParams.NetworkPolicy) {
-		return false, newNetworkPolicyUpdateFn(in.NetworkPolicy)
+	if !cmp.Equal(desired.MonitoringService, observed.MonitoringService) {
+		return false, newMonitoringServiceUpdateFn(in.MonitoringService), nil
 	}
-	if !cmp.Equal(in.PodSecurityPolicyConfig, currentParams.PodSecurityPolicyConfig) {
-		return false, newPodSecurityPolicyConfigUpdateFn(in.PodSecurityPolicyConfig)
+	if !cmp.Equal(desired.NetworkConfig, observed.NetworkConfig) {
+		return false, newNetworkConfigUpdateFn(in.NetworkConfig), nil
 	}
-	if !cmp.Equal(in.PrivateClusterConfig, currentParams.PrivateClusterConfig) {
-		return false, newPrivateClusterConfigUpdateFn(in.PrivateClusterConfig)
+	if !cmp.Equal(desired.NetworkPolicy, observed.NetworkPolicy) {
+		return false, newNetworkPolicyUpdateFn(in.NetworkPolicy), nil
 	}
-	if !cmp.Equal(in.ResourceLabels, currentParams.ResourceLabels) {
-		return false, newResourceLabelsUpdateFn(in.ResourceLabels)
+	if !cmp.Equal(desired.PodSecurityPolicyConfig, observed.PodSecurityPolicyConfig) {
+		return false, newPodSecurityPolicyConfigUpdateFn(in.PodSecurityPolicyConfig), nil
 	}
-	if !cmp.Equal(in.ResourceUsageExportConfig, currentParams.ResourceUsageExportConfig) {
-		return false, newResourceUsageExportConfigUpdateFn(in.ResourceUsageExportConfig)
+	if !cmp.Equal(desired.PrivateClusterConfig, observed.PrivateClusterConfig) {
+		return false, newPrivateClusterConfigUpdateFn(in.PrivateClusterConfig), nil
 	}
-	if !cmp.Equal(in.VerticalPodAutoscaling, currentParams.VerticalPodAutoscaling) {
-		return false, newVerticalPodAutoscalingUpdateFn(in.VerticalPodAutoscaling)
+	if !cmp.Equal(desired.ResourceLabels, observed.ResourceLabels) {
+		return false, newResourceLabelsUpdateFn(in.ResourceLabels), nil
 	}
-	if !cmp.Equal(in.WorkloadIdentityConfig, currentParams.WorkloadIdentityConfig) {
-		return false, newWorkloadIdentityConfigUpdateFn(in.WorkloadIdentityConfig)
+	if !cmp.Equal(desired.ResourceUsageExportConfig, observed.ResourceUsageExportConfig) {
+		return false, newResourceUsageExportConfigUpdateFn(in.ResourceUsageExportConfig), nil
 	}
-	return true, noOpUpdate
+	if !cmp.Equal(desired.VerticalPodAutoscaling, observed.VerticalPodAutoscaling) {
+		return false, newVerticalPodAutoscalingUpdateFn(in.VerticalPodAutoscaling), nil
+	}
+	if !cmp.Equal(desired.WorkloadIdentityConfig, observed.WorkloadIdentityConfig) {
+		return false, newWorkloadIdentityConfigUpdateFn(in.WorkloadIdentityConfig), nil
+	}
+	return true, noOpUpdate, nil
 }
 
 // GetFullyQualifiedParent builds the fully qualified name of the cluster

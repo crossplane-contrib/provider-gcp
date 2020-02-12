@@ -49,6 +49,7 @@ const (
 	errCreateNodePool              = "cannot create GKE node pool"
 	errUpdateNodePool              = "cannot update GKE node pool"
 	errDeleteNodePool              = "cannot delete GKE node pool"
+	errCheckNodePoolUpToDate       = "cannot determine if GKE node pool is up to date"
 )
 
 // SetupNodePool adds a controller that reconciles NodePool managed
@@ -130,7 +131,10 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
 	}
 
-	u, _ := np.IsUpToDate(&cr.Spec.ForProvider, *existing)
+	u, _, err := np.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, existing)
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errCheckNodePoolUpToDate)
+	}
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -151,7 +155,8 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 	}
 
 	// Generate GKE node pool from resource spec.
-	pool := np.GenerateNodePool(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	pool := &container.NodePool{}
+	np.GenerateNodePool(meta.GetExternalName(cr), cr.Spec.ForProvider, pool)
 
 	create := &container.CreateNodePoolRequest{
 		NodePool: pool,
@@ -181,7 +186,10 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetNodePool)
 	}
 
-	u, fn := np.IsUpToDate(&cr.Spec.ForProvider, *existing)
+	u, fn, err := np.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, existing)
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errCheckNodePoolUpToDate)
+	}
 	if u {
 		return managed.ExternalUpdate{}, nil
 	}

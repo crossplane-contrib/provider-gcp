@@ -331,8 +331,10 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				db := instance(withBackupConfigurationStartTime("22:00"))
-				_ = json.NewEncoder(w).Encode(cloudsql.GenerateDatabaseInstance(db.Spec.ForProvider, meta.GetExternalName(db)))
+				instance := instance(withBackupConfigurationStartTime("22:00"))
+				db := &sqladmin.DatabaseInstance{}
+				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance), instance.Spec.ForProvider, db)
+				_ = json.NewEncoder(w).Encode(db)
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(errBoom),
@@ -353,7 +355,8 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
+				db := &sqladmin.DatabaseInstance{}
+				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
 				db.State = v1beta1.StateCreating
 				_ = json.NewEncoder(w).Encode(db)
 			}),
@@ -376,7 +379,8 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
+				db := &sqladmin.DatabaseInstance{}
+				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
 				db.State = v1beta1.StateMaintenance
 				_ = json.NewEncoder(w).Encode(db)
 			}),
@@ -399,7 +403,8 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				db := cloudsql.GenerateDatabaseInstance(instance().Spec.ForProvider, meta.GetExternalName(instance()))
+				db := &sqladmin.DatabaseInstance{}
+				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
 				db.ConnectionName = connectionName
 				db.State = v1beta1.StateRunnable
 				_ = json.NewEncoder(w).Encode(db)

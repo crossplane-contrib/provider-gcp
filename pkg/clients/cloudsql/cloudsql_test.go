@@ -55,7 +55,7 @@ func params(m ...func(*v1beta1.CloudSQLInstanceParameters)) *v1beta1.CloudSQLIns
 			},
 			BackupConfiguration: &v1beta1.BackupConfiguration{
 				BinaryLogEnabled:               gcp.BoolPtr(true),
-				Enabled:                        gcp.BoolPtr(true),
+				Enabled:                        gcp.BoolPtr(false),
 				Location:                       gcp.StringPtr("us-west1"),
 				ReplicationLogArchivingEnabled: gcp.BoolPtr(true),
 				StartTime:                      gcp.StringPtr("20191018"),
@@ -162,7 +162,7 @@ func db(m ...func(*sqladmin.DatabaseInstance)) *sqladmin.DatabaseInstance {
 			},
 			BackupConfiguration: &sqladmin.BackupConfiguration{
 				BinaryLogEnabled:               true,
-				Enabled:                        true,
+				Enabled:                        false,
 				Location:                       "us-west1",
 				ReplicationLogArchivingEnabled: true,
 				StartTime:                      "20191018",
@@ -271,7 +271,8 @@ func TestGenerateDatabaseInstance(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := GenerateDatabaseInstance(tc.args.params, tc.args.name)
+			r := &sqladmin.DatabaseInstance{}
+			GenerateDatabaseInstance(tc.args.name, tc.args.params, r)
 			if diff := cmp.Diff(tc.want.db, r); diff != "" {
 				t.Errorf("GenerateDatabaseInstance(...): -want, +got:\n%s", diff)
 			}
@@ -426,7 +427,7 @@ func TestIsUpToDate(t *testing.T) {
 
 	type args struct {
 		params *v1beta1.CloudSQLInstanceParameters
-		db     sqladmin.DatabaseInstance
+		db     *sqladmin.DatabaseInstance
 	}
 	cases := map[string]struct {
 		args args
@@ -435,7 +436,14 @@ func TestIsUpToDate(t *testing.T) {
 		"IsUpToDate": {
 			args: args{
 				params: params(),
-				db:     *db(),
+				db:     db(),
+			},
+			want: true,
+		},
+		"IsUpToDateWithOutputFields": {
+			args: args{
+				params: params(),
+				db:     db(addOutputFields),
 			},
 			want: true,
 		},
@@ -451,7 +459,7 @@ func TestIsUpToDate(t *testing.T) {
 						},
 					}
 				}),
-				db: *db(func(db *sqladmin.DatabaseInstance) {
+				db: db(func(db *sqladmin.DatabaseInstance) {
 					db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
 						PrivateNetwork: privateNetworkName,
 					}
@@ -462,7 +470,7 @@ func TestIsUpToDate(t *testing.T) {
 		"NeedsUpdate": {
 			args: args{
 				params: params(),
-				db: *db(func(db *sqladmin.DatabaseInstance) {
+				db: db(func(db *sqladmin.DatabaseInstance) {
 					db.MasterInstanceName = ""
 				}),
 			},
@@ -480,7 +488,7 @@ func TestIsUpToDate(t *testing.T) {
 						},
 					}
 				}),
-				db: *db(func(db *sqladmin.DatabaseInstance) {
+				db: db(func(db *sqladmin.DatabaseInstance) {
 					db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
 						PrivateNetwork: "unexpected-network",
 					}
@@ -491,7 +499,7 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := IsUpToDate(tc.args.params, tc.args.db)
+			r, _ := IsUpToDate("test-sql", tc.args.params, tc.args.db)
 			if diff := cmp.Diff(tc.want, r); diff != "" {
 				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
 			}

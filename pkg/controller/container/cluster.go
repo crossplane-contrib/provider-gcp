@@ -45,15 +45,16 @@ import (
 
 // Error strings.
 const (
-	errGetProvider         = "cannot get Provider"
-	errGetProviderSecret   = "cannot get Provider Secret"
-	errNewClient           = "cannot create new GKE container client"
-	errManagedUpdateFailed = "cannot update GKECluster custom resource"
-	errNotCluster          = "managed resource is not a GKECluster"
-	errGetCluster          = "cannot get GKE cluster"
-	errCreateCluster       = "cannot create GKE cluster"
-	errUpdateCluster       = "cannot update GKE cluster"
-	errDeleteCluster       = "cannot delete GKE cluster"
+	errGetProvider          = "cannot get Provider"
+	errGetProviderSecret    = "cannot get Provider Secret"
+	errNewClient            = "cannot create new GKE container client"
+	errManagedUpdateFailed  = "cannot update GKECluster custom resource"
+	errNotCluster           = "managed resource is not a GKECluster"
+	errGetCluster           = "cannot get GKE cluster"
+	errCreateCluster        = "cannot create GKE cluster"
+	errUpdateCluster        = "cannot update GKE cluster"
+	errDeleteCluster        = "cannot delete GKE cluster"
+	errCheckClusterUpToDate = "cannot determine if GKE cluster is up to date"
 )
 
 // SetupGKECluster adds a controller that reconciles GKECluster
@@ -135,7 +136,10 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 		cr.Status.SetConditions(v1alpha1.Unavailable())
 	}
 
-	u, _ := gke.IsUpToDate(&cr.Spec.ForProvider, *existing)
+	u, _, err := gke.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, existing)
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errCheckClusterUpToDate)
+	}
 
 	return managed.ExternalObservation{
 		ResourceExists:    true,
@@ -157,7 +161,8 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 	}
 
 	// Generate GKE cluster from resource spec.
-	cluster := gke.GenerateCluster(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	cluster := &container.Cluster{}
+	gke.GenerateCluster(meta.GetExternalName(cr), cr.Spec.ForProvider, cluster)
 
 	// Insert default node pool for bootstrapping cluster. This is required to
 	// create a GKE cluster. After successful creation we delete the bootstrap
@@ -191,7 +196,10 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetCluster)
 	}
 
-	u, fn := gke.IsUpToDate(&cr.Spec.ForProvider, *existing)
+	u, fn, err := gke.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, existing)
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errCheckClusterUpToDate)
+	}
 	if u {
 		return managed.ExternalUpdate{}, nil
 	}

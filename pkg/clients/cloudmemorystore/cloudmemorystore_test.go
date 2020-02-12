@@ -32,6 +32,7 @@ const (
 	region        = "us-cool1"
 	project       = "coolProject"
 	instanceName  = "claimnamespace-claimname-342sd"
+	fullName      = "projects/coolProject/locations/us-cool1/instances/claimnamespace-claimname-342sd"
 	qualifiedName = "projects/" + project + "/locations/" + region + "/instances/" + instanceName
 	parent        = "projects/" + project + "/locations/" + region
 
@@ -246,37 +247,14 @@ func TestIsUpToDate(t *testing.T) {
 	randString := "wat"
 	cases := []struct {
 		name string
+		id   InstanceID
 		kube *v1beta1.CloudMemorystoreInstance
 		gcp  *redisv1pb.Instance
 		want bool
 	}{
 		{
 			name: "NeedsLessMemory",
-			kube: &v1beta1.CloudMemorystoreInstance{
-				Spec: v1beta1.CloudMemorystoreInstanceSpec{
-					ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
-						RedisConfigs: redisConfigs,
-						MemorySizeGB: memorySizeGB,
-					},
-				},
-			},
-			gcp:  &redisv1pb.Instance{MemorySizeGb: memorySizeGB + 1},
-			want: false,
-		},
-		{
-			name: "NeedsNewRedisConfigs",
-			kube: &v1beta1.CloudMemorystoreInstance{
-				Spec: v1beta1.CloudMemorystoreInstanceSpec{
-					ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
-						RedisConfigs: redisConfigs,
-					},
-				},
-			},
-			gcp:  &redisv1pb.Instance{RedisConfigs: map[string]string{"super": "cool"}},
-			want: false,
-		},
-		{
-			name: "NeedsNoUpdate",
+			id:   InstanceID{Project: project, Region: region, Instance: instanceName},
 			kube: &v1beta1.CloudMemorystoreInstance{
 				Spec: v1beta1.CloudMemorystoreInstanceSpec{
 					ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
@@ -286,13 +264,67 @@ func TestIsUpToDate(t *testing.T) {
 				},
 			},
 			gcp: &redisv1pb.Instance{
+				Name:         fullName,
+				MemorySizeGb: memorySizeGB + 1,
+			},
+			want: false,
+		},
+		{
+			name: "NeedsNewRedisConfigs",
+			id:   InstanceID{Project: project, Region: region, Instance: instanceName},
+			kube: &v1beta1.CloudMemorystoreInstance{
+				Spec: v1beta1.CloudMemorystoreInstanceSpec{
+					ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
+						RedisConfigs: redisConfigs,
+					},
+				},
+			},
+			gcp: &redisv1pb.Instance{
+				Name:         fullName,
+				RedisConfigs: map[string]string{"super": "cool"},
+			},
+			want: false,
+		},
+		{
+			name: "NeedsNoUpdate",
+			id:   InstanceID{Project: project, Region: region, Instance: instanceName},
+			kube: &v1beta1.CloudMemorystoreInstance{
+				Spec: v1beta1.CloudMemorystoreInstanceSpec{
+					ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
+						RedisConfigs: redisConfigs,
+						MemorySizeGB: memorySizeGB,
+					},
+				},
+			},
+			gcp: &redisv1pb.Instance{
+				Name:         fullName,
 				RedisConfigs: redisConfigs,
 				MemorySizeGb: memorySizeGB,
 			},
 			want: true,
 		},
 		{
+			name: "NeedsNoUpdateWithOutputFields",
+			id:   InstanceID{Project: project, Region: region, Instance: instanceName},
+			kube: &v1beta1.CloudMemorystoreInstance{
+				Spec: v1beta1.CloudMemorystoreInstanceSpec{
+					ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
+						RedisConfigs: redisConfigs,
+						MemorySizeGB: memorySizeGB,
+					},
+				},
+			},
+			gcp: &redisv1pb.Instance{
+				Name:          fullName,
+				RedisConfigs:  redisConfigs,
+				MemorySizeGb:  memorySizeGB,
+				StatusMessage: "definitely not in spec",
+			},
+			want: true,
+		},
+		{
 			name: "CannotUpdateField",
+			id:   InstanceID{Project: project, Region: region, Instance: instanceName},
 			kube: &v1beta1.CloudMemorystoreInstance{
 				Spec: v1beta1.CloudMemorystoreInstanceSpec{
 					ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
@@ -305,6 +337,7 @@ func TestIsUpToDate(t *testing.T) {
 				},
 			},
 			gcp: &redisv1pb.Instance{
+				Name:              fullName,
 				MemorySizeGb:      memorySizeGB,
 				AuthorizedNetwork: authorizedNetwork,
 			},
@@ -314,7 +347,7 @@ func TestIsUpToDate(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := IsUpToDate(tc.kube, tc.gcp)
+			got, _ := IsUpToDate(tc.id, &tc.kube.Spec.ForProvider, tc.gcp)
 			if got != tc.want {
 				t.Errorf("IsUpToDate(...): want: %t got: %t", tc.want, got)
 			}

@@ -256,7 +256,8 @@ func TestNodePoolObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				n := nodePool()
-				gn := np.GenerateNodePool(n.Spec.ForProvider, name)
+				gn := &container.NodePool{}
+				np.GenerateNodePool(name, n.Spec.ForProvider, gn)
 				gn.Locations = []string{"loc-1"}
 				_ = json.NewEncoder(w).Encode(gn)
 			}),
@@ -278,7 +279,8 @@ func TestNodePoolObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				n := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
+				n := &container.NodePool{}
+				np.GenerateNodePool(name, nodePool().Spec.ForProvider, n)
 				n.Status = v1alpha1.NodePoolStateProvisioning
 				_ = json.NewEncoder(w).Encode(n)
 			}),
@@ -300,7 +302,8 @@ func TestNodePoolObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
+				c := &container.NodePool{}
+				np.GenerateNodePool(name, nodePool().Spec.ForProvider, c)
 				c.Status = v1alpha1.NodePoolStateError
 				_ = json.NewEncoder(w).Encode(c)
 			}),
@@ -322,7 +325,8 @@ func TestNodePoolObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
+				c := &container.NodePool{}
+				np.GenerateNodePool(name, nodePool().Spec.ForProvider, c)
 				c.Status = v1alpha1.NodePoolStateRunning
 				_ = json.NewEncoder(w).Encode(c)
 			}),
@@ -350,7 +354,8 @@ func TestNodePoolObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				n := np.GenerateNodePool(nodePool().Spec.ForProvider, name)
+				n := &container.NodePool{}
+				np.GenerateNodePool(name, nodePool().Spec.ForProvider, n)
 				n.Status = v1alpha1.NodePoolStateError
 				_ = json.NewEncoder(w).Encode(n)
 			}),
@@ -786,7 +791,9 @@ func TestNodePoolUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.NodePool{})
+					_ = json.NewEncoder(w).Encode(&container.NodePool{
+						Name: name,
+					})
 				case http.MethodPut:
 					// Return bad request for update to demonstrate that
 					// underlying update is not making any http call.
