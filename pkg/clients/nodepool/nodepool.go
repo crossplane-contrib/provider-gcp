@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
@@ -351,13 +352,13 @@ func IsUpToDate(name string, in *v1alpha1.NodePoolParameters, observed *containe
 		return true, noOpUpdate, errors.New(errCheckUpToDate)
 	}
 	GenerateNodePool(name, *in, desired)
-	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling) {
+	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling, cmpopts.EquateEmpty()) {
 		return false, newAutoscalingUpdateFn(in.Autoscaling), nil
 	}
-	if !cmp.Equal(desired.Management, observed.Management) {
+	if !cmp.Equal(desired.Management, observed.Management, cmpopts.EquateEmpty()) {
 		return false, newManagementUpdateFn(in.Management), nil
 	}
-	if !cmp.Equal(desired, observed) {
+	if !cmp.Equal(desired, observed, cmpopts.EquateEmpty()) {
 		return false, newGeneralUpdateFn(in), nil
 	}
 	return true, noOpUpdate, nil

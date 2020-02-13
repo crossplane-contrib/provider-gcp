@@ -173,6 +173,7 @@ func db(m ...func(*sqladmin.DatabaseInstance)) *sqladmin.DatabaseInstance {
 						ExpirationTime: "20201018",
 						Name:           "hate",
 						Value:          "unittests",
+						Kind:           "sql#aclEntry",
 					},
 				},
 				ForceSendFields: []string{"Ipv4Enabled"},

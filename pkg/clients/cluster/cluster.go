@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
@@ -1070,58 +1071,58 @@ func IsUpToDate(name string, in *v1beta1.GKEClusterParameters, observed *contain
 	if checkForBootstrapNodePool(observed) {
 		return false, deleteBootstrapNodePoolFn(), nil
 	}
-	if !cmp.Equal(desired.AddonsConfig, observed.AddonsConfig) {
+	if !cmp.Equal(desired.AddonsConfig, observed.AddonsConfig, cmpopts.EquateEmpty()) {
 		return false, newAddonsConfigUpdateFn(in.AddonsConfig), nil
 	}
-	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling) {
+	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling, cmpopts.EquateEmpty()) {
 		return false, newAutoscalingUpdateFn(in.Autoscaling), nil
 	}
-	if !cmp.Equal(desired.BinaryAuthorization, observed.BinaryAuthorization) {
+	if !cmp.Equal(desired.BinaryAuthorization, observed.BinaryAuthorization, cmpopts.EquateEmpty()) {
 		return false, newBinaryAuthorizationUpdateFn(in.BinaryAuthorization), nil
 	}
-	if !cmp.Equal(desired.DatabaseEncryption, observed.DatabaseEncryption) {
+	if !cmp.Equal(desired.DatabaseEncryption, observed.DatabaseEncryption, cmpopts.EquateEmpty()) {
 		return false, newDatabaseEncryptionUpdateFn(in.DatabaseEncryption), nil
 	}
-	if !cmp.Equal(desired.LegacyAbac, observed.LegacyAbac) {
+	if !cmp.Equal(desired.LegacyAbac, observed.LegacyAbac, cmpopts.EquateEmpty()) {
 		return false, newLegacyAbacUpdateFn(in.LegacyAbac), nil
 	}
-	if !cmp.Equal(desired.Locations, observed.Locations) {
+	if !cmp.Equal(desired.Locations, observed.Locations, cmpopts.EquateEmpty()) {
 		return false, newLocationsUpdateFn(in.Locations), nil
 	}
-	if !cmp.Equal(desired.LoggingService, observed.LoggingService) {
+	if !cmp.Equal(desired.LoggingService, observed.LoggingService, cmpopts.EquateEmpty()) {
 		return false, newLoggingServiceUpdateFn(in.LoggingService), nil
 	}
-	if !cmp.Equal(desired.MaintenancePolicy, observed.MaintenancePolicy) {
+	if !cmp.Equal(desired.MaintenancePolicy, observed.MaintenancePolicy, cmpopts.EquateEmpty()) {
 		return false, newMaintenancePolicyUpdateFn(in.MaintenancePolicy), nil
 	}
-	if !cmp.Equal(desired.MasterAuthorizedNetworksConfig, observed.MasterAuthorizedNetworksConfig) {
+	if !cmp.Equal(desired.MasterAuthorizedNetworksConfig, observed.MasterAuthorizedNetworksConfig, cmpopts.EquateEmpty()) {
 		return false, newMasterAuthorizedNetworksConfigUpdateFn(in.MasterAuthorizedNetworksConfig), nil
 	}
-	if !cmp.Equal(desired.MonitoringService, observed.MonitoringService) {
+	if !cmp.Equal(desired.MonitoringService, observed.MonitoringService, cmpopts.EquateEmpty()) {
 		return false, newMonitoringServiceUpdateFn(in.MonitoringService), nil
 	}
-	if !cmp.Equal(desired.NetworkConfig, observed.NetworkConfig) {
+	if !cmp.Equal(desired.NetworkConfig, observed.NetworkConfig, cmpopts.EquateEmpty()) {
 		return false, newNetworkConfigUpdateFn(in.NetworkConfig), nil
 	}
-	if !cmp.Equal(desired.NetworkPolicy, observed.NetworkPolicy) {
+	if !cmp.Equal(desired.NetworkPolicy, observed.NetworkPolicy, cmpopts.EquateEmpty()) {
 		return false, newNetworkPolicyUpdateFn(in.NetworkPolicy), nil
 	}
-	if !cmp.Equal(desired.PodSecurityPolicyConfig, observed.PodSecurityPolicyConfig) {
+	if !cmp.Equal(desired.PodSecurityPolicyConfig, observed.PodSecurityPolicyConfig, cmpopts.EquateEmpty()) {
 		return false, newPodSecurityPolicyConfigUpdateFn(in.PodSecurityPolicyConfig), nil
 	}
-	if !cmp.Equal(desired.PrivateClusterConfig, observed.PrivateClusterConfig) {
+	if !cmp.Equal(desired.PrivateClusterConfig, observed.PrivateClusterConfig, cmpopts.EquateEmpty()) {
 		return false, newPrivateClusterConfigUpdateFn(in.PrivateClusterConfig), nil
 	}
-	if !cmp.Equal(desired.ResourceLabels, observed.ResourceLabels) {
+	if !cmp.Equal(desired.ResourceLabels, observed.ResourceLabels, cmpopts.EquateEmpty()) {
 		return false, newResourceLabelsUpdateFn(in.ResourceLabels), nil
 	}
-	if !cmp.Equal(desired.ResourceUsageExportConfig, observed.ResourceUsageExportConfig) {
+	if !cmp.Equal(desired.ResourceUsageExportConfig, observed.ResourceUsageExportConfig, cmpopts.EquateEmpty()) {
 		return false, newResourceUsageExportConfigUpdateFn(in.ResourceUsageExportConfig), nil
 	}
-	if !cmp.Equal(desired.VerticalPodAutoscaling, observed.VerticalPodAutoscaling) {
+	if !cmp.Equal(desired.VerticalPodAutoscaling, observed.VerticalPodAutoscaling, cmpopts.EquateEmpty()) {
 		return false, newVerticalPodAutoscalingUpdateFn(in.VerticalPodAutoscaling), nil
 	}
-	if !cmp.Equal(desired.WorkloadIdentityConfig, observed.WorkloadIdentityConfig) {
+	if !cmp.Equal(desired.WorkloadIdentityConfig, observed.WorkloadIdentityConfig, cmpopts.EquateEmpty()) {
 		return false, newWorkloadIdentityConfigUpdateFn(in.WorkloadIdentityConfig), nil
 	}
 	return true, noOpUpdate, nil
