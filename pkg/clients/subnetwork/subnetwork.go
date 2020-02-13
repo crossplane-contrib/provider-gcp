@@ -19,35 +19,38 @@ package subnetwork
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/mitchellh/copystructure"
+	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
-
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
-var equateSecondaryRange = func(i, j *v1beta1.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
+const errCheckUpToDate = "unable to determine if external resource is up to date"
+
+var equateGCPSecondaryRange = func(i, j *compute.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
 
 // GenerateSubnetwork creates a *googlecompute.Subnetwork object using SubnetworkParameters.
-func GenerateSubnetwork(s v1beta1.SubnetworkParameters, name string) *compute.Subnetwork {
-	sn := &compute.Subnetwork{
-		Name:                  name,
-		Description:           gcp.StringValue(s.Description),
-		EnableFlowLogs:        gcp.BoolValue(s.EnableFlowLogs),
-		IpCidrRange:           s.IPCidrRange,
-		Network:               gcp.StringValue(s.Network),
-		PrivateIpGoogleAccess: gcp.BoolValue(s.PrivateIPGoogleAccess),
-		Region:                s.Region,
+func GenerateSubnetwork(name string, in v1beta1.SubnetworkParameters, subnet *compute.Subnetwork) {
+	subnet.Name = name
+	subnet.Description = gcp.StringValue(in.Description)
+	subnet.EnableFlowLogs = gcp.BoolValue(in.EnableFlowLogs)
+	subnet.IpCidrRange = in.IPCidrRange
+	subnet.Network = gcp.StringValue(in.Network)
+	subnet.PrivateIpGoogleAccess = gcp.BoolValue(in.PrivateIPGoogleAccess)
+	subnet.Region = in.Region
+
+	if len(in.SecondaryIPRanges) > 0 {
+		subnet.SecondaryIpRanges = make([]*compute.SubnetworkSecondaryRange, len(in.SecondaryIPRanges))
 	}
-	for _, val := range s.SecondaryIPRanges {
-		obj := &compute.SubnetworkSecondaryRange{
+
+	for i, val := range in.SecondaryIPRanges {
+		subnet.SecondaryIpRanges[i] = &compute.SubnetworkSecondaryRange{
 			IpCidrRange: val.IPCidrRange,
 			RangeName:   val.RangeName,
 		}
-		sn.SecondaryIpRanges = append(sn.SecondaryIpRanges, obj)
 	}
-	return sn
 }
 
 // GenerateSubnetworkForUpdate creates a *googlecompute.Subnetwork object using
@@ -112,11 +115,18 @@ func LateInitializeSpec(spec *v1beta1.SubnetworkParameters, in compute.Subnetwor
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(in *v1beta1.SubnetworkParameters, current compute.Subnetwork) (upToDate bool, privateAccess bool) {
-	currentParams := &v1beta1.SubnetworkParameters{}
-	LateInitializeSpec(currentParams, current)
-	if !cmp.Equal(in.PrivateIPGoogleAccess, currentParams.PrivateIPGoogleAccess) {
-		return false, true
+func IsUpToDate(name string, in *v1beta1.SubnetworkParameters, observed *compute.Subnetwork) (upToDate bool, privateAccess bool, err error) {
+	generated, err := copystructure.Copy(observed)
+	if err != nil {
+		return true, false, errors.Wrap(err, errCheckUpToDate)
 	}
-	return cmp.Equal(in, currentParams, cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}), cmpopts.SortSlices(equateSecondaryRange)), false
+	desired, ok := generated.(*compute.Subnetwork)
+	if !ok {
+		return true, false, errors.New(errCheckUpToDate)
+	}
+	GenerateSubnetwork(name, *in, desired)
+	if !cmp.Equal(desired.PrivateIpGoogleAccess, observed.PrivateIpGoogleAccess) {
+		return false, true, nil
+	}
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.SortSlices(equateGCPSecondaryRange)), false, nil
 }

@@ -36,7 +36,7 @@ const (
 	testGatewayAddress    = "10.0.0.0"
 )
 
-var equateGCPSecondaryRange = func(i, j *compute.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
+var equateSecondaryRange = func(i, j *v1beta1.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
 
 var (
 	trueVal         = true
@@ -154,7 +154,8 @@ func TestGenerateSubnetwork(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := GenerateSubnetwork(tc.args.in, tc.args.name)
+			r := &compute.Subnetwork{}
+			GenerateSubnetwork(tc.args.name, tc.args.in, r)
 			if diff := cmp.Diff(tc.want, r, cmpopts.SortSlices(equateGCPSecondaryRange)); diff != "" {
 				t.Errorf("GenerateSubnetwork(...): -want, +got:\n%s", diff)
 			}
@@ -241,12 +242,14 @@ func TestLateInitializeSpec(t *testing.T) {
 
 func TestIsUpToDate(t *testing.T) {
 	type args struct {
+		name    string
 		in      *v1beta1.SubnetworkParameters
-		current compute.Subnetwork
+		current *compute.Subnetwork
 	}
 	type want struct {
 		upToDate bool
 		privAcc  bool
+		isErr    bool
 	}
 	cases := map[string]struct {
 		args args
@@ -254,15 +257,25 @@ func TestIsUpToDate(t *testing.T) {
 	}{
 		"UpToDate": {
 			args: args{
+				name:    testName,
 				in:      params(),
-				current: *subnetwork(),
+				current: subnetwork(),
+			},
+			want: want{upToDate: true, privAcc: false},
+		},
+		"UpToDateWithOutputFields": {
+			args: args{
+				name:    testName,
+				in:      params(),
+				current: subnetwork(addOutputFields),
 			},
 			want: want{upToDate: true, privAcc: false},
 		},
 		"NotUpToDate": {
 			args: args{
-				in: params(),
-				current: *subnetwork(func(s *compute.Subnetwork) {
+				name: testName,
+				in:   params(),
+				current: subnetwork(func(s *compute.Subnetwork) {
 					s.Description = "some other description"
 				}),
 			},
@@ -270,8 +283,9 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"NotUpToDatePrivateAccess": {
 			args: args{
-				in: params(),
-				current: *subnetwork(func(s *compute.Subnetwork) {
+				name: testName,
+				in:   params(),
+				current: subnetwork(func(s *compute.Subnetwork) {
 					s.PrivateIpGoogleAccess = false
 				}),
 			},
@@ -281,7 +295,10 @@ func TestIsUpToDate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			u, p := IsUpToDate(tc.args.in, tc.args.current)
+			u, p, err := IsUpToDate(tc.args.name, tc.args.in, tc.args.current)
+			if err != nil && !tc.want.isErr {
+				t.Error("IsUpToDate(...) unexpected error")
+			}
 			if diff := cmp.Diff(tc.want.upToDate, u); diff != "" {
 				t.Errorf("IsUpToDate(...) Up To Date: -want, +got:\n%s", diff)
 			}

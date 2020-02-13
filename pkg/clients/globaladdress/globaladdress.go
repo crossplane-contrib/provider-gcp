@@ -25,24 +25,22 @@ import (
 
 // GenerateGlobalAddress converts the supplied GlobalAddressParameters into an
 // Address suitable for use with the Google Compute API.
-func GenerateGlobalAddress(p v1beta1.GlobalAddressParameters, name string) *compute.Address {
+func GenerateGlobalAddress(name string, in v1beta1.GlobalAddressParameters, address *compute.Address) {
 	// Kubernetes API conventions dictate that optional, unspecified fields must
 	// be nil. GCP API clients omit any field set to its zero value, using
 	// NullFields and ForceSendFields to handle edge cases around unsetting
 	// previously set values, or forcing zero values to be set. The Address API
 	// does not support updates, so we can safely convert any nil pointer to
 	// string or int64 to their zero values.
-	return &compute.Address{
-		Address:      gcp.StringValue(p.Address),
-		AddressType:  gcp.StringValue(p.AddressType),
-		Description:  gcp.StringValue(p.Description),
-		IpVersion:    gcp.StringValue(p.IPVersion),
-		Name:         name,
-		Network:      gcp.StringValue(p.Network),
-		PrefixLength: gcp.Int64Value(p.PrefixLength),
-		Purpose:      gcp.StringValue(p.Purpose),
-		Subnetwork:   gcp.StringValue(p.Subnetwork),
-	}
+	address.Address = gcp.StringValue(in.Address)
+	address.AddressType = gcp.StringValue(in.AddressType)
+	address.Description = gcp.StringValue(in.Description)
+	address.IpVersion = gcp.StringValue(in.IPVersion)
+	address.Name = name
+	address.Network = gcp.StringValue(in.Network)
+	address.PrefixLength = gcp.Int64Value(in.PrefixLength)
+	address.Purpose = gcp.StringValue(in.Purpose)
+	address.Subnetwork = gcp.StringValue(in.Subnetwork)
 }
 
 // LateInitializeSpec updates any unset (i.e. nil) optional fields of the

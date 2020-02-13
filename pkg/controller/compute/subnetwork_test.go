@@ -278,7 +278,8 @@ func TestSubnetworkObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := subnetworkObj()
-				gn := subnetwork.GenerateSubnetwork(c.Spec.ForProvider, testSubnetworkName)
+				gn := &compute.Subnetwork{}
+				subnetwork.GenerateSubnetwork(testSubnetworkName, c.Spec.ForProvider, gn)
 				gn.Description = "a very interesting description"
 				_ = json.NewEncoder(w).Encode(gn)
 			}),
@@ -300,7 +301,8 @@ func TestSubnetworkObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := subnetwork.GenerateSubnetwork(subnetworkObj().Spec.ForProvider, testSubnetworkName)
+				c := &compute.Subnetwork{}
+				subnetwork.GenerateSubnetwork(testSubnetworkName, subnetworkObj().Spec.ForProvider, c)
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			kube: &test.MockClient{

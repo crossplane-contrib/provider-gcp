@@ -287,7 +287,8 @@ func TestNetworkObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := networkObj()
-				gn := network.GenerateNetwork(c.Spec.ForProvider, testNetworkName)
+				gn := &compute.Network{}
+				network.GenerateNetwork(testNetworkName, c.Spec.ForProvider, gn)
 				gn.Description = "a very interesting description"
 				_ = json.NewEncoder(w).Encode(gn)
 			}),
@@ -309,7 +310,8 @@ func TestNetworkObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := network.GenerateNetwork(networkObj().Spec.ForProvider, testNetworkName)
+				c := &compute.Network{}
+				network.GenerateNetwork(testNetworkName, networkObj().Spec.ForProvider, c)
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			kube: &test.MockClient{

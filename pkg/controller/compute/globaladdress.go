@@ -138,7 +138,8 @@ func (e *gaExternal) Create(ctx context.Context, mg resource.Managed) (managed.E
 	}
 
 	cr.Status.SetConditions(runtimev1alpha1.Creating())
-	address := globaladdress.GenerateGlobalAddress(cr.Spec.ForProvider, meta.GetExternalName(cr))
+	address := &compute.Address{}
+	globaladdress.GenerateGlobalAddress(meta.GetExternalName(cr), cr.Spec.ForProvider, address)
 	_, err := e.GlobalAddresses.Insert(e.projectID, address).Context(ctx).Do()
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateAddress)
 }

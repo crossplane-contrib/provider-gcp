@@ -168,7 +168,8 @@ func TestGenerateNetwork(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := GenerateNetwork(tc.args.in, tc.args.name)
+			r := &compute.Network{}
+			GenerateNetwork(tc.args.name, tc.args.in, r)
 			if diff := cmp.Diff(r, tc.want); diff != "" {
 				t.Errorf("GenerateNetwork(...): -want, +got:\n%s", diff)
 			}
@@ -258,34 +259,48 @@ func TestLateInitializeSpec(t *testing.T) {
 func TestIsUpToDate(t *testing.T) {
 	type args struct {
 		in      *v1beta1.NetworkParameters
-		current compute.Network
+		current *compute.Network
+	}
+	type want struct {
+		upToDate bool
+		isErr    bool
 	}
 	cases := map[string]struct {
 		args args
-		want bool
+		want want
 	}{
 		"UpToDate": {
 			args: args{
 				in:      params(),
-				current: *network(),
+				current: network(),
 			},
-			want: true,
+			want: want{upToDate: true, isErr: false},
+		},
+		"UpToDateWithOutputFields": {
+			args: args{
+				in:      params(),
+				current: network(addOutputFields),
+			},
+			want: want{upToDate: true, isErr: false},
 		},
 		"NotUpToDate": {
 			args: args{
 				in: params(func(p *v1beta1.NetworkParameters) {
 					p.Description = nil
 				}),
-				current: *network(),
+				current: network(),
 			},
-			want: false,
+			want: want{upToDate: false, isErr: false},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			u := IsUpToDate(tc.args.in, tc.args.current)
-			if diff := cmp.Diff(tc.want, u); diff != "" {
+			u, err := IsUpToDate(testName, tc.args.in, tc.args.current)
+			if err != nil && !tc.want.isErr {
+				t.Error("IsUpToDate(...) unexpected error")
+			}
+			if diff := cmp.Diff(tc.want.upToDate, u); diff != "" {
 				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
 			}
 		})

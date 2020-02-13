@@ -282,7 +282,8 @@ func TestGlobalAddressObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := addressObj()
-				gn := globaladdress.GenerateGlobalAddress(c.Spec.ForProvider, testGAName)
+				gn := &compute.Address{}
+				globaladdress.GenerateGlobalAddress(testGAName, c.Spec.ForProvider, gn)
 				gn.Description = "a very interesting description"
 				_ = json.NewEncoder(w).Encode(gn)
 			}),
@@ -308,7 +309,8 @@ func TestGlobalAddressObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := globaladdress.GenerateGlobalAddress(addressObj().Spec.ForProvider, testGAName)
+				c := &compute.Address{}
+				globaladdress.GenerateGlobalAddress(testGAName, addressObj().Spec.ForProvider, c)
 				c.Status = v1beta1.StatusReserving
 				_ = json.NewEncoder(w).Encode(c)
 			}),
@@ -336,7 +338,8 @@ func TestGlobalAddressObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				c := globaladdress.GenerateGlobalAddress(addressObj().Spec.ForProvider, testGAName)
+				c := &compute.Address{}
+				globaladdress.GenerateGlobalAddress(testGAName, addressObj().Spec.ForProvider, c)
 				c.Status = v1beta1.StatusReserved
 				_ = json.NewEncoder(w).Encode(c)
 			}),

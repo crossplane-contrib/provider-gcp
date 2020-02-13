@@ -51,6 +51,7 @@ const (
 	errUpdateSubnetworkPAFailed = "unable to update GCP Subnetwork Private IP Google Access"
 	errCreateSubnetworkFailed   = "creation of GCP Subnetwork resource has failed"
 	errDeleteSubnetworkFailed   = "deletion of GCP Subnetwork resource has failed"
+	errCheckSubnetworkUpToDate  = "cannot determine if GCP Subnetwork is up to date"
 )
 
 // SetupSubnetwork adds a controller that reconciles Subnetwork
@@ -128,7 +129,10 @@ func (c *subnetworkExternal) Observe(ctx context.Context, mg resource.Managed) (
 
 	cr.Status.AtProvider = subnetwork.GenerateSubnetworkObservation(*observed)
 
-	u, _ := subnetwork.IsUpToDate(&cr.Spec.ForProvider, *observed)
+	u, _, err := subnetwork.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errCheckSubnetworkUpToDate)
+	}
 
 	cr.Status.SetConditions(runtimev1alpha1.Available())
 	return managed.ExternalObservation{
@@ -144,7 +148,10 @@ func (c *subnetworkExternal) Create(ctx context.Context, mg resource.Managed) (m
 	}
 
 	cr.Status.SetConditions(runtimev1alpha1.Creating())
-	_, err := c.Subnetworks.Insert(c.projectID, cr.Spec.ForProvider.Region, subnetwork.GenerateSubnetwork(cr.Spec.ForProvider, meta.GetExternalName(cr))).
+
+	subnet := &googlecompute.Subnetwork{}
+	subnetwork.GenerateSubnetwork(meta.GetExternalName(cr), cr.Spec.ForProvider, subnet)
+	_, err := c.Subnetworks.Insert(c.projectID, cr.Spec.ForProvider.Region, subnet).
 		Context(ctx).
 		Do()
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateSubnetworkFailed)
@@ -161,7 +168,10 @@ func (c *subnetworkExternal) Update(ctx context.Context, mg resource.Managed) (m
 		return managed.ExternalUpdate{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetSubnetwork)
 	}
 
-	upToDate, privateAccess := subnetwork.IsUpToDate(&cr.Spec.ForProvider, *observed)
+	upToDate, privateAccess, err := subnetwork.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errCheckSubnetworkUpToDate)
+	}
 	if upToDate {
 		return managed.ExternalUpdate{}, nil
 	}

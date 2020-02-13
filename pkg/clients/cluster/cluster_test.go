@@ -1413,6 +1413,7 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	type want struct {
 		upToDate bool
+		isErr    bool
 	}
 	tests := map[string]struct {
 		args args
@@ -1426,6 +1427,7 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: true,
+				isErr:    false,
 			},
 		},
 		"UpToDateWithOutputFields": {
@@ -1436,6 +1438,7 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: true,
+				isErr:    false,
 			},
 		},
 		"UpToDateIgnoreRefs": {
@@ -1454,6 +1457,7 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: true,
+				isErr:    false,
 			},
 		},
 		"NeedsUpdate": {
@@ -1479,6 +1483,7 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: false,
+				isErr:    false,
 			},
 		},
 		"NoUpdateNotBootstrapNodePool": {
@@ -1499,6 +1504,7 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: true,
+				isErr:    false,
 			},
 		},
 		"NeedsUpdateBootstrapNodePool": {
@@ -1519,12 +1525,16 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{
 				upToDate: false,
+				isErr:    false,
 			},
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, _, _ := IsUpToDate(tc.args.name, tc.args.params, tc.args.cluster)
+			r, _, err := IsUpToDate(tc.args.name, tc.args.params, tc.args.cluster)
+			if err != nil && !tc.want.isErr {
+				t.Error("IsUpToDate(...) unexpected error")
+			}
 			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
 				t.Errorf("IsUpToDate(...): -want upToDate, +got upToDate:\n%s", diff)
 			}

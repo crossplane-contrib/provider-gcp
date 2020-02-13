@@ -137,7 +137,8 @@ func TestGenerateGlobalAddress(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := GenerateGlobalAddress(tc.args.in, tc.args.name)
+			r := &compute.Address{}
+			GenerateGlobalAddress(tc.args.name, tc.args.in, r)
 			if diff := cmp.Diff(r, tc.want); diff != "" {
 				t.Errorf("GenerateGlobalAddress(...): -want, +got:\n%s", diff)
 			}

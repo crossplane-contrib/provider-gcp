@@ -21,7 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	googlecompute "google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,9 +50,10 @@ const (
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
 	errManagedNetworkUpdate       = "unable to update Network managed resource"
 
-	errNetworkUpdateFailed = "update of Network resource has failed"
-	errNetworkCreateFailed = "creation of Network resource has failed"
-	errNetworkDeleteFailed = "deletion of Network resource has failed"
+	errNetworkUpdateFailed  = "update of Network resource has failed"
+	errNetworkCreateFailed  = "creation of Network resource has failed"
+	errNetworkDeleteFailed  = "deletion of Network resource has failed"
+	errCheckNetworkUpToDate = "cannot determine if GCP Network is up to date"
 )
 
 // SetupNetwork adds a controller that reconciles Network managed
@@ -73,7 +74,7 @@ func SetupNetwork(mgr ctrl.Manager, l logging.Logger) error {
 
 type networkConnector struct {
 	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*googlecompute.Service, error)
+	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error)
 }
 
 func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -93,11 +94,11 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (ma
 	}
 
 	if c.newServiceFn == nil {
-		c.newServiceFn = googlecompute.NewService
+		c.newServiceFn = compute.NewService
 	}
 	s, err := c.newServiceFn(ctx,
 		option.WithCredentialsJSON(secret.Data[provider.Spec.CredentialsSecretRef.Key]),
-		option.WithScopes(googlecompute.ComputeScope))
+		option.WithScopes(compute.ComputeScope))
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
@@ -106,7 +107,7 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (ma
 
 type networkExternal struct {
 	kube client.Client
-	*googlecompute.Service
+	*compute.Service
 	projectID string
 }
 
@@ -132,7 +133,10 @@ func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (man
 
 	cr.Status.SetConditions(runtimev1alpha1.Available())
 
-	u := network.IsUpToDate(&cr.Spec.ForProvider, *observed)
+	u, err := network.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errCheckNetworkUpToDate)
+	}
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -147,7 +151,10 @@ func (c *networkExternal) Create(ctx context.Context, mg resource.Managed) (mana
 	}
 
 	cr.Status.SetConditions(runtimev1alpha1.Creating())
-	_, err := c.Networks.Insert(c.projectID, network.GenerateNetwork(cr.Spec.ForProvider, meta.GetExternalName(cr))).
+
+	net := &compute.Network{}
+	network.GenerateNetwork(meta.GetExternalName(cr), cr.Spec.ForProvider, net)
+	_, err := c.Networks.Insert(c.projectID, net).
 		Context(ctx).
 		Do()
 	return managed.ExternalCreation{}, errors.Wrap(err, errNetworkCreateFailed)
@@ -158,12 +165,13 @@ func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (mana
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotNetwork)
 	}
+
+	net := &compute.Network{}
+	network.GenerateNetwork(meta.GetExternalName(cr), cr.Spec.ForProvider, net)
+
 	// NOTE(muvaf): All parameters except routing config are
 	// immutable.
-	_, err := c.Networks.Patch(
-		c.projectID,
-		meta.GetExternalName(cr),
-		network.GenerateNetwork(cr.Spec.ForProvider, meta.GetExternalName(cr))).
+	_, err := c.Networks.Patch(c.projectID, meta.GetExternalName(cr), net).
 		Context(ctx).
 		Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errNetworkUpdateFailed)

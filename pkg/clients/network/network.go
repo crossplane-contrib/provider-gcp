@@ -19,34 +19,35 @@ package network
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/mitchellh/copystructure"
+	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
-
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
+const errCheckUpToDate = "unable to determine if external resource is up to date"
+
 // GenerateNetwork takes a *NetworkParameters and returns *compute.Network.
 // It assigns only the fields that are writable, i.e. not labelled as [Output Only]
 // in Google's reference.
-func GenerateNetwork(in v1beta1.NetworkParameters, name string) *compute.Network {
-	n := &compute.Network{
-		Name:        name,
-		Description: gcp.StringValue(in.Description),
-	}
+func GenerateNetwork(name string, in v1beta1.NetworkParameters, network *compute.Network) {
+	network.Name = name
+	network.Description = gcp.StringValue(in.Description)
+
 	if in.AutoCreateSubnetworks != nil {
-		n.AutoCreateSubnetworks = *in.AutoCreateSubnetworks
-		if !n.AutoCreateSubnetworks {
-			n.ForceSendFields = []string{"AutoCreateSubnetworks"}
+		network.AutoCreateSubnetworks = *in.AutoCreateSubnetworks
+		if !network.AutoCreateSubnetworks {
+			network.ForceSendFields = []string{"AutoCreateSubnetworks"}
 		}
 	}
 	if in.RoutingConfig != nil {
-		n.RoutingConfig = &compute.NetworkRoutingConfig{
-			RoutingMode: in.RoutingConfig.RoutingMode,
+		if network.RoutingConfig == nil {
+			network.RoutingConfig = &compute.NetworkRoutingConfig{}
 		}
+		network.RoutingConfig.RoutingMode = in.RoutingConfig.RoutingMode
 	}
-	return n
 }
 
 // GenerateNetworkObservation takes a compute.Network and returns *NetworkObservation.
@@ -86,8 +87,15 @@ func LateInitializeSpec(spec *v1beta1.NetworkParameters, in compute.Network) {
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(in *v1beta1.NetworkParameters, current compute.Network) bool {
-	currentParams := &v1beta1.NetworkParameters{}
-	LateInitializeSpec(currentParams, current)
-	return cmp.Equal(in, currentParams, cmpopts.IgnoreInterfaces(struct{ resource.AttributeReferencer }{}))
+func IsUpToDate(name string, in *v1beta1.NetworkParameters, observed *compute.Network) (bool, error) {
+	generated, err := copystructure.Copy(observed)
+	if err != nil {
+		return true, errors.Wrap(err, errCheckUpToDate)
+	}
+	desired, ok := generated.(*compute.Network)
+	if !ok {
+		return true, errors.New(errCheckUpToDate)
+	}
+	GenerateNetwork(name, *in, desired)
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(compute.Network{}, "ForceSendFields")), nil
 }
