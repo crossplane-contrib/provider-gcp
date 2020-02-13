@@ -110,6 +110,7 @@ func GenerateDatabaseInstance(name string, in v1beta1.CloudSQLInstanceParameters
 				ExpirationTime: gcp.StringValue(val.ExpirationTime),
 				Name:           gcp.StringValue(val.Name),
 				Value:          gcp.StringValue(val.Value),
+				Kind:           "sql#aclEntry",
 			}
 		}
 	}
@@ -308,7 +309,7 @@ func IsUpToDate(name string, in *v1beta1.CloudSQLInstanceParameters, observed *s
 		return true, errors.New(errCheckUpToDate)
 	}
 	GenerateDatabaseInstance(name, *in, desired)
-	return cmp.Equal(desired, observed, cmpopts.IgnoreFields(sqladmin.DatabaseInstance{}, "Settings.IpConfiguration.ForceSendFields")), nil
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(sqladmin.DatabaseInstance{}, "Settings.IpConfiguration.ForceSendFields")), nil
 }
 
 // DatabaseUserName returns default database user name base on database version
