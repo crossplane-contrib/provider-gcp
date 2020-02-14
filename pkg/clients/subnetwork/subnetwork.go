@@ -17,6 +17,8 @@ limitations under the License.
 package subnetwork
 
 import (
+	"strings"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
@@ -128,5 +130,20 @@ func IsUpToDate(name string, in *v1beta1.SubnetworkParameters, observed *compute
 	if !cmp.Equal(desired.PrivateIpGoogleAccess, observed.PrivateIpGoogleAccess) {
 		return false, true, nil
 	}
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.SortSlices(equateGCPSecondaryRange)), false, nil
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.SortSlices(equateGCPSecondaryRange), equatePrefixedStrings(v1beta1.URIPrefix, v1beta1.URIRegionPrefix)), false, nil
+}
+
+func equatePrefixedStrings(prefixes ...string) cmp.Option {
+	return cmp.Comparer(func(a, b string) bool {
+		if a == b {
+			return true
+		}
+
+		for _, prefix := range prefixes {
+			if strings.TrimPrefix(a, prefix) == strings.TrimPrefix(b, prefix) {
+				return true
+			}
+		}
+		return false
+	})
 }

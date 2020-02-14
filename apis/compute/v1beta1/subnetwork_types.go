@@ -30,6 +30,9 @@ const (
 	errResourceIsNotSubnetwork = "the managed resource is not a Subnetwork"
 )
 
+// URIRegionPrefix is the URI prefix for the region of a GCP subnetwork.
+const URIRegionPrefix string = "https://www.googleapis.com/compute/v1/projects/crossplane-playground/regions/"
+
 // NetworkURIReferencerForSubnetwork is an attribute referencer that resolves
 // network uri from a referenced Network and assigns it to a subnetwork
 type NetworkURIReferencerForSubnetwork struct {

@@ -77,9 +77,9 @@ func subnetwork(m ...func(*compute.Subnetwork)) *compute.Subnetwork {
 		Name:                  testName,
 		EnableFlowLogs:        trueVal,
 		IpCidrRange:           testIPCIDRRange,
-		Network:               testNetwork,
+		Network:               v1beta1.URIPrefix + testNetwork,
 		PrivateIpGoogleAccess: trueVal,
-		Region:                testRegion,
+		Region:                v1beta1.URIPrefix + testRegion,
 		SecondaryIpRanges: []*compute.SubnetworkSecondaryRange{
 			{
 				RangeName:   "aazz",
@@ -156,7 +156,7 @@ func TestGenerateSubnetwork(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			r := &compute.Subnetwork{}
 			GenerateSubnetwork(tc.args.name, tc.args.in, r)
-			if diff := cmp.Diff(tc.want, r, cmpopts.SortSlices(equateGCPSecondaryRange)); diff != "" {
+			if diff := cmp.Diff(tc.want, r, cmpopts.SortSlices(equateGCPSecondaryRange), equatePrefixedStrings(v1beta1.URIPrefix, v1beta1.URIRegionPrefix)); diff != "" {
 				t.Errorf("GenerateSubnetwork(...): -want, +got:\n%s", diff)
 			}
 		})
