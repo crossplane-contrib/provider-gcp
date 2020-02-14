@@ -133,7 +133,7 @@ func (c *networkExternal) Observe(ctx context.Context, mg resource.Managed) (man
 
 	cr.Status.SetConditions(runtimev1alpha1.Available())
 
-	u, err := network.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
+	u, _, err := network.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckNetworkUpToDate)
 	}
@@ -166,12 +166,29 @@ func (c *networkExternal) Update(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalUpdate{}, errors.New(errNotNetwork)
 	}
 
+	observed, err := c.Networks.Get(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetNetwork)
+	}
+
+	upToDate, switchToCustom, err := network.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errCheckSubnetworkUpToDate)
+	}
+	if upToDate {
+		return managed.ExternalUpdate{}, nil
+	}
+	if switchToCustom {
+		_, err := c.Networks.SwitchToCustomMode(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
+		return managed.ExternalUpdate{}, errors.Wrap(err, errNetworkUpdateFailed)
+	}
+
 	net := &compute.Network{}
 	network.GenerateNetwork(meta.GetExternalName(cr), cr.Spec.ForProvider, net)
 
 	// NOTE(muvaf): All parameters except routing config are
 	// immutable.
-	_, err := c.Networks.Patch(c.projectID, meta.GetExternalName(cr), net).
+	_, err = c.Networks.Patch(c.projectID, meta.GetExternalName(cr), net).
 		Context(ctx).
 		Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errNetworkUpdateFailed)

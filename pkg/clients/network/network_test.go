@@ -262,8 +262,9 @@ func TestIsUpToDate(t *testing.T) {
 		current *compute.Network
 	}
 	type want struct {
-		upToDate bool
-		isErr    bool
+		upToDate     bool
+		switchCustom bool
+		isErr        bool
 	}
 	cases := map[string]struct {
 		args args
@@ -274,14 +275,14 @@ func TestIsUpToDate(t *testing.T) {
 				in:      params(),
 				current: network(),
 			},
-			want: want{upToDate: true, isErr: false},
+			want: want{upToDate: true, switchCustom: false, isErr: false},
 		},
 		"UpToDateWithOutputFields": {
 			args: args{
 				in:      params(),
 				current: network(addOutputFields),
 			},
-			want: want{upToDate: true, isErr: false},
+			want: want{upToDate: true, switchCustom: false, isErr: false},
 		},
 		"NotUpToDate": {
 			args: args{
@@ -290,18 +291,32 @@ func TestIsUpToDate(t *testing.T) {
 				}),
 				current: network(),
 			},
-			want: want{upToDate: false, isErr: false},
+			want: want{upToDate: false, switchCustom: false, isErr: false},
+		},
+		"NotUpToDateSwitchToCustom": {
+			args: args{
+				in: params(func(p *v1beta1.NetworkParameters) {
+					p.AutoCreateSubnetworks = &falseVal
+				}),
+				current: network(func(n *compute.Network) {
+					n.AutoCreateSubnetworks = true
+				}),
+			},
+			want: want{upToDate: false, switchCustom: true, isErr: false},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			u, err := IsUpToDate(testName, tc.args.in, tc.args.current)
+			u, s, err := IsUpToDate(testName, tc.args.in, tc.args.current)
 			if err != nil && !tc.want.isErr {
 				t.Error("IsUpToDate(...) unexpected error")
 			}
 			if diff := cmp.Diff(tc.want.upToDate, u); diff != "" {
-				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+				t.Errorf("IsUpToDate(...) UpToDate: -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.switchCustom, s); diff != "" {
+				t.Errorf("IsUpToDate(...) SwitchToCustoms: -want, +got:\n%s", diff)
 			}
 		})
 	}

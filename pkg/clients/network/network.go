@@ -87,15 +87,18 @@ func LateInitializeSpec(spec *v1beta1.NetworkParameters, in compute.Network) {
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(name string, in *v1beta1.NetworkParameters, observed *compute.Network) (bool, error) {
+func IsUpToDate(name string, in *v1beta1.NetworkParameters, observed *compute.Network) (upTodate bool, switchToCustom bool, err error) {
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
-		return true, errors.Wrap(err, errCheckUpToDate)
+		return true, false, errors.Wrap(err, errCheckUpToDate)
 	}
 	desired, ok := generated.(*compute.Network)
 	if !ok {
-		return true, errors.New(errCheckUpToDate)
+		return true, false, errors.New(errCheckUpToDate)
 	}
 	GenerateNetwork(name, *in, desired)
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(compute.Network{}, "ForceSendFields")), nil
+	if !desired.AutoCreateSubnetworks && observed.AutoCreateSubnetworks {
+		return false, true, nil
+	}
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(compute.Network{}, "ForceSendFields")), false, nil
 }

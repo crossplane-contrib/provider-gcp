@@ -188,7 +188,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	// before. It doesn't return error either, so, we just use this hack
 	// found in https://github.com/terraform-providers/terraform-provider-google-beta/blob/67b258a/google-beta/resource_service_networking_connection.go#L86
 	_, err := e.sn.Services.Connections.Patch(cn.Spec.ForProvider.Parent+"/connections/-", conn).UpdateMask("reservedPeeringRanges").Force(true).Context(ctx).Do()
-	fmt.Println(err)
 	return managed.ExternalCreation{}, errors.Wrap(resource.Ignore(gcp.IsErrorAlreadyExists, err), errCreateConnection)
 }
 

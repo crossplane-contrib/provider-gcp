@@ -565,6 +565,8 @@ func TestNetworkDelete(t *testing.T) {
 }
 
 func TestNetworkUpdate(t *testing.T) {
+	falseVal := false
+
 	type args struct {
 		mg resource.Managed
 	}
@@ -594,6 +596,9 @@ func TestNetworkUpdate(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
 				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Network{})
 				case http.MethodPatch:
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(&compute.Operation{})
@@ -613,10 +618,45 @@ func TestNetworkUpdate(t *testing.T) {
 				err: nil,
 			},
 		},
+		"SuccessfulSwitchToCustom": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Network{
+						AutoCreateSubnetworks: true,
+					})
+				case http.MethodPost:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: networkObj(func(n *v1beta1.Network) {
+					n.Spec.ForProvider.AutoCreateSubnetworks = &falseVal
+				}),
+			},
+			want: want{
+				mg: networkObj(func(n *v1beta1.Network) {
+					n.Spec.ForProvider.AutoCreateSubnetworks = &falseVal
+				}),
+				err: nil,
+			},
+		},
 		"UpdateFails": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
 				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Subnetwork{})
 				case http.MethodPatch:
 					w.WriteHeader(http.StatusBadRequest)
 					_ = json.NewEncoder(w).Encode(&compute.Operation{})
@@ -634,6 +674,38 @@ func TestNetworkUpdate(t *testing.T) {
 			},
 			want: want{
 				mg:  networkObj(networkWithDescription("a new description")),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errNetworkUpdateFailed),
+			},
+		},
+		"SwitchToCustomUpdateFails": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				switch r.Method {
+				case http.MethodGet:
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&compute.Network{
+						AutoCreateSubnetworks: true,
+					})
+				case http.MethodPost:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				default:
+					w.WriteHeader(http.StatusBadRequest)
+					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				}
+			}),
+			kube: &test.MockClient{
+				MockGet: test.NewMockGetFn(nil),
+			},
+			args: args{
+				mg: networkObj(func(n *v1beta1.Network) {
+					n.Spec.ForProvider.AutoCreateSubnetworks = &falseVal
+				}),
+			},
+			want: want{
+				mg: networkObj(func(n *v1beta1.Network) {
+					n.Spec.ForProvider.AutoCreateSubnetworks = &falseVal
+				}),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errNetworkUpdateFailed),
 			},
 		},

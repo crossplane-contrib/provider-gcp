@@ -383,7 +383,6 @@ func TestCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			fmt.Println(name)
 			got, err := tc.e.Create(tc.args.ctx, tc.args.mg)
 			if diff := cmp.Diff(tc.want.ec, got); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)

@@ -35,7 +35,8 @@ type NetworkParameters struct {
 	// subnet has a predetermined range as described in Auto mode VPC
 	// network IP ranges.
 	//
-	// This field can only be updated after creation
+	// This field can only be updated from true to false after creation using
+	// switchToCustomMode.
 	// +optional
 	AutoCreateSubnetworks *bool `json:"autoCreateSubnetworks,omitempty"`
 
