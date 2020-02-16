@@ -1,13 +1,24 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <title>Cloud Interconnect</title>
-  <g>
-    <path d="M126.47,58.12l-26.3-45.74A11.56,11.56,0,0,0,90.31,6.5H37.7a11.55,11.55,0,0,0-9.86,5.88L1.53,58a11.48,11.48,0,0,0,0,11.44l26.3,46a11.77,11.77,0,0,0,9.86,6.09H90.3a11.73,11.73,0,0,0,9.87-6.06l26.3-45.74A11.73,11.73,0,0,0,126.47,58.12Z" style="fill: #4285f4"/>
-    <path d="M80.69,39.31,50,45,60.24,55.24,33,67,52,86l-1.75,2.63L83.11,121.5H90.3a11.73,11.73,0,0,0,9.87-6.06l20.69-36Z" style="opacity: 0.070000000298023;isolation: isolate"/>
-    <rect x="79.5" y="61" width="13.5" height="6" style="fill: #fff"/>
-    <rect x="75" y="45" width="6" height="38" style="fill: #fff"/>
-    <rect x="33" y="61" width="12" height="6" style="fill: #fff"/>
-    <path d="M51,39H80a1,1,0,0,1,1,1h0v5H50V40A1,1,0,0,1,51,39Z" style="fill: #fff"/>
-    <path d="M50,83H81v5a1,1,0,0,1-1,1H51a1,1,0,0,1-1-1h0V83Z" style="fill: #fff"/>
-    <rect x="44" y="52" width="24" height="24" rx="0.89" ry="0.89" style="fill: #fff"/>
-  </g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="65px" height="65px" viewBox="0 0 65 65" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 62 (91390) - https://sketch.com -->
+    <title>Application Icons/GoogleCloud/Connection/65x65</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="65" height="65" rx="16"></rect>
+    </defs>
+    <g id="Application-Icons/GoogleCloud/Connection/65x65" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect id="Rectangle-Copy-13" stroke="#4A7CDB" fill="#5086EC" fill-rule="nonzero" x="0.5" y="0.5" width="64" height="64" rx="16"></rect>
+        <g id="Group">
+            <mask id="mask-2" fill="white">
+                <use xlink:href="#path-1"></use>
+            </mask>
+            <use id="Mask" fill="#5086EC" fill-rule="nonzero" xlink:href="#path-1"></use>
+            <g mask="url(#mask-2)">
+                <g transform="translate(13.541667, 16.250000)">
+                    <path d="M62.2916667,29.7916667 L42.7710015,49.3896566 C41.7278063,50.7687744 40.3368794,51.4583333 38.5982208,51.4583333 L32.0782511,51.4583333 L11.4751467,31.0301508 L12.5183419,29.7372278 L0,17.3251675 L17.7343177,9.82621441 L11.2143479,3.36159966 L31.2958547,0 L62.2916667,29.7916667 Z" id="Path" fill-opacity="0.07" fill="#000000"></path>
+                    <path d="M30.1324503,14.004065 L37.9166667,14.004065 L37.9166667,18.2317073 L30.1324503,18.2317073 L30.1324503,31.7073171 C30.1324503,32.2357724 29.8813466,32.5 29.3791391,32.5 L11.5507726,32.5 C11.0485651,32.5 10.7974614,32.2357724 10.7974614,31.7073171 L10.7974614,28.2723577 L26.365894,28.2723577 L26.365894,3.96341463 L10.7974614,3.96341463 L10.7974614,0.792682927 C10.7974614,0.264227642 11.0485651,0 11.5507726,0 L29.3791391,0 C29.8813466,0 30.1324503,0.264227642 30.1324503,0.792682927 L30.1324503,14.004065 Z M7.03090508,14.004065 L7.03090508,8.98373984 C7.03090508,8.45528455 7.28200883,8.19105691 7.78421634,8.19105691 L21.343819,8.19105691 C21.8460265,8.19105691 22.0971302,8.45528455 22.0971302,8.98373984 L22.0971302,23.2520325 C22.0971302,23.7804878 21.8460265,24.0447154 21.343819,24.0447154 L7.78421634,24.0447154 C7.28200883,24.0447154 7.03090508,23.7804878 7.03090508,23.2520325 L7.03090508,18.2317073 L0,18.2317073 L0,14.004065 L7.03090508,14.004065 Z" id="Shape" fill="#FFFFFF"></path>
+                </g>
+            </g>
+        </g>
+    </g>
 </svg>
