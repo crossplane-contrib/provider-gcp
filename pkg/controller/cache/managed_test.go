@@ -145,7 +145,7 @@ func TestConnect(t *testing.T) {
 		Spec: gcpv1alpha3.ProviderSpec{
 			ProjectID: project,
 			ProviderSpec: runtimev1alpha1.ProviderSpec{
-				CredentialsSecretRef: runtimev1alpha1.SecretKeySelector{
+				CredentialsSecretRef: &runtimev1alpha1.SecretKeySelector{
 					SecretReference: runtimev1alpha1.SecretReference{
 						Namespace: namespace,
 						Name:      providerSecretName,
@@ -227,6 +227,23 @@ func TestConnect(t *testing.T) {
 			},
 			args: args{ctx: context.Background(), mg: instance()},
 			want: want{err: errors.Wrap(errorBoom, errGetProviderSecret)},
+		},
+		"ProviderSecretNil": {
+			conn: &connecter{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						nilSecretProvider := provider
+						nilSecretProvider.SetCredentialsSecretReference(nil)
+						*obj.(*gcpv1alpha3.Provider) = nilSecretProvider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						return errorBoom
+					}
+					return nil
+				}},
+			},
+			args: args{ctx: context.Background(), mg: instance()},
+			want: want{err: errors.New(errProviderSecretNil)},
 		},
 		"FailedToCreateCloudMemorystoreClient": {
 			conn: &connecter{

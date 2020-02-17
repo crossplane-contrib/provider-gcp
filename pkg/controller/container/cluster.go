@@ -46,6 +46,7 @@ import (
 // Error strings.
 const (
 	errGetProvider          = "cannot get Provider"
+	errProviderSecretNil    = "cannot find Secret reference on Provider"
 	errGetProviderSecret    = "cannot get Provider Secret"
 	errNewClient            = "cannot create new GKE container client"
 	errManagedUpdateFailed  = "cannot update GKECluster custom resource"
@@ -86,6 +87,10 @@ func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (ma
 	p := &gcpv1alpha3.Provider{}
 	if err := c.kube.Get(ctx, meta.NamespacedNameOf(i.Spec.ProviderReference), p); err != nil {
 		return nil, errors.Wrap(err, errGetProvider)
+	}
+
+	if p.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
 	}
 
 	s := &corev1.Secret{}

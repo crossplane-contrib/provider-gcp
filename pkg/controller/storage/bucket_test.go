@@ -175,7 +175,7 @@ func newProvider(name string) *provider {
 }
 
 func (p *provider) withSecret(namespace, name, key string) *provider {
-	p.Spec.CredentialsSecretRef = runtimev1alpha1.SecretKeySelector{
+	p.Spec.CredentialsSecretRef = &runtimev1alpha1.SecretKeySelector{
 		SecretReference: runtimev1alpha1.SecretReference{
 			Namespace: namespace,
 			Name:      name,

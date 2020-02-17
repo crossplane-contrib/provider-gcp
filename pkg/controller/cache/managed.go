@@ -42,6 +42,7 @@ import (
 // Error strings.
 const (
 	errGetProvider       = "cannot get Provider"
+	errProviderSecretNil = "cannot find Secret reference on Provider"
 	errGetProviderSecret = "cannot get Provider Secret"
 	errNewClient         = "cannot create new CloudMemorystore client"
 	errNotInstance       = "managed resource is not an CloudMemorystore instance"
@@ -82,6 +83,10 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	p := &gcpv1alpha3.Provider{}
 	if err := c.client.Get(ctx, meta.NamespacedNameOf(i.Spec.ProviderReference), p); err != nil {
 		return nil, errors.Wrap(err, errGetProvider)
+	}
+
+	if p.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
 	}
 
 	s := &corev1.Secret{}

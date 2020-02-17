@@ -143,6 +143,11 @@ func (r *Reconciler) _connect(instance *gcpcomputev1alpha3.GKECluster) (gke.Clie
 	if err := r.Get(ctx, meta.NamespacedNameOf(instance.Spec.ProviderReference), p); err != nil {
 		return nil, err
 	}
+
+	if p.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
+	}
+
 	secret := &corev1.Secret{}
 	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
 	if err := r.Client.Get(ctx, n, secret); err != nil {

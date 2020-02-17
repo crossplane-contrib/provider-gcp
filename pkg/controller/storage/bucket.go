@@ -59,6 +59,7 @@ const (
 // Error strings
 const (
 	errUpdateManagedStatus = "cannot update managed resource status"
+	errProviderSecretNil   = "cannot find Secret reference on Provider"
 )
 
 var (
@@ -150,6 +151,10 @@ func (m *bucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha3.Bucket) 
 	p := &gcpv1alpha3.Provider{}
 	if err := m.Get(ctx, meta.NamespacedNameOf(b.Spec.ProviderReference), p); err != nil {
 		return nil, err
+	}
+
+	if p.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
 	}
 
 	s := &corev1.Secret{}

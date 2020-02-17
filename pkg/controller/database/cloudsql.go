@@ -45,6 +45,7 @@ import (
 const (
 	errNotCloudSQL                = "managed resource is not a CloudSQLInstance custom resource"
 	errProviderNotRetrieved       = "provider could not be retrieved"
+	errProviderSecretNil          = "cannot find Secret reference on Provider"
 	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
 	errManagedUpdateFailed        = "cannot update CloudSQLInstance custom resource"
 
@@ -90,6 +91,11 @@ func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (m
 	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), provider); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
+
+	if provider.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
+	}
+
 	secret := &v1.Secret{}
 	n := types.NamespacedName{Namespace: provider.Spec.CredentialsSecretRef.Namespace, Name: provider.Spec.CredentialsSecretRef.Name}
 	if err := c.kube.Get(ctx, n, secret); err != nil {
