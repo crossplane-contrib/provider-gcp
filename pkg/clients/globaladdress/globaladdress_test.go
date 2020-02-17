@@ -22,221 +22,202 @@ import (
 	"github.com/google/go-cmp/cmp"
 	compute "google.golang.org/api/compute/v1"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
-
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 )
 
-func TestFromParameters(t *testing.T) {
-	name := "coolName"
-	address := "coolAddress"
-	addressType := "coolType"
-	ipVersion := "coolVersion"
-	network := "coolNetwork"
-	purpose := "beingCool"
-	subnetwork := "coolSubnet"
-	var prefixLength int64 = 3001
+var (
+	name               = "coolName"
+	description        = "coolDescription"
+	addressIP          = "coolAddress"
+	addressType        = "coolType"
+	ipVersion          = "coolVersion"
+	network            = "coolNetwork"
+	purpose            = "beingCool"
+	subnetwork         = "coolSubnet"
+	prefixLength int64 = 3001
 
+	timestamp        = "coolTime"
+	link             = "coolLink"
+	users            = []string{"coolUser", "coolerUser"}
+	id        uint64 = 3001
+)
+
+func params(m ...func(*v1beta1.GlobalAddressParameters)) *v1beta1.GlobalAddressParameters {
+	o := &v1beta1.GlobalAddressParameters{
+		Address:      &addressIP,
+		AddressType:  &addressType,
+		Description:  &description,
+		IPVersion:    &ipVersion,
+		Network:      &network,
+		PrefixLength: &prefixLength,
+		Purpose:      &purpose,
+		Subnetwork:   &subnetwork,
+	}
+
+	for _, f := range m {
+		f(o)
+	}
+
+	return o
+}
+
+func address(m ...func(*compute.Address)) *compute.Address {
+	o := &compute.Address{
+		Address:      addressIP,
+		AddressType:  addressType,
+		Description:  description,
+		IpVersion:    ipVersion,
+		Name:         name,
+		Network:      network,
+		PrefixLength: prefixLength,
+		Purpose:      purpose,
+		Subnetwork:   subnetwork,
+	}
+
+	for _, f := range m {
+		f(o)
+	}
+
+	return o
+}
+
+func addOutputFields(n *compute.Address) {
+	n.Status = v1beta1.StatusReserving
+	n.CreationTimestamp = timestamp
+	n.Id = id
+	n.SelfLink = link
+	n.Users = users
+
+}
+
+func observation(m ...func(*v1beta1.GlobalAddressObservation)) *v1beta1.GlobalAddressObservation {
+	o := &v1beta1.GlobalAddressObservation{
+		Status:            v1beta1.StatusReserving,
+		CreationTimestamp: timestamp,
+		ID:                id,
+		SelfLink:          link,
+		Users:             users,
+	}
+
+	for _, f := range m {
+		f(o)
+	}
+
+	return o
+}
+
+func TestGenerateGlobalAddress(t *testing.T) {
+	type args struct {
+		name string
+		in   v1beta1.GlobalAddressParameters
+	}
 	cases := map[string]struct {
-		p    v1alpha3.GlobalAddressParameters
+		args args
 		want *compute.Address
 	}{
-		"OptionalFieldsSet": {
-			p: v1alpha3.GlobalAddressParameters{
-				Address:      &address,
-				AddressType:  &addressType,
-				IPVersion:    &ipVersion,
-				Name:         name,
-				Network:      &network,
-				PrefixLength: &prefixLength,
-				Purpose:      &purpose,
-				Subnetwork:   &subnetwork,
+		"AllFilled": {
+			args: args{
+				name: name,
+				in:   *params(),
 			},
-			want: &compute.Address{
-				Address:      address,
-				AddressType:  addressType,
-				IpVersion:    ipVersion,
-				Name:         name,
-				Network:      network,
-				PrefixLength: prefixLength,
-				Purpose:      purpose,
-				Subnetwork:   subnetwork,
-			},
+			want: address(),
 		},
-		"OptionalFieldsUnset": {
-			p:    v1alpha3.GlobalAddressParameters{Name: name},
-			want: &compute.Address{Name: name},
+		"PartialFilled": {
+			args: args{
+				name: name,
+				in: *params(func(p *v1beta1.GlobalAddressParameters) {
+					p.AddressType = nil
+				}),
+			},
+			want: address(func(a *compute.Address) {
+				a.AddressType = ""
+			}),
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := FromParameters(tc.p)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Errorf("FromParameters(...): -want, +got:\n%s", diff)
+			r := &compute.Address{}
+			GenerateGlobalAddress(tc.args.name, tc.args.in, r)
+			if diff := cmp.Diff(r, tc.want); diff != "" {
+				t.Errorf("GenerateGlobalAddress(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestUpdateParameters(t *testing.T) {
-	name := "coolName"
-	address := "coolAddress"
-	addressType := "coolType"
-	ipVersion := "coolVersion"
-	network := "coolNetwork"
-	purpose := "beingCool"
-	subnetwork := "coolSubnet"
-	var prefixLength int64 = 3001
-
-	diff := "coolDiff"
-
+func TestGenerateNetworkObservation(t *testing.T) {
 	cases := map[string]struct {
-		p        *v1alpha3.GlobalAddressParameters
-		observed *compute.Address
-		want     *v1alpha3.GlobalAddressParameters
+		in  compute.Address
+		out v1beta1.GlobalAddressObservation
 	}{
-		"OptionalFieldsSet": {
-			p: &v1alpha3.GlobalAddressParameters{
-				Address:      &address,
-				AddressType:  &addressType,
-				IPVersion:    &ipVersion,
-				Name:         name,
-				Network:      &network,
-				PrefixLength: &prefixLength,
-				Purpose:      &purpose,
-				Subnetwork:   &subnetwork,
-			},
-			observed: &compute.Address{
-				Address:      address + diff,
-				AddressType:  addressType + diff,
-				IpVersion:    ipVersion + diff,
-				Name:         name,
-				Network:      network + diff,
-				PrefixLength: prefixLength + 1,
-				Purpose:      purpose + diff,
-				Subnetwork:   subnetwork + diff,
-			},
-			want: &v1alpha3.GlobalAddressParameters{
-				Address:      &address,
-				AddressType:  &addressType,
-				IPVersion:    &ipVersion,
-				Name:         name,
-				Network:      &network,
-				PrefixLength: &prefixLength,
-				Purpose:      &purpose,
-				Subnetwork:   &subnetwork,
-			},
+		"AllFilled": {
+			in:  *address(addOutputFields),
+			out: *observation(),
 		},
-		"OptionalFieldsUnset": {
-			p: &v1alpha3.GlobalAddressParameters{Name: name},
-			observed: &compute.Address{
-				Address:      address,
-				AddressType:  addressType,
-				IpVersion:    ipVersion,
-				Name:         name,
-				Network:      network,
-				PrefixLength: prefixLength,
-				Purpose:      purpose,
-				Subnetwork:   subnetwork,
-			},
-			want: &v1alpha3.GlobalAddressParameters{
-				Address:      &address,
-				AddressType:  &addressType,
-				IPVersion:    &ipVersion,
-				Name:         name,
-				Network:      &network,
-				PrefixLength: &prefixLength,
-				Purpose:      &purpose,
-				Subnetwork:   &subnetwork,
-			},
-		},
-		"ObservedFieldsUnset": {
-			p:        &v1alpha3.GlobalAddressParameters{Name: name},
-			observed: &compute.Address{Name: name},
-			want:     &v1alpha3.GlobalAddressParameters{Name: name},
+		"PartialFilled": {
+			in: *address(addOutputFields, func(a *compute.Address) {
+				a.CreationTimestamp = ""
+			}),
+			out: *observation(func(o *v1beta1.GlobalAddressObservation) {
+				o.CreationTimestamp = ""
+			}),
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			UpdateParameters(tc.p, tc.observed)
-			if diff := cmp.Diff(tc.want, tc.p); diff != "" {
-				t.Errorf("UpdateParameters(...): -want, +got:\n%s", diff)
+			r := GenerateGlobalAddressObservation(tc.in)
+			if diff := cmp.Diff(r, tc.out); diff != "" {
+				t.Errorf("GenerateGlobalAddressObservation(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestUpdateStatus(t *testing.T) {
-	timestamp := "coolTime"
-	link := "coolLink"
-	users := []string{"coolUser", "coolerUser"}
-	var id uint64 = 3001
-
+func TestLateInitializeSpec(t *testing.T) {
+	type args struct {
+		spec *v1beta1.GlobalAddressParameters
+		in   compute.Address
+	}
 	cases := map[string]struct {
-		s        *v1alpha3.GlobalAddressStatus
-		observed *compute.Address
-		want     *v1alpha3.GlobalAddressStatus
+		args args
+		want *v1beta1.GlobalAddressParameters
 	}{
-		"Reserving": {
-			s: &v1alpha3.GlobalAddressStatus{},
-			observed: &compute.Address{
-				Status:            StatusReserving,
-				CreationTimestamp: timestamp,
-				Id:                id,
-				SelfLink:          link,
-				Users:             users,
+		"AllFilledNoDiff": {
+			args: args{
+				spec: params(),
+				in:   *address(),
 			},
-			want: &v1alpha3.GlobalAddressStatus{
-				ResourceStatus: runtimev1alpha1.ResourceStatus{
-					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
-						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Creating()},
-					},
-				},
-				Status:            StatusReserving,
-				CreationTimestamp: timestamp,
-				ID:                id,
-				SelfLink:          link,
-				Users:             users,
-			},
+			want: params(),
 		},
-		"Reserved": {
-			s: &v1alpha3.GlobalAddressStatus{},
-			observed: &compute.Address{
-				Status: StatusReserved,
+		"AllFilledExternalDiff": {
+			args: args{
+				spec: params(),
+				in: *address(func(a *compute.Address) {
+					a.Description = "some other description"
+				}),
 			},
-			want: &v1alpha3.GlobalAddressStatus{
-				ResourceStatus: runtimev1alpha1.ResourceStatus{
-					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
-						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Available()},
-					},
-				},
-				Status: StatusReserved,
-			},
+			want: params(),
 		},
-		"InUse": {
-			s: &v1alpha3.GlobalAddressStatus{},
-			observed: &compute.Address{
-				Status: StatusInUse,
+		"PartialFilled": {
+			args: args{
+				spec: params(func(p *v1beta1.GlobalAddressParameters) {
+					p.AddressType = nil
+				}),
+				in: *address(),
 			},
-			want: &v1alpha3.GlobalAddressStatus{
-				ResourceStatus: runtimev1alpha1.ResourceStatus{
-					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
-						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Available()},
-					},
-				},
-				Status: StatusInUse,
-			},
+			want: params(func(p *v1beta1.GlobalAddressParameters) {
+				p.AddressType = &addressType
+			}),
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			UpdateStatus(tc.s, tc.observed)
-			if diff := cmp.Diff(tc.want, tc.s, test.EquateConditions()); diff != "" {
-				t.Errorf("UpdateStatus(...): -want, +got:\n%s", diff)
+			LateInitializeSpec(tc.args.spec, tc.args.in)
+			if diff := cmp.Diff(tc.args.spec, tc.want); diff != "" {
+				t.Errorf("LateInitializeSpec(...): -want, +got:\n%s", diff)
 			}
 		})
 	}

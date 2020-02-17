@@ -24,7 +24,7 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	computev1alpha1 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	computev1beta1 "github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 )
 
 // Error strings
@@ -35,7 +35,7 @@ const (
 // NetworkURIReferencerForConnection is an attribute referencer that resolves
 // network uri from a referenced Network and assigns it to a connection
 type NetworkURIReferencerForConnection struct {
-	computev1alpha1.NetworkURIReferencer `json:",inline"`
+	computev1beta1.NetworkURIReferencer `json:",inline"`
 }
 
 // Assign assigns the retrieved network uri to a connection
@@ -52,7 +52,7 @@ func (v *NetworkURIReferencerForConnection) Assign(res resource.CanReference, va
 // GlobalAddressNameReferencerForConnection is an attribute referencer that resolves
 // name from a referenced GlobalAddress and assigns it to a Connection
 type GlobalAddressNameReferencerForConnection struct {
-	computev1alpha1.GlobalAddressNameReferencer `json:",inline"`
+	computev1beta1.GlobalAddressNameReferencer `json:",inline"`
 }
 
 // Assign assigns the retrieved global address name to a connection

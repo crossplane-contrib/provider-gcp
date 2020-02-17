@@ -17,22 +17,59 @@ limitations under the License.
 package subnetwork
 
 import (
+	"strings"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/mitchellh/copystructure"
+	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
 )
 
+const errCheckUpToDate = "unable to determine if external resource is up to date"
+
+var equateGCPSecondaryRange = func(i, j *compute.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
+
 // GenerateSubnetwork creates a *googlecompute.Subnetwork object using SubnetworkParameters.
-func GenerateSubnetwork(s v1alpha3.SubnetworkParameters) *compute.Subnetwork {
-	sn := &compute.Subnetwork{}
-	sn.Name = s.Name
-	sn.Description = s.Description
-	sn.EnableFlowLogs = s.EnableFlowLogs
-	sn.IpCidrRange = s.IPCidrRange
-	sn.Network = s.Network
-	sn.PrivateIpGoogleAccess = s.PrivateIPGoogleAccess
-	sn.Region = s.Region
-	for _, val := range s.SecondaryIPRanges {
+func GenerateSubnetwork(name string, in v1beta1.SubnetworkParameters, subnet *compute.Subnetwork) {
+	subnet.Name = name
+	subnet.Description = gcp.StringValue(in.Description)
+	subnet.EnableFlowLogs = gcp.BoolValue(in.EnableFlowLogs)
+	subnet.IpCidrRange = in.IPCidrRange
+	subnet.Network = gcp.StringValue(in.Network)
+	subnet.PrivateIpGoogleAccess = gcp.BoolValue(in.PrivateIPGoogleAccess)
+	subnet.Region = in.Region
+
+	if len(in.SecondaryIPRanges) > 0 {
+		subnet.SecondaryIpRanges = make([]*compute.SubnetworkSecondaryRange, len(in.SecondaryIPRanges))
+	}
+
+	for i, val := range in.SecondaryIPRanges {
+		subnet.SecondaryIpRanges[i] = &compute.SubnetworkSecondaryRange{
+			IpCidrRange: val.IPCidrRange,
+			RangeName:   val.RangeName,
+		}
+	}
+}
+
+// GenerateSubnetworkForUpdate creates a *googlecompute.Subnetwork object using
+// SubnetworkParameters with fields disallowed by the GCP API removed. If a
+// field can be included in the GCP API but will result in an error if the value
+// is changed, it will still be included here such that users are notified of
+// invalid updates.
+func GenerateSubnetworkForUpdate(s v1beta1.Subnetwork, name string) *compute.Subnetwork {
+	sn := &compute.Subnetwork{
+		Name:                  name,
+		Description:           gcp.StringValue(s.Spec.ForProvider.Description),
+		EnableFlowLogs:        gcp.BoolValue(s.Spec.ForProvider.EnableFlowLogs),
+		IpCidrRange:           s.Spec.ForProvider.IPCidrRange,
+		PrivateIpGoogleAccess: gcp.BoolValue(s.Spec.ForProvider.PrivateIPGoogleAccess),
+		Fingerprint:           s.Status.AtProvider.Fingerprint,
+	}
+	for _, val := range s.Spec.ForProvider.SecondaryIPRanges {
 		obj := &compute.SubnetworkSecondaryRange{
 			IpCidrRange: val.IPCidrRange,
 			RangeName:   val.RangeName,
@@ -42,28 +79,71 @@ func GenerateSubnetwork(s v1alpha3.SubnetworkParameters) *compute.Subnetwork {
 	return sn
 }
 
-// GenerateGCPSubnetworkStatus creates a GCPSubnetworkStatus object using *googlecompute.Subnetwork.
-func GenerateGCPSubnetworkStatus(in *compute.Subnetwork) v1alpha3.GCPSubnetworkStatus {
-	s := v1alpha3.GCPSubnetworkStatus{}
-	s.Name = in.Name
-	s.Description = in.Description
-	s.EnableFlowLogs = in.EnableFlowLogs
-	s.Fingerprint = in.Fingerprint
-	s.IPCIDRRange = in.IpCidrRange
-	s.Network = in.Network
-	s.PrivateIPGoogleAccess = in.PrivateIpGoogleAccess
-	s.Region = in.Region
-	for _, val := range in.SecondaryIpRanges {
-		obj := &v1alpha3.GCPSubnetworkSecondaryRange{
-			IPCidrRange: val.IpCidrRange,
-			RangeName:   val.RangeName,
-		}
-		s.SecondaryIPRanges = append(s.SecondaryIPRanges, obj)
+// GenerateSubnetworkObservation creates a SubnetworkObservation object using *googlecompute.Subnetwork.
+func GenerateSubnetworkObservation(in compute.Subnetwork) v1beta1.SubnetworkObservation {
+	return v1beta1.SubnetworkObservation{
+		CreationTimestamp: in.CreationTimestamp,
+		Fingerprint:       in.Fingerprint,
+		GatewayAddress:    in.GatewayAddress,
+		ID:                in.Id,
+		SelfLink:          in.SelfLink,
 	}
-	s.CreationTimestamp = in.CreationTimestamp
-	s.GatewayAddress = in.GatewayAddress
-	s.ID = in.Id
-	s.Kind = in.Kind
-	s.SelfLink = in.SelfLink
-	return s
+}
+
+// LateInitializeSpec fills unassigned fields with the values in compute.Subnetwork object.
+func LateInitializeSpec(spec *v1beta1.SubnetworkParameters, in compute.Subnetwork) {
+	if spec.IPCidrRange == "" {
+		spec.IPCidrRange = in.IpCidrRange
+	}
+
+	if spec.Region == "" {
+		spec.Region = in.Region
+	}
+
+	spec.Network = gcp.LateInitializeString(spec.Network, in.Network)
+	spec.Description = gcp.LateInitializeString(spec.Description, in.Description)
+	spec.EnableFlowLogs = gcp.LateInitializeBool(spec.EnableFlowLogs, in.EnableFlowLogs)
+	spec.PrivateIPGoogleAccess = gcp.LateInitializeBool(spec.PrivateIPGoogleAccess, in.PrivateIpGoogleAccess)
+	if len(in.SecondaryIpRanges) != 0 && len(spec.SecondaryIPRanges) == 0 {
+		spec.SecondaryIPRanges = make([]*v1beta1.SubnetworkSecondaryRange, len(in.SecondaryIpRanges))
+		for i, r := range in.SecondaryIpRanges {
+			spec.SecondaryIPRanges[i] = &v1beta1.SubnetworkSecondaryRange{
+				IPCidrRange: r.IpCidrRange,
+				RangeName:   r.RangeName,
+			}
+		}
+	}
+}
+
+// IsUpToDate checks whether current state is up-to-date compared to the given
+// set of parameters.
+func IsUpToDate(name string, in *v1beta1.SubnetworkParameters, observed *compute.Subnetwork) (upToDate bool, privateAccess bool, err error) {
+	generated, err := copystructure.Copy(observed)
+	if err != nil {
+		return true, false, errors.Wrap(err, errCheckUpToDate)
+	}
+	desired, ok := generated.(*compute.Subnetwork)
+	if !ok {
+		return true, false, errors.New(errCheckUpToDate)
+	}
+	GenerateSubnetwork(name, *in, desired)
+	if !cmp.Equal(desired.PrivateIpGoogleAccess, observed.PrivateIpGoogleAccess) {
+		return false, true, nil
+	}
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.SortSlices(equateGCPSecondaryRange), equatePrefixedStrings(v1beta1.URIPrefix, v1beta1.URIRegionPrefix)), false, nil
+}
+
+func equatePrefixedStrings(prefixes ...string) cmp.Option {
+	return cmp.Comparer(func(a, b string) bool {
+		if a == b {
+			return true
+		}
+
+		for _, prefix := range prefixes {
+			if strings.TrimPrefix(a, prefix) == strings.TrimPrefix(b, prefix) {
+				return true
+			}
+		}
+		return false
+	})
 }

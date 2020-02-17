@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,32 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	"context"
+	"strings"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 )
 
-// GlobalAddressNameReferencer retrieves a Name from a referenced GlobalAddress object
-type GlobalAddressNameReferencer struct {
+const (
+	// URIPrefix is the prefix that is used in selfLink
+	URIPrefix = "https://www.googleapis.com/compute/v1/"
+)
+
+// NetworkURIReferencer retrieves a NetworkURI from a referenced Network object
+type NetworkURIReferencer struct {
 	corev1.LocalObjectReference `json:",inline"`
 }
 
 // GetStatus implements GetStatus method of AttributeReferencer interface
-func (v *GlobalAddressNameReferencer) GetStatus(ctx context.Context, _ resource.CanReference, reader client.Reader) ([]resource.ReferenceStatus, error) {
-	ga := GlobalAddress{}
+func (v *NetworkURIReferencer) GetStatus(ctx context.Context, _ resource.CanReference, reader client.Reader) ([]resource.ReferenceStatus, error) {
+	network := &Network{}
 	nn := types.NamespacedName{Name: v.Name}
-	if err := reader.Get(ctx, nn, &ga); err != nil {
+	if err := reader.Get(ctx, nn, network); err != nil {
 		if kerrors.IsNotFound(err) {
 			return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotFound}}, nil
 		}
@@ -47,20 +51,20 @@ func (v *GlobalAddressNameReferencer) GetStatus(ctx context.Context, _ resource.
 		return nil, err
 	}
 
-	if !resource.IsConditionTrue(ga.GetCondition(runtimev1alpha1.TypeReady)) {
+	if !resource.IsConditionTrue(network.GetCondition(runtimev1alpha1.TypeReady)) {
 		return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotReady}}, nil
 	}
 
 	return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceReady}}, nil
 }
 
-// Build retrieves a GlobalAddress and builds the Name
-func (v *GlobalAddressNameReferencer) Build(ctx context.Context, _ resource.CanReference, reader client.Reader) (string, error) {
-	ga := GlobalAddress{}
+// Build retrieves and builds the NetworkURI
+func (v *NetworkURIReferencer) Build(ctx context.Context, _ resource.CanReference, reader client.Reader) (string, error) {
+	network := &Network{}
 	nn := types.NamespacedName{Name: v.Name}
-	if err := reader.Get(ctx, nn, &ga); err != nil {
+	if err := reader.Get(ctx, nn, network); err != nil {
 		return "", err
 	}
 
-	return ga.Spec.Name, nil
+	return strings.TrimPrefix(network.Status.AtProvider.SelfLink, URIPrefix), nil
 }

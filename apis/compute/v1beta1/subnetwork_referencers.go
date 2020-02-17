@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	"context"
@@ -38,9 +38,9 @@ type SubnetworkURIReferencer struct {
 
 // GetStatus implements GetStatus method of AttributeReferencer interface
 func (v *SubnetworkURIReferencer) GetStatus(ctx context.Context, _ resource.CanReference, reader client.Reader) ([]resource.ReferenceStatus, error) {
-	subnetwork := Subnetwork{}
+	subnetwork := &Subnetwork{}
 	nn := types.NamespacedName{Name: v.Name}
-	if err := reader.Get(ctx, nn, &subnetwork); err != nil {
+	if err := reader.Get(ctx, nn, subnetwork); err != nil {
 		if kerrors.IsNotFound(err) {
 			return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotFound}}, nil
 		}
@@ -57,11 +57,11 @@ func (v *SubnetworkURIReferencer) GetStatus(ctx context.Context, _ resource.CanR
 
 // Build retrieves and builds the SubnetworkURI
 func (v *SubnetworkURIReferencer) Build(ctx context.Context, _ resource.CanReference, reader client.Reader) (string, error) {
-	subnetwork := Subnetwork{}
+	subnetwork := &Subnetwork{}
 	nn := types.NamespacedName{Name: v.Name}
-	if err := reader.Get(ctx, nn, &subnetwork); err != nil {
+	if err := reader.Get(ctx, nn, subnetwork); err != nil {
 		return "", err
 	}
 
-	return strings.TrimPrefix(subnetwork.Status.SelfLink, URIPrefix), nil
+	return strings.TrimPrefix(subnetwork.Status.AtProvider.SelfLink, URIPrefix), nil
 }

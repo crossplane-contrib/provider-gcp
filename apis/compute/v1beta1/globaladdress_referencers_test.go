@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 )
@@ -41,10 +42,13 @@ func TestGlobalAddressNameReferencerGetStatus(t *testing.T) {
 	errResourceNotFound := &kerrors.StatusError{ErrStatus: metav1.Status{Reason: metav1.StatusReasonNotFound}}
 
 	readyResource := GlobalAddress{
-		Spec: GlobalAddressSpec{
-			GlobalAddressParameters: GlobalAddressParameters{
-				Name: mockGlobalAddressName,
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				meta.ExternalNameAnnotationKey: mockGlobalAddressName,
 			},
+		},
+		Spec: GlobalAddressSpec{
+			ForProvider: GlobalAddressParameters{},
 		},
 	}
 
@@ -153,7 +157,7 @@ func TestGlobalAddressNameReferencerBuild(t *testing.T) {
 			input: input{
 				readerFn: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 					p := obj.(*GlobalAddress)
-					p.Spec.Name = mockGlobalAddressName
+					meta.SetExternalName(p, mockGlobalAddressName)
 					return nil
 				},
 			},

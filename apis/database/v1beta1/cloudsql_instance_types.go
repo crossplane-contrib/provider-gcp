@@ -30,7 +30,7 @@ import (
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
 
-	computev1alpha3 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
+	computev1beta1 "github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 	"github.com/crossplaneio/stack-gcp/pkg/clients/connection"
 )
 
@@ -88,7 +88,7 @@ type NetworkURIReferencerForCloudSQLInstance struct {
 // Network is considered Ready when its Ready condition is true, and it has an
 // active service networking connection peering.
 func (v *NetworkURIReferencerForCloudSQLInstance) GetStatus(ctx context.Context, _ resource.CanReference, c client.Reader) ([]resource.ReferenceStatus, error) {
-	network := computev1alpha3.Network{}
+	network := computev1beta1.Network{}
 	nn := types.NamespacedName{Name: v.Name}
 	if err := c.Get(ctx, nn, &network); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -102,7 +102,7 @@ func (v *NetworkURIReferencerForCloudSQLInstance) GetStatus(ctx context.Context,
 		return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotReady}}, nil
 	}
 
-	for _, p := range network.Status.GCPNetworkStatus.Peerings {
+	for _, p := range network.Status.AtProvider.Peerings {
 		if p.Name == connection.PeeringName && p.State == connection.PeeringStateActive {
 			return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceReady}}, nil
 		}
@@ -113,13 +113,13 @@ func (v *NetworkURIReferencerForCloudSQLInstance) GetStatus(ctx context.Context,
 
 // Build the resource link for the referenced network.
 func (v *NetworkURIReferencerForCloudSQLInstance) Build(ctx context.Context, _ resource.CanReference, c client.Reader) (string, error) {
-	network := computev1alpha3.Network{}
+	network := computev1beta1.Network{}
 	nn := types.NamespacedName{Name: v.Name}
 	if err := c.Get(ctx, nn, &network); err != nil {
 		return "", errors.Wrap(err, errGetNetwork)
 	}
 
-	return strings.TrimPrefix(network.Status.SelfLink, computev1alpha3.URIPrefix), nil
+	return strings.TrimPrefix(network.Status.AtProvider.SelfLink, computev1beta1.URIPrefix), nil
 }
 
 // Assign the PrivateNetwork field of the supplied resource.CanReference,

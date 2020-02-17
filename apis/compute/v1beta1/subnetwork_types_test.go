@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	"testing"
@@ -26,12 +26,12 @@ import (
 	"github.com/crossplaneio/crossplane-runtime/pkg/test"
 )
 
-var _ resource.AttributeReferencer = (*NetworkURIReferencerForGlobalAddress)(nil)
+var _ resource.AttributeReferencer = (*NetworkURIReferencerForSubnetwork)(nil)
 
-func TestNetworkURIReferencerForGlobalAddress_AssignInvalidType_ReturnsErr(t *testing.T) {
+func TestNetworkURIReferencerForSubnetwork_AssignInvalidType_ReturnsErr(t *testing.T) {
 
-	r := &NetworkURIReferencerForGlobalAddress{}
-	expectedErr := errors.New(errResourceIsNotGlobalAddress)
+	r := &NetworkURIReferencerForSubnetwork{}
+	expectedErr := errors.New(errResourceIsNotSubnetwork)
 
 	err := r.Assign(nil, "mockValue")
 	if diff := cmp.Diff(expectedErr, err, test.EquateErrors()); diff != "" {
@@ -39,19 +39,18 @@ func TestNetworkURIReferencerForGlobalAddress_AssignInvalidType_ReturnsErr(t *te
 	}
 }
 
-func TestNetworkURIReferencerForGlobalAddress_AssignValidType_ReturnsExpected(t *testing.T) {
-
-	r := &NetworkURIReferencerForGlobalAddress{}
-	res := &GlobalAddress{}
+func TestNetworkURIReferencerForSubnetwork_AssignValidType_ReturnsExpected(t *testing.T) {
+	mv := "mockValue"
+	r := &NetworkURIReferencerForSubnetwork{}
+	res := &Subnetwork{}
 	var expectedErr error
 
-	mockValue := "mockValue"
-	err := r.Assign(res, mockValue)
+	err := r.Assign(res, mv)
 	if diff := cmp.Diff(expectedErr, err, test.EquateErrors()); diff != "" {
 		t.Errorf("Assign(...): -want error, +got error:\n%s", diff)
 	}
 
-	if diff := cmp.Diff(res.Spec.Network, &mockValue); diff != "" {
+	if diff := cmp.Diff(res.Spec.ForProvider.Network, &mv); diff != "" {
 		t.Errorf("Assign(...): -want value, +got value:\n%s", diff)
 	}
 }

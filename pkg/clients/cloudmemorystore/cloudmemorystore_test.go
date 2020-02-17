@@ -245,12 +245,16 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 
 func TestIsUpToDate(t *testing.T) {
 	randString := "wat"
+	type want struct {
+		upToDate bool
+		isErr    bool
+	}
 	cases := []struct {
 		name string
 		id   InstanceID
 		kube *v1beta1.CloudMemorystoreInstance
 		gcp  *redisv1pb.Instance
-		want bool
+		want want
 	}{
 		{
 			name: "NeedsLessMemory",
@@ -267,7 +271,7 @@ func TestIsUpToDate(t *testing.T) {
 				Name:         fullName,
 				MemorySizeGb: memorySizeGB + 1,
 			},
-			want: false,
+			want: want{upToDate: false, isErr: false},
 		},
 		{
 			name: "NeedsNewRedisConfigs",
@@ -283,7 +287,7 @@ func TestIsUpToDate(t *testing.T) {
 				Name:         fullName,
 				RedisConfigs: map[string]string{"super": "cool"},
 			},
-			want: false,
+			want: want{upToDate: false, isErr: false},
 		},
 		{
 			name: "NeedsNoUpdate",
@@ -301,7 +305,7 @@ func TestIsUpToDate(t *testing.T) {
 				RedisConfigs: redisConfigs,
 				MemorySizeGb: memorySizeGB,
 			},
-			want: true,
+			want: want{upToDate: true, isErr: false},
 		},
 		{
 			name: "NeedsNoUpdateWithOutputFields",
@@ -320,7 +324,7 @@ func TestIsUpToDate(t *testing.T) {
 				MemorySizeGb:  memorySizeGB,
 				StatusMessage: "definitely not in spec",
 			},
-			want: true,
+			want: want{upToDate: true, isErr: false},
 		},
 		{
 			name: "CannotUpdateField",
@@ -341,14 +345,17 @@ func TestIsUpToDate(t *testing.T) {
 				MemorySizeGb:      memorySizeGB,
 				AuthorizedNetwork: authorizedNetwork,
 			},
-			want: true,
+			want: want{upToDate: true, isErr: false},
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, _ := IsUpToDate(tc.id, &tc.kube.Spec.ForProvider, tc.gcp)
-			if got != tc.want {
+			got, err := IsUpToDate(tc.id, &tc.kube.Spec.ForProvider, tc.gcp)
+			if err != nil && !tc.want.isErr {
+				t.Error("IsUpToDate(...) unexpected error")
+			}
+			if got != tc.want.upToDate {
 				t.Errorf("IsUpToDate(...): want: %t got: %t", tc.want, got)
 			}
 		})

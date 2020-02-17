@@ -22,6 +22,8 @@ import (
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
 )
 
 // Cluster states.
@@ -45,7 +47,7 @@ const (
 // NetworkURIReferencerForGKECluster is an attribute referencer that resolves
 // network uri from a referenced Network and assigns it to a GKECluster
 type NetworkURIReferencerForGKECluster struct {
-	NetworkURIReferencer `json:",inline"`
+	v1beta1.NetworkURIReferencer `json:",inline"`
 }
 
 // Assign assigns the retrieved network uri to GKECluster
@@ -62,7 +64,7 @@ func (v *NetworkURIReferencerForGKECluster) Assign(res resource.CanReference, va
 // SubnetworkURIReferencerForGKECluster is an attribute referencer that resolves
 // subnetwork uri from a referenced Subnetwork and assigns it to a GKECluster
 type SubnetworkURIReferencerForGKECluster struct {
-	SubnetworkURIReferencer `json:",inline"`
+	v1beta1.SubnetworkURIReferencer `json:",inline"`
 }
 
 // Assign assigns the retrieved subnetwork uri to a GKECluster

@@ -430,23 +430,27 @@ func TestIsUpToDate(t *testing.T) {
 		params *v1beta1.CloudSQLInstanceParameters
 		db     *sqladmin.DatabaseInstance
 	}
+	type want struct {
+		upToDate bool
+		isErr    bool
+	}
 	cases := map[string]struct {
 		args args
-		want bool
+		want want
 	}{
 		"IsUpToDate": {
 			args: args{
 				params: params(),
 				db:     db(),
 			},
-			want: true,
+			want: want{upToDate: true, isErr: false},
 		},
 		"IsUpToDateWithOutputFields": {
 			args: args{
 				params: params(),
 				db:     db(addOutputFields),
 			},
-			want: true,
+			want: want{upToDate: true, isErr: false},
 		},
 		"IsUpToDateIgnoreReferences": {
 			args: args{
@@ -466,7 +470,7 @@ func TestIsUpToDate(t *testing.T) {
 					}
 				}),
 			},
-			want: true,
+			want: want{upToDate: true, isErr: false},
 		},
 		"NeedsUpdate": {
 			args: args{
@@ -475,7 +479,7 @@ func TestIsUpToDate(t *testing.T) {
 					db.MasterInstanceName = ""
 				}),
 			},
-			want: false,
+			want: want{upToDate: false, isErr: false},
 		},
 		"NeedsUpdateBadRef": {
 			args: args{
@@ -495,13 +499,16 @@ func TestIsUpToDate(t *testing.T) {
 					}
 				}),
 			},
-			want: false,
+			want: want{upToDate: false, isErr: false},
 		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r, _ := IsUpToDate("test-sql", tc.args.params, tc.args.db)
-			if diff := cmp.Diff(tc.want, r); diff != "" {
+			r, err := IsUpToDate("test-sql", tc.args.params, tc.args.db)
+			if err != nil && !tc.want.isErr {
+				t.Error("IsUpToDate(...) unexpected error")
+			}
+			if diff := cmp.Diff(tc.want.upToDate, r); diff != "" {
 				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
 			}
 		})

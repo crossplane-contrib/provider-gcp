@@ -174,11 +174,8 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		Cluster: cluster,
 	}
 
-	if _, err := e.cluster.Projects.Locations.Clusters.Create(gke.GetFullyQualifiedParent(e.projectID, cr.Spec.ForProvider), create).Context(ctx).Do(); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
-	}
-
-	return managed.ExternalCreation{}, nil
+	_, err := e.cluster.Projects.Locations.Clusters.Create(gke.GetFullyQualifiedParent(e.projectID, cr.Spec.ForProvider), create).Context(ctx).Do()
+	return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
 }
 
 func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
