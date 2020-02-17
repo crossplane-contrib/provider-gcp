@@ -83,6 +83,10 @@ func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (m
 		return nil, errors.Wrap(err, errGetProvider)
 	}
 
+	if p.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
+	}
+
 	s := &corev1.Secret{}
 	n := types.NamespacedName{Namespace: p.Spec.ProviderSpec.CredentialsSecretRef.Namespace, Name: p.Spec.ProviderSpec.CredentialsSecretRef.Name}
 	if err := c.kube.Get(ctx, n, s); err != nil {

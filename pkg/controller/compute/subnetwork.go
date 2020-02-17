@@ -85,6 +85,11 @@ func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) 
 	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), provider); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
+
+	if provider.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
+	}
+
 	secret := &v1.Secret{}
 	n := types.NamespacedName{Namespace: provider.Spec.CredentialsSecretRef.Namespace, Name: provider.Spec.CredentialsSecretRef.Name}
 	if err := c.kube.Get(ctx, n, secret); err != nil {

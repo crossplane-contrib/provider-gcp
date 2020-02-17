@@ -31,7 +31,9 @@ import (
 	"google.golang.org/api/option"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
@@ -52,12 +54,20 @@ var (
 
 var (
 	unexpected resource.Managed
+
+	projectID          = "myproject-id-1234"
+	providerName       = "gcp-provider"
+	providerSecretName = "gcp-creds"
+	providerSecretKey  = "creds"
+	namespace          = "test"
 )
 
 func conn() *v1beta1.Connection {
 	return &v1beta1.Connection{
 		Spec: v1beta1.ConnectionSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{}},
+			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{
+				Name: providerName,
+			}},
 		},
 		Status: v1beta1.ConnectionStatus{
 			AtProvider: v1beta1.ConnectionObservation{
@@ -68,143 +78,132 @@ func conn() *v1beta1.Connection {
 }
 
 func TestConnect(t *testing.T) {
-	var service *compute.Service
-	var apiService *servicenetworking.APIService
+	provider := gcpv1alpha3.Provider{
+		ObjectMeta: metav1.ObjectMeta{Name: providerName},
+		Spec: gcpv1alpha3.ProviderSpec{
+			ProjectID: projectID,
+			ProviderSpec: runtimev1alpha1.ProviderSpec{
+				CredentialsSecretRef: &runtimev1alpha1.SecretKeySelector{
+					SecretReference: runtimev1alpha1.SecretReference{
+						Namespace: namespace,
+						Name:      providerSecretName,
+					},
+					Key: providerSecretKey,
+				},
+			},
+		},
+	}
+
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
+		Data:       map[string][]byte{providerSecretKey: []byte("verysecret")},
+	}
 
 	type args struct {
-		ctx context.Context
-		mg  resource.Managed
+		mg resource.Managed
 	}
+	type want struct {
+		err error
+	}
+
 	cases := map[string]struct {
-		ec   managed.ExternalConnecter
+		conn managed.ExternalConnecter
 		args args
-		want error
+		want want
 	}{
-		"NotConnectionError": {
-			ec: &connector{},
-			args: args{
-				ctx: context.Background(),
-				mg:  unexpected,
-			},
-			want: errors.New(errNotConnection),
-		},
-		"GetProviderError": {
-			ec: &connector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-							return errBoom
-						case *corev1.Secret:
-						default:
-							return errors.New("unexpected resource kind")
-						}
-						return nil
-					}),
+		"Connected": {
+			conn: &connector{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						*obj.(*corev1.Secret) = secret
+					}
+					return nil
+				}},
+				newCompute: func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error) {
+					return &compute.Service{}, nil
+				},
+				newServiceNetworking: func(ctx context.Context, opts ...option.ClientOption) (*servicenetworking.APIService, error) {
+					return &servicenetworking.APIService{}, nil
 				},
 			},
 			args: args{
-				ctx: context.Background(),
-				mg:  conn(),
+				mg: conn(),
 			},
-			want: errors.Wrap(errBoom, errGetProvider),
+			want: want{
+				err: nil,
+			},
 		},
-		"GetProviderSecretError": {
-			ec: &connector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-						case *corev1.Secret:
-							return errBoom
-						default:
-							return errors.New("unexpected resource kind")
-						}
-						return nil
-					}),
-				},
+		"FailedToGetProvider": {
+			conn: &connector{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					return errBoom
+				}},
 			},
 			args: args{
-				ctx: context.Background(),
-				mg:  conn(),
+				mg: conn(),
 			},
-			want: errors.Wrap(errBoom, errGetProviderSecret),
+			want: want{
+				err: errors.Wrap(errBoom, errGetProvider),
+			},
 		},
-		"GetComputeServiceError": {
-			ec: &connector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-						case *corev1.Secret:
-						default:
-							return errors.New("unexpected resource kind")
-						}
-						return nil
-					}),
-				},
+		"FailedToGetProviderSecret": {
+			conn: &connector{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						return errBoom
+					}
+					return nil
+				}},
+			},
+			args: args{mg: conn()},
+			want: want{err: errors.Wrap(errBoom, errGetProviderSecret)},
+		},
+		"ProviderSecretNil": {
+			conn: &connector{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						nilSecretProvider := provider
+						nilSecretProvider.SetCredentialsSecretReference(nil)
+						*obj.(*gcpv1alpha3.Provider) = nilSecretProvider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						return errBoom
+					}
+					return nil
+				}},
+			},
+			args: args{mg: conn()},
+			want: want{err: errors.New(errProviderSecretNil)},
+		},
+		"FailedToCreateComputeClient": {
+			conn: &connector{
+				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						*obj.(*gcpv1alpha3.Provider) = provider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						*obj.(*corev1.Secret) = secret
+					}
+					return nil
+				}},
 				newCompute: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) { return nil, errBoom },
 			},
-			args: args{
-				ctx: context.Background(),
-				mg:  conn(),
-			},
-			want: errors.Wrap(errBoom, errNewClient),
-		},
-		"GetServiceNetworkingServiceError": {
-			ec: &connector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-						case *corev1.Secret:
-						default:
-							return errors.New("unexpected resource kind")
-						}
-						return nil
-					}),
-				},
-				newCompute: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) { return service, nil },
-				newServiceNetworking: func(_ context.Context, _ ...option.ClientOption) (*servicenetworking.APIService, error) {
-					return nil, errBoom
-				},
-			},
-			args: args{
-				ctx: context.Background(),
-				mg:  conn(),
-			},
-			want: errors.Wrap(errBoom, errNewClient),
-		},
-		"Successful": {
-			ec: &connector{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil, func(obj runtime.Object) error {
-						switch obj.(type) {
-						case *gcpv1alpha3.Provider:
-						case *corev1.Secret:
-						default:
-							return errors.Errorf("unexpected resource kind %T", obj)
-						}
-						return nil
-					}),
-				},
-				newCompute: func(_ context.Context, _ ...option.ClientOption) (*compute.Service, error) { return service, nil },
-				newServiceNetworking: func(_ context.Context, _ ...option.ClientOption) (*servicenetworking.APIService, error) {
-					return apiService, nil
-				},
-			},
-			args: args{
-				ctx: context.Background(),
-				mg:  conn(),
-			},
+			args: args{mg: conn()},
+			want: want{err: errors.Wrap(errBoom, errNewClient)},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := tc.ec.Connect(tc.args.ctx, tc.args.mg)
-			if diff := cmp.Diff(tc.want, err, test.EquateErrors()); diff != "" {
-				t.Errorf("Connect(...): -want error, +got error:\n%s", diff)
+			_, err := tc.conn.Connect(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("tc.conn.Connect(...): want error != got error:\n%s", diff)
 			}
 		})
 	}

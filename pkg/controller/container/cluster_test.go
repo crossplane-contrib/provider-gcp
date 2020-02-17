@@ -126,7 +126,7 @@ func TestConnect(t *testing.T) {
 		Spec: gcpv1alpha3.ProviderSpec{
 			ProjectID: projectID,
 			ProviderSpec: runtimev1alpha1.ProviderSpec{
-				CredentialsSecretRef: runtimev1alpha1.SecretKeySelector{
+				CredentialsSecretRef: &runtimev1alpha1.SecretKeySelector{
 					SecretReference: runtimev1alpha1.SecretReference{
 						Namespace: namespace,
 						Name:      providerSecretName,
@@ -203,6 +203,23 @@ func TestConnect(t *testing.T) {
 			},
 			args: args{mg: cluster()},
 			want: want{err: errors.Wrap(errBoom, errGetProviderSecret)},
+		},
+		"ProviderSecretNil": {
+			conn: &nodePoolConnector{
+				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
+					switch key {
+					case client.ObjectKey{Name: providerName}:
+						nilSecretProvider := provider
+						nilSecretProvider.SetCredentialsSecretReference(nil)
+						*obj.(*gcpv1alpha3.Provider) = nilSecretProvider
+					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
+						return errBoom
+					}
+					return nil
+				}},
+			},
+			args: args{mg: nodePool()},
+			want: want{err: errors.New(errProviderSecretNil)},
 		},
 		"FailedToCreateContainerClient": {
 			conn: &clusterConnector{

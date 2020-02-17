@@ -44,6 +44,7 @@ import (
 // Error strings.
 const (
 	errNotGlobalAddress     = "managed resource is not a GlobalAddress"
+	errProviderSecretNil    = "cannot find Secret reference on Provider"
 	errGetAddress           = "cannot get external Address resource"
 	errCreateAddress        = "cannot create external Address resource"
 	errDeleteAddress        = "cannot delete external Address resource"
@@ -81,6 +82,11 @@ func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (managed
 	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), p); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
+
+	if p.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
+	}
+
 	s := &v1.Secret{}
 	if err := c.kube.Get(ctx, types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}, s); err != nil {
 		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)

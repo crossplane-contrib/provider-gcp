@@ -46,6 +46,7 @@ import (
 // Error strings.
 const (
 	errGetProvider       = "cannot get provider"
+	errProviderSecretNil = "cannot find Secret reference on Provider"
 	errGetProviderSecret = "cannot get provider secret"
 	errNewClient         = "cannot create new Compute Service"
 	errNotConnection     = "managed resource is not a Connection"
@@ -112,6 +113,11 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err := c.client.Get(ctx, meta.NamespacedNameOf(ga.Spec.ProviderReference), p); err != nil {
 		return nil, errors.Wrap(err, errGetProvider)
 	}
+
+	if p.GetCredentialsSecretReference() == nil {
+		return nil, errors.New(errProviderSecretNil)
+	}
+
 	s := &v1.Secret{}
 	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
 	if err := c.client.Get(ctx, n, s); err != nil {

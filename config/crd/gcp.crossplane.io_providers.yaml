@@ -70,7 +70,6 @@ spec:
                 GCP Provider.
               type: string
           required:
-          - credentialsSecretRef
           - projectID
           type: object
       required:
