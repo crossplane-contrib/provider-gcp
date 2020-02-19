@@ -33,15 +33,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
-	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
-	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	"github.com/crossplaneio/stack-gcp/pkg/clients/globaladdress"
+	"github.com/crossplane/stack-gcp/apis/compute/v1beta1"
+	gcpv1alpha3 "github.com/crossplane/stack-gcp/apis/v1alpha3"
+	"github.com/crossplane/stack-gcp/pkg/clients/globaladdress"
 )
 
 const (

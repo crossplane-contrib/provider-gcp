@@ -24,22 +24,22 @@ import (
 	"os"
 	"testing"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
-	"github.com/crossplaneio/crossplane-runtime/pkg/test/integration"
-	crossplaneapis "github.com/crossplaneio/crossplane/apis"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/test/integration"
+	crossplaneapis "github.com/crossplane/crossplane/apis"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/yaml"
 
-	"github.com/crossplaneio/stack-gcp/apis"
-	cachev1beta1 "github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
-	computev1alpha3 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
-	containerv1beta1 "github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
-	databasev1beta1 "github.com/crossplaneio/stack-gcp/apis/database/v1beta1"
-	storagev1alpha3 "github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
-	"github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	"github.com/crossplaneio/stack-gcp/pkg/controller"
+	"github.com/crossplane/stack-gcp/apis"
+	cachev1beta1 "github.com/crossplane/stack-gcp/apis/cache/v1beta1"
+	computev1alpha3 "github.com/crossplane/stack-gcp/apis/compute/v1alpha3"
+	containerv1beta1 "github.com/crossplane/stack-gcp/apis/container/v1beta1"
+	databasev1beta1 "github.com/crossplane/stack-gcp/apis/database/v1beta1"
+	storagev1alpha3 "github.com/crossplane/stack-gcp/apis/storage/v1alpha3"
+	"github.com/crossplane/stack-gcp/apis/v1alpha3"
+	"github.com/crossplane/stack-gcp/pkg/controller"
 )
 
 func TestCreateAllClasses(t *testing.T) {

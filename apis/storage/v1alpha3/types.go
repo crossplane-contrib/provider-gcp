@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 
 	"cloud.google.com/go/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

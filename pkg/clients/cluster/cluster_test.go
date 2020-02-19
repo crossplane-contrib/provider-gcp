@@ -27,11 +27,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
+	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	computev1beta1 "github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
-	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
-	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+	computev1beta1 "github.com/crossplane/stack-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/stack-gcp/apis/container/v1beta1"
+	gcp "github.com/crossplane/stack-gcp/pkg/clients"
 )
 
 const (

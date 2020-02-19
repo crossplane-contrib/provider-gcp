@@ -30,8 +30,8 @@ I have:
 - [ ] Updated the dependencies in [`app.yaml`] to include any new role permissions.
 - [ ] Updated the [stack resources documentation] to include any new managed resources or classes.
 
-[documentation]: https://github.com/crossplaneio/crossplane/tree/master/docs
-[examples]: https://github.com/crossplaneio/crossplane/tree/master/cluster/examples
-[release notes]: https://github.com/crossplaneio/crossplane/tree/master/PendingReleaseNotes.md
-[`app.yaml`]: https://github.com/crossplaneio/stack-gcp/blob/master/config/stack/manifests/app.yaml
-[stack resources documentation]: https://github.com/crossplaneio/stack-gcp/blob/master/config/stack/manifests/resources
+[documentation]: https://github.com/crossplane/crossplane/tree/master/docs
+[examples]: https://github.com/crossplane/crossplane/tree/master/cluster/examples
+[release notes]: https://github.com/crossplane/crossplane/tree/master/PendingReleaseNotes.md
+[`app.yaml`]: https://github.com/crossplane/stack-gcp/blob/master/config/stack/manifests/app.yaml
+[stack resources documentation]: https://github.com/crossplane/stack-gcp/blob/master/config/stack/manifests/resources

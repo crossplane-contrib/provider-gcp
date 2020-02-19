@@ -21,10 +21,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	computev1beta1 "github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
+	computev1beta1 "github.com/crossplane/stack-gcp/apis/compute/v1beta1"
 )
 
 // Error strings

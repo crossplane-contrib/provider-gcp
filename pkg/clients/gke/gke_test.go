@@ -29,7 +29,7 @@ import (
 	"golang.org/x/oauth2/google"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/test"
+	"github.com/crossplane/crossplane-runtime/pkg/test"
 )
 
 func TestNewClusterClient(t *testing.T) {

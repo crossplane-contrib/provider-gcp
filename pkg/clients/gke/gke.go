@@ -27,8 +27,8 @@ import (
 	"google.golang.org/api/option"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	computev1alpha3 "github.com/crossplaneio/stack-gcp/apis/compute/v1alpha3"
-	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+	computev1alpha3 "github.com/crossplane/stack-gcp/apis/compute/v1alpha3"
+	gcp "github.com/crossplane/stack-gcp/pkg/clients"
 )
 
 const (

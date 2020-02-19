@@ -24,11 +24,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
-	crossplaneapis "github.com/crossplaneio/crossplane/apis"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	crossplaneapis "github.com/crossplane/crossplane/apis"
 
-	"github.com/crossplaneio/stack-gcp/apis"
-	"github.com/crossplaneio/stack-gcp/pkg/controller"
+	"github.com/crossplane/stack-gcp/apis"
+	"github.com/crossplane/stack-gcp/pkg/controller"
 )
 
 func main() {

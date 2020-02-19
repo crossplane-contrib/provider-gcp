@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
+	"github.com/crossplane/stack-gcp/apis/container/v1beta1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 

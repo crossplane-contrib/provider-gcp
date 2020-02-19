@@ -29,18 +29,18 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/event"
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
-	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/event"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
-	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
-	gke "github.com/crossplaneio/stack-gcp/pkg/clients/cluster"
+	"github.com/crossplane/stack-gcp/apis/container/v1beta1"
+	gcpv1alpha3 "github.com/crossplane/stack-gcp/apis/v1alpha3"
+	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	gke "github.com/crossplane/stack-gcp/pkg/clients/cluster"
 )
 
 // Error strings.
