@@ -25,17 +25,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/event"
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
-	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimbinding"
-	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimdefaulting"
-	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/claimscheduling"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	cachev1alpha1 "github.com/crossplaneio/crossplane/apis/cache/v1alpha1"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/event"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/claimbinding"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/claimdefaulting"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/claimscheduling"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	cachev1alpha1 "github.com/crossplane/crossplane/apis/cache/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
-	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+	"github.com/crossplane/stack-gcp/apis/cache/v1beta1"
+	gcp "github.com/crossplane/stack-gcp/pkg/clients"
 )
 
 // SetupCloudMemorystoreInstanceClaimScheduling adds a controller that

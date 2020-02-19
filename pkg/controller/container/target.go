@@ -19,13 +19,13 @@ package container
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/event"
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
-	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/target"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
-	"github.com/crossplaneio/crossplane/apis/workload/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/event"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/target"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane/apis/workload/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/container/v1beta1"
+	"github.com/crossplane/stack-gcp/apis/container/v1beta1"
 )
 
 // SetupGKEClusterTarget adds a controller that propagates GKECluster

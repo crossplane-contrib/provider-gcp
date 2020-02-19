@@ -19,14 +19,14 @@ package controller
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
-	"github.com/crossplaneio/stack-gcp/pkg/controller/cache"
-	"github.com/crossplaneio/stack-gcp/pkg/controller/compute"
-	"github.com/crossplaneio/stack-gcp/pkg/controller/container"
-	"github.com/crossplaneio/stack-gcp/pkg/controller/database"
-	"github.com/crossplaneio/stack-gcp/pkg/controller/servicenetworking"
-	"github.com/crossplaneio/stack-gcp/pkg/controller/storage"
+	"github.com/crossplane/stack-gcp/pkg/controller/cache"
+	"github.com/crossplane/stack-gcp/pkg/controller/compute"
+	"github.com/crossplane/stack-gcp/pkg/controller/container"
+	"github.com/crossplane/stack-gcp/pkg/controller/database"
+	"github.com/crossplane/stack-gcp/pkg/controller/servicenetworking"
+	"github.com/crossplane/stack-gcp/pkg/controller/storage"
 )
 
 // Setup creates all GCP controllers with the supplied logger and adds them to

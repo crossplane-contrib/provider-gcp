@@ -22,10 +22,10 @@ import (
 	compute "google.golang.org/api/compute/v1"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 
-	"github.com/crossplaneio/stack-gcp/apis/servicenetworking/v1beta1"
-	gcp "github.com/crossplaneio/stack-gcp/pkg/clients"
+	"github.com/crossplane/stack-gcp/apis/servicenetworking/v1beta1"
+	gcp "github.com/crossplane/stack-gcp/pkg/clients"
 )
 
 // PeeringName of the peering created when a service networking connection is

@@ -32,15 +32,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/logging"
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
-	"github.com/crossplaneio/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplaneio/stack-gcp/apis/storage/v1alpha3"
-	gcpv1alpha3 "github.com/crossplaneio/stack-gcp/apis/v1alpha3"
-	gcpstorage "github.com/crossplaneio/stack-gcp/pkg/clients/storage"
+	"github.com/crossplane/stack-gcp/apis/storage/v1alpha3"
+	gcpv1alpha3 "github.com/crossplane/stack-gcp/apis/v1alpha3"
+	gcpstorage "github.com/crossplane/stack-gcp/pkg/clients/storage"
 )
 
 const (

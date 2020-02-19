@@ -23,9 +23,9 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplaneio/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 
-	"github.com/crossplaneio/stack-gcp/apis/cache/v1beta1"
+	"github.com/crossplane/stack-gcp/apis/cache/v1beta1"
 )
 
 const (

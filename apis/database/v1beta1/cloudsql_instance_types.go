@@ -27,11 +27,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplaneio/crossplane-runtime/pkg/resource"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	computev1beta1 "github.com/crossplaneio/stack-gcp/apis/compute/v1beta1"
-	"github.com/crossplaneio/stack-gcp/pkg/clients/connection"
+	computev1beta1 "github.com/crossplane/stack-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/stack-gcp/pkg/clients/connection"
 )
 
 // CloudSQL instance states
