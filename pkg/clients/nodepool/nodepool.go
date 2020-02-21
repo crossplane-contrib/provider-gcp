@@ -360,6 +360,9 @@ func IsUpToDate(name string, in *v1alpha1.NodePoolParameters, observed *containe
 	if !cmp.Equal(desired.Management, observed.Management, cmpopts.EquateEmpty()) {
 		return false, newManagementUpdateFn(in.Management), nil
 	}
+
+	// TODO(hasheddan): remove manual ignore functions when resolution is
+	// reached on https://github.com/crossplane/crossplane-runtime/issues/120
 	if !cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreSliceElements(func(c *container.NodeTaint) bool {
 		return c.Key == runtimeKey
 	}), cmpopts.IgnoreMapEntries(func(key, _ string) bool {
