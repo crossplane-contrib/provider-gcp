@@ -37,6 +37,8 @@ const (
 	NodePoolNameFormat = "%s/nodePools/%s"
 
 	errCheckUpToDate = "unable to determine if external resource is up to date"
+
+	runtimeKey = "sandbox.gke.io/runtime"
 )
 
 // GenerateNodePool generates *container.NodePool instance from NodePoolParameters.
@@ -358,7 +360,14 @@ func IsUpToDate(name string, in *v1alpha1.NodePoolParameters, observed *containe
 	if !cmp.Equal(desired.Management, observed.Management, cmpopts.EquateEmpty()) {
 		return false, newManagementUpdateFn(in.Management), nil
 	}
-	if !cmp.Equal(desired, observed, cmpopts.EquateEmpty()) {
+
+	// TODO(hasheddan): remove manual ignore functions when resolution is
+	// reached on https://github.com/crossplane/crossplane-runtime/issues/120
+	if !cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreSliceElements(func(c *container.NodeTaint) bool {
+		return c.Key == runtimeKey
+	}), cmpopts.IgnoreMapEntries(func(key, _ string) bool {
+		return key == runtimeKey
+	})) {
 		return false, newGeneralUpdateFn(in), nil
 	}
 	return true, noOpUpdate, nil

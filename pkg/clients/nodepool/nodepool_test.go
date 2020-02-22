@@ -578,6 +578,44 @@ func TestIsUpToDate(t *testing.T) {
 				isErr:    false,
 			},
 		},
+		"UpToDateIgnoreGVisor": {
+			args: args{
+				name: name,
+				nodePool: nodePool(addOutputFields, func(n *container.NodePool) {
+					n.Config = &container.NodeConfig{
+						Labels: map[string]string{
+							"cool-key": "cool-value",
+							runtimeKey: "any value here ignored",
+						},
+						Taints: []*container.NodeTaint{
+							{
+								Key:   "cool-key",
+								Value: "cool-value",
+							},
+							{
+								Key:   runtimeKey,
+								Value: "any value here ignored",
+							},
+						},
+					}
+				}),
+				params: params(func(p *v1alpha1.NodePoolParameters) {
+					p.Config = &v1alpha1.NodeConfig{
+						Labels: map[string]string{"cool-key": "cool-value"},
+						Taints: []*v1alpha1.NodeTaint{
+							{
+								Key:   "cool-key",
+								Value: "cool-value",
+							},
+						},
+					}
+				}),
+			},
+			want: want{
+				upToDate: true,
+				isErr:    false,
+			},
+		},
 		"NeedsUpdate": {
 			args: args{
 				name: name,
