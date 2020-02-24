@@ -134,8 +134,8 @@ build-stack-package: $(STACK_PACKAGE_REGISTRY)
 # but then we couldn't use per CRD metadata files.
 	@$(INFO) building stack package in $(STACK_PACKAGE)
 	@find $(CRD_DIR) -type f -name '*.yaml' | \
-		while read filename ; do cat $$filename > \
-		$(STACK_PACKAGE_REGISTRY)/resources/$$( basename $${filename/.yaml/.crd.yaml} ) \
+		while read filename ; do mkdir -p $(STACK_PACKAGE_REGISTRY)/resources/$$(basename $${filename%_*}); cat $$filename > \
+		$(STACK_PACKAGE_REGISTRY)/resources/$$( basename $${filename%_*} )/$$( basename $${filename/.yaml/.crd.yaml} ) \
 		; done
 	@cp -r $(STACK_PACKAGE_REGISTRY_SOURCE)/* $(STACK_PACKAGE_REGISTRY)
 
