@@ -3,7 +3,7 @@ apiVersion: compute.crossplane.io/v1alpha1
 kind: KubernetesCluster
 metadata:
   name: app-kubernetes
-  label:
+  labels:
     example: "true"
 spec:
   classSelector:
