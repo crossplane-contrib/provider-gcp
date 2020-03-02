@@ -43,6 +43,11 @@ func (mg *GKECluster) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1al
 	return mg.Status.GetCondition(ct)
 }
 
+// GetProviderReference of this GKECluster.
+func (mg *GKECluster) GetProviderReference() *corev1.ObjectReference {
+	return mg.Spec.ProviderReference
+}
+
 // GetReclaimPolicy of this GKECluster.
 func (mg *GKECluster) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
@@ -71,6 +76,11 @@ func (mg *GKECluster) SetClassReference(r *corev1.ObjectReference) {
 // SetConditions of this GKECluster.
 func (mg *GKECluster) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
+}
+
+// SetProviderReference of this GKECluster.
+func (mg *GKECluster) SetProviderReference(r *corev1.ObjectReference) {
+	mg.Spec.ProviderReference = r
 }
 
 // SetReclaimPolicy of this GKECluster.

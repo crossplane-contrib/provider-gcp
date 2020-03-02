@@ -43,6 +43,11 @@ func (mg *Bucket) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1
 	return mg.Status.GetCondition(ct)
 }
 
+// GetProviderReference of this Bucket.
+func (mg *Bucket) GetProviderReference() *corev1.ObjectReference {
+	return mg.Spec.ProviderReference
+}
+
 // GetReclaimPolicy of this Bucket.
 func (mg *Bucket) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
@@ -71,6 +76,11 @@ func (mg *Bucket) SetClassReference(r *corev1.ObjectReference) {
 // SetConditions of this Bucket.
 func (mg *Bucket) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
+}
+
+// SetProviderReference of this Bucket.
+func (mg *Bucket) SetProviderReference(r *corev1.ObjectReference) {
+	mg.Spec.ProviderReference = r
 }
 
 // SetReclaimPolicy of this Bucket.

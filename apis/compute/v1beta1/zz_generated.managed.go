@@ -43,6 +43,11 @@ func (mg *GlobalAddress) GetCondition(ct runtimev1alpha1.ConditionType) runtimev
 	return mg.Status.GetCondition(ct)
 }
 
+// GetProviderReference of this GlobalAddress.
+func (mg *GlobalAddress) GetProviderReference() *corev1.ObjectReference {
+	return mg.Spec.ProviderReference
+}
+
 // GetReclaimPolicy of this GlobalAddress.
 func (mg *GlobalAddress) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
@@ -71,6 +76,11 @@ func (mg *GlobalAddress) SetClassReference(r *corev1.ObjectReference) {
 // SetConditions of this GlobalAddress.
 func (mg *GlobalAddress) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
+}
+
+// SetProviderReference of this GlobalAddress.
+func (mg *GlobalAddress) SetProviderReference(r *corev1.ObjectReference) {
+	mg.Spec.ProviderReference = r
 }
 
 // SetReclaimPolicy of this GlobalAddress.
@@ -103,6 +113,11 @@ func (mg *Network) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha
 	return mg.Status.GetCondition(ct)
 }
 
+// GetProviderReference of this Network.
+func (mg *Network) GetProviderReference() *corev1.ObjectReference {
+	return mg.Spec.ProviderReference
+}
+
 // GetReclaimPolicy of this Network.
 func (mg *Network) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
@@ -131,6 +146,11 @@ func (mg *Network) SetClassReference(r *corev1.ObjectReference) {
 // SetConditions of this Network.
 func (mg *Network) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
+}
+
+// SetProviderReference of this Network.
+func (mg *Network) SetProviderReference(r *corev1.ObjectReference) {
+	mg.Spec.ProviderReference = r
 }
 
 // SetReclaimPolicy of this Network.
@@ -163,6 +183,11 @@ func (mg *Subnetwork) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1al
 	return mg.Status.GetCondition(ct)
 }
 
+// GetProviderReference of this Subnetwork.
+func (mg *Subnetwork) GetProviderReference() *corev1.ObjectReference {
+	return mg.Spec.ProviderReference
+}
+
 // GetReclaimPolicy of this Subnetwork.
 func (mg *Subnetwork) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
@@ -191,6 +216,11 @@ func (mg *Subnetwork) SetClassReference(r *corev1.ObjectReference) {
 // SetConditions of this Subnetwork.
 func (mg *Subnetwork) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
+}
+
+// SetProviderReference of this Subnetwork.
+func (mg *Subnetwork) SetProviderReference(r *corev1.ObjectReference) {
+	mg.Spec.ProviderReference = r
 }
 
 // SetReclaimPolicy of this Subnetwork.
