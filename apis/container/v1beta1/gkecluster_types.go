@@ -1475,7 +1475,7 @@ type NodeConfigClusterStatus struct {
 type AcceleratorConfigClusterStatus struct {
 	// AcceleratorCount: The number of the accelerator cards exposed to an
 	// instance.
-	AcceleratorCount int64 `json:"acceleratorCount,omitempty,string"`
+	AcceleratorCount int64 `json:"acceleratorCount,omitempty"`
 
 	// AcceleratorType: The accelerator type resource name. List of
 	// supported accelerators
