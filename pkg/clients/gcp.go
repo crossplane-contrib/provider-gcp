@@ -92,7 +92,7 @@ func BoolPtr(p bool) *bool { return &p }
 // is returned.
 // https://github.com/kubernetes/community/blob/db7f270f/contributors/devel/sig-architecture/api-conventions.md#optional-vs-required
 // https://github.com/kubernetes/community/blob/db7f270f/contributors/devel/sig-architecture/api-conventions.md#late-initialization
-// TODO(muvaf): These functions will probably be needed by other stacks.
+// TODO(muvaf): These functions will probably be needed by other providers.
 // Consider moving them to crossplane-runtime.
 
 // LateInitializeString implements late initialization for string type.

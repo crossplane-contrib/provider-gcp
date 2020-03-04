@@ -38,9 +38,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/stack-gcp/apis/storage/v1alpha3"
-	gcpv1alpha3 "github.com/crossplane/stack-gcp/apis/v1alpha3"
-	gcpstorage "github.com/crossplane/stack-gcp/pkg/clients/storage"
+	"github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
+	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
+	gcpstorage "github.com/crossplane/provider-gcp/pkg/clients/storage"
 )
 
 const (

@@ -23,8 +23,8 @@ import (
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/crossplane/stack-gcp/apis/database/v1beta1"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/apis/database/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 const (

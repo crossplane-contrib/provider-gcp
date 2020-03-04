@@ -33,10 +33,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/crossplane/stack-gcp/apis"
-	containerv1beta1 "github.com/crossplane/stack-gcp/apis/container/v1beta1"
-	"github.com/crossplane/stack-gcp/apis/v1alpha3"
-	"github.com/crossplane/stack-gcp/pkg/controller"
+	"github.com/crossplane/provider-gcp/apis"
+	containerv1beta1 "github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/v1alpha3"
+	"github.com/crossplane/provider-gcp/pkg/controller"
 )
 
 func TestGKEClusterStatic(t *testing.T) {
@@ -135,7 +135,7 @@ func TestGKEClusterStatic(t *testing.T) {
 	}
 
 	zl := zap.New(zap.UseDevMode(true))
-	log := logging.NewLogrLogger(zl.WithName("stack-gcp-gkecluster_static_test"))
+	log := logging.NewLogrLogger(zl.WithName("provider-gcp-gkecluster_static_test"))
 	if err := controller.Setup(i, log); err != nil {
 		t.Fatal(err)
 	}

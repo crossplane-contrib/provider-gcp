@@ -39,10 +39,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	gcpcomputev1alpha3 "github.com/crossplane/stack-gcp/apis/compute/v1alpha3"
-	gcpv1alpha3 "github.com/crossplane/stack-gcp/apis/v1alpha3"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
-	"github.com/crossplane/stack-gcp/pkg/clients/gke"
+	gcpcomputev1alpha3 "github.com/crossplane/provider-gcp/apis/compute/v1alpha3"
+	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/pkg/clients/gke"
 )
 
 const (

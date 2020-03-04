@@ -1,4 +1,4 @@
-module github.com/crossplane/stack-gcp
+module github.com/crossplane/provider-gcp
 
 go 1.13
 

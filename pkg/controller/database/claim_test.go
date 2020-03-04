@@ -31,7 +31,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	databasev1alpha1 "github.com/crossplane/crossplane/apis/database/v1alpha1"
 
-	"github.com/crossplane/stack-gcp/apis/database/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/database/v1beta1"
 )
 
 var (

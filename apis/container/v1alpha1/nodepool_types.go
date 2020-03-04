@@ -22,7 +22,7 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplane/stack-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 )
 
 // NodePool states.

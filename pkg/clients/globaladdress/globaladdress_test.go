@@ -22,7 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	compute "google.golang.org/api/compute/v1"
 
-	"github.com/crossplane/stack-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 )
 
 var (

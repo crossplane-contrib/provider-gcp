@@ -32,14 +32,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/yaml"
 
-	"github.com/crossplane/stack-gcp/apis"
-	cachev1beta1 "github.com/crossplane/stack-gcp/apis/cache/v1beta1"
-	computev1alpha3 "github.com/crossplane/stack-gcp/apis/compute/v1alpha3"
-	containerv1beta1 "github.com/crossplane/stack-gcp/apis/container/v1beta1"
-	databasev1beta1 "github.com/crossplane/stack-gcp/apis/database/v1beta1"
-	storagev1alpha3 "github.com/crossplane/stack-gcp/apis/storage/v1alpha3"
-	"github.com/crossplane/stack-gcp/apis/v1alpha3"
-	"github.com/crossplane/stack-gcp/pkg/controller"
+	"github.com/crossplane/provider-gcp/apis"
+	cachev1beta1 "github.com/crossplane/provider-gcp/apis/cache/v1beta1"
+	computev1alpha3 "github.com/crossplane/provider-gcp/apis/compute/v1alpha3"
+	containerv1beta1 "github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	databasev1beta1 "github.com/crossplane/provider-gcp/apis/database/v1beta1"
+	storagev1alpha3 "github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
+	"github.com/crossplane/provider-gcp/apis/v1alpha3"
+	"github.com/crossplane/provider-gcp/pkg/controller"
 )
 
 func TestCreateAllClasses(t *testing.T) {
@@ -225,7 +225,7 @@ func TestCreateAllClasses(t *testing.T) {
 	}
 
 	zl := zap.New(zap.UseDevMode(true))
-	log := logging.NewLogrLogger(zl.WithName("stack-gcp-create_classes_test"))
+	log := logging.NewLogrLogger(zl.WithName("provider-gcp-create_classes_test"))
 	if err := controller.Setup(i, log); err != nil {
 		t.Fatal(err)
 	}

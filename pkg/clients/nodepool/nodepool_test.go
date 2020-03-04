@@ -24,9 +24,9 @@ import (
 	container "google.golang.org/api/container/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/crossplane/stack-gcp/apis/container/v1alpha1"
-	"github.com/crossplane/stack-gcp/apis/container/v1beta1"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 const (

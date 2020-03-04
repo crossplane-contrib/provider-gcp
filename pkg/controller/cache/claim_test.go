@@ -31,7 +31,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	cachev1alpha1 "github.com/crossplane/crossplane/apis/cache/v1alpha1"
 
-	"github.com/crossplane/stack-gcp/apis/cache/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
 )
 
 var _ claimbinding.ManagedConfigurator = claimbinding.ManagedConfiguratorFn(ConfigureCloudMemorystoreInstance)

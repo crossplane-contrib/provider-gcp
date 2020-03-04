@@ -1,7 +1,7 @@
 # ====================================================================================
 # Setup Project
 
-PROJECT_NAME := stack-gcp
+PROJECT_NAME := provider-gcp
 PROJECT_REPO := github.com/crossplane/$(PROJECT_NAME)
 
 PLATFORMS ?= linux_amd64 linux_arm64
@@ -31,7 +31,7 @@ GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 
 GO_INTEGRATION_TESTS_SUBDIRS = test
 
-GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/stack
+GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
 GO_LDFLAGS += -X $(GO_PROJECT)/pkg/version.Version=$(VERSION)
 GO_SUBDIRS += cmd pkg apis
 GO111MODULE = on
@@ -51,7 +51,7 @@ STACK_PACKAGE_REGISTRY=$(STACK_PACKAGE)/.registry
 STACK_PACKAGE_REGISTRY_SOURCE=config/stack/manifests
 
 DOCKER_REGISTRY = crossplane
-IMAGES = stack-gcp
+IMAGES = provider-gcp
 -include build/makelib/image.mk
 
 # ====================================================================================

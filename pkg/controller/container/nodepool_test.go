@@ -39,9 +39,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/stack-gcp/apis/container/v1alpha1"
-	gcpv1alpha3 "github.com/crossplane/stack-gcp/apis/v1alpha3"
-	np "github.com/crossplane/stack-gcp/pkg/clients/nodepool"
+	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
+	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
+	np "github.com/crossplane/provider-gcp/pkg/clients/nodepool"
 )
 
 type nodePoolModifier func(*v1alpha1.NodePool)

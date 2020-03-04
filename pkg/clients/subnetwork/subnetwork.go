@@ -25,8 +25,8 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
 
-	"github.com/crossplane/stack-gcp/apis/compute/v1beta1"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 const errCheckUpToDate = "unable to determine if external resource is up to date"

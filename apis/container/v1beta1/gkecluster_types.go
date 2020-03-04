@@ -22,7 +22,7 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplane/stack-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 )
 
 // Cluster states.
@@ -423,7 +423,7 @@ type GKEClusterObservation struct {
 	PrivateClusterConfig *PrivateClusterConfigStatus `json:"privateClusterConfig,omitempty"`
 
 	// NOTE(hasheddan): node pools are modelled in status only because
-	// management of node pools is handled by the stack-gcp NodePool object.
+	// management of node pools is handled by the provider-gcp NodePool object.
 
 	// NodePools: The node pools associated with this cluster.
 	// This field should not be set if "node_config" or "initial_node_count"
