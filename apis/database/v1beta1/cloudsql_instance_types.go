@@ -30,8 +30,8 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	computev1beta1 "github.com/crossplane/stack-gcp/apis/compute/v1beta1"
-	"github.com/crossplane/stack-gcp/pkg/clients/connection"
+	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/pkg/clients/connection"
 )
 
 // CloudSQL instance states

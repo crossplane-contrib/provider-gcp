@@ -32,7 +32,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storagev1alpha1 "github.com/crossplane/crossplane/apis/storage/v1alpha1"
 
-	"github.com/crossplane/stack-gcp/apis/storage/v1alpha3"
+	"github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
 )
 
 // SetupBucketClaimScheduling adds a controller that reconciles Bucket claims

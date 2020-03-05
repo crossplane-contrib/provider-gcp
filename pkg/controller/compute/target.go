@@ -25,7 +25,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane/apis/workload/v1alpha1"
 
-	"github.com/crossplane/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha3"
 )
 
 // SetupGKEClusterTarget adds a controller that propagates GKECluster

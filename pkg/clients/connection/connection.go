@@ -24,8 +24,8 @@ import (
 
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 
-	"github.com/crossplane/stack-gcp/apis/servicenetworking/v1beta1"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 // PeeringName of the peering created when a service networking connection is

@@ -34,8 +34,8 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 
-	"github.com/crossplane/stack-gcp/apis/cache/v1beta1"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 const errCheckUpToDate = "unable to determine if external resource is up to date"

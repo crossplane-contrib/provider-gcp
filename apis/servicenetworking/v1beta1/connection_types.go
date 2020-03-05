@@ -24,7 +24,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	computev1beta1 "github.com/crossplane/stack-gcp/apis/compute/v1beta1"
+	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 )
 
 // Error strings

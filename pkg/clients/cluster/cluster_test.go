@@ -29,9 +29,9 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	computev1beta1 "github.com/crossplane/stack-gcp/apis/compute/v1beta1"
-	"github.com/crossplane/stack-gcp/apis/container/v1beta1"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 const (

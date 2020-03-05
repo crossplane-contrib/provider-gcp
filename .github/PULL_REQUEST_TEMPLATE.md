@@ -33,5 +33,5 @@ I have:
 [documentation]: https://github.com/crossplane/crossplane/tree/master/docs
 [examples]: https://github.com/crossplane/crossplane/tree/master/cluster/examples
 [release notes]: https://github.com/crossplane/crossplane/tree/master/PendingReleaseNotes.md
-[`app.yaml`]: https://github.com/crossplane/stack-gcp/blob/master/config/stack/manifests/app.yaml
-[stack resources documentation]: https://github.com/crossplane/stack-gcp/blob/master/config/stack/manifests/resources
+[`app.yaml`]: https://github.com/crossplane/provider-gcp/blob/master/config/stack/manifests/app.yaml
+[stack resources documentation]: https://github.com/crossplane/provider-gcp/blob/master/config/stack/manifests/resources

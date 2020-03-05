@@ -32,8 +32,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	computev1beta1 "github.com/crossplane/stack-gcp/apis/compute/v1beta1"
-	"github.com/crossplane/stack-gcp/pkg/clients/connection"
+	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/pkg/clients/connection"
 )
 
 var _ resource.AttributeReferencer = (*NetworkURIReferencerForCloudSQLInstance)(nil)

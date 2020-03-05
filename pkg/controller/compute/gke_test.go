@@ -41,10 +41,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/stack-gcp/apis"
-	. "github.com/crossplane/stack-gcp/apis/compute/v1alpha3"
-	"github.com/crossplane/stack-gcp/pkg/clients/fake"
-	"github.com/crossplane/stack-gcp/pkg/clients/gke"
+	"github.com/crossplane/provider-gcp/apis"
+	. "github.com/crossplane/provider-gcp/apis/compute/v1alpha3"
+	"github.com/crossplane/provider-gcp/pkg/clients/fake"
+	"github.com/crossplane/provider-gcp/pkg/clients/gke"
 )
 
 const (

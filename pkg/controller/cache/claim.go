@@ -34,8 +34,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	cachev1alpha1 "github.com/crossplane/crossplane/apis/cache/v1alpha1"
 
-	"github.com/crossplane/stack-gcp/apis/cache/v1beta1"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 // SetupCloudMemorystoreInstanceClaimScheduling adds a controller that

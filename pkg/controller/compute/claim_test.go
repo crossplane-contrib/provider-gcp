@@ -31,7 +31,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	computev1alpha1 "github.com/crossplane/crossplane/apis/compute/v1alpha1"
 
-	"github.com/crossplane/stack-gcp/apis/compute/v1alpha3"
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha3"
 )
 
 var _ claimbinding.ManagedConfigurator = claimbinding.ManagedConfiguratorFn(ConfigureGKECluster)

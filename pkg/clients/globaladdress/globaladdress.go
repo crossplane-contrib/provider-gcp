@@ -19,8 +19,8 @@ package globaladdress
 import (
 	compute "google.golang.org/api/compute/v1"
 
-	"github.com/crossplane/stack-gcp/apis/compute/v1beta1"
-	gcp "github.com/crossplane/stack-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 // GenerateGlobalAddress converts the supplied GlobalAddressParameters into an
