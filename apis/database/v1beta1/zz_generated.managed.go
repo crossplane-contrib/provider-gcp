@@ -43,6 +43,11 @@ func (mg *CloudSQLInstance) GetCondition(ct runtimev1alpha1.ConditionType) runti
 	return mg.Status.GetCondition(ct)
 }
 
+// GetProviderReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetProviderReference() *corev1.ObjectReference {
+	return mg.Spec.ProviderReference
+}
+
 // GetReclaimPolicy of this CloudSQLInstance.
 func (mg *CloudSQLInstance) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
 	return mg.Spec.ReclaimPolicy
@@ -71,6 +76,11 @@ func (mg *CloudSQLInstance) SetClassReference(r *corev1.ObjectReference) {
 // SetConditions of this CloudSQLInstance.
 func (mg *CloudSQLInstance) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
+}
+
+// SetProviderReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetProviderReference(r *corev1.ObjectReference) {
+	mg.Spec.ProviderReference = r
 }
 
 // SetReclaimPolicy of this CloudSQLInstance.

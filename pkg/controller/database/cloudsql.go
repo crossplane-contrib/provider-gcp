@@ -18,6 +18,7 @@ package database
 
 import (
 	"context"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -67,6 +68,7 @@ func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
 		managed.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}),
+		managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient()), &cloudsqlTagger{kube: mgr.GetClient()}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
@@ -244,4 +246,24 @@ func getConnectionDetails(cr *v1beta1.CloudSQLInstance, instance *sqladmin.Datab
 	}
 
 	return m
+}
+
+type cloudsqlTagger struct {
+	kube client.Client
+}
+
+// Initialize adds the external tags to spec.forProvider.settings.userLabels
+func (t *cloudsqlTagger) Initialize(ctx context.Context, mg resource.Managed) error {
+	cr, ok := mg.(*v1beta1.CloudSQLInstance)
+	if !ok {
+		return errors.New(errNotCloudSQL)
+	}
+	if cr.Spec.ForProvider.Settings.UserLabels == nil {
+		cr.Spec.ForProvider.Settings.UserLabels = map[string]string{}
+	}
+	for k, v := range resource.GetExternalTags(cr) {
+		// NOTE(muvaf): See label constraints here https://cloud.google.com/compute/docs/labeling-resources
+		cr.Spec.ForProvider.Settings.UserLabels[k] = strings.ToLower(strings.ReplaceAll(v, ".", "_"))
+	}
+	return errors.Wrap(t.kube.Update(ctx, cr), errManagedUpdateFailed)
 }
