@@ -1,5 +1,5 @@
 # Human readable title of application.
-title: Crossplane GCP
+title: Crossplane GCP Provider
 
 overviewShort: The GCP Crossplane provider enables infrastructure management for the Google Cloud Platform.
 overview: |-
