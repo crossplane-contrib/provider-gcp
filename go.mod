@@ -4,8 +4,8 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.45.1
-	github.com/crossplane/crossplane v0.8.0-rc.0.20200219030944-557074689d71
-	github.com/crossplane/crossplane-runtime v0.5.1-0.20200304190937-e98175fed978
+	github.com/crossplane/crossplane v0.9.0
+	github.com/crossplane/crossplane-runtime v0.6.0
 	github.com/crossplane/crossplane-tools v0.0.0-20200303232609-b3831cbb446d
 	github.com/google/go-cmp v0.3.1
 	github.com/googleapis/gax-go v1.0.3
@@ -19,9 +19,9 @@ require (
 	google.golang.org/grpc v1.23.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	honnef.co/go/tools v0.0.1-2019.2.2 // indirect
-	k8s.io/api v0.17.0
-	k8s.io/apimachinery v0.17.0
-	k8s.io/client-go v0.17.0
+	k8s.io/api v0.17.3
+	k8s.io/apimachinery v0.17.3
+	k8s.io/client-go v0.17.3
 	sigs.k8s.io/controller-runtime v0.4.0
 	sigs.k8s.io/controller-tools v0.2.4
 	sigs.k8s.io/yaml v1.1.0
