@@ -9,6 +9,7 @@ require (
 	github.com/crossplane/crossplane-tools v0.0.0-20200303232609-b3831cbb446d
 	github.com/google/go-cmp v0.3.1
 	github.com/googleapis/gax-go v1.0.3
+	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
 	github.com/mitchellh/copystructure v1.0.0
 	github.com/onsi/gomega v1.7.0
 	github.com/pkg/errors v0.8.1

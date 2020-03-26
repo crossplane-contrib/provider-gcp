@@ -49,6 +49,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		container.SetupGKEClusterClaimDefaulting,
 		container.SetupGKEClusterClaimBinding,
 		container.SetupGKEClusterTarget,
+		container.SetupGKEClusterSecret,
 		container.SetupGKECluster,
 		container.SetupNodePool,
 		database.SetupPostgreSQLInstanceClaimScheduling,
