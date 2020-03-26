@@ -6,4 +6,4 @@ overviewShort: "A GKEClusterClass is a non-portable resource class. It defines t
 overview: |
  "A GKEClusterClass is a non-portable resource class. It defines the desired spec of resource claims that use it to dynamically provision a managed resource."
 readme: |
- Full documentation can be found in the Crossplane [API Reference docs](https://crossplane.io/docs/master/api/crossplane/stack-gcp/compute-gcp-crossplane-io-v1alpha3.html#GKEClusterClass).
+ Full documentation can be found in the Crossplane [API Reference docs](https://doc.crds.dev/github.com/crossplane/provider-gcp/container.gcp.crossplane.io_gkeclusterclasses.yaml).

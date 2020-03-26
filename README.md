@@ -12,8 +12,7 @@ adds the following new functionality:
   clusters](https://cloud.google.com/kubernetes-engine/), etc.)
 * Controllers to provision these resources in GCP based on the users desired
   state captured in CRDs they create
-* Implementations of Crossplane's [portable resource
-  abstractions](https://crossplane.io/docs/master/concepts.html), enabling GCP
+* Implementations of Crossplane's portable resource abstractions, enabling GCP
   resources to fulfill a user's general need for cloud services
 
 ## Getting Started and Documentation
