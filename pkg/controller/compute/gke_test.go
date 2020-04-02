@@ -21,17 +21,18 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
-
-	container "google.golang.org/api/container/v1"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/gomega"
+	"google.golang.org/api/container/v1"
+	"google.golang.org/api/googleapi"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/clientcmd"
 	. "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -102,36 +103,6 @@ func (*mockReferenceResolver) ResolveReferences(ctx context.Context, res resourc
 	return nil
 }
 
-func TestSyncClusterGetError(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	tc := testCluster()
-
-	r := &Reconciler{
-		Client:   NewFakeClient(tc),
-		resolver: &mockReferenceResolver{},
-		log:      logging.NewNopLogger(),
-	}
-
-	called := false
-	testError := errors.New("test-cluster-retriever-error")
-
-	cl := fake.NewGKEClient()
-	cl.MockGetCluster = func(string, string) (*container.Cluster, error) {
-		called = true
-		return nil, testError
-	}
-
-	expectedStatus := runtimev1alpha1.ConditionedStatus{}
-	expectedStatus.SetConditions(runtimev1alpha1.ReconcileError(testError))
-
-	rs, err := r._sync(tc, cl)
-	g.Expect(rs).To(Equal(resultRequeue))
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(called).To(BeTrue())
-	assertResource(g, r, expectedStatus)
-}
-
 func TestSyncErroredCluster(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -143,16 +114,9 @@ func TestSyncErroredCluster(t *testing.T) {
 	}
 
 	errorMessage := "Something went wrong on gcloud side."
-
-	called := false
-
-	cl := fake.NewGKEClient()
-	cl.MockGetCluster = func(string, string) (*container.Cluster, error) {
-		called = true
-		return &container.Cluster{
-			Status:        ClusterStateError,
-			StatusMessage: errorMessage,
-		}, nil
+	cluster := &container.Cluster{
+		Status:        ClusterStateError,
+		StatusMessage: errorMessage,
 	}
 
 	expectedStatus := runtimev1alpha1.ConditionedStatus{}
@@ -160,10 +124,9 @@ func TestSyncErroredCluster(t *testing.T) {
 	expectedStatus.SetConditions(runtimev1alpha1.Unavailable().
 		WithMessage(fmt.Sprintf(erroredClusterErrorMessageFormat, ClusterStateError, errorMessage)))
 
-	rs, err := r._sync(tc, cl)
+	rs, err := r._sync(tc, cluster)
 	g.Expect(rs).To(Equal(resultRequeue))
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(called).To(BeTrue())
 	g.Expect(tc.Status.State).To(Equal(expectedState))
 	assertResource(g, r, expectedStatus)
 }
@@ -184,28 +147,21 @@ func TestSyncPublishConnectionDetailsError(t *testing.T) {
 		log: logging.NewNopLogger(),
 	}
 
-	called := false
-
 	auth := masterAuth
 	endpoint := "test-ep"
 
-	cl := fake.NewGKEClient()
-	cl.MockGetCluster = func(string, string) (*container.Cluster, error) {
-		called = true
-		return &container.Cluster{
-			Status:     ClusterStateRunning,
-			Endpoint:   endpoint,
-			MasterAuth: auth,
-		}, nil
+	cluster := &container.Cluster{
+		Status:     ClusterStateRunning,
+		Endpoint:   endpoint,
+		MasterAuth: auth,
 	}
 
 	expectedStatus := runtimev1alpha1.ConditionedStatus{}
 	expectedStatus.SetConditions(runtimev1alpha1.ReconcileError(testError))
 
-	rs, err := r._sync(tc, cl)
+	rs, err := r._sync(tc, cluster)
 	g.Expect(rs).To(Equal(resultRequeue))
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(called).To(BeTrue())
 	assertResource(g, r, expectedStatus)
 }
 
@@ -219,22 +175,15 @@ func TestSyncClusterNotReady(t *testing.T) {
 		log:    logging.NewNopLogger(),
 	}
 
-	called := false
-
-	cl := fake.NewGKEClient()
-	cl.MockGetCluster = func(string, string) (*container.Cluster, error) {
-		called = true
-		return &container.Cluster{
-			Status: ClusterStateProvisioning,
-		}, nil
+	cluster := &container.Cluster{
+		Status: ClusterStateProvisioning,
 	}
 
 	expectedStatus := runtimev1alpha1.ConditionedStatus{}
 
-	rs, err := r._sync(tc, cl)
+	rs, err := r._sync(tc, cluster)
 	g.Expect(rs).To(Equal(reconcile.Result{RequeueAfter: requeueOnWait}))
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(called).To(BeTrue())
 	assertResource(g, r, expectedStatus)
 }
 
@@ -248,29 +197,21 @@ func TestSync(t *testing.T) {
 		publisher: managed.PublisherChain{},
 		log:       logging.NewNopLogger(),
 	}
-
-	called := false
-
 	auth := masterAuth
 	endpoint := "test-ep"
 
-	cl := fake.NewGKEClient()
-	cl.MockGetCluster = func(string, string) (*container.Cluster, error) {
-		called = true
-		return &container.Cluster{
-			Status:     ClusterStateRunning,
-			Endpoint:   endpoint,
-			MasterAuth: auth,
-		}, nil
+	cluster := &container.Cluster{
+		Status:     ClusterStateRunning,
+		Endpoint:   endpoint,
+		MasterAuth: auth,
 	}
 
 	expectedStatus := runtimev1alpha1.ConditionedStatus{}
 	expectedStatus.SetConditions(runtimev1alpha1.Available(), runtimev1alpha1.ReconcileSuccess())
 
-	rs, err := r._sync(tc, cl)
+	rs, err := r._sync(tc, cluster)
 	g.Expect(rs).To(Equal(reconcile.Result{RequeueAfter: requeueOnSucces}))
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(called).To(BeTrue())
 	assertResource(g, r, expectedStatus)
 }
 
@@ -389,14 +330,15 @@ func TestReconcileClientError(t *testing.T) {
 	testError := errors.New("test-client-error")
 
 	called := false
-
+	kube := NewFakeClient(testCluster())
 	r := &Reconciler{
-		Client: NewFakeClient(testCluster()),
+		Client: kube,
 		connect: func(*GKECluster) (gke.Client, error) {
 			called = true
 			return nil, testError
 		},
-		log: logging.NewNopLogger(),
+		log:         logging.NewNopLogger(),
+		initializer: managed.NewNameAsExternalName(kube),
 	}
 
 	// expected to have a failed condition
@@ -420,9 +362,9 @@ func TestReconcileDelete(t *testing.T) {
 	tc.DeletionTimestamp = &dt
 
 	called := false
-
+	kube := NewFakeClient(tc)
 	r := &Reconciler{
-		Client: NewFakeClient(tc),
+		Client: kube,
 		connect: func(*GKECluster) (gke.Client, error) {
 			return nil, nil
 		},
@@ -430,8 +372,9 @@ func TestReconcileDelete(t *testing.T) {
 			called = true
 			return result, nil
 		},
-		resolver: &mockReferenceResolver{},
-		log:      logging.NewNopLogger(),
+		resolver:    &mockReferenceResolver{},
+		log:         logging.NewNopLogger(),
+		initializer: managed.NewNameAsExternalName(kube),
 	}
 
 	rs, err := r.Reconcile(request)
@@ -445,18 +388,21 @@ func TestReconcileCreate(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	called := false
-
+	kube := NewFakeClient(testCluster())
 	r := &Reconciler{
-		Client: NewFakeClient(testCluster()),
+		Client: kube,
 		connect: func(*GKECluster) (gke.Client, error) {
-			return nil, nil
+			return &fake.GKEClient{MockGetCluster: func(_ string, _ string) (*container.Cluster, error) {
+				return nil, &googleapi.Error{Code: http.StatusNotFound}
+			}}, nil
 		},
 		create: func(*GKECluster, gke.Client) (reconcile.Result, error) {
 			called = true
 			return resultRequeue, nil
 		},
-		resolver: &mockReferenceResolver{},
-		log:      logging.NewNopLogger(),
+		resolver:    &mockReferenceResolver{},
+		log:         logging.NewNopLogger(),
+		initializer: managed.NewNameAsExternalName(kube),
 	}
 
 	rs, err := r.Reconcile(request)
@@ -471,20 +417,22 @@ func TestReconcileSync(t *testing.T) {
 	called := false
 
 	tc := testCluster()
-	tc.Status.ClusterName = "test-status- cluster-name"
 	tc.Finalizers = []string{finalizer}
-
+	kube := NewFakeClient(tc)
 	r := &Reconciler{
-		Client: NewFakeClient(tc),
+		Client: kube,
 		connect: func(*GKECluster) (gke.Client, error) {
-			return nil, nil
+			return &fake.GKEClient{MockGetCluster: func(_ string, _ string) (*container.Cluster, error) {
+				return &container.Cluster{}, nil
+			}}, nil
 		},
-		sync: func(*GKECluster, gke.Client) (reconcile.Result, error) {
+		sync: func(*GKECluster, *container.Cluster) (reconcile.Result, error) {
 			called = true
 			return resultRequeue, nil
 		},
-		resolver: &mockReferenceResolver{},
-		log:      logging.NewNopLogger(),
+		resolver:    &mockReferenceResolver{},
+		log:         logging.NewNopLogger(),
+		initializer: managed.NewNameAsExternalName(kube),
 	}
 
 	rs, err := r.Reconcile(request)
