@@ -135,11 +135,6 @@ func ConfigureBucket(_ context.Context, cm resource.Claim, cs resource.Class, mg
 		BucketParameters: rs.SpecTemplate.BucketParameters,
 	}
 
-	// Set Name bucket name if Name value is provided by Bucket Claim spec
-	if bcm.Spec.Name != "" {
-		spec.NameFormat = bcm.Spec.Name
-	}
-
 	// Set PredefinedACL from bucketClaim claim only iff: claim has this value and
 	// it is not defined in the resource class (i.e. not already in the spec)
 	if bcm.Spec.PredefinedACL != nil && spec.PredefinedACL == "" {

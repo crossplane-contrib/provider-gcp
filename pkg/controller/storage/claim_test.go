@@ -52,7 +52,6 @@ func TestConfigureBucket(t *testing.T) {
 	namespace := "ns"
 	claimUID := types.UID("definitely-a-uuid")
 	providerName := "coolprovider"
-	bucketName := "coolbucket"
 	bucketPrivate := storagev1alpha1.ACLPrivate
 
 	cases := map[string]struct {
@@ -64,7 +63,6 @@ func TestConfigureBucket(t *testing.T) {
 				cm: &storagev1alpha1.Bucket{
 					ObjectMeta: metav1.ObjectMeta{UID: claimUID},
 					Spec: storagev1alpha1.BucketSpec{
-						Name:          bucketName,
 						PredefinedACL: &bucketPrivate,
 					},
 				},
@@ -91,7 +89,6 @@ func TestConfigureBucket(t *testing.T) {
 							ProviderReference: &corev1.ObjectReference{Name: providerName},
 						},
 						BucketParameters: v1alpha3.BucketParameters{
-							NameFormat: bucketName,
 							BucketSpecAttrs: v1alpha3.BucketSpecAttrs{
 								BucketUpdatableAttrs: v1alpha3.BucketUpdatableAttrs{
 									PredefinedACL: string(bucketPrivate),

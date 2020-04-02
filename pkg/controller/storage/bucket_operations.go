@@ -148,7 +148,7 @@ func (bh *bucketHandler) updateSecret(ctx context.Context) error {
 		s.Data[runtimev1alpha1.ResourceCredentialsSecretPasswordKey] = ss.Data[saSecretKeySecret]
 		s.Data[runtimev1alpha1.ResourceCredentialsSecretTokenKey] = ss.Data[saSecretKeyCredentials]
 	}
-	s.Data[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(bh.GetBucketName())
+	s.Data[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(meta.GetExternalName(bh))
 
 	return errors.Wrapf(apply(ctx, bh.kube, s), "failed to apply connection secret: %s/%s", s.Namespace, s.Name)
 }

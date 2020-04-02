@@ -21,8 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/crossplane/provider-gcp/apis"
-
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -40,9 +38,12 @@ import (
 
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
+	"github.com/crossplane/provider-gcp/apis"
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
 	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 )
@@ -119,12 +120,14 @@ type bucket struct {
 }
 
 func newBucket(name string) *bucket {
-	return &bucket{Bucket: &v1alpha3.Bucket{
+	b := &bucket{Bucket: &v1alpha3.Bucket{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Finalizers: []string{},
 		},
 	}}
+	meta.SetExternalName(b, name)
+	return b
 }
 
 func (b *bucket) withUID(uid string) *bucket {
@@ -290,6 +293,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 				ReferenceResolver: &mockReferenceResolver{},
 				log:               logging.NewNopLogger(),
+				initializer:       managed.NewNameAsExternalName(tt.fields.client),
 			}
 			got, err := r.Reconcile(req)
 			if diff := cmp.Diff(tt.wantErr, err, test.EquateErrors()); diff != "" {

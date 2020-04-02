@@ -293,11 +293,6 @@ spec:
                   description: A prefix for log object names.
                   type: string
               type: object
-            nameFormat:
-              description: NameFormat specifies the name of the external Bucket. The
-                first instance of the string '%s' will be replaced with the Kubernetes
-                UID of this Bucket.
-              type: string
             predefinedAcl:
               description: If not empty, applies a predefined set of access controls.
                 It should be set only when creating a bucket. It is always empty for

@@ -17,14 +17,12 @@ limitations under the License.
 package v1alpha3
 
 import (
-	"fmt"
-	"strings"
 	"time"
-
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 
 	"cloud.google.com/go/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
 // ProjectTeam is the project team associated with the entity, if any.
@@ -757,9 +755,6 @@ type BucketOutputAttrs struct {
 	// Created is the creation time of the bucket.
 	Created metav1.Time `json:"created,omitempty"`
 
-	// Name is the name of the bucket.
-	Name string `json:"name,omitempty"`
-
 	// Retention policy enforces a minimum retention time for all objects
 	// contained in the bucket. A RetentionPolicy of nil implies the bucket
 	// has no minimum data retention.
@@ -780,7 +775,6 @@ func NewBucketOutputAttrs(attrs *storage.BucketAttrs) BucketOutputAttrs {
 		Created: metav1.Time{
 			Time: attrs.Created,
 		},
-		Name:            attrs.Name,
 		RetentionPolicy: NewRetentionPolicyStatus(attrs.RetentionPolicy),
 	}
 }
@@ -790,12 +784,6 @@ func NewBucketOutputAttrs(attrs *storage.BucketAttrs) BucketOutputAttrs {
 // https://cloud.google.com/storage/docs/json_api/v1/buckets#resource
 type BucketParameters struct {
 	BucketSpecAttrs `json:",inline"`
-
-	// NameFormat specifies the name of the external Bucket. The first instance
-	// of the string '%s' will be replaced with the Kubernetes UID of this
-	// Bucket.
-	NameFormat string `json:"nameFormat,omitempty"`
-
 	// ServiceAccountSecretRef contains GCP ServiceAccount secret that will be used
 	// for bucket connection secret credentials
 	ServiceAccountSecretRef *runtimev1alpha1.SecretReference `json:"serviceAccountSecretRef,omitempty"`
@@ -830,30 +818,6 @@ type Bucket struct {
 
 	Spec   BucketSpec   `json:"spec"`
 	Status BucketStatus `json:"status,omitempty"`
-}
-
-// GetBucketName based on the NameFormat spec value,
-// If name format is not provided, bucket name defaults to UID
-// If name format provided with '%s' value, bucket name will result in formatted string + UID,
-//   NOTE: only single %s substitution is supported
-// If name format does not contain '%s' substitution, i.e. a constant string, the
-// constant string value is returned back
-//
-// Examples:
-//   For all examples assume "UID" = "test-uid"
-//   1. NameFormat = "", BucketName = "test-uid"
-//   2. NameFormat = "%s", BucketName = "test-uid"
-//   3. NameFormat = "foo", BucketName = "foo"
-//   4. NameFormat = "foo-%s", BucketName = "foo-test-uid"
-//   5. NameFormat = "foo-%s-bar-%s", BucketName = "foo-test-uid-bar-%!s(MISSING)"
-func (b *Bucket) GetBucketName() string {
-	if b.Spec.NameFormat == "" {
-		return string(b.GetUID())
-	}
-	if strings.Contains(b.Spec.NameFormat, "%s") {
-		return fmt.Sprintf(b.Spec.NameFormat, string(b.GetUID()))
-	}
-	return b.Spec.NameFormat
 }
 
 // +kubebuilder:object:root=true
