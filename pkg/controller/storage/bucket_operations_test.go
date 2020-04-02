@@ -309,7 +309,6 @@ func Test_bucketHandler_setStatusAttrs(t *testing.T) {
 			name:   "Test",
 			fields: fields{bucket: &v1alpha3.Bucket{}},
 			args:   &storage.BucketAttrs{Name: "foo"},
-			want:   v1alpha3.BucketOutputAttrs{Name: "foo"},
 		},
 	}
 	for _, tt := range tests {
@@ -390,7 +389,6 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 	ctx := context.TODO()
 	testError := errors.New("test-error")
 	testNamespace := "test-sa-namespace"
-	bucketUID := "test-uid"
 	saSecretName := "test-sa-secret"
 	saSecretUser := "test-user"
 	saSecretPass := "test-pass"
@@ -439,7 +437,6 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 				Bucket: newBucket(testBucketName).
 					withWriteConnectionSecretToReference(testNamespace, testBucketName).
 					withServiceAccountSecretRef(testNamespace, saSecretName).
-					withUID(bucketUID).
 					Bucket,
 				kube: &test.MockClient{
 					MockGet: func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
@@ -464,7 +461,7 @@ func Test_bucketHandler_updateSecret(t *testing.T) {
 								obj, &corev1.Secret{})
 						}
 						// assert secret data
-						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretEndpointKey, bucketUID)
+						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretEndpointKey, testBucketName)
 						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretUserKey, saSecretUser)
 						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretPasswordKey, saSecretPass)
 						assertSecretData(s.Data, runtimev1alpha1.ResourceCredentialsSecretTokenKey, saSecretCreds)

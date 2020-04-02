@@ -874,7 +874,6 @@ func TestCopyBucketSpecAttrs(t *testing.T) {
 var (
 	testBucketOutputAttrs = BucketOutputAttrs{
 		Created:         metav1.NewTime(now),
-		Name:            "test-name",
 		RetentionPolicy: testRetentionPolicyStatus,
 	}
 
@@ -899,79 +898,6 @@ func TestNewBucketOutputAttrs(t *testing.T) {
 			got := NewBucketOutputAttrs(tt.args)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf("NewBucketOutputAttrs() = %v, want %v\n%s", got, tt.want, diff)
-			}
-		})
-	}
-}
-
-func TestBucket_GetBucketName(t *testing.T) {
-	om := metav1.ObjectMeta{
-		Namespace: "foo",
-		Name:      "bar",
-		UID:       "test-uid",
-	}
-	type fields struct {
-		ObjectMeta metav1.ObjectMeta
-		Spec       BucketSpec
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{
-			name: "NoNameFormat",
-			fields: fields{
-				ObjectMeta: om,
-				Spec:       BucketSpec{},
-			},
-			want: "test-uid",
-		},
-		{
-			name: "FormatString",
-			fields: fields{
-				ObjectMeta: om,
-				Spec: BucketSpec{
-					BucketParameters: BucketParameters{
-						NameFormat: "foo-%s",
-					},
-				},
-			},
-			want: "foo-test-uid",
-		},
-		{
-			name: "ConstantString",
-			fields: fields{
-				ObjectMeta: om,
-				Spec: BucketSpec{
-					BucketParameters: BucketParameters{
-						NameFormat: "foo-bar",
-					},
-				},
-			},
-			want: "foo-bar",
-		},
-		{
-			name: "InvalidMultipleSubstitutions",
-			fields: fields{
-				ObjectMeta: om,
-				Spec: BucketSpec{
-					BucketParameters: BucketParameters{
-						NameFormat: "foo-%s-bar-%s",
-					},
-				},
-			},
-			want: "foo-test-uid-bar-%!s(MISSING)",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := &Bucket{
-				ObjectMeta: tt.fields.ObjectMeta,
-				Spec:       tt.fields.Spec,
-			}
-			if got := b.GetBucketName(); got != tt.want {
-				t.Errorf("Bucket.GetBucketName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -72,7 +72,8 @@ type Reconciler struct {
 	client.Client
 	factory
 	managed.ReferenceResolver
-	log logging.Logger
+	initializer managed.Initializer
+	log         logging.Logger
 }
 
 // SetupBucket adds a controller that reconciles Bucket managed
@@ -85,6 +86,7 @@ func SetupBucket(mgr ctrl.Manager, l logging.Logger) error {
 		factory:           &bucketFactory{mgr.GetClient()},
 		ReferenceResolver: managed.NewAPIReferenceResolver(mgr.GetClient()),
 		log:               l.WithValues("controller", name),
+		initializer:       managed.NewNameAsExternalName(mgr.GetClient()),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -107,6 +109,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
+		return reconcile.Result{}, err
+	}
+	if err := r.initializer.Initialize(ctx, b); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -175,7 +180,7 @@ func (m *bucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha3.Bucket) 
 
 	ops := &bucketHandler{
 		Bucket: b,
-		gcp:    &gcpstorage.BucketClient{BucketHandle: sc.Bucket(b.GetBucketName())},
+		gcp:    &gcpstorage.BucketClient{BucketHandle: sc.Bucket(meta.GetExternalName(b))},
 		kube:   m.Client,
 	}
 
