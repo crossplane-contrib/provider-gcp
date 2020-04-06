@@ -68,7 +68,7 @@ func nodePool(im ...nodePoolModifier) *v1alpha1.NodePool {
 			Name:       name,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.ExternalNameAnnotationKey: name,
+				meta.AnnotationKeyExternalName: name,
 			},
 		},
 		Spec: v1alpha1.NodePoolSpec{

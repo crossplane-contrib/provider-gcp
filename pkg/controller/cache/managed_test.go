@@ -110,7 +110,7 @@ func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
 			Name:       instanceName,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.ExternalNameAnnotationKey: instanceName,
+				meta.AnnotationKeyExternalName: instanceName,
 			},
 		},
 		Spec: v1beta1.CloudMemorystoreInstanceSpec{

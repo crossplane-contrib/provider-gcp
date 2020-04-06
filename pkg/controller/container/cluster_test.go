@@ -102,7 +102,7 @@ func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 			Name:       name,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.ExternalNameAnnotationKey: name,
+				meta.AnnotationKeyExternalName: name,
 			},
 		},
 		Spec: v1beta1.GKEClusterSpec{
