@@ -75,7 +75,7 @@ func addressObj(im ...addressModifier) *v1beta1.GlobalAddress {
 			Name:       testNetworkName,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.ExternalNameAnnotationKey: testGAName,
+				meta.AnnotationKeyExternalName: testGAName,
 			},
 		},
 		Spec: v1beta1.GlobalAddressSpec{

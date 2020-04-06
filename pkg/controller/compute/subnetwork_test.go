@@ -71,7 +71,7 @@ func subnetworkObj(im ...subnetworkModifier) *v1beta1.Subnetwork {
 			Name:       testSubnetworkName,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.ExternalNameAnnotationKey: testSubnetworkName,
+				meta.AnnotationKeyExternalName: testSubnetworkName,
 			},
 		},
 		Spec: v1beta1.SubnetworkSpec{

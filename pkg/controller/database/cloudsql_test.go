@@ -112,7 +112,7 @@ func instance(im ...instanceModifier) *v1beta1.CloudSQLInstance {
 			Name:       name,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.ExternalNameAnnotationKey: name,
+				meta.AnnotationKeyExternalName: name,
 			},
 		},
 		Spec: v1beta1.CloudSQLInstanceSpec{

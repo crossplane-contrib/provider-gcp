@@ -80,7 +80,7 @@ func networkObj(im ...networkModifier) *v1beta1.Network {
 			Name:       testNetworkName,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.ExternalNameAnnotationKey: testNetworkName,
+				meta.AnnotationKeyExternalName: testNetworkName,
 			},
 		},
 		Spec: v1beta1.NetworkSpec{

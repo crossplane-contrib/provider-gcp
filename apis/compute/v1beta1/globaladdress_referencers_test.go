@@ -44,7 +44,7 @@ func TestGlobalAddressNameReferencerGetStatus(t *testing.T) {
 	readyResource := GlobalAddress{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{
-				meta.ExternalNameAnnotationKey: mockGlobalAddressName,
+				meta.AnnotationKeyExternalName: mockGlobalAddressName,
 			},
 		},
 		Spec: GlobalAddressSpec{

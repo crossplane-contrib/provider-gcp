@@ -67,7 +67,7 @@ func TestInstanceID(t *testing.T) {
 			i: &v1beta1.CloudMemorystoreInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						meta.ExternalNameAnnotationKey: instanceName,
+						meta.AnnotationKeyExternalName: instanceName,
 					},
 				},
 				Spec: v1beta1.CloudMemorystoreInstanceSpec{
@@ -118,7 +118,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 			i: &v1beta1.CloudMemorystoreInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						meta.ExternalNameAnnotationKey: instanceName,
+						meta.AnnotationKeyExternalName: instanceName,
 					},
 				},
 				Spec: v1beta1.CloudMemorystoreInstanceSpec{
@@ -161,7 +161,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 			i: &v1beta1.CloudMemorystoreInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						meta.ExternalNameAnnotationKey: instanceName,
+						meta.AnnotationKeyExternalName: instanceName,
 					},
 				},
 				Spec: v1beta1.CloudMemorystoreInstanceSpec{
@@ -208,7 +208,7 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 			i: &v1beta1.CloudMemorystoreInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						meta.ExternalNameAnnotationKey: instanceName,
+						meta.AnnotationKeyExternalName: instanceName,
 					},
 				},
 				Spec: v1beta1.CloudMemorystoreInstanceSpec{
