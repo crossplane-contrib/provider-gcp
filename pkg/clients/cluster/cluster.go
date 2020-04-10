@@ -1071,7 +1071,13 @@ func IsUpToDate(name string, in *v1beta1.GKEClusterParameters, observed *contain
 	if checkForBootstrapNodePool(observed) {
 		return false, deleteBootstrapNodePoolFn(), nil
 	}
-	if !cmp.Equal(desired.AddonsConfig, observed.AddonsConfig, cmpopts.EquateEmpty()) {
+	if !cmp.Equal(desired.AddonsConfig, observed.AddonsConfig, cmpopts.EquateEmpty(),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "CloudRunConfig.ForceSendFields"),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "HorizontalPodAutoscaling.ForceSendFields"),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "HttpLoadBalancing.ForceSendFields"),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "IstioConfig.ForceSendFields"),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "KubernetesDashboard.ForceSendFields"),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "NetworkPolicyConfig.ForceSendFields")) {
 		return false, newAddonsConfigUpdateFn(in.AddonsConfig), nil
 	}
 	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling, cmpopts.EquateEmpty()) {
