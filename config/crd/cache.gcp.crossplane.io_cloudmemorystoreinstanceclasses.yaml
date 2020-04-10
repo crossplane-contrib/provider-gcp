@@ -20,6 +20,10 @@ spec:
     type: date
   group: cache.gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - class
+    - gcp
     kind: CloudMemorystoreInstanceClass
     listKind: CloudMemorystoreInstanceClassList
     plural: cloudmemorystoreinstanceclasses

@@ -35,6 +35,10 @@ spec:
     type: date
   group: compute.gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
     kind: GKECluster
     listKind: GKEClusterList
     plural: gkeclusters

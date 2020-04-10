@@ -21,6 +21,10 @@ spec:
     type: string
   group: gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - provider
+    - gcp
     kind: Provider
     listKind: ProviderList
     plural: providers

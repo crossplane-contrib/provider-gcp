@@ -26,6 +26,10 @@ spec:
     type: date
   group: database.gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
     kind: CloudSQLInstance
     listKind: CloudSQLInstanceList
     plural: cloudsqlinstances

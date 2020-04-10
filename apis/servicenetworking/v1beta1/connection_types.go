@@ -130,7 +130,7 @@ type ConnectionStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 
 // A Connection is a managed resource that represents a Google Cloud Service
 // Networking Connection.
