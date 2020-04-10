@@ -1460,6 +1460,29 @@ func TestIsUpToDate(t *testing.T) {
 				isErr:    false,
 			},
 		},
+		"UpToDateIgnoreForceSendFields": {
+			args: args{
+				name: name,
+				cluster: cluster(func(c *container.Cluster) {
+					c.AddonsConfig = &container.AddonsConfig{
+						KubernetesDashboard: &container.KubernetesDashboard{
+							Disabled: true,
+						},
+					}
+				}),
+				params: params(func(p *v1beta1.GKEClusterParameters) {
+					p.AddonsConfig = &v1beta1.AddonsConfig{
+						KubernetesDashboard: &v1beta1.KubernetesDashboard{
+							Disabled: gcp.BoolPtr(true),
+						},
+					}
+				}),
+			},
+			want: want{
+				upToDate: true,
+				isErr:    false,
+			},
+		},
 		"NeedsUpdate": {
 			args: args{
 				name: name,
