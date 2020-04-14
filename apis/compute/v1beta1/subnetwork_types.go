@@ -170,7 +170,7 @@ type SubnetworkStatus struct {
 // A Subnetwork is a managed resource that represents a Google Compute Engine
 // VPC Subnetwork.
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 type Subnetwork struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -10,6 +10,10 @@ metadata:
 spec:
   group: compute.gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
     kind: GlobalAddress
     listKind: GlobalAddressList
     plural: globaladdresses

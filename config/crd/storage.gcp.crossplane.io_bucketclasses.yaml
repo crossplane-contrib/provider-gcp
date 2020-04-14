@@ -20,6 +20,10 @@ spec:
     type: date
   group: storage.gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - class
+    - gcp
     kind: BucketClass
     listKind: BucketClassList
     plural: bucketclasses
