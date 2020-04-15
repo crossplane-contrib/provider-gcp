@@ -20,6 +20,10 @@ import (
 	"context"
 	"strings"
 
+	v1beta12 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"google.golang.org/api/option"
@@ -60,6 +64,19 @@ const (
 	errCheckUpToDate    = "cannot determine if CloudSQL instance is up to date"
 )
 
+// These would be in crossplane-runtime.
+type ReferenceResolverFn func(referencer resource.Managed, referenced resource.Managed) error
+
+type ReferenceResolver struct {
+	schema.GroupVersionKind
+	ReferenceResolverFn
+}
+
+type SelectorResolver struct {
+	SelectorFieldPath  string
+	ReferenceFieldPath string
+}
+
 // SetupCloudSQLInstance adds a controller that reconciles
 // CloudSQLInstance managed resources.
 func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
@@ -70,7 +87,18 @@ func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
 		managed.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}),
 		managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient()), &cloudsqlTagger{kube: mgr.GetClient()}),
 		managed.WithLogger(l.WithValues("controller", name)),
-		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		managed.WithReferenceResolvers([]ReferenceResolver{
+			{GroupVersionKind: v1beta12.NetworkGroupVersionKind, ReferenceResolverFn: v1beta1.ResolvePrivateNetwork},
+		}),
+		// The selector resolver would convert the CR into unstructured only once
+		// and use it for all resolvers.
+		// An alternative could be to use real Go field names and operate on it
+		// with http://godoc.org/github.com/mitchellh/mapstructure that will
+		// work with generic Selector and LocalObjectReference objects.
+		managed.WithSelectorResolvers([]SelectorResolver{
+			{SelectorFieldPath: "spec.forProvider.settings.ipConfiguration.privateNetworkSelector", ReferenceFieldPath: "spec.forProvider.settings.ipConfiguration.privateNetworkRef"},
+		}))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

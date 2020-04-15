@@ -17,21 +17,15 @@ limitations under the License.
 package v1beta1
 
 import (
-	"context"
 	"strings"
-
-	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
-	"github.com/crossplane/provider-gcp/pkg/clients/connection"
 )
 
 // CloudSQL instance states
@@ -76,64 +70,23 @@ const (
 	errResourceIsNotCloudSQLInstance = "the managed resource is not a CloudSQLInstance"
 )
 
-// NetworkURIReferencerForCloudSQLInstance resolves references from a
-// CloudSQLInstance to a Network by returning the referenced Network's
-// resource link, e.g. /projects/example/global/networks/example.
-type NetworkURIReferencerForCloudSQLInstance struct {
-	corev1.LocalObjectReference `json:",inline"`
-}
-
-// GetStatus reports whether the referenced Network should be considered Ready;
-// reconciliation of the CloudSQLInstance will block until such time. The
-// Network is considered Ready when its Ready condition is true, and it has an
-// active service networking connection peering.
-func (v *NetworkURIReferencerForCloudSQLInstance) GetStatus(ctx context.Context, _ resource.CanReference, c client.Reader) ([]resource.ReferenceStatus, error) {
-	network := computev1beta1.Network{}
-	nn := types.NamespacedName{Name: v.Name}
-	if err := c.Get(ctx, nn, &network); err != nil {
-		if kerrors.IsNotFound(err) {
-			return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotFound}}, nil
-		}
-
-		return nil, errors.Wrap(err, errGetNetwork)
-	}
-
-	if !resource.IsConditionTrue(network.GetCondition(runtimev1alpha1.TypeReady)) {
-		return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotReady}}, nil
-	}
-
-	for _, p := range network.Status.AtProvider.Peerings {
-		if p.Name == connection.PeeringName && p.State == connection.PeeringStateActive {
-			return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceReady}}, nil
-		}
-	}
-
-	return []resource.ReferenceStatus{{Name: v.Name, Status: resource.ReferenceNotReady}}, nil
-}
-
-// Build the resource link for the referenced network.
-func (v *NetworkURIReferencerForCloudSQLInstance) Build(ctx context.Context, _ resource.CanReference, c client.Reader) (string, error) {
-	network := computev1beta1.Network{}
-	nn := types.NamespacedName{Name: v.Name}
-	if err := c.Get(ctx, nn, &network); err != nil {
-		return "", errors.Wrap(err, errGetNetwork)
-	}
-
-	return strings.TrimPrefix(network.Status.AtProvider.SelfLink, computev1beta1.URIPrefix), nil
-}
-
-// Assign the PrivateNetwork field of the supplied resource.CanReference,
-// assumed to be a CloudSQLInstance.
-func (v *NetworkURIReferencerForCloudSQLInstance) Assign(res resource.CanReference, value string) error {
-	sql, ok := res.(*CloudSQLInstance)
+// ResolvePrivateNetwork resolves the network resource reference.
+func ResolvePrivateNetwork(referencer resource.Managed, referenced resource.Managed) error {
+	network, ok := referenced.(*computev1beta1.Network)
 	if !ok {
-		return errors.New(errResourceIsNotCloudSQLInstance)
+		return errors.New("resource is not network")
 	}
+	sql, ok := referencer.(*CloudSQLInstance)
+	if !ok {
+		return errors.New("resource is not cloudsqlinstance")
+	}
+
+	// This function is called only when the referenced has Ready condition.
 
 	if sql.Spec.ForProvider.Settings.IPConfiguration == nil {
 		sql.Spec.ForProvider.Settings.IPConfiguration = &IPConfiguration{}
 	}
-
+	value := strings.TrimPrefix(network.Status.AtProvider.SelfLink, computev1beta1.URIPrefix)
 	sql.Spec.ForProvider.Settings.IPConfiguration.PrivateNetwork = &value
 	return nil
 }
@@ -439,7 +392,7 @@ type IPConfiguration struct {
 	// must have an active Service Networking connection peering before
 	// resolution will proceed.
 	// https://cloud.google.com/vpc/docs/configure-private-services-access
-	PrivateNetworkRef *NetworkURIReferencerForCloudSQLInstance `json:"privateNetworkRef,omitempty" resource:"attributereferencer"`
+	PrivateNetworkRef *corev1.LocalObjectReference `json:"privateNetworkRef,omitempty" resource:"attributereferencer"`
 
 	// RequireSsl: Whether SSL connections over IP should be enforced or
 	// not.
