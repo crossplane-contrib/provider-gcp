@@ -636,9 +636,25 @@ spec:
                     URI
                   properties:
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: Name of the referenced object.
                       type: string
+                  required:
+                  - name
+                  type: object
+                networkSelector:
+                  description: NetworkSelector selects a reference to a Network and
+                    retrieves its URI
+                  properties:
+                    matchControllerRef:
+                      description: MatchControllerRef ensures an object with the same
+                        controller reference as the selecting object is selected.
+                      type: boolean
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: MatchLabels ensures an object with matching labels
+                        is selected.
+                      type: object
                   type: object
                 podSecurityPolicyConfig:
                   description: 'PodSecurityPolicyConfig: Configuration for the PodSecurityPolicy
@@ -726,9 +742,25 @@ spec:
                     its URI
                   properties:
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: Name of the referenced object.
                       type: string
+                  required:
+                  - name
+                  type: object
+                subnetworkSelector:
+                  description: SubnetworkSelector selects a reference to a Subnetwork
+                    and retrieves its URI
+                  properties:
+                    matchControllerRef:
+                      description: MatchControllerRef ensures an object with the same
+                        controller reference as the selecting object is selected.
+                      type: boolean
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: MatchLabels ensures an object with matching labels
+                        is selected.
+                      type: object
                   type: object
                 tierSettings:
                   description: 'TierSettings: Cluster tier settings.'

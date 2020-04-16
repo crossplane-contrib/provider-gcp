@@ -93,7 +93,7 @@ func SetupGKECluster(mgr ctrl.Manager, l logging.Logger) error {
 	r := &Reconciler{
 		Client:      mgr.GetClient(),
 		publisher:   managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme()),
-		resolver:    managed.NewAPIReferenceResolver(mgr.GetClient()),
+		resolver:    managed.NewAPISimpleReferenceResolver(mgr.GetClient()),
 		initializer: managed.NewNameAsExternalName(mgr.GetClient()),
 		log:         l.WithValues("controller", name),
 	}
@@ -250,19 +250,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return r.fail(instance, err)
 	}
 
-	if !resource.IsConditionTrue(instance.GetCondition(runtimev1alpha1.TypeReferencesResolved)) {
-		if err := r.resolver.ResolveReferences(ctx, instance); err != nil {
-			condition := runtimev1alpha1.ReconcileError(err)
-			if managed.IsReferencesAccessError(err) {
-				condition = runtimev1alpha1.ReferenceResolutionBlocked(err)
-			}
-
-			instance.Status.SetConditions(condition)
-			return reconcile.Result{RequeueAfter: aLongWait}, errors.Wrap(r.Update(ctx, instance), errUpdateManagedStatus)
-		}
-
-		// Add ReferenceResolutionSuccess to the conditions
-		instance.Status.SetConditions(runtimev1alpha1.ReferenceResolutionSuccess())
+	if err := r.resolver.ResolveReferences(ctx, instance); err != nil {
+		instance.Status.SetConditions(runtimev1alpha1.ReconcileError(err))
+		return reconcile.Result{RequeueAfter: aLongWait}, errors.Wrap(r.Update(ctx, instance), errUpdateManagedStatus)
 	}
 
 	// Check for deletion

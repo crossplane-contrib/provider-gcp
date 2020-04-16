@@ -132,13 +132,28 @@ spec:
                     service consumer''s VPC network.'
                   type: string
                 networkRef:
-                  description: NetworkRef references to a Network and retrieves its
-                    URI
+                  description: NetworkRef references a Network and retrieves its URI
                   properties:
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: Name of the referenced object.
                       type: string
+                  required:
+                  - name
+                  type: object
+                networkSelector:
+                  description: NetworkSelector selects a reference to a Network and
+                    retrieves its URI
+                  properties:
+                    matchControllerRef:
+                      description: MatchControllerRef ensures an object with the same
+                        controller reference as the selecting object is selected.
+                      type: boolean
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: MatchLabels ensures an object with matching labels
+                        is selected.
+                      type: object
                   type: object
                 parent:
                   description: 'Parent: The service that is managing peering connectivity
@@ -149,16 +164,30 @@ spec:
                   description: ReservedPeeringRangeRefs is a set of references to
                     GlobalAddress objects
                   items:
-                    description: GlobalAddressNameReferencerForConnection is an attribute
-                      referencer that resolves name from a referenced GlobalAddress
-                      and assigns it to a Connection
+                    description: A Reference to a named object.
                     properties:
                       name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        description: Name of the referenced object.
                         type: string
+                    required:
+                    - name
                     type: object
                   type: array
+                reservedPeeringRangeSelector:
+                  description: ReservedPeeringRangeSelector selects a set of references
+                    to GlobalAddress objects.
+                  properties:
+                    matchControllerRef:
+                      description: MatchControllerRef ensures an object with the same
+                        controller reference as the selecting object is selected.
+                      type: boolean
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: MatchLabels ensures an object with matching labels
+                        is selected.
+                      type: object
+                  type: object
                 reservedPeeringRanges:
                   description: 'ReservedPeeringRanges: The name of one or more allocated
                     IP address ranges for this service producer of type `PEERING`.'

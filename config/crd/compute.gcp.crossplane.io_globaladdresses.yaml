@@ -154,13 +154,27 @@ spec:
                     the VPC_PEERING purpose.'
                   type: string
                 networkRef:
-                  description: NetworkRef references to a Network and retrieves its
-                    URI
+                  description: NetworkRef references a Network to retrieve its URI
                   properties:
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: Name of the referenced object.
                       type: string
+                  required:
+                  - name
+                  type: object
+                networkSelector:
+                  description: NetworkSelector selects a reference to a Network
+                  properties:
+                    matchControllerRef:
+                      description: MatchControllerRef ensures an object with the same
+                        controller reference as the selecting object is selected.
+                      type: boolean
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: MatchLabels ensures an object with matching labels
+                        is selected.
+                      type: object
                   type: object
                 prefixLength:
                   description: 'PrefixLength: The prefix length if the resource represents
@@ -189,13 +203,28 @@ spec:
                     with INTERNAL type with a GCE_ENDPOINT or DNS_RESOLVER purpose.'
                   type: string
                 subnetworkRef:
-                  description: SubnetworkRef references to a Subnetwork and retrieves
-                    its URI
+                  description: SubnetworkRef references a Subnetwork to retrieve its
+                    URI
                   properties:
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: Name of the referenced object.
                       type: string
+                  required:
+                  - name
+                  type: object
+                subnetworkSelector:
+                  description: SubnetworkSelector selects a reference to a Subnetwork
+                  properties:
+                    matchControllerRef:
+                      description: MatchControllerRef ensures an object with the same
+                        controller reference as the selecting object is selected.
+                      type: boolean
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: MatchLabels ensures an object with matching labels
+                        is selected.
+                      type: object
                   type: object
               type: object
             providerRef:

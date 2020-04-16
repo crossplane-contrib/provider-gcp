@@ -18,8 +18,6 @@ package v1alpha1
 
 import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
@@ -35,30 +33,6 @@ const (
 	NodePoolStateStopping     = "STOPPING"
 	NodePoolStateError        = "ERROR"
 )
-
-// Error strings
-const (
-	errResourceIsNotNodePool = "the managed resource is not a NodePool"
-)
-
-// GKEClusterURIReferencerForNodePool resolves references from a NodePool to a
-// GKECluster by returning the referenced GKECluster's resource link, e.g.
-// projects/projectID/locations/clusterLocation/clusters/clusterName.
-type GKEClusterURIReferencerForNodePool struct {
-	v1beta1.GKEClusterURIReferencer `json:",inline"`
-}
-
-// Assign the PrivateGKECluster field of the supplied resource.CanReference,
-// assumed to be a NodePool.
-func (v *GKEClusterURIReferencerForNodePool) Assign(res resource.CanReference, value string) error {
-	np, ok := res.(*NodePool)
-	if !ok {
-		return errors.New(errResourceIsNotNodePool)
-	}
-
-	np.Spec.ForProvider.Cluster = value
-	return nil
-}
 
 // NodePoolObservation is used to show the observed state of the GKE Node Pool
 // resource on GCP.
@@ -130,11 +104,16 @@ type NodePoolParameters struct {
 	Cluster string `json:"cluster,omitempty"`
 
 	// ClusterRef sets the Cluster field by resolving the resource link of the
-	// referenced Crossplane GKECluster managed resource. Must be supplied in
-	// Cluster is not.
+	// referenced Crossplane GKECluster managed resource.
 	// +immutable
 	// +optional
-	ClusterRef *GKEClusterURIReferencerForNodePool `json:"clusterRef,omitempty" resource:"attributereferencer"`
+	ClusterRef *runtimev1alpha1.Reference `json:"clusterRef,omitempty"`
+
+	// ClusterSelector selects a reference to resolve the resource link of the
+	// referenced Crossplane GKECluster managed resource.
+	// +immutable
+	// +optional
+	ClusterSelector *runtimev1alpha1.Selector `json:"clusterSelector,omitempty"`
 
 	// NOTE(hasheddan): Autoscaling can only be updated via setAutoscaling
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters.nodePools/setAutoscaling

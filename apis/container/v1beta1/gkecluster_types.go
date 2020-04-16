@@ -18,11 +18,7 @@ package v1beta1
 
 import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 )
 
 // Cluster states.
@@ -41,45 +37,6 @@ const (
 	DefaultReclaimPolicy = runtimev1alpha1.ReclaimRetain
 	DefaultNumberOfNodes = int64(1)
 )
-
-// Error strings
-const (
-	errResourceIsNotGKECluster = "the managed resource is not a GKECluster"
-)
-
-// NetworkURIReferencerForGKECluster is an attribute referencer that resolves
-// network uri from a referenced Network and assigns it to a GKECluster
-type NetworkURIReferencerForGKECluster struct {
-	v1beta1.NetworkURIReferencer `json:",inline"`
-}
-
-// Assign assigns the retrieved network uri to GKECluster
-func (v *NetworkURIReferencerForGKECluster) Assign(res resource.CanReference, value string) error {
-	gke, ok := res.(*GKECluster)
-	if !ok {
-		return errors.New(errResourceIsNotGKECluster)
-	}
-
-	gke.Spec.ForProvider.Network = &value
-	return nil
-}
-
-// SubnetworkURIReferencerForGKECluster is an attribute referencer that resolves
-// subnetwork uri from a referenced Subnetwork and assigns it to a GKECluster
-type SubnetworkURIReferencerForGKECluster struct {
-	v1beta1.SubnetworkURIReferencer `json:",inline"`
-}
-
-// Assign assigns the retrieved subnetwork uri to a GKECluster
-func (v *SubnetworkURIReferencerForGKECluster) Assign(res resource.CanReference, value string) error {
-	gke, ok := res.(*GKECluster)
-	if !ok {
-		return errors.New(errResourceIsNotGKECluster)
-	}
-
-	gke.Spec.ForProvider.Subnetwork = &value
-	return nil
-}
 
 // GKEClusterParameters define the desired state of a Google Kubernetes Engine
 // cluster. Most of its fields are direct mirror of GCP Cluster object.
@@ -277,7 +234,12 @@ type GKEClusterParameters struct {
 	// NetworkRef references to a Network and retrieves its URI
 	// +optional
 	// +immutable
-	NetworkRef *NetworkURIReferencerForGKECluster `json:"networkRef,omitempty" resource:"attributereferencer"`
+	NetworkRef *runtimev1alpha1.Reference `json:"networkRef,omitempty"`
+
+	// NetworkSelector selects a reference to a Network and retrieves its URI
+	// +optional
+	// +immutable
+	NetworkSelector *runtimev1alpha1.Selector `json:"networkSelector,omitempty"`
 
 	// NOTE(hasheddan): only intranode visibility can be updated in
 	// NetworkConfig
@@ -329,7 +291,13 @@ type GKEClusterParameters struct {
 	// SubnetworkRef references to a Subnetwork and retrieves its URI
 	// +optional
 	// +immutable
-	SubnetworkRef *SubnetworkURIReferencerForGKECluster `json:"subnetworkRef,omitempty" resource:"attributereferencer"`
+	SubnetworkRef *runtimev1alpha1.Reference `json:"subnetworkRef,omitempty"`
+
+	// SubnetworkSelector selects a reference to a Subnetwork and retrieves its
+	// URI
+	// +optional
+	// +immutable
+	SubnetworkSelector *runtimev1alpha1.Selector `json:"subnetworkSelector,omitempty"`
 
 	// TierSettings: Cluster tier settings.
 	// +optional

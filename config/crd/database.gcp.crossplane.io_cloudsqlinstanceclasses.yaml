@@ -272,19 +272,35 @@ spec:
                             VPC network from which the Cloud SQL instance is accessible
                             for private IP. For example, /projects/myProject/global/networks/default.
                             This setting can be updated, but it cannot be removed
-                            after it is set.'
+                            after it is set. The Network must have an active Service
+                            Networking connection peering before resolution will proceed.
+                            https://cloud.google.com/vpc/docs/configure-private-services-access'
                           type: string
                         privateNetworkRef:
                           description: PrivateNetworkRef sets the PrivateNetwork field
                             by resolving the resource link of the referenced Crossplane
-                            Network managed resource. The Network must have an active
-                            Service Networking connection peering before resolution
-                            will proceed. https://cloud.google.com/vpc/docs/configure-private-services-access
+                            Network managed resource.
                           properties:
                             name:
-                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              description: Name of the referenced object.
                               type: string
+                          required:
+                          - name
+                          type: object
+                        privateNetworkSelector:
+                          description: PrivateNetworkSelector selects a PrivateNetworkRef.
+                          properties:
+                            matchControllerRef:
+                              description: MatchControllerRef ensures an object with
+                                the same controller reference as the selecting object
+                                is selected.
+                              type: boolean
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: MatchLabels ensures an object with matching
+                                labels is selected.
+                              type: object
                           type: object
                         requireSsl:
                           description: 'RequireSsl: Whether SSL connections over IP

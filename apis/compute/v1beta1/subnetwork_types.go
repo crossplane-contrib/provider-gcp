@@ -17,38 +17,10 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/pkg/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
-
-// Error strings
-const (
-	errResourceIsNotSubnetwork = "the managed resource is not a Subnetwork"
-)
-
-// URIRegionPrefix is the URI prefix for the region of a GCP subnetwork.
-const URIRegionPrefix string = "https://www.googleapis.com/compute/v1/projects/crossplane-playground/regions/"
-
-// NetworkURIReferencerForSubnetwork is an attribute referencer that resolves
-// network uri from a referenced Network and assigns it to a subnetwork
-type NetworkURIReferencerForSubnetwork struct {
-	NetworkURIReferencer `json:",inline"`
-}
-
-// Assign assigns the retrieved network uri to a subnetwork object
-func (v *NetworkURIReferencerForSubnetwork) Assign(res resource.CanReference, value string) error {
-	subnetwork, ok := res.(*Subnetwork)
-	if !ok {
-		return errors.New(errResourceIsNotSubnetwork)
-	}
-
-	subnetwork.Spec.ForProvider.Network = &value
-	return nil
-}
 
 // SubnetworkParameters define the desired state of a Google Compute Engine VPC
 // Subnetwork. Most fields map directly to a Subnetwork:
@@ -66,11 +38,19 @@ type SubnetworkParameters struct {
 	// provided by the client when initially creating the subnetwork. Only
 	// networks that are in the distributed mode can have subnetworks. This
 	// field can be set only at resource creation time.
+	// +optional
 	// +immutable
 	Network *string `json:"network,omitempty"`
 
-	// NetworkRef references to a Network and retrieves its URI
-	NetworkRef *NetworkURIReferencerForSubnetwork `json:"networkRef,omitempty" resource:"attributereferencer"`
+	// NetworkRef references a Network and retrieves its URI
+	// +optional
+	// +immutable
+	NetworkRef *runtimev1alpha1.Reference `json:"networkRef,omitempty"`
+
+	// NetworkSelector selects a reference to a Network
+	// +optional
+	// +immutable
+	NetworkSelector *runtimev1alpha1.Selector `json:"networkSelector,omitempty"`
 
 	// Region: URL of the region where the Subnetwork resides. This field
 	// can be set only at resource creation time.
@@ -155,14 +135,14 @@ type SubnetworkSecondaryRange struct {
 
 // A SubnetworkSpec defines the desired state of a Subnetwork.
 type SubnetworkSpec struct {
-	v1alpha1.ResourceSpec `json:",inline"`
-	ForProvider           SubnetworkParameters `json:"forProvider"`
+	runtimev1alpha1.ResourceSpec `json:",inline"`
+	ForProvider                  SubnetworkParameters `json:"forProvider"`
 }
 
 // A SubnetworkStatus represents the observed state of a Subnetwork.
 type SubnetworkStatus struct {
-	v1alpha1.ResourceStatus `json:",inline"`
-	AtProvider              SubnetworkObservation `json:"atProvider,omitempty"`
+	runtimev1alpha1.ResourceStatus `json:",inline"`
+	AtProvider                     SubnetworkObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

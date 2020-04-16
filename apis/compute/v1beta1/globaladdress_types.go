@@ -17,12 +17,10 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
 )
 
 // Known Address statuses.
@@ -31,45 +29,6 @@ const (
 	StatusReserved  = "RESERVED"
 	StatusReserving = "RESERVING"
 )
-
-// Error strings
-const (
-	errResourceIsNotGlobalAddress = "the managed resource is not a GlobalAddress"
-)
-
-// NetworkURIReferencerForGlobalAddress is an attribute referencer that resolves
-// network uri from a referenced Network and assigns it to a global address object
-type NetworkURIReferencerForGlobalAddress struct {
-	NetworkURIReferencer `json:",inline"`
-}
-
-// Assign assigns the retrieved network uri to a global address object
-func (v *NetworkURIReferencerForGlobalAddress) Assign(res resource.CanReference, value string) error {
-	ga, ok := res.(*GlobalAddress)
-	if !ok {
-		return errors.New(errResourceIsNotGlobalAddress)
-	}
-
-	ga.Spec.ForProvider.Network = &value
-	return nil
-}
-
-// SubnetworkURIReferencerForGlobalAddress is an attribute referencer that resolves
-// subnetwork uri from a referenced Subnetwork and assigns it to a global address object
-type SubnetworkURIReferencerForGlobalAddress struct {
-	SubnetworkURIReferencer `json:",inline"`
-}
-
-// Assign assigns the retrieved network uri to a global address object
-func (v *SubnetworkURIReferencerForGlobalAddress) Assign(res resource.CanReference, value string) error {
-	ga, ok := res.(*GlobalAddress)
-	if !ok {
-		return errors.New(errResourceIsNotGlobalAddress)
-	}
-
-	ga.Spec.ForProvider.Subnetwork = &value
-	return nil
-}
 
 // GlobalAddressParameters define the desired state of a Google Compute Engine
 // Global Address. Most fields map directly to an Address:
@@ -116,10 +75,15 @@ type GlobalAddressParameters struct {
 	// +immutable
 	Network *string `json:"network,omitempty"`
 
-	// NetworkRef references to a Network and retrieves its URI
+	// NetworkRef references a Network to retrieve its URI
 	// +optional
 	// +immutable
-	NetworkRef *NetworkURIReferencerForGlobalAddress `json:"networkRef,omitempty" resource:"attributereferencer"`
+	NetworkRef *runtimev1alpha1.Reference `json:"networkRef,omitempty"`
+
+	// NetworkSelector selects a reference to a Network
+	// +optional
+	// +immutable
+	NetworkSelector *runtimev1alpha1.Selector `json:"networkSelector,omitempty"`
 
 	// PrefixLength: The prefix length if the resource represents an IP
 	// range.
@@ -155,10 +119,15 @@ type GlobalAddressParameters struct {
 	// +immutable
 	Subnetwork *string `json:"subnetwork,omitempty"`
 
-	// SubnetworkRef references to a Subnetwork and retrieves its URI
+	// SubnetworkRef references a Subnetwork to retrieve its URI
 	// +optional
 	// +immutable
-	SubnetworkRef *SubnetworkURIReferencerForGlobalAddress `json:"subnetworkRef,omitempty" resource:"attributereferencer"`
+	SubnetworkRef *v1alpha1.Reference `json:"subnetworkRef,omitempty"`
+
+	// SubnetworkSelector selects a reference to a Subnetwork
+	// +optional
+	// +immutable
+	SubnetworkSelector *v1alpha1.Selector `json:"subnetworkSelector,omitempty"`
 }
 
 // A GlobalAddressObservation reflects the observed state of a GlobalAddress on GCP.
