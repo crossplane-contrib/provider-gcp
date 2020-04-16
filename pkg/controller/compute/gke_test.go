@@ -99,7 +99,7 @@ func assertResource(g *GomegaWithT, r *Reconciler, s runtimev1alpha1.Conditioned
 
 type mockReferenceResolver struct{}
 
-func (*mockReferenceResolver) ResolveReferences(ctx context.Context, res resource.CanReference) (err error) {
+func (*mockReferenceResolver) ResolveReferences(ctx context.Context, mg resource.Managed) (err error) {
 	return nil
 }
 
