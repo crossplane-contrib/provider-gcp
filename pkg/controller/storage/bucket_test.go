@@ -40,7 +40,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/crossplane/provider-gcp/apis"
@@ -66,12 +65,6 @@ func (m *MockBucketCreateUpdater) update(ctx context.Context, a *storage.BucketA
 }
 
 var _ createupdater = &MockBucketCreateUpdater{}
-
-type mockReferenceResolver struct{}
-
-func (*mockReferenceResolver) ResolveReferences(ctx context.Context, res resource.CanReference) (err error) {
-	return nil
-}
 
 type MockBucketSyncDeleter struct {
 	MockDelete func(context.Context) (reconcile.Result, error)
@@ -261,7 +254,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			wantRs:  resultRequeue,
 			wantErr: nil,
 			wantObj: newBucket(name).
-				withConditions(runtimev1alpha1.ReferenceResolutionSuccess(), runtimev1alpha1.ReconcileError(errors.New("handler-factory-error"))).
+				withConditions(runtimev1alpha1.ReconcileError(errors.New("handler-factory-error"))).
 				withFinalizer("foo.bar").Bucket,
 		},
 		{
@@ -291,9 +284,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Client:  tt.fields.client,
 				factory: tt.fields.factory,
 
-				ReferenceResolver: &mockReferenceResolver{},
-				log:               logging.NewNopLogger(),
-				initializer:       managed.NewNameAsExternalName(tt.fields.client),
+				log:         logging.NewNopLogger(),
+				initializer: managed.NewNameAsExternalName(tt.fields.client),
 			}
 			got, err := r.Reconcile(req)
 			if diff := cmp.Diff(tt.wantErr, err, test.EquateErrors()); diff != "" {

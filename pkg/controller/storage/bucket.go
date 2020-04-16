@@ -36,7 +36,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
 	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
@@ -51,15 +50,9 @@ const (
 	requeueAfterOnSuccess = 30 * time.Second
 )
 
-// Amounts of time we wait before requeuing a reconcile.
-const (
-	aLongWait = 60 * time.Second
-)
-
 // Error strings
 const (
-	errUpdateManagedStatus = "cannot update managed resource status"
-	errProviderSecretNil   = "cannot find Secret reference on Provider"
+	errProviderSecretNil = "cannot find Secret reference on Provider"
 )
 
 var (
@@ -71,7 +64,6 @@ var (
 type Reconciler struct {
 	client.Client
 	factory
-	managed.ReferenceResolver
 	initializer managed.Initializer
 	log         logging.Logger
 }
@@ -82,11 +74,10 @@ func SetupBucket(mgr ctrl.Manager, l logging.Logger) error {
 	name := managed.ControllerName(v1alpha3.BucketGroupKind)
 
 	r := &Reconciler{
-		Client:            mgr.GetClient(),
-		factory:           &bucketFactory{mgr.GetClient()},
-		ReferenceResolver: managed.NewAPIReferenceResolver(mgr.GetClient()),
-		log:               l.WithValues("controller", name),
-		initializer:       managed.NewNameAsExternalName(mgr.GetClient()),
+		Client:      mgr.GetClient(),
+		factory:     &bucketFactory{mgr.GetClient()},
+		log:         l.WithValues("controller", name),
+		initializer: managed.NewNameAsExternalName(mgr.GetClient()),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -113,21 +104,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	if err := r.initializer.Initialize(ctx, b); err != nil {
 		return reconcile.Result{}, err
-	}
-
-	if !resource.IsConditionTrue(b.GetCondition(runtimev1alpha1.TypeReferencesResolved)) {
-		if err := r.ResolveReferences(ctx, b); err != nil {
-			condition := runtimev1alpha1.ReconcileError(err)
-			if managed.IsReferencesAccessError(err) {
-				condition = runtimev1alpha1.ReferenceResolutionBlocked(err)
-			}
-
-			b.Status.SetConditions(condition)
-			return reconcile.Result{RequeueAfter: aLongWait}, errors.Wrap(r.Update(ctx, b), errUpdateManagedStatus)
-		}
-
-		// Add ReferenceResolutionSuccess to the conditions
-		b.Status.SetConditions(runtimev1alpha1.ReferenceResolutionSuccess())
 	}
 
 	bh, err := r.newSyncDeleter(ctx, b)
