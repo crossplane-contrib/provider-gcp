@@ -5,17 +5,19 @@ metadata:
   name: cloudsqlinstancemysql-standard
   labels:
     example: "true"
+    engine: mysql
 specTemplate:
   writeConnectionSecretsToNamespace: crossplane-system
   forProvider:
-    databaseVersion: MYSQL_5_6
-    region: us-west2
+    databaseVersion: MYSQL_5_7
+    region: us-central1
     settings:
       tier: db-n1-standard-1
       dataDiskType: PD_SSD
       dataDiskSizeGb: 10
       ipConfiguration:
-        ipv4Enabled: true
+        privateNetworkRef:
+          name: example-mysql
   providerRef:
     name: example
   reclaimPolicy: Delete

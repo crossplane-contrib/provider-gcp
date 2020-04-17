@@ -6,10 +6,17 @@ metadata:
   labels:
     example: "true"
 specTemplate:
-  writeConnectionSecretsToNamespace: crossplane-system
   machineType: n1-standard-1
   numNodes: 1
   zone: us-central1-b
+  networkRef:
+    name: example-gke
+  subnetworkRef:
+    name: example-gke
+  enableIPAlias: true
+  clusterSecondaryRangeName: pods
+  servicesSecondaryRangeName: services
+  writeConnectionSecretsToNamespace: crossplane-system
   providerRef:
     name: example
   reclaimPolicy: Delete
