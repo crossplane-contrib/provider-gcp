@@ -24,6 +24,7 @@ import (
 	"google.golang.org/api/compute/v1"
 
 	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 const (
@@ -77,9 +78,9 @@ func subnetwork(m ...func(*compute.Subnetwork)) *compute.Subnetwork {
 		Name:                  testName,
 		EnableFlowLogs:        trueVal,
 		IpCidrRange:           testIPCIDRRange,
-		Network:               v1beta1.URIPrefix + testNetwork,
+		Network:               v1beta1.ComputeURIPrefix + testNetwork,
 		PrivateIpGoogleAccess: trueVal,
-		Region:                v1beta1.URIPrefix + testRegion,
+		Region:                v1beta1.ComputeURIPrefix + testRegion,
 		SecondaryIpRanges: []*compute.SubnetworkSecondaryRange{
 			{
 				RangeName:   "aazz",
@@ -156,7 +157,7 @@ func TestGenerateSubnetwork(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			r := &compute.Subnetwork{}
 			GenerateSubnetwork(tc.args.name, tc.args.in, r)
-			if diff := cmp.Diff(tc.want, r, cmpopts.SortSlices(equateGCPSecondaryRange), equatePrefixedStrings(v1beta1.URIPrefix, v1beta1.URIRegionPrefix)); diff != "" {
+			if diff := cmp.Diff(tc.want, r, equateSecondaryRanges(), gcp.EquateComputeURLs()); diff != "" {
 				t.Errorf("GenerateSubnetwork(...): -want, +got:\n%s", diff)
 			}
 		})

@@ -24,12 +24,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
@@ -1435,25 +1433,6 @@ func TestIsUpToDate(t *testing.T) {
 				name:    name,
 				cluster: cluster(addOutputFields),
 				params:  params(),
-			},
-			want: want{
-				upToDate: true,
-				isErr:    false,
-			},
-		},
-		"UpToDateIgnoreRefs": {
-			args: args{
-				name:    name,
-				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.NetworkRef = &v1beta1.NetworkURIReferencerForGKECluster{
-						NetworkURIReferencer: computev1beta1.NetworkURIReferencer{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "my-network",
-							},
-						},
-					}
-				}),
 			},
 			want: want{
 				upToDate: true,

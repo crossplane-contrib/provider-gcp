@@ -5,15 +5,19 @@ metadata:
   name: cloudsqlinstancepostgresql-standard
   labels:
     example: "true"
+    engine: postgresql
 specTemplate:
   writeConnectionSecretsToNamespace: crossplane-system
   forProvider:
     databaseVersion: POSTGRES_9_6
-    region: us-west2
+    region: us-central1
     settings:
       tier: db-custom-1-3840
       dataDiskType: PD_SSD
       dataDiskSizeGb: 10
+      ipConfiguration:
+        privateNetworkRef:
+          name: example-postgresql
   providerRef:
     name: example
   reclaimPolicy: Delete

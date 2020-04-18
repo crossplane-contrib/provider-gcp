@@ -22,7 +22,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	container "google.golang.org/api/container/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
@@ -552,26 +551,6 @@ func TestIsUpToDate(t *testing.T) {
 				name:     name,
 				nodePool: nodePool(addOutputFields),
 				params:   params(),
-			},
-			want: want{
-				upToDate: true,
-				isErr:    false,
-			},
-		},
-		"UpToDateIgnoreRefs": {
-			args: args{
-				name:     name,
-				nodePool: nodePool(),
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.ClusterRef = &v1alpha1.GKEClusterURIReferencerForNodePool{
-						GKEClusterURIReferencer: v1beta1.GKEClusterURIReferencer{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: cluster,
-							},
-						},
-					}
-					p.Cluster = cluster
-				}),
 			},
 			want: want{
 				upToDate: true,

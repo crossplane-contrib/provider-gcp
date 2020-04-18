@@ -17,8 +17,6 @@ limitations under the License.
 package subnetwork
 
 import (
-	"strings"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
@@ -31,9 +29,8 @@ import (
 
 const errCheckUpToDate = "unable to determine if external resource is up to date"
 
-var equateGCPSecondaryRange = func(i, j *compute.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName }
-
-// GenerateSubnetwork creates a *googlecompute.Subnetwork object using SubnetworkParameters.
+// GenerateSubnetwork populates the supplied compute.Subnetwork with the
+// supplied SubnetworkParameters.
 func GenerateSubnetwork(name string, in v1beta1.SubnetworkParameters, subnet *compute.Subnetwork) {
 	subnet.Name = name
 	subnet.Description = gcp.StringValue(in.Description)
@@ -130,20 +127,12 @@ func IsUpToDate(name string, in *v1beta1.SubnetworkParameters, observed *compute
 	if !cmp.Equal(desired.PrivateIpGoogleAccess, observed.PrivateIpGoogleAccess) {
 		return false, true, nil
 	}
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.SortSlices(equateGCPSecondaryRange), equatePrefixedStrings(v1beta1.URIPrefix, v1beta1.URIRegionPrefix)), false, nil
+
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), gcp.EquateComputeURLs(), equateSecondaryRanges()), false, nil
 }
 
-func equatePrefixedStrings(prefixes ...string) cmp.Option {
-	return cmp.Comparer(func(a, b string) bool {
-		if a == b {
-			return true
-		}
-
-		for _, prefix := range prefixes {
-			if strings.TrimPrefix(a, prefix) == strings.TrimPrefix(b, prefix) {
-				return true
-			}
-		}
-		return false
-	})
+// Two compute.Subnetworks with differently ordered but otherwise identical
+// arrays of secondary ranges should be considered equal.
+func equateSecondaryRanges() cmp.Option {
+	return cmpopts.SortSlices(func(i, j *compute.SubnetworkSecondaryRange) bool { return i.RangeName > j.RangeName })
 }

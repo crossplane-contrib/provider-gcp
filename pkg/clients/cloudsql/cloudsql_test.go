@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
-	corev1 "k8s.io/api/core/v1"
 
 	"github.com/crossplane/provider-gcp/apis/database/v1beta1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
@@ -424,8 +423,6 @@ func TestGetServerCACertificate(t *testing.T) {
 }
 
 func TestIsUpToDate(t *testing.T) {
-	privateNetworkName := "a-cool-network"
-
 	type args struct {
 		params *v1beta1.CloudSQLInstanceParameters
 		db     *sqladmin.DatabaseInstance
@@ -452,51 +449,11 @@ func TestIsUpToDate(t *testing.T) {
 			},
 			want: want{upToDate: true, isErr: false},
 		},
-		"IsUpToDateIgnoreReferences": {
-			args: args{
-				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
-					p.Settings.IPConfiguration = &v1beta1.IPConfiguration{
-						PrivateNetwork: &privateNetworkName,
-						PrivateNetworkRef: &v1beta1.NetworkURIReferencerForCloudSQLInstance{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "network-ref-exists",
-							},
-						},
-					}
-				}),
-				db: db(func(db *sqladmin.DatabaseInstance) {
-					db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
-						PrivateNetwork: privateNetworkName,
-					}
-				}),
-			},
-			want: want{upToDate: true, isErr: false},
-		},
 		"NeedsUpdate": {
 			args: args{
 				params: params(),
 				db: db(func(db *sqladmin.DatabaseInstance) {
 					db.MasterInstanceName = ""
-				}),
-			},
-			want: want{upToDate: false, isErr: false},
-		},
-		"NeedsUpdateBadRef": {
-			args: args{
-				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
-					p.Settings.IPConfiguration = &v1beta1.IPConfiguration{
-						PrivateNetwork: &privateNetworkName,
-						PrivateNetworkRef: &v1beta1.NetworkURIReferencerForCloudSQLInstance{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "network-ref-exists",
-							},
-						},
-					}
-				}),
-				db: db(func(db *sqladmin.DatabaseInstance) {
-					db.Settings.IpConfiguration = &sqladmin.IpConfiguration{
-						PrivateNetwork: "unexpected-network",
-					}
 				}),
 			},
 			want: want{upToDate: false, isErr: false},

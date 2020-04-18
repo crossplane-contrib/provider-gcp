@@ -20,3 +20,6 @@ limitations under the License.
 // +groupName=compute.gcp.crossplane.io
 // +versionName=v1beta1
 package v1beta1
+
+// ComputeURIPrefix is the common prefix for compute API links.
+const ComputeURIPrefix = "https://www.googleapis.com/compute/v1/"

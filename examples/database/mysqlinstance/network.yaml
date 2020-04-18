@@ -1,0 +1,63 @@
+---
+apiVersion: compute.gcp.crossplane.io/v1beta1
+kind: Network
+metadata:
+  name: example-mysql
+spec:
+  forProvider:
+    autoCreateSubnetworks: false
+    routingConfig:
+      routingMode: REGIONAL
+  reclaimPolicy: Delete
+  providerRef:
+    name: example
+---
+apiVersion: compute.gcp.crossplane.io/v1beta1
+kind: Subnetwork
+metadata:
+  name: example-mysql
+spec:
+  forProvider:
+    region: us-central1
+    ipCidrRange: "192.168.0.0/24"
+    privateIpGoogleAccess: true
+    secondaryIpRanges:
+      - rangeName: pods
+        ipCidrRange: 10.128.0.0/20
+      - rangeName: services
+        ipCidrRange: 172.16.0.0/16
+    networkRef:
+      name: example-mysql
+  reclaimPolicy: Delete
+  providerRef:
+    name: example
+---
+apiVersion: compute.gcp.crossplane.io/v1beta1
+kind: GlobalAddress
+metadata:
+  name: example-mysql
+spec:
+  forProvider:
+    purpose: VPC_PEERING
+    addressType: INTERNAL
+    prefixLength: 16
+    networkRef:
+      name: example-mysql
+  reclaimPolicy: Delete
+  providerRef:
+    name: example
+---
+apiVersion: servicenetworking.gcp.crossplane.io/v1beta1
+kind: Connection
+metadata:
+  name: example-mysql
+spec:
+  forProvider:
+    parent: services/servicenetworking.googleapis.com
+    networkRef:
+      name: example-mysql
+    reservedPeeringRangeRefs:
+    - name: example-mysql
+  reclaimPolicy: Delete
+  providerRef:
+    name: example

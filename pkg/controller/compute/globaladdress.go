@@ -62,6 +62,7 @@ func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger) error {
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.GlobalAddressGroupVersionKind),
 			managed.WithExternalConnecter(&gaConnector{kube: mgr.GetClient(), newServiceFn: compute.NewService}),
+			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithConnectionPublishers(),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))

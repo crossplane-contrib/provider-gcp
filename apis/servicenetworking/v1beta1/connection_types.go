@@ -17,60 +17,10 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/pkg/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
-
-	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
-
-// Error strings
-const (
-	errResourceIsNotConnection = "the managed resource is not a Connection"
-)
-
-// NetworkURIReferencerForConnection is an attribute referencer that resolves
-// network uri from a referenced Network and assigns it to a connection
-type NetworkURIReferencerForConnection struct {
-	computev1beta1.NetworkURIReferencer `json:",inline"`
-}
-
-// Assign assigns the retrieved network uri to a connection
-func (v *NetworkURIReferencerForConnection) Assign(res resource.CanReference, value string) error {
-	conn, ok := res.(*Connection)
-	if !ok {
-		return errors.New(errResourceIsNotConnection)
-	}
-
-	conn.Spec.ForProvider.Network = &value
-	return nil
-}
-
-// GlobalAddressNameReferencerForConnection is an attribute referencer that resolves
-// name from a referenced GlobalAddress and assigns it to a Connection
-type GlobalAddressNameReferencerForConnection struct {
-	computev1beta1.GlobalAddressNameReferencer `json:",inline"`
-}
-
-// Assign assigns the retrieved global address name to a connection
-func (v *GlobalAddressNameReferencerForConnection) Assign(res resource.CanReference, value string) error {
-	conn, ok := res.(*Connection)
-	if !ok {
-		return errors.New(errResourceIsNotConnection)
-	}
-
-	for _, r := range conn.Spec.ForProvider.ReservedPeeringRanges {
-		if r == value {
-			return nil
-		}
-	}
-
-	conn.Spec.ForProvider.ReservedPeeringRanges = append(conn.Spec.ForProvider.ReservedPeeringRanges, value)
-	return nil
-}
 
 // ConnectionParameters define the desired state of a Google Cloud Service
 // Networking Connection. Most fields map direct to a Connection:
@@ -91,9 +41,13 @@ type ConnectionParameters struct {
 	// +optional
 	Network *string `json:"network,omitempty"`
 
-	// NetworkRef references to a Network and retrieves its URI
+	// NetworkRef references a Network and retrieves its URI
 	// +optional
-	NetworkRef *NetworkURIReferencerForConnection `json:"networkRef,omitempty" resource:"attributereferencer"`
+	NetworkRef *runtimev1alpha1.Reference `json:"networkRef,omitempty"`
+
+	// NetworkSelector selects a reference to a Network and retrieves its URI
+	// +optional
+	NetworkSelector *runtimev1alpha1.Selector `json:"networkSelector,omitempty"`
 
 	// ReservedPeeringRanges: The name of one or more allocated IP address
 	// ranges for this service producer of type `PEERING`.
@@ -102,7 +56,12 @@ type ConnectionParameters struct {
 
 	// ReservedPeeringRangeRefs is a set of references to GlobalAddress objects
 	// +optional
-	ReservedPeeringRangeRefs []*GlobalAddressNameReferencerForConnection `json:"reservedPeeringRangeRefs,omitempty" resource:"attributereferencer"`
+	ReservedPeeringRangeRefs []runtimev1alpha1.Reference `json:"reservedPeeringRangeRefs,omitempty"`
+
+	// ReservedPeeringRangeSelector selects a set of references to GlobalAddress
+	// objects.
+	// +optional
+	ReservedPeeringRangeSelector runtimev1alpha1.Selector `json:"reservedPeeringRangeSelector,omitempty"`
 }
 
 // ConnectionObservation is used to show the observed state of the Connection.
@@ -118,14 +77,14 @@ type ConnectionObservation struct {
 
 // A ConnectionSpec defines the desired state of a Connection.
 type ConnectionSpec struct {
-	v1alpha1.ResourceSpec `json:",inline"`
-	ForProvider           ConnectionParameters `json:"forProvider"`
+	runtimev1alpha1.ResourceSpec `json:",inline"`
+	ForProvider                  ConnectionParameters `json:"forProvider"`
 }
 
 // A ConnectionStatus represents the observed state of a Connection.
 type ConnectionStatus struct {
-	v1alpha1.ResourceStatus `json:",inline"`
-	AtProvider              ConnectionObservation `json:"atProvider,omitempty"`
+	runtimev1alpha1.ResourceStatus `json:",inline"`
+	AtProvider                     ConnectionObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

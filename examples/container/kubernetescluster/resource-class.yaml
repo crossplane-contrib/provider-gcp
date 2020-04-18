@@ -8,7 +8,15 @@ metadata:
 specTemplate:
   forProvider:
     location: us-central1 # indicates regional cluster
+    networkRef:
+      name: example-gke
+    subnetworkRef:
+      name: example-gke
+    ipAllocationPolicy:
+      useIpAliases: true
+      clusterSecondaryRangeName: pods
+      servicesSecondaryRangeName: services
   writeConnectionSecretsToNamespace: crossplane-system
   providerRef:
-    name: gcp-provider
+    name: example
   reclaimPolicy: Delete

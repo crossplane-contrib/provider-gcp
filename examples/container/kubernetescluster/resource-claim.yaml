@@ -2,12 +2,34 @@
 apiVersion: compute.crossplane.io/v1alpha1
 kind: KubernetesCluster
 metadata:
-  name: app-kubernetes
+  name: example-gke
   labels:
     example: "true"
+  annotations:
+    crossplane.io/external-name: example-gke
 spec:
   classSelector:
     matchLabels:
       example: "true"
   writeConnectionSecretToRef:
     name: k8scluster
+---
+apiVersion: container.gcp.crossplane.io/v1alpha1
+kind: NodePool
+metadata:
+  name: example-gke
+  labels:
+    example: "true"
+spec:
+  forProvider:
+    clusterSelector:
+      matchLabels:
+        # You'll need to manually add this label to the GKECluster.
+        example: "true"
+    initialNodeCount: 1
+  writeConnectionSecretToRef:
+    namespace: crossplane-system
+    name: example-gke
+  providerRef:
+    name: example
+  reclaimPolicy: Delete
