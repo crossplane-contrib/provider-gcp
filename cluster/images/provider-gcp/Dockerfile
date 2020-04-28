@@ -9,4 +9,5 @@ ADD provider /usr/local/bin/crossplane-gcp-provider
 COPY stack-package /
 
 EXPOSE 8080
+USER 1001
 ENTRYPOINT ["crossplane-gcp-provider"]
