@@ -466,27 +466,45 @@ type AddonsConfig struct {
 	// CloudRunConfig: Configuration for the Cloud Run addon. The
 	// `IstioConfig` addon must be
 	// enabled in order to enable Cloud Run addon. This option can only be
-	// enabled
-	// at cluster creation time.
+	// enabled at cluster creation time.
+	// +optional
 	CloudRunConfig *CloudRunConfig `json:"cloudRunConfig,omitempty"`
 
+	// DNSCacheConfig: Configuration for NodeLocalDNS, a dns cache running
+	// on cluster nodes
+	// +optional
+	DNSCacheConfig *DNSCacheConfig `json:"dnsCacheConfig,omitempty"`
+
+	// GCEPersistentDiskCSIDriverConfig: Configuration for the GCP Compute
+	// Persistent Disk CSI driver.
+	// +optional
+	GCEPersistentDiskCSIDriverConfig *GCEPersistentDiskCSIDriverConfig `json:"gcePersistentDiskCsiDriverConfig,omitempty"`
+
 	// HorizontalPodAutoscaling: Configuration for the horizontal pod
-	// autoscaling feature, which
-	// increases or decreases the number of replica pods a replication
-	// controller
-	// has based on the resource usage of the existing pods.
+	// autoscaling feature, which increases or decreases the number of replica
+	// pods a replication controller has based on the resource usage of the
+	// existing pods.
+	// +optional
 	HorizontalPodAutoscaling *HorizontalPodAutoscaling `json:"horizontalPodAutoscaling,omitempty"`
 
 	// HTTpLoadBalancing: Configuration for the HTTP (L7) load balancing
 	// controller addon, which
 	// makes it easy to set up HTTP load balancers for services in a
 	// cluster.
+	// +optional
 	HTTPLoadBalancing *HTTPLoadBalancing `json:"httpLoadBalancing,omitempty"`
 
 	// IstioConfig: Configuration for Istio, an open platform to connect,
 	// manage, and secure
 	// microservices.
+	// +optional
 	IstioConfig *IstioConfig `json:"istioConfig,omitempty"`
+
+	// KALMConfig: Configuration for the KALM addon, which manages the
+	// lifecycle of k8s
+	// applications.
+	// +optional
+	KALMConfig *KALMConfig `json:"kalmConfig,omitempty"`
 
 	// KubernetesDashboard: Configuration for the Kubernetes Dashboard.
 	// This addon is deprecated, and will be disabled in 1.15. It is
@@ -495,16 +513,34 @@ type AddonsConfig struct {
 	// clusters,
 	// workloads and applications. For more information,
 	// see:
-	// https://cloud.google.com/kubernetes-engine/docs/concepts/dashboar
-	// ds
+	// https://cloud.google.com/kubernetes-engine/docs/concepts/dashboards
+	// +optional
 	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
 
 	// NetworkPolicyConfig: Configuration for NetworkPolicy. This only
-	// tracks whether the addon
-	// is enabled or not on the Master, it does not track whether network
-	// policy
-	// is enabled for the nodes.
+	// tracks whether the addon is enabled or not on the Master, it does not
+	// track whether network policy is enabled for the nodes.
+	// +optional
 	NetworkPolicyConfig *NetworkPolicyConfig `json:"networkPolicyConfig,omitempty"`
+}
+
+// KALMConfig is configuration options for the KALM addon.
+type KALMConfig struct {
+	// Enabled: Whether KALM is enabled for this cluster.
+	Enabled bool `json:"enabled"`
+}
+
+// GCEPersistentDiskCSIDriverConfig is configuration for the GCE PD CSI driver.
+// This option can only be enabled at cluster creation time.
+type GCEPersistentDiskCSIDriverConfig struct {
+	// Enabled: Whether the GCE PD CSI driver is enabled for this cluster.
+	Enabled bool `json:"enabled"`
+}
+
+// DNSCacheConfig is configuration for NodeLocal DNSCache.
+type DNSCacheConfig struct {
+	// Enabled: Whether NodeLocal DNSCache is enabled for this cluster.
+	Enabled bool `json:"enabled"`
 }
 
 // CloudRunConfig is configuration options for the Cloud Run feature.
