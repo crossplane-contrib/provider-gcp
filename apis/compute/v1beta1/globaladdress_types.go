@@ -169,12 +169,13 @@ type GlobalAddressStatus struct {
 	AtProvider                     GlobalAddressObservation `json:"atProvider,omitempty"`
 }
 
+// A GlobalAddress is a managed resource that represents a Google Compute Engine
+// Global Address.
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
-
-// A GlobalAddress is a managed resource that represents a Google Compute Engine
-// Global Address.
 type GlobalAddress struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

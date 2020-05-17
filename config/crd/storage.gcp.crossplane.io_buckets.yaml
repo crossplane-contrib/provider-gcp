@@ -9,14 +9,17 @@ metadata:
   name: buckets.storage.gcp.crossplane.io
 spec:
   additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: READY
+    type: string
+  - JSONPath: .status.conditions[?(@.type=='Synced')].status
+    name: SYNCED
+    type: string
   - JSONPath: .spec.storageClass
     name: STORAGE_CLASS
     type: string
   - JSONPath: .spec.location
     name: LOCATION
-    type: string
-  - JSONPath: .spec.classRef.name
-    name: CLASS
     type: string
   - JSONPath: .spec.reclaimPolicy
     name: RECLAIM_POLICY
