@@ -9,17 +9,17 @@ metadata:
   name: gkeclusters.container.gcp.crossplane.io
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.bindingPhase
-    name: STATUS
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: READY
+    type: string
+  - JSONPath: .status.conditions[?(@.type=='Synced')].status
+    name: SYNCED
     type: string
   - JSONPath: .status.atProvider.status
     name: STATE
     type: string
   - JSONPath: .status.atProvider.endpoint
     name: ENDPOINT
-    type: string
-  - JSONPath: .spec.classRef.name
-    name: CLUSTER-CLASS
     type: string
   - JSONPath: .spec.forProvider.location
     name: LOCATION

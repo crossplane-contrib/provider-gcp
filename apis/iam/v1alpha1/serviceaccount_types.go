@@ -89,6 +89,8 @@ type ServiceAccountStatus struct {
 
 // ServiceAccount is a managed resource that represents a Google IAM Service Account.
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="DISPLAYNAME",type="string",JSONPath=".spec.forProvider.displayName"
 // +kubebuilder:printcolumn:name="EMAIL",type="string",JSONPath=".status.atProvider.email"
 // +kubebuilder:printcolumn:name="DISABLED",type="boolean",JSONPath=".status.atProvider.disabled"

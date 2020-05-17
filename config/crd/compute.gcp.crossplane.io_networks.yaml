@@ -8,6 +8,13 @@ metadata:
   creationTimestamp: null
   name: networks.compute.gcp.crossplane.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: READY
+    type: string
+  - JSONPath: .status.conditions[?(@.type=='Synced')].status
+    name: SYNCED
+    type: string
   group: compute.gcp.crossplane.io
   names:
     categories:
