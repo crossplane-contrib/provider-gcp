@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -61,6 +62,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		database.SetupMySQLInstanceClaimBinding,
 		database.SetupCloudSQLInstance,
 		iam.SetupServiceAccount,
+		pubsub.SetupTopic,
 		servicenetworking.SetupConnection,
 		storage.SetupBucketClaimScheduling,
 		storage.SetupBucketClaimDefaulting,
