@@ -110,6 +110,21 @@ run: go.build
 	@# To see other arguments that can be provided, run the command with --help instead
 	$(GO_OUT_DIR)/$(PROJECT_NAME) --debug
 
+dev: $(KIND) $(KUBECTL)
+	@$(INFO) Creating kind cluster
+	@$(KIND) create cluster --name=provider-gcp-dev
+	@$(KUBECTL) cluster-info --context kind-provider-gcp-dev
+	@$(INFO) Installing Crossplane CRDs
+	@$(KUBECTL) apply -k https://github.com/crossplane/crossplane//cluster?ref=master
+	@$(INFO) Installing Provider GCP CRDs
+	@$(KUBECTL) apply -f $(CRD_DIR) -R
+	@$(INFO) Starting Provider GCP controllers
+	@$(GO) run cmd/provider/main.go --debug
+
+dev-clean: $(KIND) $(KUBECTL)
+	@$(INFO) Deleting kind cluster
+	@$(KIND) delete cluster --name=provider-gcp-dev
+
 # ====================================================================================
 # Package related targets
 
@@ -148,7 +163,7 @@ clean-package:
 manifests:
 	@$(INFO) Deprecated. Run make generate instead.
 
-.PHONY: cobertura reviewable submodules fallthrough test-integration run clean-package build-package manifests go-integration
+.PHONY: cobertura reviewable submodules fallthrough test-integration run clean-package build-package manifests go-integration dev dev-clean
 
 # ====================================================================================
 # Special Targets
