@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	pubsubgo "cloud.google.com/go/pubsub"
 	pubsub "cloud.google.com/go/pubsub/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -50,7 +49,7 @@ const (
 	errGetProviderSecret = "cannot get Provider Secret"
 
 	errNotTopic        = "managed resource is not of type Topic"
-	errClientCreate    = "cannot create client"
+	errNewClient       = "cannot create client"
 	errGetTopic        = "cannot get Topic"
 	errUpdateTopic     = "cannot update Topic"
 	errKubeUpdateTopic = "cannot update Topic custom resource"
@@ -67,19 +66,19 @@ func SetupTopic(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1alpha1.Topic{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.TopicGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newPubSubClient: pubsub.NewPublisherClient}),
+			managed.WithExternalConnecter(&connector{client: mgr.GetClient(), newPubSubClient: pubsub.NewPublisherClient}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
-type connecter struct {
+type connector struct {
 	client          client.Client
 	newPubSubClient func(ctx context.Context, opts ...option.ClientOption) (*pubsub.PublisherClient, error)
 }
 
 // Connect returns an ExternalClient with necessary information to talk to GCP API.
-func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
+func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*v1alpha1.Topic)
 	if !ok {
 		return nil, errors.New(errNotTopic)
@@ -101,9 +100,9 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 
 	ps, err := c.newPubSubClient(ctx,
 		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
-		option.WithScopes(pubsubgo.ScopePubSub))
+		option.WithScopes(pubsub.DefaultAuthScopes()...))
 	if err != nil {
-		return nil, errors.Wrap(err, errClientCreate)
+		return nil, errors.Wrap(err, errNewClient)
 	}
 	return &external{projectID: p.Spec.ProjectID, client: c.client, ps: ps}, nil
 }
@@ -111,7 +110,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 type external struct {
 	projectID string
 	client    client.Client
-	ps        *pubsub.PublisherClient
+	ps        topic.PublisherClient
 }
 
 // Observe makes observation about the external resource.
@@ -136,7 +135,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		ResourceExists:   true,
 		ResourceUpToDate: topic.IsUpToDate(cr.Spec.ForProvider, *t),
 		ConnectionDetails: managed.ConnectionDetails{
-			"topic": []byte(meta.GetExternalName(cr)),
+			v1alpha1.ConnectionSecretKeyTopic:       []byte(meta.GetExternalName(cr)),
+			v1alpha1.ConnectionSecretKeyProjectName: []byte(e.projectID),
 		},
 	}, nil
 }
@@ -148,10 +148,8 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotTopic)
 	}
 	cr.SetConditions(runtimev1alpha1.Creating())
-	if _, err := e.ps.CreateTopic(ctx, topic.GenerateTopic(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider)); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateTopic)
-	}
-	return managed.ExternalCreation{}, nil
+	_, err := e.ps.CreateTopic(ctx, topic.GenerateTopic(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider))
+	return managed.ExternalCreation{}, errors.Wrap(err, errCreateTopic)
 }
 
 // Update initiates an update to the external resource.

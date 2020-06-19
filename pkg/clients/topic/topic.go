@@ -17,7 +17,10 @@ limitations under the License.
 package topic
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/googleapis/gax-go/v2"
 
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/genproto/googleapis/pubsub/v1"
@@ -26,6 +29,15 @@ import (
 	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
+
+// PublisherClient is interface that lists the required functions for the reconciler
+// to work.
+type PublisherClient interface {
+	CreateTopic(ctx context.Context, req *pubsub.Topic, opts ...gax.CallOption) (*pubsub.Topic, error)
+	UpdateTopic(ctx context.Context, req *pubsub.UpdateTopicRequest, opts ...gax.CallOption) (*pubsub.Topic, error)
+	GetTopic(ctx context.Context, req *pubsub.GetTopicRequest, opts ...gax.CallOption) (*pubsub.Topic, error)
+	DeleteTopic(ctx context.Context, req *pubsub.DeleteTopicRequest, opts ...gax.CallOption) error
+}
 
 // GenerateTopic produces a Topic that is configured via given TopicParameters.
 func GenerateTopic(projectID, name string, s v1alpha1.TopicParameters) *pubsub.Topic {
@@ -49,7 +61,7 @@ func LateInitialize(s *v1alpha1.TopicParameters, t pubsub.Topic) {
 			s.Labels[k] = v
 		}
 	}
-	if s.KmsKeyName == nil && len(t.KmsKeyName) == 0 {
+	if s.KmsKeyName == nil && len(t.KmsKeyName) != 0 {
 		s.KmsKeyName = gcp.StringPtr(t.KmsKeyName)
 	}
 	if s.MessageStoragePolicy == nil && t.MessageStoragePolicy != nil {

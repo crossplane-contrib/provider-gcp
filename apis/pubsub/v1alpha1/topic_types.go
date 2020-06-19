@@ -22,6 +22,12 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
+// Keys used in connection secret.
+const (
+	ConnectionSecretKeyTopic       = "topic"
+	ConnectionSecretKeyProjectName = "projectName"
+)
+
 // TopicParameters defines parameters for a desired PubSub Topic.
 type TopicParameters struct {
 	// Labels are used as additional metadata on Topic.
