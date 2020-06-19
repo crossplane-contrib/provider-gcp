@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -27,6 +26,7 @@ import (
 	"github.com/crossplane/provider-gcp/pkg/controller/container"
 	"github.com/crossplane/provider-gcp/pkg/controller/database"
 	"github.com/crossplane/provider-gcp/pkg/controller/iam"
+	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
 	"github.com/crossplane/provider-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplane/provider-gcp/pkg/controller/storage"
 )

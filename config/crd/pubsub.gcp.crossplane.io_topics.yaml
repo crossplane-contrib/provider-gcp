@@ -121,31 +121,33 @@ spec:
                   type: string
               type: object
             forProvider:
-              description: TopicParameters defines parameters for a desired IAM Topic.
+              description: TopicParameters defines parameters for a desired PubSub
+                Topic.
               properties:
                 kmsKeyName:
-                  description: "The resource name of the Cloud KMS CryptoKey to be
-                    used to protect access to messages published on this topic. \n
-                    The expected format is `projects/*/locations/*/keyRings/*/cryptoKeys/*`."
+                  description: "KmsKeyName is the resource name of the Cloud KMS CryptoKey
+                    to be used to protect access to messages published on this topic.
+                    \n The expected format is `projects/*/locations/*/keyRings/*/cryptoKeys/*`."
                   type: string
                 labels:
                   additionalProperties:
                     type: string
-                  description: See <a href="https://cloud.google.com/pubsub/docs/labels">
-                    Creating and managing labels</a>.
+                  description: Labels are used as additional metadata on Topic.
                   type: object
                 messageStoragePolicy:
-                  description: Policy constraining the set of Google Cloud Platform
-                    regions where messages published to the topic may be stored. If
-                    not present, then no constraints are in effect.
+                  description: MessageStoragePolicy is the policy constraining the
+                    set of Google Cloud Platform regions where messages published
+                    to the topic may be stored. If not present, then no constraints
+                    are in effect.
                   properties:
                     allowedPersistenceRegions:
-                      description: A list of IDs of GCP regions where messages that
-                        are published to the topic may be persisted in storage. Messages
-                        published by publishers running in non-allowed GCP regions
-                        (or running outside of GCP altogether) will be routed for
-                        storage in one of the allowed regions. An empty list means
-                        that no regions are allowed, and is not a valid configuration.
+                      description: AllowedPersistenceRegions is the list of IDs of
+                        GCP regions where messages that are published to the topic
+                        may be persisted in storage. Messages published by publishers
+                        running in non-allowed GCP regions (or running outside of
+                        GCP altogether) will be routed for storage in one of the allowed
+                        regions. An empty list means that no regions are allowed,
+                        and is not a valid configuration.
                       items:
                         type: string
                       type: array

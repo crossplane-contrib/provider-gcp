@@ -19,16 +19,15 @@ package topic
 import (
 	"fmt"
 
+	"github.com/google/go-cmp/cmp"
+	"google.golang.org/genproto/googleapis/pubsub/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	"github.com/google/go-cmp/cmp"
-
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-
 	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
-	"google.golang.org/genproto/googleapis/pubsub/v1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
+// GenerateTopic produces a Topic that is configured via given TopicParameters.
 func GenerateTopic(projectID, name string, s v1alpha1.TopicParameters) *pubsub.Topic {
 	t := &pubsub.Topic{
 		Name:       fmt.Sprintf("projects/%s/topics/%s", projectID, name),
@@ -41,6 +40,8 @@ func GenerateTopic(projectID, name string, s v1alpha1.TopicParameters) *pubsub.T
 	return t
 }
 
+// LateInitialize fills the empty fields of TopicParameters if the corresponding
+// fields are given in Topic.
 func LateInitialize(s *v1alpha1.TopicParameters, t pubsub.Topic) {
 	if len(s.Labels) == 0 && len(t.Labels) != 0 {
 		s.Labels = map[string]string{}
@@ -56,12 +57,15 @@ func LateInitialize(s *v1alpha1.TopicParameters, t pubsub.Topic) {
 	}
 }
 
+// IsUpToDate checks whether Topic is configured with given TopicParameters.
 func IsUpToDate(s v1alpha1.TopicParameters, t pubsub.Topic) bool {
 	observed := &v1alpha1.TopicParameters{}
 	LateInitialize(observed, t)
 	return cmp.Equal(observed, &s)
 }
 
+// GenerateUpdateRequest produces an UpdateTopicRequest with the difference
+// between TopicParameters and Topic.
 func GenerateUpdateRequest(projectID, name string, s v1alpha1.TopicParameters, t pubsub.Topic) *pubsub.UpdateTopicRequest {
 	observed := &v1alpha1.TopicParameters{}
 	LateInitialize(observed, t)

@@ -22,19 +22,21 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// TopicParameters defines parameters for a desired IAM Topic.
+// TopicParameters defines parameters for a desired PubSub Topic.
 type TopicParameters struct {
-	// See <a href="https://cloud.google.com/pubsub/docs/labels"> Creating and
-	// managing labels</a>.
+	// Labels are used as additional metadata on Topic.
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
-	// Policy constraining the set of Google Cloud Platform regions where messages
-	// published to the topic may be stored. If not present, then no constraints
-	// are in effect.
+	// MessageStoragePolicy is the policy constraining the set of Google Cloud
+	// Platform regions where messages published to the topic may be stored. If
+	// not present, then no constraints are in effect.
 	// +optional
 	MessageStoragePolicy *MessageStoragePolicy `json:"messageStoragePolicy,omitempty"`
-	// The resource name of the Cloud KMS CryptoKey to be used to protect access
-	// to messages published on this topic.
+
+	// TODO(muvaf): Add referencer & selector when we have KMS as managed resource.
+
+	// KmsKeyName is the resource name of the Cloud KMS CryptoKey to be used to
+	// protect access to messages published on this topic.
 	//
 	// The expected format is `projects/*/locations/*/keyRings/*/cryptoKeys/*`.
 	// +optional
@@ -42,12 +44,14 @@ type TopicParameters struct {
 	KmsKeyName *string `json:"kmsKeyName,omitempty"`
 }
 
+// MessageStoragePolicy contains configuration for message storage policy.
 type MessageStoragePolicy struct {
-	// A list of IDs of GCP regions where messages that are published to the topic
-	// may be persisted in storage. Messages published by publishers running in
-	// non-allowed GCP regions (or running outside of GCP altogether) will be
-	// routed for storage in one of the allowed regions. An empty list means that
-	// no regions are allowed, and is not a valid configuration.
+	// AllowedPersistenceRegions is the list of IDs of GCP regions where messages
+	// that are published to the topic may be persisted in storage. Messages
+	// published by publishers running in non-allowed GCP regions (or running
+	// outside of GCP altogether) will be routed for storage in one of the
+	// allowed regions. An empty list means that no regions are allowed, and is
+	// not a valid configuration.
 	AllowedPersistenceRegions []string `json:"allowedPersistenceRegions,omitempty"`
 }
 
