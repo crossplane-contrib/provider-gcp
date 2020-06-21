@@ -17,6 +17,10 @@ spec:
     type: string
   group: pubsub.gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
     kind: Topic
     listKind: TopicList
     plural: topics
@@ -229,10 +233,6 @@ spec:
         status:
           description: TopicStatus represents the observed state of a Topic.
           properties:
-            atProvider:
-              description: TopicObservation is used to show the observed state of
-                the Topic resource on GCP.
-              type: object
             bindingPhase:
               description: Phase represents the binding phase of a managed resource
                 or claim. Unbindable resources cannot be bound, typically because

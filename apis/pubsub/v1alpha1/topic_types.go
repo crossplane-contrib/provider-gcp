@@ -61,10 +61,6 @@ type MessageStoragePolicy struct {
 	AllowedPersistenceRegions []string `json:"allowedPersistenceRegions,omitempty"`
 }
 
-// TopicObservation is used to show the observed state of the
-// Topic resource on GCP.
-type TopicObservation struct{}
-
 // TopicSpec defines the desired state of a
 // Topic.
 type TopicSpec struct {
@@ -76,7 +72,6 @@ type TopicSpec struct {
 // Topic.
 type TopicStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     TopicObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -85,7 +80,7 @@ type TopicStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 type Topic struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
