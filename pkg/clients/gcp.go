@@ -23,9 +23,22 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 )
+
+// IsErrorNotFoundGRPC gets a value indicating whether the given error represents
+// a "not found" response from the Google API. It works only for the clients
+// that use gRPC as protocol.
+func IsErrorNotFoundGRPC(err error) bool {
+	if err == nil {
+		return false
+	}
+	grpcErr, ok := err.(interface{ GRPCStatus() *status.Status })
+	return ok && grpcErr.GRPCStatus().Code() == codes.NotFound
+}
 
 // IsErrorNotFound gets a value indicating whether the given error represents a "not found" response from the Google API
 func IsErrorNotFound(err error) bool {

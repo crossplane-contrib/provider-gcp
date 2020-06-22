@@ -4,12 +4,14 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.56.0
+	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.6.0
 	github.com/crossplane/crossplane v0.11.0
 	github.com/crossplane/crossplane-runtime v0.9.0
 	github.com/crossplane/crossplane-tools v0.0.0-20200412230150-efd0edd4565b
 	github.com/google/go-cmp v0.4.0
 	github.com/googleapis/gax-go v1.0.3
+	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
 	github.com/mitchellh/copystructure v1.0.0
 	github.com/onsi/gomega v1.8.1

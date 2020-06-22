@@ -26,6 +26,7 @@ import (
 	"github.com/crossplane/provider-gcp/pkg/controller/container"
 	"github.com/crossplane/provider-gcp/pkg/controller/database"
 	"github.com/crossplane/provider-gcp/pkg/controller/iam"
+	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
 	"github.com/crossplane/provider-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplane/provider-gcp/pkg/controller/storage"
 )
@@ -61,6 +62,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		database.SetupMySQLInstanceClaimBinding,
 		database.SetupCloudSQLInstance,
 		iam.SetupServiceAccount,
+		pubsub.SetupTopic,
 		servicenetworking.SetupConnection,
 		storage.SetupBucketClaimScheduling,
 		storage.SetupBucketClaimDefaulting,
