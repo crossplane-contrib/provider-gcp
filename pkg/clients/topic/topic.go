@@ -20,9 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/googleapis/gax-go/v2"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/googleapis/gax-go/v2"
 	"google.golang.org/genproto/googleapis/pubsub/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
 
@@ -85,7 +84,9 @@ func GenerateUpdateRequest(projectID, name string, s v1alpha1.TopicParameters, t
 	if !cmp.Equal(s.MessageStoragePolicy, observed.MessageStoragePolicy) {
 		ut.UpdateMask.Paths = append(ut.UpdateMask.Paths, "messageStoragePolicy")
 		if s.MessageStoragePolicy != nil {
-			ut.Topic.MessageStoragePolicy.AllowedPersistenceRegions = s.MessageStoragePolicy.AllowedPersistenceRegions
+			ut.Topic.MessageStoragePolicy = &pubsub.MessageStoragePolicy{
+				AllowedPersistenceRegions: s.MessageStoragePolicy.AllowedPersistenceRegions,
+			}
 		}
 	}
 	if !cmp.Equal(s.Labels, observed.Labels) {
