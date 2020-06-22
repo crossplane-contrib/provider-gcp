@@ -18,8 +18,8 @@ spec:
   - JSONPath: .status.atProvider.status
     name: STATE
     type: string
-  - JSONPath: .spec.forProvider.cluster
-    name: CLUSTER-NAME
+  - JSONPath: .spec.forProvider.clusterRef.name
+    name: CLUSTER-REF
     type: string
   - JSONPath: .spec.classRef.name
     name: NODE-POOL-CLASS
