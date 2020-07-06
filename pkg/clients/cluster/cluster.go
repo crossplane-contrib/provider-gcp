@@ -112,6 +112,20 @@ func GenerateAddonsConfig(in *v1beta1.AddonsConfig, cluster *container.Cluster) 
 			cluster.AddonsConfig.CloudRunConfig.Disabled = gcp.BoolValue(in.CloudRunConfig.Disabled)
 			cluster.AddonsConfig.CloudRunConfig.ForceSendFields = []string{"Disabled"}
 		}
+		if in.DNSCacheConfig != nil {
+			if cluster.AddonsConfig.DnsCacheConfig == nil {
+				cluster.AddonsConfig.DnsCacheConfig = &container.DnsCacheConfig{}
+			}
+			cluster.AddonsConfig.DnsCacheConfig.Enabled = in.DNSCacheConfig.Enabled
+			cluster.AddonsConfig.DnsCacheConfig.ForceSendFields = []string{"Enabled"}
+		}
+		if in.GCEPersistentDiskCSIDriverConfig != nil {
+			if cluster.AddonsConfig.GcePersistentDiskCsiDriverConfig == nil {
+				cluster.AddonsConfig.GcePersistentDiskCsiDriverConfig = &container.GcePersistentDiskCsiDriverConfig{}
+			}
+			cluster.AddonsConfig.GcePersistentDiskCsiDriverConfig.Enabled = in.GCEPersistentDiskCSIDriverConfig.Enabled
+			cluster.AddonsConfig.GcePersistentDiskCsiDriverConfig.ForceSendFields = []string{"Enabled"}
+		}
 		if in.HorizontalPodAutoscaling != nil {
 			if cluster.AddonsConfig.HorizontalPodAutoscaling == nil {
 				cluster.AddonsConfig.HorizontalPodAutoscaling = &container.HorizontalPodAutoscaling{}
@@ -133,6 +147,13 @@ func GenerateAddonsConfig(in *v1beta1.AddonsConfig, cluster *container.Cluster) 
 			cluster.AddonsConfig.IstioConfig.Auth = gcp.StringValue(in.IstioConfig.Auth)
 			cluster.AddonsConfig.IstioConfig.Disabled = gcp.BoolValue(in.IstioConfig.Disabled)
 			cluster.AddonsConfig.IstioConfig.ForceSendFields = []string{"Disabled"}
+		}
+		if in.KALMConfig != nil {
+			if cluster.AddonsConfig.KalmConfig == nil {
+				cluster.AddonsConfig.KalmConfig = &container.KalmConfig{}
+			}
+			cluster.AddonsConfig.KalmConfig.Enabled = in.KALMConfig.Enabled
+			cluster.AddonsConfig.KalmConfig.ForceSendFields = []string{"Enabled"}
 		}
 		if in.KubernetesDashboard != nil {
 			if cluster.AddonsConfig.KubernetesDashboard == nil {
@@ -557,6 +578,16 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 				Disabled: gcp.BoolPtr(in.AddonsConfig.CloudRunConfig.Disabled),
 			}
 		}
+		if spec.AddonsConfig.DNSCacheConfig == nil && in.AddonsConfig.DnsCacheConfig != nil {
+			spec.AddonsConfig.DNSCacheConfig = &v1beta1.DNSCacheConfig{
+				Enabled: in.AddonsConfig.DnsCacheConfig.Enabled,
+			}
+		}
+		if spec.AddonsConfig.GCEPersistentDiskCSIDriverConfig == nil && in.AddonsConfig.GcePersistentDiskCsiDriverConfig != nil {
+			spec.AddonsConfig.GCEPersistentDiskCSIDriverConfig = &v1beta1.GCEPersistentDiskCSIDriverConfig{
+				Enabled: in.AddonsConfig.GcePersistentDiskCsiDriverConfig.Enabled,
+			}
+		}
 		if spec.AddonsConfig.HorizontalPodAutoscaling == nil && in.AddonsConfig.HorizontalPodAutoscaling != nil {
 			spec.AddonsConfig.HorizontalPodAutoscaling = &v1beta1.HorizontalPodAutoscaling{
 				Disabled: gcp.BoolPtr(in.AddonsConfig.HorizontalPodAutoscaling.Disabled),
@@ -573,6 +604,11 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 			}
 			spec.AddonsConfig.IstioConfig.Auth = gcp.LateInitializeString(spec.AddonsConfig.IstioConfig.Auth, in.AddonsConfig.IstioConfig.Auth)
 			spec.AddonsConfig.IstioConfig.Disabled = gcp.LateInitializeBool(spec.AddonsConfig.IstioConfig.Disabled, in.AddonsConfig.IstioConfig.Disabled)
+		}
+		if spec.AddonsConfig.KALMConfig == nil && in.AddonsConfig.KalmConfig != nil {
+			spec.AddonsConfig.KALMConfig = &v1beta1.KALMConfig{
+				Enabled: in.AddonsConfig.KalmConfig.Enabled,
+			}
 		}
 		if spec.AddonsConfig.KubernetesDashboard == nil && in.AddonsConfig.KubernetesDashboard != nil {
 			spec.AddonsConfig.KubernetesDashboard = &v1beta1.KubernetesDashboard{
@@ -1073,9 +1109,12 @@ func IsUpToDate(name string, in *v1beta1.GKEClusterParameters, observed *contain
 	}
 	if !cmp.Equal(desired.AddonsConfig, observed.AddonsConfig, cmpopts.EquateEmpty(),
 		cmpopts.IgnoreFields(container.AddonsConfig{}, "CloudRunConfig.ForceSendFields"),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "DnsCacheConfig.ForceSendFields"),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "GcePersistentDiskCsiDriverConfig.ForceSendFields"),
 		cmpopts.IgnoreFields(container.AddonsConfig{}, "HorizontalPodAutoscaling.ForceSendFields"),
 		cmpopts.IgnoreFields(container.AddonsConfig{}, "HttpLoadBalancing.ForceSendFields"),
 		cmpopts.IgnoreFields(container.AddonsConfig{}, "IstioConfig.ForceSendFields"),
+		cmpopts.IgnoreFields(container.AddonsConfig{}, "KalmConfig.ForceSendFields"),
 		cmpopts.IgnoreFields(container.AddonsConfig{}, "KubernetesDashboard.ForceSendFields"),
 		cmpopts.IgnoreFields(container.AddonsConfig{}, "NetworkPolicyConfig.ForceSendFields")) {
 		return false, newAddonsConfigUpdateFn(in.AddonsConfig), nil

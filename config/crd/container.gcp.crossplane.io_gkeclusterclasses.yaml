@@ -74,6 +74,28 @@ spec:
                       required:
                       - disabled
                       type: object
+                    dnsCacheConfig:
+                      description: 'DNSCacheConfig: Configuration for NodeLocalDNS,
+                        a dns cache running on cluster nodes'
+                      properties:
+                        enabled:
+                          description: 'Enabled: Whether NodeLocal DNSCache is enabled
+                            for this cluster.'
+                          type: boolean
+                      required:
+                      - enabled
+                      type: object
+                    gcePersistentDiskCsiDriverConfig:
+                      description: 'GCEPersistentDiskCSIDriverConfig: Configuration
+                        for the GCP Compute Persistent Disk CSI driver.'
+                      properties:
+                        enabled:
+                          description: 'Enabled: Whether the GCE PD CSI driver is
+                            enabled for this cluster.'
+                          type: boolean
+                      required:
+                      - enabled
+                      type: object
                     horizontalPodAutoscaling:
                       description: 'HorizontalPodAutoscaling: Configuration for the
                         horizontal pod autoscaling feature, which increases or decreases
@@ -118,13 +140,23 @@ spec:
                             cluster.'
                           type: boolean
                       type: object
+                    kalmConfig:
+                      description: 'KALMConfig: Configuration for the KALM addon,
+                        which manages the lifecycle of k8s applications.'
+                      properties:
+                        enabled:
+                          description: 'Enabled: Whether KALM is enabled for this
+                            cluster.'
+                          type: boolean
+                      required:
+                      - enabled
+                      type: object
                     kubernetesDashboard:
                       description: 'KubernetesDashboard: Configuration for the Kubernetes
                         Dashboard. This addon is deprecated, and will be disabled
                         in 1.15. It is recommended to use the Cloud Console to manage
                         and monitor your Kubernetes clusters, workloads and applications.
-                        For more information, see: https://cloud.google.com/kubernetes-engine/docs/concepts/dashboar
-                        ds'
+                        For more information, see: https://cloud.google.com/kubernetes-engine/docs/concepts/dashboards'
                       properties:
                         disabled:
                           description: 'Disabled: Whether the Kubernetes Dashboard
