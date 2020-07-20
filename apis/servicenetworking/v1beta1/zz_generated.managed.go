@@ -44,7 +44,7 @@ func (mg *Connection) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1al
 }
 
 // GetProviderReference of this Connection.
-func (mg *Connection) GetProviderReference() *corev1.ObjectReference {
+func (mg *Connection) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *Connection) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this Connection.
-func (mg *Connection) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *Connection) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

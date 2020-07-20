@@ -44,7 +44,7 @@ func (mg *CloudMemorystoreInstance) GetCondition(ct runtimev1alpha1.ConditionTyp
 }
 
 // GetProviderReference of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) GetProviderReference() *corev1.ObjectReference {
+func (mg *CloudMemorystoreInstance) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *CloudMemorystoreInstance) SetConditions(c ...runtimev1alpha1.Condition
 }
 
 // SetProviderReference of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *CloudMemorystoreInstance) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

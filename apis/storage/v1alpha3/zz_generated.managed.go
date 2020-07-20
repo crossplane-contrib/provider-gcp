@@ -44,7 +44,7 @@ func (mg *Bucket) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1
 }
 
 // GetProviderReference of this Bucket.
-func (mg *Bucket) GetProviderReference() *corev1.ObjectReference {
+func (mg *Bucket) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *Bucket) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this Bucket.
-func (mg *Bucket) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *Bucket) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

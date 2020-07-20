@@ -80,7 +80,7 @@ func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (managed
 	}
 
 	p := &gcpv1alpha3.Provider{}
-	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), p); err != nil {
+	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.ProviderReference.Name}, p); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
 

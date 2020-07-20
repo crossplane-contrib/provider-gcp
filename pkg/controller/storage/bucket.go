@@ -130,7 +130,7 @@ type bucketFactory struct {
 
 func (m *bucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha3.Bucket) (syncdeleter, error) {
 	p := &gcpv1alpha3.Provider{}
-	if err := m.Get(ctx, meta.NamespacedNameOf(b.Spec.ProviderReference), p); err != nil {
+	if err := m.Get(ctx, types.NamespacedName{Name: b.Spec.ProviderReference.Name}, p); err != nil {
 		return nil, err
 	}
 

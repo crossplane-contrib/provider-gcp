@@ -44,7 +44,7 @@ func (mg *CloudSQLInstance) GetCondition(ct runtimev1alpha1.ConditionType) runti
 }
 
 // GetProviderReference of this CloudSQLInstance.
-func (mg *CloudSQLInstance) GetProviderReference() *corev1.ObjectReference {
+func (mg *CloudSQLInstance) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *CloudSQLInstance) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this CloudSQLInstance.
-func (mg *CloudSQLInstance) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *CloudSQLInstance) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

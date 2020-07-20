@@ -73,7 +73,7 @@ func nodePool(im ...nodePoolModifier) *v1alpha1.NodePool {
 		},
 		Spec: v1alpha1.NodePoolSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &corev1.ObjectReference{Name: providerName},
+				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
 			},
 			ForProvider: v1alpha1.NodePoolParameters{},
 		},

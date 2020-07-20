@@ -44,7 +44,7 @@ func (mg *GKECluster) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1al
 }
 
 // GetProviderReference of this GKECluster.
-func (mg *GKECluster) GetProviderReference() *corev1.ObjectReference {
+func (mg *GKECluster) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *GKECluster) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this GKECluster.
-func (mg *GKECluster) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *GKECluster) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

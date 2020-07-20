@@ -115,7 +115,7 @@ func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
 		},
 		Spec: v1beta1.CloudMemorystoreInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &corev1.ObjectReference{Name: providerName},
+				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
 				WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
 					Namespace: namespace,
 					Name:      connectionSecretName,

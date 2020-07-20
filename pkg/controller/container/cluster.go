@@ -86,7 +86,7 @@ func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (ma
 	}
 
 	p := &gcpv1alpha3.Provider{}
-	if err := c.kube.Get(ctx, meta.NamespacedNameOf(i.Spec.ProviderReference), p); err != nil {
+	if err := c.kube.Get(ctx, types.NamespacedName{Name: i.Spec.ProviderReference.Name}, p); err != nil {
 		return nil, errors.Wrap(err, errGetProvider)
 	}
 

@@ -30,7 +30,6 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -81,7 +80,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}
 
 	p := &gcpv1alpha3.Provider{}
-	if err := c.client.Get(ctx, meta.NamespacedNameOf(i.Spec.ProviderReference), p); err != nil {
+	if err := c.client.Get(ctx, types.NamespacedName{Name: i.Spec.ProviderReference.Name}, p); err != nil {
 		return nil, errors.Wrap(err, errGetProvider)
 	}
 

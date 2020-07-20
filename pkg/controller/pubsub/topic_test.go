@@ -84,7 +84,7 @@ type TopicOption func(*v1alpha1.Topic)
 func newTopic(opts ...TopicOption) *v1alpha1.Topic {
 	t := &v1alpha1.Topic{
 		Spec: v1alpha1.TopicSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{
+			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: runtimev1alpha1.Reference{
 				Name: providerName,
 			}},
 		},

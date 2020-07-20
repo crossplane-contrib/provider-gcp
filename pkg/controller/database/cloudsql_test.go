@@ -117,7 +117,7 @@ func instance(im ...instanceModifier) *v1beta1.CloudSQLInstance {
 		},
 		Spec: v1beta1.CloudSQLInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &corev1.ObjectReference{Name: providerName},
+				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
 			},
 			ForProvider: v1beta1.CloudSQLInstanceParameters{},
 		},
