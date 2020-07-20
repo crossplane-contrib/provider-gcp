@@ -44,7 +44,7 @@ func (mg *GlobalAddress) GetCondition(ct runtimev1alpha1.ConditionType) runtimev
 }
 
 // GetProviderReference of this GlobalAddress.
-func (mg *GlobalAddress) GetProviderReference() *corev1.ObjectReference {
+func (mg *GlobalAddress) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *GlobalAddress) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this GlobalAddress.
-func (mg *GlobalAddress) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *GlobalAddress) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
@@ -114,7 +114,7 @@ func (mg *Network) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha
 }
 
 // GetProviderReference of this Network.
-func (mg *Network) GetProviderReference() *corev1.ObjectReference {
+func (mg *Network) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -149,7 +149,7 @@ func (mg *Network) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this Network.
-func (mg *Network) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *Network) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
@@ -184,7 +184,7 @@ func (mg *Subnetwork) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1al
 }
 
 // GetProviderReference of this Subnetwork.
-func (mg *Subnetwork) GetProviderReference() *corev1.ObjectReference {
+func (mg *Subnetwork) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -219,7 +219,7 @@ func (mg *Subnetwork) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this Subnetwork.
-func (mg *Subnetwork) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *Subnetwork) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

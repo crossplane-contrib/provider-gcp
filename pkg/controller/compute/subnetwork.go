@@ -83,7 +83,7 @@ func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) 
 	}
 
 	provider := &gcpapis.Provider{}
-	if err := c.kube.Get(ctx, meta.NamespacedNameOf(cr.Spec.ProviderReference), provider); err != nil {
+	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.ProviderReference.Name}, provider); err != nil {
 		return nil, errors.Wrap(err, errProviderNotRetrieved)
 	}
 

@@ -44,7 +44,7 @@ func (mg *NodePool) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alph
 }
 
 // GetProviderReference of this NodePool.
-func (mg *NodePool) GetProviderReference() *corev1.ObjectReference {
+func (mg *NodePool) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *NodePool) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this NodePool.
-func (mg *NodePool) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *NodePool) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

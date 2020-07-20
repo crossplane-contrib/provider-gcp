@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -70,7 +69,7 @@ func TestConfigureBucket(t *testing.T) {
 					SpecTemplate: v1alpha3.BucketClassSpecTemplate{
 						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
 							WriteConnectionSecretsToNamespace: namespace,
-							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
+							ProviderReference:                 runtimev1alpha1.Reference{Name: providerName},
 							ReclaimPolicy:                     runtimev1alpha1.ReclaimDelete,
 						},
 					},
@@ -86,7 +85,7 @@ func TestConfigureBucket(t *testing.T) {
 								Namespace: namespace,
 								Name:      string(claimUID),
 							},
-							ProviderReference: &corev1.ObjectReference{Name: providerName},
+							ProviderReference: runtimev1alpha1.Reference{Name: providerName},
 						},
 						BucketParameters: v1alpha3.BucketParameters{
 							BucketSpecAttrs: v1alpha3.BucketSpecAttrs{

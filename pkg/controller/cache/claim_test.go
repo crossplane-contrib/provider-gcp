@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -69,7 +68,7 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 					SpecTemplate: v1beta1.CloudMemorystoreInstanceClassSpecTemplate{
 						ClassSpecTemplate: runtimev1alpha1.ClassSpecTemplate{
 							WriteConnectionSecretsToNamespace: namespace,
-							ProviderReference:                 &corev1.ObjectReference{Name: providerName},
+							ProviderReference:                 runtimev1alpha1.Reference{Name: providerName},
 							ReclaimPolicy:                     runtimev1alpha1.ReclaimDelete,
 						},
 						ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
@@ -89,7 +88,7 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 								Namespace: namespace,
 								Name:      string(claimUID),
 							},
-							ProviderReference: &corev1.ObjectReference{Name: providerName},
+							ProviderReference: runtimev1alpha1.Reference{Name: providerName},
 						},
 						ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
 							RedisVersion: &redisVersion,

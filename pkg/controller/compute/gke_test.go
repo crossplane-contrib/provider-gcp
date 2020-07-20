@@ -28,7 +28,6 @@ import (
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/container/v1"
 	"google.golang.org/api/googleapi"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -82,7 +81,7 @@ func testCluster() *GKECluster {
 		},
 		Spec: GKEClusterSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &corev1.ObjectReference{Name: providerName},
+				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
 			},
 		},
 	}

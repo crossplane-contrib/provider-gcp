@@ -140,7 +140,7 @@ func connectionDetails(cluster *container.Cluster) (managed.ConnectionDetails, e
 func (r *Reconciler) _connect(instance *gcpcomputev1alpha3.GKECluster) (gke.Client, error) {
 	// Fetch Provider
 	p := &gcpv1alpha3.Provider{}
-	if err := r.Get(ctx, meta.NamespacedNameOf(instance.Spec.ProviderReference), p); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Spec.ProviderReference.Name}, p); err != nil {
 		return nil, err
 	}
 

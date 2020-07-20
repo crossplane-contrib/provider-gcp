@@ -65,7 +65,7 @@ var (
 func conn() *v1beta1.Connection {
 	return &v1beta1.Connection{
 		Spec: v1beta1.ConnectionSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &corev1.ObjectReference{
+			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: runtimev1alpha1.Reference{
 				Name: providerName,
 			}},
 		},

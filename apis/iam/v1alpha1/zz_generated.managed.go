@@ -44,7 +44,7 @@ func (mg *ServiceAccount) GetCondition(ct runtimev1alpha1.ConditionType) runtime
 }
 
 // GetProviderReference of this ServiceAccount.
-func (mg *ServiceAccount) GetProviderReference() *corev1.ObjectReference {
+func (mg *ServiceAccount) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *ServiceAccount) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this ServiceAccount.
-func (mg *ServiceAccount) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *ServiceAccount) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

@@ -44,7 +44,7 @@ func (mg *Topic) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.
 }
 
 // GetProviderReference of this Topic.
-func (mg *Topic) GetProviderReference() *corev1.ObjectReference {
+func (mg *Topic) GetProviderReference() runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -79,7 +79,7 @@ func (mg *Topic) SetConditions(c ...runtimev1alpha1.Condition) {
 }
 
 // SetProviderReference of this Topic.
-func (mg *Topic) SetProviderReference(r *corev1.ObjectReference) {
+func (mg *Topic) SetProviderReference(r runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
