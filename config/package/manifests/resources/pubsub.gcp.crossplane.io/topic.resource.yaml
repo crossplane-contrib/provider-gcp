@@ -1,0 +1,25 @@
+id: topic
+title: Cloud PubSub Topic
+titlePlural: Cloud PubSub Topics
+category: Message Queue
+overviewShort: Pub/Sub is an asynchronous messaging service that decouples services that produce events from services that process events.
+overview: |
+ Pub/Sub is an asynchronous messaging service that decouples services that produce events from services that process events.
+ You can use Pub/Sub as messaging-oriented middleware or event ingestion and delivery for streaming analytics pipelines.
+ Pub/Sub offers durable message storage and real-time message delivery with high availability and consistent performance at scale. Pub/Sub servers run in all Google Cloud regions around the world.
+readme: |
+ ## Stream analytics and connectors
+ 
+ Native Dataflow integration enables reliable, expressive, exactly-once processing and integration of event streams in Java, Python and SQL.
+
+ ## Open
+
+ Open REST and gRPC APIs with client libraries in seven languages support cross-cloud and hybrid deployments.
+
+ ## Cost-optimized ingestion with Pub/Sub Lite
+
+ With zonal message storage and configurable throughput capacity, Pub/Sub Lite (beta) is a serverless, Google-managed offering for high-volume messaging use cases and aims to be the lowest cost to serve option for event ingestion.
+
+ ## Learn more
+
+ This content is from https://cloud.google.com/pubsub/, you can learn more in the [GCP documentation](https://cloud.google.com/pubsub/docs/overview).
