@@ -107,7 +107,7 @@ func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 		},
 		Spec: v1beta1.GKEClusterSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+				ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 			},
 			ForProvider: v1beta1.GKEClusterParameters{},
 		},

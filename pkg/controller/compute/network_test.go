@@ -85,7 +85,7 @@ func networkObj(im ...networkModifier) *v1beta1.Network {
 		},
 		Spec: v1beta1.NetworkSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+				ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 			},
 			ForProvider: v1beta1.NetworkParameters{},
 		},

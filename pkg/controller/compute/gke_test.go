@@ -81,7 +81,7 @@ func testCluster() *GKECluster {
 		},
 		Spec: GKEClusterSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+				ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 			},
 		},
 	}

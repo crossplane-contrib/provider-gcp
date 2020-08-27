@@ -43,8 +43,21 @@ func (mg *CloudMemorystoreInstance) GetCondition(ct runtimev1alpha1.ConditionTyp
 	return mg.Status.GetCondition(ct)
 }
 
-// GetProviderReference of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) GetProviderReference() runtimev1alpha1.Reference {
+// GetDeletionPolicy of this CloudMemorystoreInstance.
+func (mg *CloudMemorystoreInstance) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+	return mg.Spec.DeletionPolicy
+}
+
+// GetProviderConfigReference of this CloudMemorystoreInstance.
+func (mg *CloudMemorystoreInstance) GetProviderConfigReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderConfigReference
+}
+
+/*
+GetProviderReference of this CloudMemorystoreInstance.
+Deprecated: Use GetProviderConfigReference.
+*/
+func (mg *CloudMemorystoreInstance) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -78,8 +91,21 @@ func (mg *CloudMemorystoreInstance) SetConditions(c ...runtimev1alpha1.Condition
 	mg.Status.SetConditions(c...)
 }
 
-// SetProviderReference of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) SetProviderReference(r runtimev1alpha1.Reference) {
+// SetDeletionPolicy of this CloudMemorystoreInstance.
+func (mg *CloudMemorystoreInstance) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+	mg.Spec.DeletionPolicy = r
+}
+
+// SetProviderConfigReference of this CloudMemorystoreInstance.
+func (mg *CloudMemorystoreInstance) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderConfigReference = r
+}
+
+/*
+SetProviderReference of this CloudMemorystoreInstance.
+Deprecated: Use SetProviderConfigReference.
+*/
+func (mg *CloudMemorystoreInstance) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

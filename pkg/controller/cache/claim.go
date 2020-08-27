@@ -151,7 +151,7 @@ func ConfigureCloudMemorystoreInstance(_ context.Context, cm resource.Claim, cs 
 		Namespace: rc.SpecTemplate.WriteConnectionSecretsToNamespace,
 		Name:      string(cm.GetUID()),
 	}
-	spec.ProviderReference = rc.SpecTemplate.ProviderReference
+	spec.ProviderReference = rc.SpecTemplate.ProviderReference.DeepCopy()
 	spec.ReclaimPolicy = rc.SpecTemplate.ReclaimPolicy
 
 	c.Spec = *spec

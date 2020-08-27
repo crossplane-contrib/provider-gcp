@@ -149,7 +149,7 @@ func (b *bucket) withFinalizer(f string) *bucket {
 }
 
 func (b *bucket) withProvider(name string) *bucket {
-	b.Spec.ProviderReference = runtimev1alpha1.Reference{Name: name}
+	b.Spec.ProviderReference = &runtimev1alpha1.Reference{Name: name}
 	return b
 }
 

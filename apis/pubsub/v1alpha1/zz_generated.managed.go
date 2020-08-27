@@ -43,8 +43,21 @@ func (mg *Topic) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.
 	return mg.Status.GetCondition(ct)
 }
 
-// GetProviderReference of this Topic.
-func (mg *Topic) GetProviderReference() runtimev1alpha1.Reference {
+// GetDeletionPolicy of this Topic.
+func (mg *Topic) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+	return mg.Spec.DeletionPolicy
+}
+
+// GetProviderConfigReference of this Topic.
+func (mg *Topic) GetProviderConfigReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderConfigReference
+}
+
+/*
+GetProviderReference of this Topic.
+Deprecated: Use GetProviderConfigReference.
+*/
+func (mg *Topic) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -78,8 +91,21 @@ func (mg *Topic) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
-// SetProviderReference of this Topic.
-func (mg *Topic) SetProviderReference(r runtimev1alpha1.Reference) {
+// SetDeletionPolicy of this Topic.
+func (mg *Topic) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+	mg.Spec.DeletionPolicy = r
+}
+
+// SetProviderConfigReference of this Topic.
+func (mg *Topic) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderConfigReference = r
+}
+
+/*
+SetProviderReference of this Topic.
+Deprecated: Use SetProviderConfigReference.
+*/
+func (mg *Topic) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

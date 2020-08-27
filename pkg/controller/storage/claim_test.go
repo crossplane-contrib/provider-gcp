@@ -85,7 +85,7 @@ func TestConfigureBucket(t *testing.T) {
 								Namespace: namespace,
 								Name:      string(claimUID),
 							},
-							ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+							ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 						},
 						BucketParameters: v1alpha3.BucketParameters{
 							BucketSpecAttrs: v1alpha3.BucketSpecAttrs{

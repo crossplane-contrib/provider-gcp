@@ -119,7 +119,7 @@ func serviceAccount(im ...valueModifier) *v1alpha1.ServiceAccount {
 		},
 		Spec: v1alpha1.ServiceAccountSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+				ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 				WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
 					Namespace: namespace,
 					Name:      connectionSecretName,

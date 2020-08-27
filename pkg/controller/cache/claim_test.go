@@ -88,7 +88,7 @@ func TestConfigureCloudMemorystoreInstance(t *testing.T) {
 								Namespace: namespace,
 								Name:      string(claimUID),
 							},
-							ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+							ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 						},
 						ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
 							RedisVersion: &redisVersion,

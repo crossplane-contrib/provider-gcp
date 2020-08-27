@@ -76,7 +76,7 @@ func subnetworkObj(im ...subnetworkModifier) *v1beta1.Subnetwork {
 		},
 		Spec: v1beta1.SubnetworkSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+				ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 			},
 			ForProvider: v1beta1.SubnetworkParameters{},
 		},

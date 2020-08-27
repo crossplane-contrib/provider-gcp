@@ -43,8 +43,21 @@ func (mg *NodePool) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alph
 	return mg.Status.GetCondition(ct)
 }
 
-// GetProviderReference of this NodePool.
-func (mg *NodePool) GetProviderReference() runtimev1alpha1.Reference {
+// GetDeletionPolicy of this NodePool.
+func (mg *NodePool) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+	return mg.Spec.DeletionPolicy
+}
+
+// GetProviderConfigReference of this NodePool.
+func (mg *NodePool) GetProviderConfigReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderConfigReference
+}
+
+/*
+GetProviderReference of this NodePool.
+Deprecated: Use GetProviderConfigReference.
+*/
+func (mg *NodePool) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -78,8 +91,21 @@ func (mg *NodePool) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
-// SetProviderReference of this NodePool.
-func (mg *NodePool) SetProviderReference(r runtimev1alpha1.Reference) {
+// SetDeletionPolicy of this NodePool.
+func (mg *NodePool) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+	mg.Spec.DeletionPolicy = r
+}
+
+// SetProviderConfigReference of this NodePool.
+func (mg *NodePool) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderConfigReference = r
+}
+
+/*
+SetProviderReference of this NodePool.
+Deprecated: Use SetProviderConfigReference.
+*/
+func (mg *NodePool) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
