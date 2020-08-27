@@ -38,6 +38,9 @@ import (
 	"github.com/crossplane/provider-gcp/apis/v1alpha3"
 )
 
+// GetAuthInfo returns the necessary authentication information that is necessary
+// to use when the controller connects to GCP API in order to reconcile the managed
+// resource.
 func GetAuthInfo(ctx context.Context, kube client.Client, cr resource.Managed) (projectID string, opts option.ClientOption, err error) {
 	pc := &v1alpha3.ProviderConfig{}
 	switch {

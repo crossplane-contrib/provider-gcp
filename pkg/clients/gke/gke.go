@@ -17,14 +17,10 @@ limitations under the License.
 package gke
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/container/v1"
-	"google.golang.org/api/option"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	computev1alpha3 "github.com/crossplane/provider-gcp/apis/compute/v1alpha3"
@@ -32,9 +28,6 @@ import (
 )
 
 const (
-	// DefaultScope used by the GKE API.
-	DefaultScope = container.CloudPlatformScope
-
 	// TODO(negz): Is this username special? I can't see any ClusterRoleBindings
 	// that bind it to a role.
 	adminUser = "admin"
@@ -49,21 +42,16 @@ type Client interface {
 
 // ClusterClient implementation
 type ClusterClient struct {
-	creds  *google.Credentials
-	client *container.Service
+	projectID string
+	client    *container.Service
 }
 
 // NewClusterClient return new instance of the Client based on credentials
-func NewClusterClient(ctx context.Context, creds *google.Credentials) (*ClusterClient, error) {
-	client, err := container.NewService(ctx, option.WithHTTPClient(oauth2.NewClient(context.Background(), creds.TokenSource)))
-	if err != nil {
-		return nil, err
-	}
-
+func NewClusterClient(projectID string, service *container.Service) *ClusterClient {
 	return &ClusterClient{
-		creds:  creds,
-		client: client,
-	}, nil
+		projectID: projectID,
+		client:    service,
+	}
 }
 
 // CreateCluster creates a new GKE cluster.
@@ -102,7 +90,7 @@ func (c *ClusterClient) CreateCluster(name string, spec computev1alpha3.GKEClust
 				},
 			},
 		},
-		ProjectId: c.creds.ProjectID,
+		ProjectId: c.projectID,
 		Zone:      spec.Zone,
 	}
 
@@ -115,12 +103,12 @@ func (c *ClusterClient) CreateCluster(name string, spec computev1alpha3.GKEClust
 
 // GetCluster retrieve GKE Cluster based on provided zone and name
 func (c *ClusterClient) GetCluster(zone, name string) (*container.Cluster, error) {
-	return c.client.Projects.Zones.Clusters.Get(c.creds.ProjectID, zone, name).Do()
+	return c.client.Projects.Zones.Clusters.Get(c.projectID, zone, name).Do()
 }
 
 // DeleteCluster in the given zone with the given name
 func (c *ClusterClient) DeleteCluster(zone, name string) error {
-	_, err := c.client.Projects.Zones.Clusters.Delete(c.creds.ProjectID, zone, name).Do()
+	_, err := c.client.Projects.Zones.Clusters.Delete(c.projectID, zone, name).Do()
 	if err != nil {
 		if gcp.IsErrorNotFound(err) {
 			return nil
@@ -132,7 +120,7 @@ func (c *ClusterClient) DeleteCluster(zone, name string) error {
 
 // DefaultKubernetesVersion is the default Kubernetes Cluster version supported by GKE for given project/zone
 func (c *ClusterClient) DefaultKubernetesVersion(zone string) (string, error) {
-	sc, err := c.client.Projects.Zones.GetServerconfig(c.creds.ProjectID, zone).Fields("validMasterVersions").Do()
+	sc, err := c.client.Projects.Zones.GetServerconfig(c.projectID, zone).Fields("validMasterVersions").Do()
 	if err != nil {
 		return "", err
 	}

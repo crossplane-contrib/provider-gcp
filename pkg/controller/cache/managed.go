@@ -21,12 +21,9 @@ import (
 	"strconv"
 
 	redisv1 "cloud.google.com/go/redis/apiv1"
-
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	"google.golang.org/api/option"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"google.golang.org/api/option"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,6 +34,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/cloudmemorystore"
 )
 

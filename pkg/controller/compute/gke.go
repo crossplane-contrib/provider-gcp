@@ -22,11 +22,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/container/v1"
-	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,7 +36,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	gcpcomputev1alpha3 "github.com/crossplane/provider-gcp/apis/compute/v1alpha3"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/gke"
 )
@@ -138,30 +134,15 @@ func connectionDetails(cluster *container.Cluster) (managed.ConnectionDetails, e
 }
 
 func (r *Reconciler) _connect(instance *gcpcomputev1alpha3.GKECluster) (gke.Client, error) {
-	// Fetch Provider
-	p := &gcpv1alpha3.Provider{}
-	if err := r.Get(ctx, types.NamespacedName{Name: instance.Spec.ProviderReference.Name}, p); err != nil {
-		return nil, err
-	}
-
-	if p.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretNil)
-	}
-
-	secret := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
-	if err := r.Client.Get(ctx, n, secret); err != nil {
-		return nil, err
-	}
-	data, ok := secret.Data[p.Spec.CredentialsSecretRef.Key]
-	if !ok {
-		return nil, fmt.Errorf("secret data is not found for key [%s]", p.Spec.CredentialsSecretRef.Key)
-	}
-	creds, err := google.CredentialsFromJSON(context.Background(), data, gke.DefaultScope)
+	projectID, opts, err := gcp.GetAuthInfo(context.TODO(), r, instance)
 	if err != nil {
 		return nil, err
 	}
-	return gke.NewClusterClient(ctx, creds)
+	s, err := container.NewService(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return gke.NewClusterClient(projectID, s), nil
 }
 
 func (r *Reconciler) _create(instance *gcpcomputev1alpha3.GKECluster, client gke.Client) (reconcile.Result, error) {
