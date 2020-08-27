@@ -33,7 +33,6 @@ import (
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
@@ -42,8 +41,7 @@ import (
 )
 
 const (
-	providerName = "fooprovider"
-	projectID    = "fooproject"
+	projectID = "fooproject"
 )
 
 var (
@@ -73,13 +71,7 @@ func (m *MockPublisherClient) DeleteTopic(ctx context.Context, req *pubsubpb.Del
 type TopicOption func(*v1alpha1.Topic)
 
 func newTopic(opts ...TopicOption) *v1alpha1.Topic {
-	t := &v1alpha1.Topic{
-		Spec: v1alpha1.TopicSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: &runtimev1alpha1.Reference{
-				Name: providerName,
-			}},
-		},
-	}
+	t := &v1alpha1.Topic{}
 
 	for _, f := range opts {
 		f(t)

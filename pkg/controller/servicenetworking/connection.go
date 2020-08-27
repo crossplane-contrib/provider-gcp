@@ -25,8 +25,6 @@ import (
 	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,23 +35,19 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/connection"
 )
 
 // Error strings.
 const (
-	errGetProvider       = "cannot get provider"
-	errProviderSecretNil = "cannot find Secret reference on Provider"
-	errGetProviderSecret = "cannot get provider secret"
-	errNewClient         = "cannot create new Compute Service"
-	errNotConnection     = "managed resource is not a Connection"
-	errListConnections   = "cannot list external Connection resources"
-	errGetNetwork        = "cannot get VPC Network"
-	errCreateConnection  = "cannot create external Connection resource"
-	errUpdateConnection  = "cannot update external Connection resource"
-	errDeleteConnection  = "cannot delete external Connection resource"
+	errNewClient        = "cannot create new Compute Service"
+	errNotConnection    = "managed resource is not a Connection"
+	errListConnections  = "cannot list external Connection resources"
+	errGetNetwork       = "cannot get VPC Network"
+	errCreateConnection = "cannot create external Connection resource"
+	errUpdateConnection = "cannot update external Connection resource"
+	errDeleteConnection = "cannot delete external Connection resource"
 )
 
 // NOTE(negz): There is no 'Get' method for connections, only 'List', and the
@@ -104,37 +98,18 @@ type connector struct {
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	ga, ok := mg.(*v1beta1.Connection)
-	if !ok {
-		return nil, errors.New(errNotConnection)
+	projectID, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	if err != nil {
+		return nil, err
 	}
 
-	p := &gcpv1alpha3.Provider{}
-	if err := c.client.Get(ctx, types.NamespacedName{Name: ga.Spec.ProviderReference.Name}, p); err != nil {
-		return nil, errors.Wrap(err, errGetProvider)
-	}
-
-	if p.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretNil)
-	}
-
-	s := &v1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
-	if err := c.client.Get(ctx, n, s); err != nil {
-		return nil, errors.Wrap(err, errGetProviderSecret)
-	}
-
-	cmp, err := c.newCompute(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
-		option.WithScopes(compute.ComputeScope))
+	cmp, err := c.newCompute(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
 
-	sn, err := c.newServiceNetworking(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
-		option.WithScopes(servicenetworking.ServiceManagementScope))
-	return &external{sn: sn, compute: cmp, projectID: p.Spec.ProjectID}, errors.Wrap(err, errNewClient)
+	sn, err := c.newServiceNetworking(ctx, opts)
+	return &external{sn: sn, compute: cmp, projectID: projectID}, errors.Wrap(err, errNewClient)
 }
 
 type external struct {
