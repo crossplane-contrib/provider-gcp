@@ -41,7 +41,6 @@ import (
 // Error strings.
 const (
 	errNotGlobalAddress     = "managed resource is not a GlobalAddress"
-	errProviderSecretNil    = "cannot find Secret reference on Provider"
 	errGetAddress           = "cannot get external Address resource"
 	errCreateAddress        = "cannot create external Address resource"
 	errDeleteAddress        = "cannot delete external Address resource"

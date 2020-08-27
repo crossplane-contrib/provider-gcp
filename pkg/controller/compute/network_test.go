@@ -45,9 +45,7 @@ import (
 const (
 	testNetworkName = "test-network"
 
-	projectID          = "myproject-id-1234"
-	providerSecretName = "gcp-creds"
-	providerSecretKey  = "creds"
+	projectID = "myproject-id-1234"
 )
 
 var _ managed.ExternalConnecter = &networkConnector{}

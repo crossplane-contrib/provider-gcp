@@ -40,12 +40,10 @@ import (
 
 const (
 	// Error strings.
-	errNewClient                  = "cannot create new Compute Service"
-	errNotNetwork                 = "managed resource is not a Network resource"
-	errGetNetwork                 = "cannot get GCP network"
-	errProviderNotRetrieved       = "provider could not be retrieved"
-	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
-	errManagedNetworkUpdate       = "unable to update Network managed resource"
+	errNewClient            = "cannot create new Compute Service"
+	errNotNetwork           = "managed resource is not a Network resource"
+	errGetNetwork           = "cannot get GCP network"
+	errManagedNetworkUpdate = "unable to update Network managed resource"
 
 	errNetworkUpdateFailed  = "update of Network resource has failed"
 	errNetworkCreateFailed  = "creation of Network resource has failed"
