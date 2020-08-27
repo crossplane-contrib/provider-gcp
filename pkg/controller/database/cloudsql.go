@@ -24,8 +24,6 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -38,17 +36,13 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/database/v1beta1"
-	apisv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/cloudsql"
 )
 
 const (
-	errNotCloudSQL                = "managed resource is not a CloudSQLInstance custom resource"
-	errProviderNotRetrieved       = "provider could not be retrieved"
-	errProviderSecretNil          = "cannot find Secret reference on Provider"
-	errProviderSecretNotRetrieved = "secret referred in provider could not be retrieved"
-	errManagedUpdateFailed        = "cannot update CloudSQLInstance custom resource"
+	errNotCloudSQL         = "managed resource is not a CloudSQLInstance custom resource"
+	errManagedUpdateFailed = "cannot update CloudSQLInstance custom resource"
 
 	errNewClient        = "cannot create new Sqladmin Service"
 	errCreateFailed     = "cannot create new CloudSQL instance"
@@ -85,34 +79,15 @@ type cloudsqlConnector struct {
 }
 
 func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1beta1.CloudSQLInstance)
-	if !ok {
-		return nil, errors.New(errNotCloudSQL)
+	projectID, opts, err := gcp.GetAuthInfo(ctx, c.kube, mg)
+	if err != nil {
+		return nil, err
 	}
-
-	provider := &apisv1alpha3.Provider{}
-	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.ProviderReference.Name}, provider); err != nil {
-		return nil, errors.Wrap(err, errProviderNotRetrieved)
-	}
-
-	if provider.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretNil)
-	}
-
-	secret := &v1.Secret{}
-	n := types.NamespacedName{Namespace: provider.Spec.CredentialsSecretRef.Namespace, Name: provider.Spec.CredentialsSecretRef.Name}
-	if err := c.kube.Get(ctx, n, secret); err != nil {
-		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)
-	}
-
-	s, err := c.newServiceFn(ctx,
-		option.WithCredentialsJSON(secret.Data[provider.Spec.CredentialsSecretRef.Key]),
-		option.WithScopes(sqladmin.SqlserviceAdminScope))
+	s, err := c.newServiceFn(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-
-	return &cloudsqlExternal{kube: c.kube, db: s.Instances, projectID: provider.Spec.ProjectID}, nil
+	return &cloudsqlExternal{kube: c.kube, db: s.Instances, projectID: projectID}, nil
 }
 
 type cloudsqlExternal struct {
