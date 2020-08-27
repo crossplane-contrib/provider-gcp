@@ -23,7 +23,6 @@ import (
 
 	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
-	"google.golang.org/api/option"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,17 +73,12 @@ const (
 // managed resources.
 func SetupConnection(mgr ctrl.Manager, l logging.Logger) error {
 	name := managed.ControllerName(v1beta1.ConnectionGroupKind)
-	conn := &connector{
-		client:               mgr.GetClient(),
-		newCompute:           compute.NewService,
-		newServiceNetworking: servicenetworking.NewService,
-	}
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&v1beta1.Connection{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.ConnectionGroupVersionKind),
-			managed.WithExternalConnecter(conn),
+			managed.WithExternalConnecter(&connector{client: mgr.GetClient()}),
 			managed.WithConnectionPublishers(),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l.WithValues("controller", name)),
@@ -92,9 +86,7 @@ func SetupConnection(mgr ctrl.Manager, l logging.Logger) error {
 }
 
 type connector struct {
-	client               client.Client
-	newCompute           func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error)
-	newServiceNetworking func(ctx context.Context, opts ...option.ClientOption) (*servicenetworking.APIService, error)
+	client client.Client
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -103,12 +95,12 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	cmp, err := c.newCompute(ctx, opts)
+	cmp, err := compute.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
 
-	sn, err := c.newServiceNetworking(ctx, opts)
+	sn, err := servicenetworking.NewService(ctx, opts)
 	return &external{sn: sn, compute: cmp, projectID: projectID}, errors.Wrap(err, errNewClient)
 }
 

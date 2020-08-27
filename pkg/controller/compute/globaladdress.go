@@ -22,7 +22,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
-	"google.golang.org/api/option"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -57,7 +56,7 @@ func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1beta1.GlobalAddress{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.GlobalAddressGroupVersionKind),
-			managed.WithExternalConnecter(&gaConnector{kube: mgr.GetClient(), newServiceFn: compute.NewService}),
+			managed.WithExternalConnecter(&gaConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithConnectionPublishers(),
 			managed.WithLogger(l.WithValues("controller", name)),
@@ -65,8 +64,7 @@ func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger) error {
 }
 
 type gaConnector struct {
-	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error)
+	kube client.Client
 }
 
 func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -74,7 +72,7 @@ func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (managed
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := compute.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

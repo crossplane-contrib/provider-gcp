@@ -22,7 +22,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	googlecompute "google.golang.org/api/compute/v1"
-	"google.golang.org/api/option"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -69,8 +68,7 @@ func SetupSubnetwork(mgr ctrl.Manager, l logging.Logger) error {
 }
 
 type subnetworkConnector struct {
-	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*googlecompute.Service, error)
+	kube client.Client
 }
 
 func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -78,7 +76,7 @@ func (c *subnetworkConnector) Connect(ctx context.Context, mg resource.Managed) 
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := googlecompute.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

@@ -23,7 +23,6 @@ import (
 	pubsub "cloud.google.com/go/pubsub/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"google.golang.org/api/option"
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,15 +58,14 @@ func SetupTopic(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1alpha1.Topic{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.TopicGroupVersionKind),
-			managed.WithExternalConnecter(&connector{client: mgr.GetClient(), newServiceFn: pubsub.NewPublisherClient}),
+			managed.WithExternalConnecter(&connector{client: mgr.GetClient()}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type connector struct {
-	client       client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*pubsub.PublisherClient, error)
+	client client.Client
 }
 
 // Connect returns an ExternalClient with necessary information to talk to GCP API.
@@ -76,7 +74,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := pubsub.NewPublisherClient(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

@@ -20,8 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/api/option"
-
 	"github.com/crossplane/provider-gcp/pkg/clients/serviceaccount"
 
 	"github.com/pkg/errors"
@@ -58,15 +56,14 @@ func SetupServiceAccount(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1alpha1.ServiceAccount{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.ServiceAccountGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newServiceFn: iamv1.NewService}),
+			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type connecter struct {
-	client       client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*iamv1.Service, error)
+	client client.Client
 }
 
 // Connect sets up iam client using credentials from the provider
@@ -75,7 +72,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := iamv1.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

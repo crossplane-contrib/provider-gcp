@@ -22,7 +22,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,7 +60,7 @@ func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.CloudSQLInstanceGroupVersionKind),
-		managed.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient(), newServiceFn: sqladmin.NewService}),
+		managed.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient()}),
 		managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient()), &cloudsqlTagger{kube: mgr.GetClient()}),
 		managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 		managed.WithLogger(l.WithValues("controller", name)),
@@ -74,8 +73,7 @@ func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
 }
 
 type cloudsqlConnector struct {
-	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*sqladmin.Service, error)
+	kube client.Client
 }
 
 func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -83,7 +81,7 @@ func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (m
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := sqladmin.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

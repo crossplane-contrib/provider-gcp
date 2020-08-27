@@ -22,7 +22,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
-	"google.golang.org/api/option"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,15 +61,14 @@ func SetupGKECluster(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1beta1.GKECluster{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind),
-			managed.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}),
+			managed.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type clusterConnector struct {
-	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*container.Service, error)
+	kube client.Client
 }
 
 func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -78,7 +76,7 @@ func (c *clusterConnector) Connect(ctx context.Context, mg resource.Managed) (ma
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := container.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

@@ -23,7 +23,6 @@ import (
 	redisv1 "cloud.google.com/go/redis/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"google.golang.org/api/option"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -60,14 +59,13 @@ func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1beta1.CloudMemorystoreInstance{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newServiceFn: redisv1.NewCloudRedisClient}),
+			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type connecter struct {
-	client       client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*redisv1.CloudRedisClient, error)
+	client client.Client
 }
 
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -75,7 +73,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := redisv1.NewCloudRedisClient(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

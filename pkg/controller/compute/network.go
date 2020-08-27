@@ -22,7 +22,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
-	"google.golang.org/api/option"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -69,8 +68,7 @@ func SetupNetwork(mgr ctrl.Manager, l logging.Logger) error {
 }
 
 type networkConnector struct {
-	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error)
+	kube client.Client
 }
 
 func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -78,7 +76,7 @@ func (c *networkConnector) Connect(ctx context.Context, mg resource.Managed) (ma
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := compute.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

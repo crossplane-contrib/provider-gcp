@@ -59,7 +59,7 @@ func SetupNodePool(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1alpha1.NodePool{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.NodePoolGroupVersionKind),
-			managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}),
+			managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
@@ -75,7 +75,7 @@ func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (m
 	if err != nil {
 		return nil, err
 	}
-	s, err := c.newServiceFn(ctx, opts)
+	s, err := container.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
