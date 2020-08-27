@@ -66,14 +66,6 @@ type bucketHandler struct {
 
 var _ operations = &bucketHandler{}
 
-func newBucketClients(bucket *v1alpha3.Bucket, kube client.Client, gcp gcpstorage.Client) *bucketHandler {
-	return &bucketHandler{
-		Bucket: bucket,
-		kube:   kube,
-		gcp:    gcp,
-	}
-}
-
 //
 // Crossplane GCP Bucket object operations
 //

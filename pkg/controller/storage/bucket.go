@@ -21,13 +21,11 @@ import (
 	"reflect"
 	"time"
 
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
+
 	"cloud.google.com/go/storage"
-	"github.com/pkg/errors"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/option"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -38,7 +36,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcpstorage "github.com/crossplane/provider-gcp/pkg/clients/storage"
 )
 
@@ -48,11 +45,6 @@ const (
 
 	reconcileTimeout      = 1 * time.Minute
 	requeueAfterOnSuccess = 30 * time.Second
-)
-
-// Error strings
-const (
-	errProviderSecretNil = "cannot find Secret reference on Provider"
 )
 
 var (
@@ -129,40 +121,23 @@ type bucketFactory struct {
 }
 
 func (m *bucketFactory) newSyncDeleter(ctx context.Context, b *v1alpha3.Bucket) (syncdeleter, error) {
-	p := &gcpv1alpha3.Provider{}
-	if err := m.Get(ctx, types.NamespacedName{Name: b.Spec.ProviderReference.Name}, p); err != nil {
+	projectID, opts, err := gcp.GetAuthInfo(ctx, m, b)
+	if err != nil {
 		return nil, err
 	}
-
-	if p.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretNil)
-	}
-
-	s := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
-	if err := m.Get(ctx, n, s); err != nil {
-		return nil, errors.Wrapf(err, "cannot get provider's secret %s", n)
-	}
-
-	creds, err := google.CredentialsFromJSON(context.Background(), s.Data[p.Spec.CredentialsSecretRef.Key], storage.ScopeFullControl)
+	s, err := storage.NewClient(ctx, opts)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot retrieve creds from json")
+		return nil, err
 	}
-
-	sc, err := storage.NewClient(ctx, option.WithCredentials(creds))
-	if err != nil {
-		return nil, errors.Wrapf(err, "error creating storage client")
-	}
-
 	ops := &bucketHandler{
 		Bucket: b,
-		gcp:    &gcpstorage.BucketClient{BucketHandle: sc.Bucket(meta.GetExternalName(b))},
+		gcp:    &gcpstorage.BucketClient{BucketHandle: s.Bucket(meta.GetExternalName(b))},
 		kube:   m.Client,
 	}
 
 	return &bucketSyncDeleter{
 		operations:    ops,
-		createupdater: &bucketCreateUpdater{operations: ops, projectID: creds.ProjectID},
+		createupdater: &bucketCreateUpdater{operations: ops, projectID: projectID},
 	}, nil
 
 }
