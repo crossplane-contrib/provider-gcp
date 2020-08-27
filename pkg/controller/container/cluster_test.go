@@ -31,9 +31,7 @@ import (
 	container "google.golang.org/api/container/v1beta1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -43,7 +41,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gke "github.com/crossplane/provider-gcp/pkg/clients/cluster"
 )
 
@@ -106,9 +103,6 @@ func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 			},
 		},
 		Spec: v1beta1.GKEClusterSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
-			},
 			ForProvider: v1beta1.GKEClusterParameters{},
 		},
 	}
@@ -118,135 +112,6 @@ func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 	}
 
 	return i
-}
-
-func TestConnect(t *testing.T) {
-	provider := gcpv1alpha3.Provider{
-		ObjectMeta: metav1.ObjectMeta{Name: providerName},
-		Spec: gcpv1alpha3.ProviderSpec{
-			ProjectID: projectID,
-			ProviderSpec: runtimev1alpha1.ProviderSpec{
-				CredentialsSecretRef: &runtimev1alpha1.SecretKeySelector{
-					SecretReference: runtimev1alpha1.SecretReference{
-						Namespace: namespace,
-						Name:      providerSecretName,
-					},
-					Key: providerSecretKey,
-				},
-			},
-		},
-	}
-
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
-		Data:       map[string][]byte{providerSecretKey: []byte("olala")},
-	}
-
-	type args struct {
-		mg resource.Managed
-	}
-	type want struct {
-		err error
-	}
-
-	cases := map[string]struct {
-		conn managed.ExternalConnecter
-		args args
-		want want
-	}{
-		"Connected": {
-			conn: &clusterConnector{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = secret
-					}
-					return nil
-				}},
-				newServiceFn: func(ctx context.Context, opts ...option.ClientOption) (*container.Service, error) {
-					return &container.Service{}, nil
-				},
-			},
-			args: args{
-				mg: cluster(),
-			},
-			want: want{
-				err: nil,
-			},
-		},
-		"FailedToGetProvider": {
-			conn: &clusterConnector{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					return errBoom
-				}},
-			},
-			args: args{
-				mg: cluster(),
-			},
-			want: want{
-				err: errors.Wrap(errBoom, errGetProvider),
-			},
-		},
-		"FailedToGetProviderSecret": {
-			conn: &clusterConnector{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return errBoom
-					}
-					return nil
-				}},
-			},
-			args: args{mg: cluster()},
-			want: want{err: errors.Wrap(errBoom, errGetProviderSecret)},
-		},
-		"ProviderSecretNil": {
-			conn: &nodePoolConnector{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						nilSecretProvider := provider
-						nilSecretProvider.SetCredentialsSecretReference(nil)
-						*obj.(*gcpv1alpha3.Provider) = nilSecretProvider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return errBoom
-					}
-					return nil
-				}},
-			},
-			args: args{mg: nodePool()},
-			want: want{err: errors.New(errProviderSecretNil)},
-		},
-		"FailedToCreateContainerClient": {
-			conn: &clusterConnector{
-				kube: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = secret
-					}
-					return nil
-				}},
-				newServiceFn: func(_ context.Context, _ ...option.ClientOption) (*container.Service, error) { return nil, errBoom },
-			},
-			args: args{mg: cluster()},
-			want: want{err: errors.Wrap(errBoom, errNewClient)},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			_, err := tc.conn.Connect(context.Background(), tc.args.mg)
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.conn.Connect(...): want error != got error:\n%s", diff)
-			}
-		})
-	}
 }
 
 func TestObserve(t *testing.T) {
