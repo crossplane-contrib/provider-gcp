@@ -48,10 +48,8 @@ const (
 	name      = "test-cluster"
 	namespace = "mynamespace"
 
-	projectID          = "myproject-id-1234"
-	providerName       = "gcp-provider"
-	providerSecretName = "gcp-creds"
-	providerSecretKey  = "creds"
+	projectID    = "myproject-id-1234"
+	providerName = "gcp-provider"
 )
 
 var errBoom = errors.New("boom")

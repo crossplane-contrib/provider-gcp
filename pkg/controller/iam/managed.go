@@ -20,11 +20,12 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/api/option"
+
+	"github.com/crossplane/provider-gcp/pkg/clients/serviceaccount"
+
 	"github.com/pkg/errors"
 	iamv1 "google.golang.org/api/iam/v1"
-	"google.golang.org/api/option"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -35,15 +36,11 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 // Error strings.
 const (
-	errGetProvider       = "cannot get Provider"
-	errProviderSecretRef = "cannot find Secret reference on Provider"
-	errGetProviderSecret = "cannot get Provider Secret"
 	errNewClient         = "cannot create new GCP IAM API client"
 	errNotServiceAccount = "managed resource is not a GCP ServiceAccount"
 	errGet               = "cannot get GCP ServiceAccount object via IAM API"
@@ -61,56 +58,33 @@ func SetupServiceAccount(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1alpha1.ServiceAccount{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.ServiceAccountGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newSAS: newServiceAccountsAPI}),
+			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newServiceFn: iamv1.NewService}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
-// newServiceAccountsAPI returns a new IAM Admin Client (responsible for Service Account management).
-// Credentials must be passed as JSON encoded data.
-func newServiceAccountsAPI(ctx context.Context, credentials []byte) (*iamv1.ProjectsServiceAccountsService, error) {
-	service, err := iamv1.NewService(ctx, option.WithCredentialsJSON(credentials))
-	if err != nil {
-		return nil, err
-	}
-	return iamv1.NewProjectsService(service).ServiceAccounts, nil
-}
-
 type connecter struct {
-	client client.Client
-	newSAS func(ctx context.Context, creds []byte) (*iamv1.ProjectsServiceAccountsService, error)
+	client       client.Client
+	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*iamv1.Service, error)
 }
 
 // Connect sets up iam client using credentials from the provider
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1alpha1.ServiceAccount)
-	if !ok {
-		return nil, errors.New(errNotServiceAccount)
+	projectID, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	if err != nil {
+		return nil, err
 	}
-
-	p := &gcpv1alpha3.Provider{}
-	if err := c.client.Get(ctx, types.NamespacedName{Name: cr.Spec.ProviderReference.Name}, p); err != nil {
-		return nil, errors.Wrap(err, errGetProvider)
+	s, err := c.newServiceFn(ctx, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, errNewClient)
 	}
-
-	if p.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretRef)
-	}
-
-	s := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
-	if err := c.client.Get(ctx, n, s); err != nil {
-		return nil, errors.Wrap(err, errGetProviderSecret)
-	}
-
-	saAPI, err := c.newSAS(ctx, s.Data[p.Spec.CredentialsSecretRef.Key])
-	rrn := NewRelativeResourceNamer(p.Spec.ProjectID)
-	return &external{serviceAccounts: saAPI, rrn: rrn}, errors.Wrap(err, errNewClient)
+	rrn := NewRelativeResourceNamer(projectID)
+	return &external{serviceAccounts: s.Projects.ServiceAccounts, rrn: rrn}, errors.Wrap(err, errNewClient)
 }
 
 type external struct {
-	serviceAccounts *iamv1.ProjectsServiceAccountsService
+	serviceAccounts serviceaccount.Client
 	rrn             RelativeResourceNamer
 }
 
