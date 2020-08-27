@@ -42,9 +42,6 @@ import (
 
 // Error strings.
 const (
-	errGetProvider          = "cannot get Provider"
-	errProviderSecretNil    = "cannot find Secret reference on Provider"
-	errGetProviderSecret    = "cannot get Provider Secret"
 	errNewClient            = "cannot create new GKE container client"
 	errManagedUpdateFailed  = "cannot update GKECluster custom resource"
 	errNotCluster           = "managed resource is not a GKECluster"
