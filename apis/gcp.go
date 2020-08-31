@@ -31,12 +31,14 @@ import (
 	servicenetworkingv1beta1 "github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
 	storagev1alpha3 "github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
 	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
+	gcpv1beta1 "github.com/crossplane/provider-gcp/apis/v1beta1"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
 	AddToSchemes = append(AddToSchemes,
 		gcpv1alpha3.SchemeBuilder.AddToScheme,
+		gcpv1beta1.SchemeBuilder.AddToScheme,
 		cachev1beta1.SchemeBuilder.AddToScheme,
 		computev1alpha3.SchemeBuilder.AddToScheme,
 		computev1beta1.SchemeBuilder.AddToScheme,

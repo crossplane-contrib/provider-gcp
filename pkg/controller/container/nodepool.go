@@ -22,7 +22,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
-	"google.golang.org/api/option"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -66,8 +65,7 @@ func SetupNodePool(mgr ctrl.Manager, l logging.Logger) error {
 }
 
 type nodePoolConnector struct {
-	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*container.Service, error)
+	kube client.Client
 }
 
 func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {

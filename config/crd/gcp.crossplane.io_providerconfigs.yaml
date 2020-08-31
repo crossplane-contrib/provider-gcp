@@ -33,8 +33,8 @@ spec:
   subresources: {}
   validation:
     openAPIV3Schema:
-      description: A ProviderConfig configures a GCP 'provider', i.e. a connection
-        to a particular GCP project using a particular GCP service account
+      description: A ProviderConfig configures how GCP controller should connect to
+        GCP API.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -79,9 +79,9 @@ spec:
       required:
       - spec
       type: object
-  version: v1alpha3
+  version: v1beta1
   versions:
-  - name: v1alpha3
+  - name: v1beta1
     served: true
     storage: true
 status:

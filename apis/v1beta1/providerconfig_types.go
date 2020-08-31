@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -31,8 +31,7 @@ type ProviderConfigSpec struct {
 
 // +kubebuilder:object:root=true
 
-// A ProviderConfig configures a GCP 'provider', i.e. a connection to a particular
-// GCP project using a particular GCP service account
+// A ProviderConfig configures how GCP controller should connect to GCP API.
 // +kubebuilder:printcolumn:name="PROJECT-ID",type="string",JSONPath=".spec.projectID"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="SECRET-NAME",type="string",JSONPath=".spec.credentialsSecretRef.name",priority=1
