@@ -11,5 +11,5 @@ spec:
   writeConnectionSecretToRef:
     name: little-topics-big-secret
     namespace: crossplane-system
-  providerRef:
+  providerConfigRef:
     name: gcp-provider

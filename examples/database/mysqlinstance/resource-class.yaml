@@ -18,6 +18,6 @@ specTemplate:
       ipConfiguration:
         privateNetworkRef:
           name: example-mysql
-  providerRef:
+  providerConfigRef:
     name: example
   reclaimPolicy: Delete
