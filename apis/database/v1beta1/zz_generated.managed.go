@@ -43,8 +43,21 @@ func (mg *CloudSQLInstance) GetCondition(ct runtimev1alpha1.ConditionType) runti
 	return mg.Status.GetCondition(ct)
 }
 
-// GetProviderReference of this CloudSQLInstance.
-func (mg *CloudSQLInstance) GetProviderReference() runtimev1alpha1.Reference {
+// GetDeletionPolicy of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+	return mg.Spec.DeletionPolicy
+}
+
+// GetProviderConfigReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetProviderConfigReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderConfigReference
+}
+
+/*
+GetProviderReference of this CloudSQLInstance.
+Deprecated: Use GetProviderConfigReference.
+*/
+func (mg *CloudSQLInstance) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -78,8 +91,21 @@ func (mg *CloudSQLInstance) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
-// SetProviderReference of this CloudSQLInstance.
-func (mg *CloudSQLInstance) SetProviderReference(r runtimev1alpha1.Reference) {
+// SetDeletionPolicy of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+	mg.Spec.DeletionPolicy = r
+}
+
+// SetProviderConfigReference of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderConfigReference = r
+}
+
+/*
+SetProviderReference of this CloudSQLInstance.
+Deprecated: Use SetProviderConfigReference.
+*/
+func (mg *CloudSQLInstance) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

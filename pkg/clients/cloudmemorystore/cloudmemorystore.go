@@ -25,7 +25,6 @@ import (
 	"github.com/googleapis/gax-go"
 	"github.com/mitchellh/copystructure"
 	"github.com/pkg/errors"
-	"google.golang.org/api/option"
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
@@ -55,12 +54,6 @@ type Client interface {
 	UpdateInstance(ctx context.Context, req *redisv1pb.UpdateInstanceRequest, opts ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error)
 	DeleteInstance(ctx context.Context, req *redisv1pb.DeleteInstanceRequest, opts ...gax.CallOption) (*redisv1.DeleteInstanceOperation, error)
 	GetInstance(ctx context.Context, req *redisv1pb.GetInstanceRequest, opts ...gax.CallOption) (*redisv1pb.Instance, error)
-}
-
-// NewClient returns a new CloudMemorystore Client. Credentials must be passed
-// as JSON encoded data.
-func NewClient(ctx context.Context, credentials []byte) (Client, error) {
-	return redisv1.NewCloudRedisClient(ctx, option.WithCredentialsJSON(credentials))
 }
 
 // An InstanceID represents a CloudMemorystore instance in the GCP API.

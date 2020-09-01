@@ -17,17 +17,66 @@ limitations under the License.
 package gcp
 
 import (
+	"context"
 	"net/http"
 	"path"
 	"strings"
 
+	"github.com/crossplane/provider-gcp/apis/v1beta1"
+
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+
+	cmpv1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/v1alpha3"
 )
+
+// GetAuthInfo returns the necessary authentication information that is necessary
+// to use when the controller connects to GCP API in order to reconcile the managed
+// resource.
+func GetAuthInfo(ctx context.Context, kube client.Client, cr resource.Managed) (projectID string, opts option.ClientOption, err error) {
+	pc := &v1beta1.ProviderConfig{}
+	switch {
+	case cr.GetProviderConfigReference() != nil && cr.GetProviderConfigReference().Name != "":
+		nn := types.NamespacedName{Name: cr.GetProviderConfigReference().Name}
+		if err := kube.Get(ctx, nn, pc); err != nil {
+			return "", nil, err
+		}
+	case cr.GetProviderReference() != nil && cr.GetProviderReference().Name != "":
+		p := &v1alpha3.Provider{}
+		nn := types.NamespacedName{Name: cr.GetProviderReference().Name}
+		if err := kube.Get(ctx, nn, p); err != nil {
+			return "", nil, err
+		}
+		p.ObjectMeta.DeepCopyInto(&pc.ObjectMeta)
+		p.Spec.ProviderSpec.CredentialsSecretRef.DeepCopyInto(pc.Spec.ProviderConfigSpec.CredentialsSecretRef)
+		pc.Spec.ProjectID = p.Spec.ProjectID
+	default:
+		return "", nil, errors.New("neither providerConfigRef nor providerRef is given")
+	}
+	if pc.Spec.CredentialsSecretRef == nil {
+		return "", nil, errors.New("credentialsSecretRef is empty")
+	}
+
+	// NOTE(muvaf): When we implement the workload identity, we will only need to
+	// return a different type of option.ClientOption, which is WithTokenSource().
+
+	s := &v1.Secret{}
+	nn := types.NamespacedName{Name: pc.Spec.CredentialsSecretRef.Name, Namespace: pc.Spec.CredentialsSecretRef.Namespace}
+	if err := kube.Get(ctx, nn, s); err != nil {
+		return "", nil, err
+	}
+	return pc.Spec.ProjectID, option.WithCredentialsJSON(s.Data[pc.Spec.CredentialsSecretRef.Key]), nil
+}
 
 // IsErrorNotFoundGRPC gets a value indicating whether the given error represents
 // a "not found" response from the Google API. It works only for the clients
@@ -168,12 +217,12 @@ func EquateComputeURLs() cmp.Option {
 			return true
 		}
 
-		if !strings.HasPrefix(a, v1beta1.ComputeURIPrefix) && !strings.HasPrefix(b, v1beta1.ComputeURIPrefix) {
+		if !strings.HasPrefix(a, cmpv1beta1.ComputeURIPrefix) && !strings.HasPrefix(b, cmpv1beta1.ComputeURIPrefix) {
 			return a == b
 		}
 
-		ta := strings.TrimPrefix(a, v1beta1.ComputeURIPrefix)
-		tb := strings.TrimPrefix(b, v1beta1.ComputeURIPrefix)
+		ta := strings.TrimPrefix(a, cmpv1beta1.ComputeURIPrefix)
+		tb := strings.TrimPrefix(b, cmpv1beta1.ComputeURIPrefix)
 
 		// Partially qualified URLs are considered equal to their corresponding
 		// fully qualified URLs.

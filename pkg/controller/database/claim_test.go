@@ -86,7 +86,7 @@ func TestConfigurePostgreCloudSQLInstance(t *testing.T) {
 								Namespace: namespace,
 								Name:      string(claimUID),
 							},
-							ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+							ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 						},
 						ForProvider: v1beta1.CloudSQLInstanceParameters{
 							DatabaseVersion: getString("POSTGRES_9_6"),
@@ -157,7 +157,7 @@ func TestConfigureMyCloudSQLInstance(t *testing.T) {
 								Namespace: namespace,
 								Name:      string(claimUID),
 							},
-							ProviderReference: runtimev1alpha1.Reference{Name: providerName},
+							ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
 						},
 						ForProvider: v1beta1.CloudSQLInstanceParameters{
 							DatabaseVersion: getString("MYSQL_5_6"),

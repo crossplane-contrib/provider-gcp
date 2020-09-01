@@ -18,6 +18,6 @@ specTemplate:
       ipConfiguration:
         privateNetworkRef:
           name: example-postgresql
-  providerRef:
+  providerConfigRef:
     name: example
   reclaimPolicy: Delete

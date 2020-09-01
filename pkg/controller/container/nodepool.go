@@ -22,9 +22,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
-	"google.golang.org/api/option"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -36,7 +33,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	np "github.com/crossplane/provider-gcp/pkg/clients/nodepool"
 )
@@ -62,42 +58,26 @@ func SetupNodePool(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1alpha1.NodePool{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.NodePoolGroupVersionKind),
-			managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient(), newServiceFn: container.NewService}),
+			managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type nodePoolConnector struct {
-	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*container.Service, error)
+	kube client.Client
 }
 
 func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	i, ok := mg.(*v1alpha1.NodePool)
-	if !ok {
-		return nil, errors.New(errNotNodePool)
+	projectID, opts, err := gcp.GetAuthInfo(ctx, c.kube, mg)
+	if err != nil {
+		return nil, err
 	}
-
-	p := &gcpv1alpha3.Provider{}
-	if err := c.kube.Get(ctx, types.NamespacedName{Name: i.Spec.ProviderReference.Name}, p); err != nil {
-		return nil, errors.Wrap(err, errGetProvider)
+	s, err := container.NewService(ctx, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, errNewClient)
 	}
-
-	if p.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretNil)
-	}
-
-	s := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.ProviderSpec.CredentialsSecretRef.Namespace, Name: p.Spec.ProviderSpec.CredentialsSecretRef.Name}
-	if err := c.kube.Get(ctx, n, s); err != nil {
-		return nil, errors.Wrap(err, errGetProviderSecret)
-	}
-
-	client, err := c.newServiceFn(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.ProviderSpec.CredentialsSecretRef.Key]),
-		option.WithScopes(container.CloudPlatformScope))
-	return &nodePoolExternal{container: client, projectID: p.Spec.ProjectID, kube: c.kube}, errors.Wrap(err, errNewClient)
+	return &nodePoolExternal{container: s, projectID: projectID, kube: c.kube}, errors.Wrap(err, errNewClient)
 }
 
 type nodePoolExternal struct {

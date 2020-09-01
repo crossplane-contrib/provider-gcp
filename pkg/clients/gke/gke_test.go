@@ -17,7 +17,6 @@ limitations under the License.
 package gke
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"testing"
@@ -25,43 +24,10 @@ import (
 	"google.golang.org/api/container/v1"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"golang.org/x/oauth2/google"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 )
-
-func TestNewClusterClient(t *testing.T) {
-	type want struct {
-		err error
-		res *ClusterClient
-	}
-	tests := []struct {
-		name string
-		args *google.Credentials
-		want want
-	}{
-		{name: "Test", args: &google.Credentials{}, want: want{res: &ClusterClient{}}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewClusterClient(context.Background(), tt.args)
-			if diff := cmp.Diff(err, tt.want.err, test.EquateErrors()); diff != "" {
-				t.Errorf("NewClusterClient() error = %v, want.err %v\n%s", err, tt.want.err, diff)
-				return
-			}
-
-			// TODO(negz): Do we really want to ignore unexported fields? I did
-			// so to match the previous deep.Equal semantics here, but
-			// ClusterClient _only_ has unexported fields so we're only testing
-			// that NewClusterClient returns the expected type here.
-			if diff := cmp.Diff(got, tt.want.res, cmpopts.IgnoreUnexported(ClusterClient{})); diff != "" {
-				t.Errorf("NewClusterClient() = %v, want %v\n%s", got, tt.want.res, diff)
-			}
-		})
-	}
-}
 
 func TestGenerateClientConfig(t *testing.T) {
 	name := "gke-cluster"

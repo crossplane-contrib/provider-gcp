@@ -152,7 +152,7 @@ func ConfigureGKECluster(_ context.Context, cm resource.Claim, cs resource.Class
 		Namespace: rs.SpecTemplate.WriteConnectionSecretsToNamespace,
 		Name:      string(cm.GetUID()),
 	}
-	spec.ProviderReference = rs.SpecTemplate.ProviderReference
+	spec.ProviderReference = rs.SpecTemplate.ProviderReference.DeepCopy()
 	spec.ReclaimPolicy = rs.SpecTemplate.ReclaimPolicy
 
 	i.Spec = *spec

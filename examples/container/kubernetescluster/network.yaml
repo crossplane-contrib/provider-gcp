@@ -9,7 +9,7 @@ spec:
     routingConfig:
       routingMode: REGIONAL
   reclaimPolicy: Delete
-  providerRef:
+  providerConfigRef:
     name: example
 ---
 apiVersion: compute.gcp.crossplane.io/v1beta1
@@ -29,5 +29,5 @@ spec:
     networkRef:
       name: example-gke
   reclaimPolicy: Delete
-  providerRef:
+  providerConfigRef:
     name: example

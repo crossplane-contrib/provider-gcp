@@ -17,6 +17,6 @@ specTemplate:
       clusterSecondaryRangeName: pods
       servicesSecondaryRangeName: services
   writeConnectionSecretsToNamespace: crossplane-system
-  providerRef:
+  providerConfigRef:
     name: example
   reclaimPolicy: Delete

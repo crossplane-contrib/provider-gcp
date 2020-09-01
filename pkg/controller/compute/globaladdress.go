@@ -21,10 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	compute "google.golang.org/api/compute/v1"
-	"google.golang.org/api/option"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"google.golang.org/api/compute/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -36,7 +33,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/globaladdress"
 )
@@ -44,7 +40,6 @@ import (
 // Error strings.
 const (
 	errNotGlobalAddress     = "managed resource is not a GlobalAddress"
-	errProviderSecretNil    = "cannot find Secret reference on Provider"
 	errGetAddress           = "cannot get external Address resource"
 	errCreateAddress        = "cannot create external Address resource"
 	errDeleteAddress        = "cannot delete external Address resource"
@@ -61,7 +56,7 @@ func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1beta1.GlobalAddress{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.GlobalAddressGroupVersionKind),
-			managed.WithExternalConnecter(&gaConnector{kube: mgr.GetClient(), newServiceFn: compute.NewService}),
+			managed.WithExternalConnecter(&gaConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithConnectionPublishers(),
 			managed.WithLogger(l.WithValues("controller", name)),
@@ -69,34 +64,19 @@ func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger) error {
 }
 
 type gaConnector struct {
-	kube         client.Client
-	newServiceFn func(ctx context.Context, opts ...option.ClientOption) (*compute.Service, error)
+	kube client.Client
 }
 
 func (c *gaConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1beta1.GlobalAddress)
-	if !ok {
-		return nil, errors.New(errNotGlobalAddress)
+	projectID, opts, err := gcp.GetAuthInfo(ctx, c.kube, mg)
+	if err != nil {
+		return nil, err
 	}
-
-	p := &gcpv1alpha3.Provider{}
-	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.ProviderReference.Name}, p); err != nil {
-		return nil, errors.Wrap(err, errProviderNotRetrieved)
+	s, err := compute.NewService(ctx, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, errNewClient)
 	}
-
-	if p.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretNil)
-	}
-
-	s := &v1.Secret{}
-	if err := c.kube.Get(ctx, types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}, s); err != nil {
-		return nil, errors.Wrap(err, errProviderSecretNotRetrieved)
-	}
-
-	svc, err := c.newServiceFn(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
-		option.WithScopes(compute.ComputeScope))
-	return &gaExternal{kube: c.kube, Service: svc, projectID: p.Spec.ProjectID}, errors.Wrap(err, errNewClient)
+	return &gaExternal{kube: c.kube, Service: s, projectID: projectID}, errors.Wrap(err, errNewClient)
 }
 
 type gaExternal struct {

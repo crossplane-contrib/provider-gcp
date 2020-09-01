@@ -25,33 +25,23 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"google.golang.org/api/googleapi"
 	iamv1 "google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 )
 
 const (
 	namespace = "some-namespace"
 	project   = "someProject"
-
-	providerName       = "some-provider"
-	providerSecretName = "some-provider-secret"
-	providerSecretKey  = "credentials.json"
-	providerSecretData = "definitelyjson"
 
 	connectionSecretName = "some-connection-secret"
 	metadataName         = "beautiful-serviceAccount"
@@ -61,7 +51,6 @@ const (
 
 var (
 	err500      = &googleapi.Error{Code: 500, Body: "{}\n"}
-	errorBoom   = errors.New("boom")
 	displayName = "Beautiful, maybe perfect"
 	description = "A perfect description"
 	fqName      = fmt.Sprintf("projects/%s/serviceAccounts/%s", project, accountEmail)
@@ -119,7 +108,6 @@ func serviceAccount(im ...valueModifier) *v1alpha1.ServiceAccount {
 		},
 		Spec: v1alpha1.ServiceAccountSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
 				WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
 					Namespace: namespace,
 					Name:      connectionSecretName,
@@ -140,143 +128,6 @@ func serviceAccount(im ...valueModifier) *v1alpha1.ServiceAccount {
 
 var _ managed.ExternalClient = &external{}
 var _ managed.ExternalConnecter = &connecter{}
-
-func TestConnect(t *testing.T) {
-	provider := gcpv1alpha3.Provider{
-		ObjectMeta: metav1.ObjectMeta{Name: providerName},
-		Spec: gcpv1alpha3.ProviderSpec{
-			ProjectID: project,
-			ProviderSpec: runtimev1alpha1.ProviderSpec{
-				CredentialsSecretRef: &runtimev1alpha1.SecretKeySelector{
-					SecretReference: runtimev1alpha1.SecretReference{
-						Namespace: namespace,
-						Name:      providerSecretName,
-					},
-					Key: providerSecretKey,
-				},
-			},
-		},
-	}
-
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
-		Data:       map[string][]byte{providerSecretKey: []byte(providerSecretData)},
-	}
-
-	type strange struct {
-		resource.Managed
-	}
-
-	type args struct {
-		ctx context.Context
-		mg  resource.Managed
-	}
-	type want struct {
-		err error
-	}
-
-	cases := map[string]struct {
-		conn managed.ExternalConnecter
-		args args
-		want want
-	}{
-		"Connected": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = secret
-					}
-					return nil
-				}},
-				newSAS: func(_ context.Context, _ []byte) (*iamv1.ProjectsServiceAccountsService, error) { return nil, nil },
-			},
-			args: args{
-				ctx: context.Background(),
-				mg:  serviceAccount(),
-			},
-			want: want{
-				err: nil,
-			},
-		},
-		"NotServiceAccount": {
-			conn: &connecter{},
-			args: args{ctx: context.Background(), mg: &strange{}},
-			want: want{err: errors.New(errNotServiceAccount)},
-		},
-		"FailedToGetProvider": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					return errorBoom
-				}},
-			},
-			args: args{ctx: context.Background(), mg: serviceAccount()},
-			want: want{err: errors.Wrap(errorBoom, errGetProvider)},
-		},
-		"FailedToGetProviderSecret": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return errorBoom
-					}
-					return nil
-				}},
-			},
-			args: args{ctx: context.Background(), mg: serviceAccount()},
-			want: want{err: errors.Wrap(errorBoom, errGetProviderSecret)},
-		},
-		"ProviderSecretNil": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						nilSecretProvider := provider
-						nilSecretProvider.SetCredentialsSecretReference(nil)
-						*obj.(*gcpv1alpha3.Provider) = nilSecretProvider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return errorBoom
-					}
-					return nil
-				}},
-			},
-			args: args{ctx: context.Background(), mg: serviceAccount()},
-			want: want{err: errors.New(errProviderSecretRef)},
-		},
-		"FailedToCreateClient": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = secret
-					}
-					return nil
-				}},
-				newSAS: func(_ context.Context, _ []byte) (*iamv1.ProjectsServiceAccountsService, error) {
-					return nil, errorBoom
-				},
-			},
-			args: args{ctx: context.Background(), mg: serviceAccount()},
-			want: want{err: errors.Wrap(errorBoom, errNewClient)},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			_, err := tc.conn.Connect(tc.args.ctx, tc.args.mg)
-
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.conn.Connect(...): want error != got error:\n%s", diff)
-			}
-		})
-	}
-}
 
 func TestRelativeResourceNamer(t *testing.T) {
 	type args struct {

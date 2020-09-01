@@ -28,31 +28,20 @@ import (
 
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 
-	pubsub "cloud.google.com/go/pubsub/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
 	"github.com/pkg/errors"
-	"google.golang.org/api/option"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 )
 
 const (
-	providerName       = "fooprovider"
-	projectID          = "fooproject"
-	namespace          = "foons"
-	providerSecretName = "foosecret"
-	providerSecretKey  = "secretkeybar"
+	projectID = "fooproject"
 )
 
 var (
@@ -82,149 +71,12 @@ func (m *MockPublisherClient) DeleteTopic(ctx context.Context, req *pubsubpb.Del
 type TopicOption func(*v1alpha1.Topic)
 
 func newTopic(opts ...TopicOption) *v1alpha1.Topic {
-	t := &v1alpha1.Topic{
-		Spec: v1alpha1.TopicSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{ProviderReference: runtimev1alpha1.Reference{
-				Name: providerName,
-			}},
-		},
-	}
+	t := &v1alpha1.Topic{}
 
 	for _, f := range opts {
 		f(t)
 	}
 	return t
-}
-
-func TestConnect(t *testing.T) {
-	provider := gcpv1alpha3.Provider{
-		ObjectMeta: metav1.ObjectMeta{Name: providerName},
-		Spec: gcpv1alpha3.ProviderSpec{
-			ProjectID: projectID,
-			ProviderSpec: runtimev1alpha1.ProviderSpec{
-				CredentialsSecretRef: &runtimev1alpha1.SecretKeySelector{
-					SecretReference: runtimev1alpha1.SecretReference{
-						Namespace: namespace,
-						Name:      providerSecretName,
-					},
-					Key: providerSecretKey,
-				},
-			},
-		},
-	}
-
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
-		Data:       map[string][]byte{providerSecretKey: []byte("verysecret")},
-	}
-
-	type args struct {
-		mg resource.Managed
-	}
-	type want struct {
-		err error
-	}
-
-	cases := map[string]struct {
-		conn managed.ExternalConnecter
-		args args
-		want want
-	}{
-		"Connected": {
-			conn: &connector{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = secret
-					}
-					return nil
-				}},
-				newPubSubClient: func(ctx context.Context, opts ...option.ClientOption) (*pubsub.PublisherClient, error) {
-					return &pubsub.PublisherClient{}, nil
-				},
-			},
-			args: args{
-				mg: newTopic(),
-			},
-			want: want{
-				err: nil,
-			},
-		},
-		"FailedToGetProvider": {
-			conn: &connector{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					return errBoom
-				}},
-			},
-			args: args{
-				mg: newTopic(),
-			},
-			want: want{
-				err: errors.Wrap(errBoom, errGetProvider),
-			},
-		},
-		"FailedToGetProviderSecret": {
-			conn: &connector{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return errBoom
-					}
-					return nil
-				}},
-			},
-			args: args{mg: newTopic()},
-			want: want{err: errors.Wrap(errBoom, errGetProviderSecret)},
-		},
-		"ProviderSecretNil": {
-			conn: &connector{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						nilSecretProvider := provider
-						nilSecretProvider.SetCredentialsSecretReference(nil)
-						*obj.(*gcpv1alpha3.Provider) = nilSecretProvider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return errBoom
-					}
-					return nil
-				}},
-			},
-			args: args{mg: newTopic()},
-			want: want{err: errors.New(errProviderSecretRef)},
-		},
-		"FailedToCreateComputeClient": {
-			conn: &connector{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = secret
-					}
-					return nil
-				}},
-				newPubSubClient: func(ctx context.Context, opts ...option.ClientOption) (*pubsub.PublisherClient, error) {
-					return nil, errBoom
-				},
-			},
-			args: args{mg: newTopic()},
-			want: want{err: errors.Wrap(errBoom, errNewClient)},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			_, err := tc.conn.Connect(context.Background(), tc.args.mg)
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.conn.Connect(...): want error != got error:\n%s", diff)
-			}
-		})
-	}
 }
 
 func TestObserve(t *testing.T) {

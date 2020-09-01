@@ -43,8 +43,21 @@ func (mg *Connection) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1al
 	return mg.Status.GetCondition(ct)
 }
 
-// GetProviderReference of this Connection.
-func (mg *Connection) GetProviderReference() runtimev1alpha1.Reference {
+// GetDeletionPolicy of this Connection.
+func (mg *Connection) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+	return mg.Spec.DeletionPolicy
+}
+
+// GetProviderConfigReference of this Connection.
+func (mg *Connection) GetProviderConfigReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderConfigReference
+}
+
+/*
+GetProviderReference of this Connection.
+Deprecated: Use GetProviderConfigReference.
+*/
+func (mg *Connection) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
@@ -78,8 +91,21 @@ func (mg *Connection) SetConditions(c ...runtimev1alpha1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
-// SetProviderReference of this Connection.
-func (mg *Connection) SetProviderReference(r runtimev1alpha1.Reference) {
+// SetDeletionPolicy of this Connection.
+func (mg *Connection) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+	mg.Spec.DeletionPolicy = r
+}
+
+// SetProviderConfigReference of this Connection.
+func (mg *Connection) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderConfigReference = r
+}
+
+/*
+SetProviderReference of this Connection.
+Deprecated: Use SetProviderConfigReference.
+*/
+func (mg *Connection) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 

@@ -23,13 +23,9 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,7 +40,6 @@ import (
 
 	"github.com/crossplane/provider-gcp/apis"
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 )
 
 func init() {
@@ -123,11 +118,6 @@ func newBucket(name string) *bucket {
 	return b
 }
 
-func (b *bucket) withUID(uid string) *bucket {
-	b.ObjectMeta.UID = types.UID(uid)
-	return b
-}
-
 func (b *bucket) withServiceAccountSecretRef(namespace, name string) *bucket {
 	b.Spec.ServiceAccountSecretRef = &runtimev1alpha1.SecretReference{Namespace: namespace, Name: name}
 	return b
@@ -148,64 +138,12 @@ func (b *bucket) withFinalizer(f string) *bucket {
 	return b
 }
 
-func (b *bucket) withProvider(name string) *bucket {
-	b.Spec.ProviderReference = runtimev1alpha1.Reference{Name: name}
-	return b
-}
-
 func (b *bucket) withConditions(c ...runtimev1alpha1.Condition) *bucket {
 	b.Status.SetConditions(c...)
 	return b
 }
 
-type provider struct {
-	*gcpv1alpha3.Provider
-}
-
-func newProvider(name string) *provider {
-	return &provider{Provider: &gcpv1alpha3.Provider{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-	}}
-}
-
-func (p *provider) withSecret(namespace, name, key string) *provider {
-	p.Spec.CredentialsSecretRef = &runtimev1alpha1.SecretKeySelector{
-		SecretReference: runtimev1alpha1.SecretReference{
-			Namespace: namespace,
-			Name:      name,
-		},
-		Key: key,
-	}
-	return p
-}
-
-type secret struct {
-	*corev1.Secret
-}
-
-func newSecret(ns, name string) *secret {
-	return &secret{
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: ns,
-				Name:      name,
-			},
-		},
-	}
-}
-
-func (s *secret) withKeyData(key, data string) *secret {
-	if s.Data == nil {
-		s.Data = make(map[string][]byte)
-	}
-	s.Data[key] = []byte(data)
-	return s
-}
-
 const (
-	testNamespace  = "default"
 	testBucketName = "testBucket"
 )
 
@@ -307,97 +245,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 				if diff := cmp.Diff(tt.wantObj, b, test.EquateConditions()); diff != "" {
 					t.Errorf("Reconciler.Reconcile() -want bucket, +got bucket:\n%s", diff)
 				}
-			}
-		})
-	}
-}
-
-func Test_bucketFactory_newHandler(t *testing.T) {
-	ctx := context.TODO()
-	ns := testNamespace
-	bucketName := testBucketName
-	providerName := "test-provider"
-	secretName := "test-secret"
-	secretKey := "creds"
-	secretData := `{
-	"type": "service_account",
-	"project_id": "%s",
-	"private_key_id": "%s",
-	"private_key": "-----BEGIN PRIVATE KEY-----\n%s\n-----END PRIVATE KEY-----\n",
-	"client_email": "%s",
-	"client_id": "%s",
-	"auth_uri": "https://accounts.google.com/bucket/oauth2/auth",
-	"token_uri": "https://oauth2.googleapis.com/token",
-	"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-	"client_x509_cert_url": "%s"}`
-	type want struct {
-		err error
-		sd  syncdeleter
-	}
-	tests := []struct {
-		name   string
-		Client client.Client
-		bucket *v1alpha3.Bucket
-		want   want
-	}{
-		{
-			name:   "ErrProviderIsNotFound",
-			Client: fake.NewFakeClient(),
-			bucket: newBucket(bucketName).withProvider(providerName).Bucket,
-			want: want{
-				err: kerrors.NewNotFound(schema.GroupResource{
-					Group:    gcpv1alpha3.Group,
-					Resource: "providers"}, "test-provider"),
-			},
-		},
-		{
-			name:   "ProviderSecretIsNotFound",
-			Client: fake.NewFakeClient(newProvider(providerName).withSecret(ns, secretName, secretKey).Provider),
-			bucket: newBucket(bucketName).withProvider(providerName).Bucket,
-			want: want{
-				err: errors.WithStack(
-					errors.Errorf("cannot get provider's secret %s/%s: secrets \"%s\" not found", ns, secretName, secretName)),
-			},
-		},
-		{
-			name: "InvalidCredentials",
-			Client: fake.NewFakeClient(newProvider(providerName).
-				withSecret(ns, secretName, secretKey).Provider,
-				newSecret(ns, secretName).Secret),
-			bucket: newBucket(bucketName).withProvider(providerName).Bucket,
-			want: want{
-				err: errors.WithStack(
-					errors.Errorf("cannot retrieve creds from json: unexpected end of JSON input")),
-			},
-		},
-		{
-			name: "Successful",
-			Client: fake.NewFakeClient(newProvider(providerName).
-				withSecret(ns, secretName, secretKey).Provider,
-				newSecret(ns, secretName).withKeyData(secretKey, secretData).Secret),
-			bucket: newBucket(bucketName).withUID("test-uid").withProvider(providerName).Bucket,
-			want: want{
-				// BUG(negz): This test is broken. It appears to intend to compare
-				// unexported fields, but does not. This behaviour was maintained
-				// when porting the test from https://github.com/go-test/deep to cmp.
-				sd: newBucketSyncDeleter(
-					newBucketClients(
-						newBucket(bucketName).withUID("test-uid").withProvider(providerName).Bucket,
-						nil, nil), ""),
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &bucketFactory{
-				Client: tt.Client,
-			}
-			got, err := m.newSyncDeleter(ctx, tt.bucket)
-			if diff := cmp.Diff(tt.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("bucketFactory.newSyncDeleter() -want error, +got error:\n%s", diff)
-			}
-			if diff := cmp.Diff(tt.want.sd, got, cmpopts.IgnoreUnexported(bucketSyncDeleter{})); diff != "" {
-				t.Errorf("bucketFactory.newSyncDeleter() -want, +got:\n%s", diff)
 			}
 		})
 	}

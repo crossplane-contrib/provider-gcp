@@ -28,10 +28,7 @@ import (
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -40,7 +37,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	"github.com/crossplane/provider-gcp/pkg/clients/cloudmemorystore"
 	"github.com/crossplane/provider-gcp/pkg/clients/cloudmemorystore/fake"
 )
@@ -54,11 +50,6 @@ const (
 	memorySizeGB  = 1
 	host          = "172.16.0.1"
 	port          = 6379
-
-	providerName       = "cool-gcp"
-	providerSecretName = "cool-gcp-secret"
-	providerSecretKey  = "credentials.json"
-	providerSecretData = "definitelyjson"
 
 	connectionSecretName = "cool-connection-secret"
 )
@@ -115,7 +106,6 @@ func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
 		},
 		Spec: v1beta1.CloudMemorystoreInstanceSpec{
 			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: runtimev1alpha1.Reference{Name: providerName},
 				WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
 					Namespace: namespace,
 					Name:      connectionSecretName,
@@ -138,141 +128,6 @@ func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
 
 var _ managed.ExternalClient = &external{}
 var _ managed.ExternalConnecter = &connecter{}
-
-func TestConnect(t *testing.T) {
-	provider := gcpv1alpha3.Provider{
-		ObjectMeta: metav1.ObjectMeta{Name: providerName},
-		Spec: gcpv1alpha3.ProviderSpec{
-			ProjectID: project,
-			ProviderSpec: runtimev1alpha1.ProviderSpec{
-				CredentialsSecretRef: &runtimev1alpha1.SecretKeySelector{
-					SecretReference: runtimev1alpha1.SecretReference{
-						Namespace: namespace,
-						Name:      providerSecretName,
-					},
-					Key: providerSecretKey,
-				},
-			},
-		},
-	}
-
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Namespace: namespace, Name: providerSecretName},
-		Data:       map[string][]byte{providerSecretKey: []byte(providerSecretData)},
-	}
-
-	type strange struct {
-		resource.Managed
-	}
-
-	type args struct {
-		ctx context.Context
-		mg  resource.Managed
-	}
-	type want struct {
-		err error
-	}
-
-	cases := map[string]struct {
-		conn managed.ExternalConnecter
-		args args
-		want want
-	}{
-		"Connected": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = secret
-					}
-					return nil
-				}},
-				newCMS: func(_ context.Context, _ []byte) (cloudmemorystore.Client, error) { return nil, nil },
-			},
-			args: args{
-				ctx: context.Background(),
-				mg:  instance(),
-			},
-			want: want{
-				err: nil,
-			},
-		},
-		"NotCloudMemorystoreInstance": {
-			conn: &connecter{},
-			args: args{ctx: context.Background(), mg: &strange{}},
-			want: want{err: errors.New(errNotInstance)},
-		},
-		"FailedToGetProvider": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					return errorBoom
-				}},
-			},
-			args: args{ctx: context.Background(), mg: instance()},
-			want: want{err: errors.Wrap(errorBoom, errGetProvider)},
-		},
-		"FailedToGetProviderSecret": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return errorBoom
-					}
-					return nil
-				}},
-			},
-			args: args{ctx: context.Background(), mg: instance()},
-			want: want{err: errors.Wrap(errorBoom, errGetProviderSecret)},
-		},
-		"ProviderSecretNil": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						nilSecretProvider := provider
-						nilSecretProvider.SetCredentialsSecretReference(nil)
-						*obj.(*gcpv1alpha3.Provider) = nilSecretProvider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						return errorBoom
-					}
-					return nil
-				}},
-			},
-			args: args{ctx: context.Background(), mg: instance()},
-			want: want{err: errors.New(errProviderSecretNil)},
-		},
-		"FailedToCreateCloudMemorystoreClient": {
-			conn: &connecter{
-				client: &test.MockClient{MockGet: func(_ context.Context, key client.ObjectKey, obj runtime.Object) error {
-					switch key {
-					case client.ObjectKey{Name: providerName}:
-						*obj.(*gcpv1alpha3.Provider) = provider
-					case client.ObjectKey{Namespace: namespace, Name: providerSecretName}:
-						*obj.(*corev1.Secret) = secret
-					}
-					return nil
-				}},
-				newCMS: func(_ context.Context, _ []byte) (cloudmemorystore.Client, error) { return nil, errorBoom },
-			},
-			args: args{ctx: context.Background(), mg: instance()},
-			want: want{err: errors.Wrap(errorBoom, errNewClient)},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			_, err := tc.conn.Connect(tc.args.ctx, tc.args.mg)
-
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.conn.Connect(...): want error != got error:\n%s", diff)
-			}
-		})
-	}
-}
 
 func TestObserve(t *testing.T) {
 	type args struct {

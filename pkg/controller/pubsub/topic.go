@@ -23,10 +23,7 @@ import (
 	pubsub "cloud.google.com/go/pubsub/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"google.golang.org/api/option"
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -38,16 +35,11 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/topic"
 )
 
 const (
-	errGetProvider       = "cannot get Provider"
-	errProviderSecretRef = "cannot find Secret reference on Provider"
-	errGetProviderSecret = "cannot get Provider Secret"
-
 	errNotTopic        = "managed resource is not of type Topic"
 	errNewClient       = "cannot create client"
 	errGetTopic        = "cannot get Topic"
@@ -66,45 +58,27 @@ func SetupTopic(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1alpha1.Topic{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.TopicGroupVersionKind),
-			managed.WithExternalConnecter(&connector{client: mgr.GetClient(), newPubSubClient: pubsub.NewPublisherClient}),
+			managed.WithExternalConnecter(&connector{client: mgr.GetClient()}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type connector struct {
-	client          client.Client
-	newPubSubClient func(ctx context.Context, opts ...option.ClientOption) (*pubsub.PublisherClient, error)
+	client client.Client
 }
 
 // Connect returns an ExternalClient with necessary information to talk to GCP API.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1alpha1.Topic)
-	if !ok {
-		return nil, errors.New(errNotTopic)
+	projectID, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	if err != nil {
+		return nil, err
 	}
-	p := &gcpv1alpha3.Provider{}
-	if err := c.client.Get(ctx, types.NamespacedName{Name: cr.Spec.ProviderReference.Name}, p); err != nil {
-		return nil, errors.Wrap(err, errGetProvider)
-	}
-
-	if p.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretRef)
-	}
-
-	s := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
-	if err := c.client.Get(ctx, n, s); err != nil {
-		return nil, errors.Wrap(err, errGetProviderSecret)
-	}
-
-	ps, err := c.newPubSubClient(ctx,
-		option.WithCredentialsJSON(s.Data[p.Spec.CredentialsSecretRef.Key]),
-		option.WithScopes(pubsub.DefaultAuthScopes()...))
+	s, err := pubsub.NewPublisherClient(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	return &external{projectID: p.Spec.ProjectID, client: c.client, ps: ps}, nil
+	return &external{projectID: projectID, client: c.client, ps: s}, nil
 }
 
 type external struct {

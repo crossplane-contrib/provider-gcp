@@ -20,10 +20,9 @@ import (
 	"context"
 	"strconv"
 
+	redisv1 "cloud.google.com/go/redis/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -34,23 +33,20 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/cloudmemorystore"
 )
 
 // Error strings.
 const (
-	errGetProvider       = "cannot get Provider"
-	errProviderSecretNil = "cannot find Secret reference on Provider"
-	errGetProviderSecret = "cannot get Provider Secret"
-	errNewClient         = "cannot create new CloudMemorystore client"
-	errNotInstance       = "managed resource is not an CloudMemorystore instance"
-	errUpdateCR          = "cannot update CloudMemorystore custom resource"
-	errGetInstance       = "cannot get CloudMemorystore instance"
-	errCreateInstance    = "cannot create CloudMemorystore instance"
-	errUpdateInstance    = "cannot update CloudMemorystore instance"
-	errDeleteInstance    = "cannot delete CloudMemorystore instance"
-	errCheckUpToDate     = "cannot determine if CloudMemorystore instance is up to date"
+	errNewClient      = "cannot create new CloudMemorystore client"
+	errNotInstance    = "managed resource is not an CloudMemorystore instance"
+	errUpdateCR       = "cannot update CloudMemorystore custom resource"
+	errGetInstance    = "cannot get CloudMemorystore instance"
+	errCreateInstance = "cannot create CloudMemorystore instance"
+	errUpdateInstance = "cannot update CloudMemorystore instance"
+	errDeleteInstance = "cannot delete CloudMemorystore instance"
+	errCheckUpToDate  = "cannot determine if CloudMemorystore instance is up to date"
 )
 
 // SetupCloudMemorystoreInstance adds a controller that reconciles
@@ -63,39 +59,25 @@ func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1beta1.CloudMemorystoreInstance{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient(), newCMS: cloudmemorystore.NewClient}),
+			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 type connecter struct {
 	client client.Client
-	newCMS func(ctx context.Context, creds []byte) (cloudmemorystore.Client, error)
 }
 
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	i, ok := mg.(*v1beta1.CloudMemorystoreInstance)
-	if !ok {
-		return nil, errors.New(errNotInstance)
+	projectID, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	if err != nil {
+		return nil, err
 	}
-
-	p := &gcpv1alpha3.Provider{}
-	if err := c.client.Get(ctx, types.NamespacedName{Name: i.Spec.ProviderReference.Name}, p); err != nil {
-		return nil, errors.Wrap(err, errGetProvider)
+	s, err := redisv1.NewCloudRedisClient(ctx, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, errNewClient)
 	}
-
-	if p.GetCredentialsSecretReference() == nil {
-		return nil, errors.New(errProviderSecretNil)
-	}
-
-	s := &corev1.Secret{}
-	n := types.NamespacedName{Namespace: p.Spec.CredentialsSecretRef.Namespace, Name: p.Spec.CredentialsSecretRef.Name}
-	if err := c.client.Get(ctx, n, s); err != nil {
-		return nil, errors.Wrap(err, errGetProviderSecret)
-	}
-
-	cms, err := c.newCMS(ctx, s.Data[p.Spec.CredentialsSecretRef.Key])
-	return &external{cms: cms, projectID: p.Spec.ProjectID, kube: c.client}, errors.Wrap(err, errNewClient)
+	return &external{cms: s, projectID: projectID, kube: c.client}, errors.Wrap(err, errNewClient)
 }
 
 type external struct {
