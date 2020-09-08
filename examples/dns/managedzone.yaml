@@ -1,0 +1,17 @@
+---
+apiVersion: managedzone.gcp.crossplane.io/v1alpha1
+kind: ManagedZone
+metadata:
+  name: my-little-zone
+spec:
+  forProvider:
+    name: test--fang--23645c95
+    network: test
+    description: fang-test-123
+    dnsName: us-west1.dev.gcp.tidbcloud.com.
+  reclaimPolicy: Delete
+  writeConnectionSecretToRef:
+    name: little-managedzone-big-secret
+    namespace: crossplane-system
+  providerRef:
+    name: gcp-provider
