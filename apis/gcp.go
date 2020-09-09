@@ -27,6 +27,8 @@ import (
 	containerv1beta1 "github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	databasev1beta1 "github.com/crossplane/provider-gcp/apis/database/v1beta1"
 	iam "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
+
+	dns "github.com/crossplane/provider-gcp/apis/dns/v1alpha1"
 	pubsub "github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	servicenetworkingv1beta1 "github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
 	storagev1alpha3 "github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
@@ -45,6 +47,7 @@ func init() {
 		databasev1beta1.SchemeBuilder.AddToScheme,
 		iam.SchemeBuilder.AddToScheme,
 		pubsub.SchemeBuilder.AddToScheme,
+		dns.SchemeBuilder.AddToScheme,
 		servicenetworkingv1beta1.SchemeBuilder.AddToScheme,
 		storagev1alpha3.SchemeBuilder.AddToScheme,
 	)
