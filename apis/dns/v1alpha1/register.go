@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "managedzone.gcp.crossplane.io"
+	Group   = "dns.gcp.crossplane.io"
 	Version = "v1alpha1"
 )
 
@@ -45,6 +45,15 @@ var (
 	ManagedZoneGroupVersionKind = SchemeGroupVersion.WithKind(ManagedZoneKind)
 )
 
+// ResourceRecordSet type metadata.
+var (
+	ResourceRecordSetKind             = reflect.TypeOf(ResourceRecordSet{}).Name()
+	ResourceRecordSetGroupKind        = schema.GroupKind{Group: Group, Kind: ResourceRecordSetKind}.String()
+	ResourceRecordSetKindAPIVersion   = ResourceRecordSetKind + "." + SchemeGroupVersion.String()
+	ResourceRecordSetGroupVersionKind = SchemeGroupVersion.WithKind(ResourceRecordSetKind)
+)
+
 func init() {
 	SchemeBuilder.Register(&ManagedZone{}, &ManagedZoneList{})
+	SchemeBuilder.Register(&ResourceRecordSet{}, &ResourceRecordSetList{})
 }

@@ -64,6 +64,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		database.SetupCloudSQLInstance,
 		iam.SetupServiceAccount,
 		dns.SetupManagedZone,
+		dns.SetupResourceRecordSet,
 		pubsub.SetupTopic,
 		servicenetworking.SetupConnection,
 		storage.SetupBucketClaimScheduling,

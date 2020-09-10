@@ -24,12 +24,6 @@ import (
 
 // ManagedZoneParameters defines parameters for a ManagedZone.
 type ManagedZoneParameters struct {
-	// Name: User assigned name for this resource. Must be unique within the
-	// project. The name must be 1-63 characters long, must begin with a
-	// letter, end with a letter or digit, and only contain lowercase
-	// letters, digits or dashes.
-	Name string `json:"name,omitempty"`
-
 	// Labels are used as additional metadata on ManagedZone.
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
@@ -63,6 +57,9 @@ type ManagedZoneParameters struct {
 // be populated from GCP responses; any changes made to the k8s resource outside
 // of the crossplane gcp controller will be ignored and overwritten.
 type ManagedZoneObservation struct {
+	// ID that gcp dns assigned to the managed zone when you created
+	// it.
+	ID uint64 `json:"id,omitempty"`
 }
 
 // ManagedZoneSpec defines the desired state of a
@@ -82,6 +79,10 @@ type ManagedZoneStatus struct {
 // +kubebuilder:object:root=true
 
 // ManagedZone is a managed resource that represents a Google IAM Service Account.
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".status.atProvider.id"
+// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
 type ManagedZone struct {
