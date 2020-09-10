@@ -1,0 +1,16 @@
+id: managedzone
+title: Cloud Managed Zone
+titlePlural: Cloud Managed Zone
+category: Cloud DNS
+overviewShort: ManagedZone is a resource that represents a DNS zone hosted by the Cloud DNS service.
+overview: |
+ ManagedZone is a subtree of the DNS namespace under one administrative responsibility.
+ ManagedZone is a resource that represents a DNS zone hosted by the Cloud DNS service.
+readme: |
+ ## Resource: ManagedZone
+
+ Represents a DNS zone hosted resource.
+
+ ## Learn more
+
+  This content is from the [GCP documentation](https://cloud.google.com/dns/docs/reference/v1/managedZones).
