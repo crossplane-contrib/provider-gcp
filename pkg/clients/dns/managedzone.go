@@ -25,7 +25,7 @@ import (
 )
 
 // GenerateManagedZone produces a ManagedZone that is configured via given ManagedZoneParameters.
-func GenerateManagedZone(projectID string, s v1alpha1.ManagedZoneParameters) *dns.ManagedZone {
+func GenerateManagedZone(name string, projectID string, s v1alpha1.ManagedZoneParameters) *dns.ManagedZone {
 	network := &dns.ManagedZonePrivateVisibilityConfigNetwork{
 		Kind:       "dns#managedZonePrivateVisibilityConfigNetwork",
 		NetworkUrl: fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/global/networks/%s", projectID, s.Network),
@@ -37,7 +37,7 @@ func GenerateManagedZone(projectID string, s v1alpha1.ManagedZoneParameters) *dn
 	}
 
 	zone := &dns.ManagedZone{
-		Name:        s.Name,
+		Name:        name,
 		DnsName:     s.DNSName,
 		Description: s.Description,
 		Visibility:  visibility,

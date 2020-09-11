@@ -18,7 +18,6 @@ package dns
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/api/option"
 	"k8s.io/apimachinery/pkg/types"
@@ -48,7 +47,7 @@ const (
 	errProviderSecretRef = "cannot find Secret reference on Provider"
 	errGetProviderSecret = "cannot get Provider Secret"
 
-	errNotManagedZone    = "managed resource is not of type Topic"
+	errNotManagedZone    = "managed resource is not of type ManagedZone"
 	errNewClient         = "cannot create client"
 	errCreateManagedZone = "cannot create ManagedZone"
 	errGet               = "failed to get the ManagedZone resource"
@@ -76,7 +75,7 @@ type connecter struct {
 	kube client.Client
 }
 
-// Connect sets up iam client using credentials from the provider
+// Connect sets up dnsservice client using credentials from the provider
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*v1alpha1.ManagedZone)
 	if !ok {
@@ -138,6 +137,7 @@ func (e *managedZoneExternal) Observe(ctx context.Context, mg resource.Managed) 
 	}
 
 	cr.SetConditions(runtimev1alpha1.Available())
+	cr.Status.AtProvider.ID = t.Id
 	return managed.ExternalObservation{
 		ResourceExists:   true,
 		ResourceUpToDate: dns2.IsUpToDate(cr.Spec.ForProvider, *t),
@@ -152,13 +152,8 @@ func (e *managedZoneExternal) Create(ctx context.Context, mg resource.Managed) (
 	}
 	cr.SetConditions(runtimev1alpha1.Creating())
 
-	resp, err := e.ManagedZones.Create(e.projectID, dns2.GenerateManagedZone(e.projectID, cr.Spec.ForProvider)).Do()
-	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateManagedZone)
-	}
-
-	meta.SetExternalName(cr, fmt.Sprintf("%d", resp.Id))
-	return managed.ExternalCreation{}, errors.Wrap(e.kube.Update(ctx, cr), errKubeUpdate)
+	_, err := e.ManagedZones.Create(e.projectID, dns2.GenerateManagedZone(meta.GetExternalName(cr), e.projectID, cr.Spec.ForProvider)).Do()
+	return managed.ExternalCreation{}, errors.Wrap(err, errCreateManagedZone)
 }
 
 func (e *managedZoneExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {

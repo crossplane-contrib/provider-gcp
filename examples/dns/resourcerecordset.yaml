@@ -1,0 +1,17 @@
+---
+apiVersion: dns.gcp.crossplane.io/v1alpha1
+kind: ResourceRecordSet
+metadata:
+  name: tidb.10a00558.4798a7b3.us-west1.dev.gcp.tidbcloud.com
+spec:
+  forProvider:
+    aliasTarget:
+    - "1.1.1.1"
+    zoneId: "my-little-zone"
+    type: A
+  reclaimPolicy: Delete
+  writeConnectionSecretToRef:
+    name: little-resourcerecord-big2-secret
+    namespace: crossplane-system
+  providerRef:
+    name: gcp-provider
