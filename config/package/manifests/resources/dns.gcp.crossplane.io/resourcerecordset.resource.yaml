@@ -1,0 +1,15 @@
+id: resourcerecordset
+title: Cloud ResourceRecordSet
+titlePlural: Cloud ResourceRecordSet
+category: Cloud DNS
+overviewShort: ResourceRecordSet is a unit of data that will be returned by the DNS servers.
+overview: |
+  ResourceRecordSet is a unit of data that will be returned by the DNS servers.
+readme: |
+  ## Resource: ResourceRecordSet
+
+  Represents a DNS Resource Record Set resource.
+
+  ## Learn more
+
+   This content is from the [GCP documentation](https://cloud.google.com/dns/docs/reference/v1/resourceRecordSets).
