@@ -12,9 +12,7 @@ require (
 	github.com/google/go-cmp v0.4.0
 	github.com/googleapis/gax-go v1.0.3
 	github.com/googleapis/gax-go/v2 v2.0.5
-	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
 	github.com/mitchellh/copystructure v1.0.0
-	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.8.1
 	google.golang.org/api v0.21.0
 	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
@@ -25,5 +23,4 @@ require (
 	k8s.io/client-go v0.18.2
 	sigs.k8s.io/controller-runtime v0.6.0
 	sigs.k8s.io/controller-tools v0.2.4
-	sigs.k8s.io/yaml v1.2.0
 )
