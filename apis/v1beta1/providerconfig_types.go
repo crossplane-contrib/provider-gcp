@@ -17,13 +17,15 @@ limitations under the License.
 package v1beta1
 
 import (
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // A ProviderConfigSpec defines the desired state of a ProviderConfig.
 type ProviderConfigSpec struct {
-	runtimev1alpha1.ProviderConfigSpec `json:",inline"`
+	// CredentialsSecretRef references a specific secret's key that contains
+	// the credentials that are used to connect to the GCP API.
+	CredentialsSecretRef v1alpha1.SecretKeySelector `json:"credentialsSecretRef"`
 
 	// ProjectID is the project name (not numerical ID) of this GCP ProviderConfig.
 	ProjectID string `json:"projectID"`

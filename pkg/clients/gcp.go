@@ -58,13 +58,10 @@ func GetAuthInfo(ctx context.Context, kube client.Client, cr resource.Managed) (
 			return "", nil, err
 		}
 		p.ObjectMeta.DeepCopyInto(&pc.ObjectMeta)
-		p.Spec.ProviderSpec.CredentialsSecretRef.DeepCopyInto(pc.Spec.ProviderConfigSpec.CredentialsSecretRef)
+		p.Spec.CredentialsSecretRef.DeepCopyInto(&pc.Spec.CredentialsSecretRef)
 		pc.Spec.ProjectID = p.Spec.ProjectID
 	default:
 		return "", nil, errors.New("neither providerConfigRef nor providerRef is given")
-	}
-	if pc.Spec.CredentialsSecretRef == nil {
-		return "", nil, errors.New("credentialsSecretRef is empty")
 	}
 
 	// NOTE(muvaf): When we implement the workload identity, we will only need to

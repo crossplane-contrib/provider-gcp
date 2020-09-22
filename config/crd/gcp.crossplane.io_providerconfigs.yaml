@@ -53,7 +53,8 @@ spec:
           properties:
             credentialsSecretRef:
               description: CredentialsSecretRef references a specific secret's key
-                that contains the credentials that are used to connect to the provider.
+                that contains the credentials that are used to connect to the GCP
+                API.
               properties:
                 key:
                   description: The key to select.
@@ -74,6 +75,7 @@ spec:
                 GCP ProviderConfig.
               type: string
           required:
+          - credentialsSecretRef
           - projectID
           type: object
       required:
