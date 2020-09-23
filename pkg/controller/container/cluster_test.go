@@ -45,8 +45,7 @@ import (
 )
 
 const (
-	name      = "test-cluster"
-	namespace = "mynamespace"
+	name = "test-cluster"
 
 	projectID    = "myproject-id-1234"
 	providerName = "gcp-provider"
@@ -73,10 +72,6 @@ func withConditions(c ...runtimev1alpha1.Condition) clusterModifier {
 
 func withProviderStatus(s string) clusterModifier {
 	return func(i *v1beta1.GKECluster) { i.Status.AtProvider.Status = s }
-}
-
-func withBindingPhase(p runtimev1alpha1.BindingPhase) clusterModifier {
-	return func(i *v1beta1.GKECluster) { i.Status.SetBindingPhase(p) }
 }
 
 func withLocations(l []string) clusterModifier {
@@ -269,8 +264,7 @@ func TestObserve(t *testing.T) {
 				},
 				mg: cluster(
 					withProviderStatus(v1beta1.ClusterStateRunning),
-					withConditions(runtimev1alpha1.Available()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
+					withConditions(runtimev1alpha1.Available())),
 			},
 		},
 		"BoundUnavailable": {
@@ -292,7 +286,6 @@ func TestObserve(t *testing.T) {
 				mg: cluster(
 					withProviderStatus(v1beta1.ClusterStateRunning),
 					withConditions(runtimev1alpha1.Available()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseBound),
 				),
 			},
 			want: want{
@@ -303,8 +296,7 @@ func TestObserve(t *testing.T) {
 				},
 				mg: cluster(
 					withProviderStatus(v1beta1.ClusterStateError),
-					withConditions(runtimev1alpha1.Unavailable()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseBound)),
+					withConditions(runtimev1alpha1.Unavailable())),
 			},
 		},
 	}

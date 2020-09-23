@@ -35,33 +35,18 @@ import (
 // the supplied manager.
 func Setup(mgr ctrl.Manager, l logging.Logger) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger) error{
-		cache.SetupCloudMemorystoreInstanceClaimScheduling,
-		cache.SetupCloudMemorystoreInstanceClaimDefaulting,
-		cache.SetupCloudMemorystoreInstanceClaimBinding,
 		cache.SetupCloudMemorystoreInstance,
 		compute.SetupGlobalAddress,
 		compute.SetupNetwork,
 		compute.SetupSubnetwork,
-		container.SetupGKEClusterClaimScheduling,
-		container.SetupGKEClusterClaimDefaulting,
-		container.SetupGKEClusterClaimBinding,
 		container.SetupGKEClusterTarget,
 		container.SetupGKEClusterSecret,
 		container.SetupGKECluster,
 		container.SetupNodePool,
-		database.SetupPostgreSQLInstanceClaimScheduling,
-		database.SetupPostgreSQLInstanceClaimDefaulting,
-		database.SetupPostgreSQLInstanceClaimBinding,
-		database.SetupMySQLInstanceClaimScheduling,
-		database.SetupMySQLInstanceClaimDefaulting,
-		database.SetupMySQLInstanceClaimBinding,
 		database.SetupCloudSQLInstance,
 		iam.SetupServiceAccount,
 		pubsub.SetupTopic,
 		servicenetworking.SetupConnection,
-		storage.SetupBucketClaimScheduling,
-		storage.SetupBucketClaimDefaulting,
-		storage.SetupBucketClaimBinding,
 		storage.SetupBucket,
 	} {
 		if err := setup(mgr, l); err != nil {

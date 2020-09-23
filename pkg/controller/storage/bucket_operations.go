@@ -39,12 +39,10 @@ type operations interface {
 	// Bucket object operations
 	addFinalizer()
 	removeFinalizer()
-	isReclaimDelete() bool
 	getSpecAttrs() v1alpha3.BucketUpdatableAttrs
 	setSpecAttrs(*storage.BucketAttrs)
 	setStatusAttrs(*storage.BucketAttrs)
 	setStatusConditions(c ...runtimev1alpha1.Condition)
-	setBindable()
 
 	// Controller-runtime operations
 	updateObject(ctx context.Context) error
@@ -77,10 +75,6 @@ func (bh *bucketHandler) removeFinalizer() {
 	meta.RemoveFinalizer(bh, finalizer)
 }
 
-func (bh *bucketHandler) isReclaimDelete() bool {
-	return bh.Spec.ReclaimPolicy == runtimev1alpha1.ReclaimDelete
-}
-
 func (bh *bucketHandler) getSpecAttrs() v1alpha3.BucketUpdatableAttrs {
 	return bh.Spec.BucketUpdatableAttrs
 }
@@ -95,10 +89,6 @@ func (bh *bucketHandler) setStatusAttrs(attrs *storage.BucketAttrs) {
 
 func (bh *bucketHandler) setStatusConditions(c ...runtimev1alpha1.Condition) {
 	bh.Status.SetConditions(c...)
-}
-
-func (bh *bucketHandler) setBindable() {
-	resource.SetBindable(bh)
 }
 
 //

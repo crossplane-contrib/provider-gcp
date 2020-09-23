@@ -71,10 +71,6 @@ func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
 	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.SetConditions(c...) }
 }
 
-func withBindingPhase(p runtimev1alpha1.BindingPhase) instanceModifier {
-	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.SetBindingPhase(p) }
-}
-
 func withState(s string) instanceModifier {
 	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.AtProvider.State = s }
 }
@@ -166,7 +162,6 @@ func TestObserve(t *testing.T) {
 			want: want{
 				mg: instance(
 					withConditions(runtimev1alpha1.Available()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound),
 					withState(cloudmemorystore.StateReady),
 					withHost(host),
 					withPort(port),

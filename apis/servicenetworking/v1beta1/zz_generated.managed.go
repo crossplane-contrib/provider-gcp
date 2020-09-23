@@ -18,25 +18,7 @@ limitations under the License.
 
 package v1beta1
 
-import (
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-)
-
-// GetBindingPhase of this Connection.
-func (mg *Connection) GetBindingPhase() runtimev1alpha1.BindingPhase {
-	return mg.Status.GetBindingPhase()
-}
-
-// GetClaimReference of this Connection.
-func (mg *Connection) GetClaimReference() *corev1.ObjectReference {
-	return mg.Spec.ClaimReference
-}
-
-// GetClassReference of this Connection.
-func (mg *Connection) GetClassReference() *corev1.ObjectReference {
-	return mg.Spec.ClassReference
-}
+import runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 
 // GetCondition of this Connection.
 func (mg *Connection) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
@@ -61,29 +43,9 @@ func (mg *Connection) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
-// GetReclaimPolicy of this Connection.
-func (mg *Connection) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return mg.Spec.ReclaimPolicy
-}
-
 // GetWriteConnectionSecretToReference of this Connection.
 func (mg *Connection) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
-}
-
-// SetBindingPhase of this Connection.
-func (mg *Connection) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
-	mg.Status.SetBindingPhase(p)
-}
-
-// SetClaimReference of this Connection.
-func (mg *Connection) SetClaimReference(r *corev1.ObjectReference) {
-	mg.Spec.ClaimReference = r
-}
-
-// SetClassReference of this Connection.
-func (mg *Connection) SetClassReference(r *corev1.ObjectReference) {
-	mg.Spec.ClassReference = r
 }
 
 // SetConditions of this Connection.
@@ -107,11 +69,6 @@ Deprecated: Use SetProviderConfigReference.
 */
 func (mg *Connection) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
-}
-
-// SetReclaimPolicy of this Connection.
-func (mg *Connection) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
-	mg.Spec.ReclaimPolicy = r
 }
 
 // SetWriteConnectionSecretToReference of this Connection.

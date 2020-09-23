@@ -18,25 +18,7 @@ limitations under the License.
 
 package v1beta1
 
-import (
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-)
-
-// GetBindingPhase of this GlobalAddress.
-func (mg *GlobalAddress) GetBindingPhase() runtimev1alpha1.BindingPhase {
-	return mg.Status.GetBindingPhase()
-}
-
-// GetClaimReference of this GlobalAddress.
-func (mg *GlobalAddress) GetClaimReference() *corev1.ObjectReference {
-	return mg.Spec.ClaimReference
-}
-
-// GetClassReference of this GlobalAddress.
-func (mg *GlobalAddress) GetClassReference() *corev1.ObjectReference {
-	return mg.Spec.ClassReference
-}
+import runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 
 // GetCondition of this GlobalAddress.
 func (mg *GlobalAddress) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
@@ -61,29 +43,9 @@ func (mg *GlobalAddress) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
-// GetReclaimPolicy of this GlobalAddress.
-func (mg *GlobalAddress) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return mg.Spec.ReclaimPolicy
-}
-
 // GetWriteConnectionSecretToReference of this GlobalAddress.
 func (mg *GlobalAddress) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
-}
-
-// SetBindingPhase of this GlobalAddress.
-func (mg *GlobalAddress) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
-	mg.Status.SetBindingPhase(p)
-}
-
-// SetClaimReference of this GlobalAddress.
-func (mg *GlobalAddress) SetClaimReference(r *corev1.ObjectReference) {
-	mg.Spec.ClaimReference = r
-}
-
-// SetClassReference of this GlobalAddress.
-func (mg *GlobalAddress) SetClassReference(r *corev1.ObjectReference) {
-	mg.Spec.ClassReference = r
 }
 
 // SetConditions of this GlobalAddress.
@@ -109,29 +71,9 @@ func (mg *GlobalAddress) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
-// SetReclaimPolicy of this GlobalAddress.
-func (mg *GlobalAddress) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
-	mg.Spec.ReclaimPolicy = r
-}
-
 // SetWriteConnectionSecretToReference of this GlobalAddress.
 func (mg *GlobalAddress) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetBindingPhase of this Network.
-func (mg *Network) GetBindingPhase() runtimev1alpha1.BindingPhase {
-	return mg.Status.GetBindingPhase()
-}
-
-// GetClaimReference of this Network.
-func (mg *Network) GetClaimReference() *corev1.ObjectReference {
-	return mg.Spec.ClaimReference
-}
-
-// GetClassReference of this Network.
-func (mg *Network) GetClassReference() *corev1.ObjectReference {
-	return mg.Spec.ClassReference
 }
 
 // GetCondition of this Network.
@@ -157,29 +99,9 @@ func (mg *Network) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
-// GetReclaimPolicy of this Network.
-func (mg *Network) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return mg.Spec.ReclaimPolicy
-}
-
 // GetWriteConnectionSecretToReference of this Network.
 func (mg *Network) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
-}
-
-// SetBindingPhase of this Network.
-func (mg *Network) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
-	mg.Status.SetBindingPhase(p)
-}
-
-// SetClaimReference of this Network.
-func (mg *Network) SetClaimReference(r *corev1.ObjectReference) {
-	mg.Spec.ClaimReference = r
-}
-
-// SetClassReference of this Network.
-func (mg *Network) SetClassReference(r *corev1.ObjectReference) {
-	mg.Spec.ClassReference = r
 }
 
 // SetConditions of this Network.
@@ -205,29 +127,9 @@ func (mg *Network) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
-// SetReclaimPolicy of this Network.
-func (mg *Network) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
-	mg.Spec.ReclaimPolicy = r
-}
-
 // SetWriteConnectionSecretToReference of this Network.
 func (mg *Network) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
-}
-
-// GetBindingPhase of this Subnetwork.
-func (mg *Subnetwork) GetBindingPhase() runtimev1alpha1.BindingPhase {
-	return mg.Status.GetBindingPhase()
-}
-
-// GetClaimReference of this Subnetwork.
-func (mg *Subnetwork) GetClaimReference() *corev1.ObjectReference {
-	return mg.Spec.ClaimReference
-}
-
-// GetClassReference of this Subnetwork.
-func (mg *Subnetwork) GetClassReference() *corev1.ObjectReference {
-	return mg.Spec.ClassReference
 }
 
 // GetCondition of this Subnetwork.
@@ -253,29 +155,9 @@ func (mg *Subnetwork) GetProviderReference() *runtimev1alpha1.Reference {
 	return mg.Spec.ProviderReference
 }
 
-// GetReclaimPolicy of this Subnetwork.
-func (mg *Subnetwork) GetReclaimPolicy() runtimev1alpha1.ReclaimPolicy {
-	return mg.Spec.ReclaimPolicy
-}
-
 // GetWriteConnectionSecretToReference of this Subnetwork.
 func (mg *Subnetwork) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
-}
-
-// SetBindingPhase of this Subnetwork.
-func (mg *Subnetwork) SetBindingPhase(p runtimev1alpha1.BindingPhase) {
-	mg.Status.SetBindingPhase(p)
-}
-
-// SetClaimReference of this Subnetwork.
-func (mg *Subnetwork) SetClaimReference(r *corev1.ObjectReference) {
-	mg.Spec.ClaimReference = r
-}
-
-// SetClassReference of this Subnetwork.
-func (mg *Subnetwork) SetClassReference(r *corev1.ObjectReference) {
-	mg.Spec.ClassReference = r
 }
 
 // SetConditions of this Subnetwork.
@@ -299,11 +181,6 @@ Deprecated: Use SetProviderConfigReference.
 */
 func (mg *Subnetwork) SetProviderReference(r *runtimev1alpha1.Reference) {
 	mg.Spec.ProviderReference = r
-}
-
-// SetReclaimPolicy of this Subnetwork.
-func (mg *Subnetwork) SetReclaimPolicy(r runtimev1alpha1.ReclaimPolicy) {
-	mg.Spec.ReclaimPolicy = r
 }
 
 // SetWriteConnectionSecretToReference of this Subnetwork.

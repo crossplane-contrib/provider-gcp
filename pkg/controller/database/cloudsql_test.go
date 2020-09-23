@@ -43,8 +43,7 @@ import (
 )
 
 const (
-	name      = "test-sql"
-	namespace = "mynamespace"
+	name = "test-sql"
 
 	projectID      = "myproject-id-1234"
 	connectionName = "some:connection:name"
@@ -60,10 +59,6 @@ func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
 
 func withProviderState(s string) instanceModifier {
 	return func(i *v1beta1.CloudSQLInstance) { i.Status.AtProvider.State = s }
-}
-
-func withBindingPhase(p runtimev1alpha1.BindingPhase) instanceModifier {
-	return func(i *v1beta1.CloudSQLInstance) { i.Status.SetBindingPhase(p) }
 }
 
 func withPublicIP(ip string) instanceModifier {
@@ -302,7 +297,6 @@ func TestObserve(t *testing.T) {
 				mg: instance(
 					withProviderState(v1beta1.StateRunnable),
 					withConditions(runtimev1alpha1.Available()),
-					withBindingPhase(runtimev1alpha1.BindingPhaseUnbound),
 					withConnectionName(connectionName)),
 			},
 		},

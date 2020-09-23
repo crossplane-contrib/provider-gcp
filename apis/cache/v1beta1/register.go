@@ -45,15 +45,6 @@ var (
 	CloudMemorystoreInstanceGroupVersionKind = SchemeGroupVersion.WithKind(CloudMemorystoreInstanceKind)
 )
 
-// CloudMemorystoreInstanceClass type metadata.
-var (
-	CloudMemorystoreInstanceClassKind             = reflect.TypeOf(CloudMemorystoreInstanceClass{}).Name()
-	CloudMemorystoreInstanceClassGroupKind        = schema.GroupKind{Group: Group, Kind: CloudMemorystoreInstanceClassKind}.String()
-	CloudMemorystoreInstanceClassKindAPIVersion   = CloudMemorystoreInstanceClassKind + "." + SchemeGroupVersion.String()
-	CloudMemorystoreInstanceClassGroupVersionKind = SchemeGroupVersion.WithKind(CloudMemorystoreInstanceClassKind)
-)
-
 func init() {
 	SchemeBuilder.Register(&CloudMemorystoreInstance{}, &CloudMemorystoreInstanceList{})
-	SchemeBuilder.Register(&CloudMemorystoreInstanceClass{}, &CloudMemorystoreInstanceClassList{})
 }

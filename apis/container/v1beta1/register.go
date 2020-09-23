@@ -45,15 +45,6 @@ var (
 	GKEClusterGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterKind)
 )
 
-// GKEClusterClass type metadata.
-var (
-	GKEClusterClassKind             = reflect.TypeOf(GKEClusterClass{}).Name()
-	GKEClusterClassGroupKind        = schema.GroupKind{Group: Group, Kind: GKEClusterClassKind}.String()
-	GKEClusterClassKindAPIVersion   = GKEClusterClassKind + "." + SchemeGroupVersion.String()
-	GKEClusterClassGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterClassKind)
-)
-
 func init() {
 	SchemeBuilder.Register(&GKECluster{}, &GKEClusterList{})
-	SchemeBuilder.Register(&GKEClusterClass{}, &GKEClusterClassList{})
 }

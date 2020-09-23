@@ -829,38 +829,3 @@ type BucketList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Bucket `json:"items"`
 }
-
-// BucketClassSpecTemplate is the Schema for the resource class
-
-// A BucketClassSpecTemplate is a template for the spec of a dynamically
-// provisioned Bucket.
-type BucketClassSpecTemplate struct {
-	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
-	BucketParameters                  `json:",inline"`
-}
-
-// +kubebuilder:object:root=true
-
-// A BucketClass is a resource class. It defines the desired spec of resource
-// claims that use it to dynamically provision a managed resource.
-// +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
-// +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
-// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,class,gcp}
-type BucketClass struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// SpecTemplate is a template for the spec of a dynamically provisioned
-	// Bucket.
-	SpecTemplate BucketClassSpecTemplate `json:"specTemplate"`
-}
-
-// +kubebuilder:object:root=true
-
-// BucketClassList contains a list of cloud memorystore resource classes.
-type BucketClassList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []BucketClass `json:"items"`
-}

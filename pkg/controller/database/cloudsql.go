@@ -116,7 +116,6 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	switch cr.Status.AtProvider.State {
 	case v1beta1.StateRunnable:
 		cr.Status.SetConditions(v1alpha1.Available())
-		resource.SetBindable(cr)
 	case v1beta1.StateCreating:
 		cr.Status.SetConditions(v1alpha1.Creating())
 	case v1beta1.StateCreationFailed, v1beta1.StateSuspended, v1beta1.StateMaintenance, v1beta1.StateUnknownState:

@@ -162,13 +162,6 @@ func newBucketSyncDeleter(ops operations, projectID string) *bucketSyncDeleter {
 func (bh *bucketSyncDeleter) delete(ctx context.Context) (reconcile.Result, error) {
 	bh.setStatusConditions(runtimev1alpha1.Deleting())
 
-	if bh.isReclaimDelete() {
-		if err := bh.deleteBucket(ctx); err != nil && err != storage.ErrBucketNotExist {
-			bh.setStatusConditions(runtimev1alpha1.ReconcileError(err))
-			return resultRequeue, bh.updateStatus(ctx)
-		}
-	}
-
 	// NOTE(negz): We don't update the conditioned status here because assuming
 	// no other finalizers need to be cleaned up the object should cease to
 	// exist after we update it.
@@ -239,7 +232,6 @@ func (bh *bucketCreateUpdater) create(ctx context.Context) (reconcile.Result, er
 	bh.setStatusAttrs(attrs)
 
 	bh.setStatusConditions(runtimev1alpha1.Available(), runtimev1alpha1.ReconcileSuccess())
-	bh.setBindable()
 
 	return requeueOnSuccess, bh.updateStatus(ctx)
 }

@@ -1,21 +1,8 @@
 ---
 apiVersion: compute.gcp.crossplane.io/v1beta1
-kind: Network
-metadata:
-  name: example-gke
-spec:
-  forProvider:
-    autoCreateSubnetworks: false
-    routingConfig:
-      routingMode: REGIONAL
-  reclaimPolicy: Delete
-  providerConfigRef:
-    name: example
----
-apiVersion: compute.gcp.crossplane.io/v1beta1
 kind: Subnetwork
 metadata:
-  name: example-gke
+  name: example
 spec:
   forProvider:
     region: us-central1
@@ -27,7 +14,7 @@ spec:
       - rangeName: services
         ipCidrRange: 172.16.0.0/16
     networkRef:
-      name: example-gke
+      name: example
   reclaimPolicy: Delete
   providerConfigRef:
     name: example

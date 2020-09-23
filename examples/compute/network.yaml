@@ -1,0 +1,13 @@
+---
+apiVersion: compute.gcp.crossplane.io/v1beta1
+kind: Network
+metadata:
+  name: example
+spec:
+  forProvider:
+    autoCreateSubnetworks: false
+    routingConfig:
+      routingMode: REGIONAL
+  reclaimPolicy: Delete
+  providerConfigRef:
+    name: example

@@ -51,10 +51,6 @@ func npWithProviderStatus(s string) nodePoolModifier {
 	return func(i *v1alpha1.NodePool) { i.Status.AtProvider.Status = s }
 }
 
-func npWithBindingPhase(p runtimev1alpha1.BindingPhase) nodePoolModifier {
-	return func(i *v1alpha1.NodePool) { i.Status.SetBindingPhase(p) }
-}
-
 func npWithLocations(l []string) nodePoolModifier {
 	return func(i *v1alpha1.NodePool) { i.Spec.ForProvider.Locations = l }
 }
@@ -228,8 +224,7 @@ func TestNodePoolObserve(t *testing.T) {
 				},
 				mg: nodePool(
 					npWithProviderStatus(v1alpha1.NodePoolStateRunning),
-					npWithConditions(runtimev1alpha1.Available()),
-					npWithBindingPhase(runtimev1alpha1.BindingPhaseUnbound)),
+					npWithConditions(runtimev1alpha1.Available())),
 			},
 		},
 		"BoundUnavailable": {
@@ -251,7 +246,6 @@ func TestNodePoolObserve(t *testing.T) {
 				mg: nodePool(
 					npWithProviderStatus(v1alpha1.NodePoolStateRunning),
 					npWithConditions(runtimev1alpha1.Available()),
-					npWithBindingPhase(runtimev1alpha1.BindingPhaseBound),
 				),
 			},
 			want: want{
@@ -261,8 +255,7 @@ func TestNodePoolObserve(t *testing.T) {
 				},
 				mg: nodePool(
 					npWithProviderStatus(v1alpha1.NodePoolStateError),
-					npWithConditions(runtimev1alpha1.Unavailable()),
-					npWithBindingPhase(runtimev1alpha1.BindingPhaseBound)),
+					npWithConditions(runtimev1alpha1.Unavailable())),
 			},
 		},
 	}

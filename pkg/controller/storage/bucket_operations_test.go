@@ -45,7 +45,6 @@ type mockOperations struct {
 	mockSetSpecAttrs        func(*storage.BucketAttrs)
 	mockSetStatusAttrs      func(*storage.BucketAttrs)
 	mockSetStatusConditions func(...runtimev1alpha1.Condition)
-	mockSetBindable         func()
 
 	mockUpdateObject func(ctx context.Context) error
 	mockUpdateStatus func(ctx context.Context) error
@@ -58,10 +57,6 @@ type mockOperations struct {
 }
 
 var _ operations = &mockOperations{}
-
-func (o *mockOperations) isReclaimDelete() bool {
-	return o.mockIsReclaimDelete()
-}
 
 func (o *mockOperations) addFinalizer() {
 	o.mockAddFinalizer()
@@ -85,10 +80,6 @@ func (o *mockOperations) setStatusAttrs(attrs *storage.BucketAttrs) {
 
 func (o *mockOperations) setStatusConditions(c ...runtimev1alpha1.Condition) {
 	o.mockSetStatusConditions(c...)
-}
-
-func (o *mockOperations) setBindable() {
-	o.mockSetBindable()
 }
 
 //
@@ -180,49 +171,6 @@ func Test_bucketHandler_removeFinalizer(t *testing.T) {
 			got := tt.fields.bucket.Finalizers
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Errorf("bucketHandler.removeFinalizer(): -want, +got:\n%s", diff)
-			}
-		})
-	}
-}
-
-func Test_bucketHandler_isReclaimDelete(t *testing.T) {
-	type fields struct {
-		bucket *v1alpha3.Bucket
-		kube   client.Client
-		gcp    gcpstorage.Client
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   bool
-	}{
-		{
-			name:   "Default",
-			fields: fields{bucket: &v1alpha3.Bucket{}},
-			want:   false,
-		},
-		{
-			name: "Delete",
-			fields: fields{bucket: &v1alpha3.Bucket{
-				Spec: v1alpha3.BucketSpec{
-					ResourceSpec: runtimev1alpha1.ResourceSpec{
-						ReclaimPolicy: runtimev1alpha1.ReclaimDelete,
-					},
-				},
-			},
-			},
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bc := &bucketHandler{
-				Bucket: tt.fields.bucket,
-				kube:   tt.fields.kube,
-				gcp:    tt.fields.gcp,
-			}
-			if got := bc.isReclaimDelete(); got != tt.want {
-				t.Errorf("bucketHandler.isReclaimDelete() = %v, want %v", got, tt.want)
 			}
 		})
 	}

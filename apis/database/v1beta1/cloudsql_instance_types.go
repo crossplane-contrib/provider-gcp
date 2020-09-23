@@ -559,36 +559,3 @@ type CloudSQLInstanceList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CloudSQLInstance `json:"items"`
 }
-
-// A CloudSQLInstanceClassSpecTemplate is a template for the spec of a
-// dynamically provisioned CloudSQLInstance.
-type CloudSQLInstanceClassSpecTemplate struct {
-	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
-	ForProvider                       CloudSQLInstanceParameters `json:"forProvider"`
-}
-
-// +kubebuilder:object:root=true
-
-// A CloudSQLInstanceClass is a resource class. It defines the desired spec of
-// resource claims that use it to dynamically provision a managed resource.
-// +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
-// +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
-// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,class,gcp}
-type CloudSQLInstanceClass struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// SpecTemplate is a template for the spec of a dynamically provisioned
-	// CloudSQLInstance.
-	SpecTemplate CloudSQLInstanceClassSpecTemplate `json:"specTemplate"`
-}
-
-// +kubebuilder:object:root=true
-
-// CloudSQLInstanceClassList contains a list of cloud memorystore resource classes.
-type CloudSQLInstanceClassList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CloudSQLInstanceClass `json:"items"`
-}

@@ -313,22 +313,6 @@ func Test_bucketSyncDeleter_delete(t *testing.T) {
 				res: reconcile.Result{},
 			},
 		},
-		{
-			name: "DeleteFailedOther",
-			fields: fields{
-				ops: &mockOperations{
-					mockIsReclaimDelete: func() bool { return true },
-					mockDeleteBucket: func(ctx context.Context) error {
-						return errors.New("test-error")
-					},
-					mockSetStatusConditions: func(_ ...runtimev1alpha1.Condition) {},
-					mockUpdateStatus:        func(ctx context.Context) error { return nil },
-				},
-			},
-			want: want{
-				res: resultRequeue,
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -514,7 +498,6 @@ func Test_bucketCreateUpdater_create(t *testing.T) {
 					mockSetSpecAttrs:        func(attrs *storage.BucketAttrs) {},
 					mockUpdateObject:        func(ctx context.Context) error { return nil },
 					mockSetStatusConditions: func(_ ...runtimev1alpha1.Condition) {},
-					mockSetBindable:         func() {},
 					mockSetStatusAttrs:      func(attrs *storage.BucketAttrs) {},
 					mockUpdateStatus:        func(ctx context.Context) error { return nil },
 				},
