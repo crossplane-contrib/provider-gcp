@@ -12,6 +12,7 @@ require (
 	github.com/google/go-cmp v0.4.0
 	github.com/googleapis/gax-go v1.0.3
 	github.com/googleapis/gax-go/v2 v2.0.5
+	github.com/imdario/mergo v0.3.9
 	github.com/mitchellh/copystructure v1.0.0
 	github.com/pkg/errors v0.9.1
 	google.golang.org/api v0.21.0

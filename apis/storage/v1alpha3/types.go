@@ -753,7 +753,7 @@ type BucketOutputAttrs struct {
 	BucketPolicyOnly *BucketPolicyOnly `json:"bucketPolicyOnly,omitempty"`
 
 	// Created is the creation time of the bucket.
-	Created metav1.Time `json:"created,omitempty"`
+	Created *metav1.Time `json:"created,omitempty"`
 
 	// Retention policy enforces a minimum retention time for all objects
 	// contained in the bucket. A RetentionPolicy of nil implies the bucket
@@ -770,13 +770,14 @@ func NewBucketOutputAttrs(attrs *storage.BucketAttrs) BucketOutputAttrs {
 	if attrs == nil {
 		return BucketOutputAttrs{}
 	}
-	return BucketOutputAttrs{
+	ao := BucketOutputAttrs{
 		BucketPolicyOnly: NewBucketPolicyOnly(attrs.BucketPolicyOnly),
-		Created: metav1.Time{
-			Time: attrs.Created,
-		},
-		RetentionPolicy: NewRetentionPolicyStatus(attrs.RetentionPolicy),
+		RetentionPolicy:  NewRetentionPolicyStatus(attrs.RetentionPolicy),
 	}
+	if !attrs.Created.IsZero() {
+		ao.Created = &metav1.Time{Time: attrs.Created}
+	}
+	return ao
 }
 
 // BucketParameters define the desired state of a Google Cloud Storage Bucket.
@@ -784,9 +785,6 @@ func NewBucketOutputAttrs(attrs *storage.BucketAttrs) BucketOutputAttrs {
 // https://cloud.google.com/storage/docs/json_api/v1/buckets#resource
 type BucketParameters struct {
 	BucketSpecAttrs `json:",inline"`
-	// ServiceAccountSecretRef contains GCP ServiceAccount secret that will be used
-	// for bucket connection secret credentials
-	ServiceAccountSecretRef *runtimev1alpha1.SecretReference `json:"serviceAccountSecretRef,omitempty"`
 }
 
 // A BucketSpec defines the desired state of a Bucket.
