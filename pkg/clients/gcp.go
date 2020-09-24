@@ -22,8 +22,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/crossplane/provider-gcp/apis/v1beta1"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"google.golang.org/api/googleapi"
@@ -31,13 +29,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	cmpv1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 	"github.com/crossplane/provider-gcp/apis/v1alpha3"
+	"github.com/crossplane/provider-gcp/apis/v1beta1"
 )
 
 // GetAuthInfo returns the necessary authentication information that is necessary
@@ -47,31 +49,66 @@ func GetAuthInfo(ctx context.Context, kube client.Client, cr resource.Managed) (
 	pc := &v1beta1.ProviderConfig{}
 	switch {
 	case cr.GetProviderConfigReference() != nil && cr.GetProviderConfigReference().Name != "":
-		nn := types.NamespacedName{Name: cr.GetProviderConfigReference().Name}
-		if err := kube.Get(ctx, nn, pc); err != nil {
-			return "", nil, err
-		}
+		return UseProviderConfig(ctx, kube, cr)
 	case cr.GetProviderReference() != nil && cr.GetProviderReference().Name != "":
 		p := &v1alpha3.Provider{}
 		nn := types.NamespacedName{Name: cr.GetProviderReference().Name}
 		if err := kube.Get(ctx, nn, p); err != nil {
 			return "", nil, err
 		}
-		p.ObjectMeta.DeepCopyInto(&pc.ObjectMeta)
-		p.Spec.CredentialsSecretRef.DeepCopyInto(&pc.Spec.CredentialsSecretRef)
-		pc.Spec.ProjectID = p.Spec.ProjectID
+		s := &v1.Secret{}
+		nn = types.NamespacedName{Name: pc.Spec.CredentialsSecretRef.Name, Namespace: pc.Spec.CredentialsSecretRef.Namespace}
+		if err := kube.Get(ctx, nn, s); err != nil {
+			return "", nil, err
+		}
+
+		// NOTE(muvaf): When we implement the workload identity, we will only need to
+		// return a different type of option.ClientOption, which is WithTokenSource().
+		return pc.Spec.ProjectID, option.WithCredentialsJSON(s.Data[pc.Spec.CredentialsSecretRef.Key]), nil
 	default:
 		return "", nil, errors.New("neither providerConfigRef nor providerRef is given")
 	}
+}
 
-	// NOTE(muvaf): When we implement the workload identity, we will only need to
-	// return a different type of option.ClientOption, which is WithTokenSource().
+// UseProviderConfig uses the supplied managed resource's providerConfigRef to
+// return the authentication options necessary to create a client. A
+// ProviderConfigUsage is created to indicate the ProviderConfig is in use.
+func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts option.ClientOption, err error) {
+	name := mg.GetProviderConfigReference().Name
+	pc := &v1beta1.ProviderConfig{}
+	if err := c.Get(ctx, types.NamespacedName{Name: name}, pc); err != nil {
+		return "", nil, errors.Wrap(err, "cannot get provider configuration")
+	}
 
 	s := &v1.Secret{}
-	nn := types.NamespacedName{Name: pc.Spec.CredentialsSecretRef.Name, Namespace: pc.Spec.CredentialsSecretRef.Namespace}
-	if err := kube.Get(ctx, nn, s); err != nil {
-		return "", nil, err
+	nn := types.NamespacedName{Namespace: pc.Spec.CredentialsSecretRef.Namespace, Name: pc.Spec.CredentialsSecretRef.Name}
+	if err := c.Get(ctx, nn, s); err != nil {
+		return "", nil, errors.Wrap(err, "cannot get provider credentials secret")
 	}
+
+	// NOTE(negz): The vast majority of ProviderConfigUsages will be garbage
+	// collected by Kubernetes when their corresponding resource is deleted, due
+	// to their controller reference. If a ProviderConfigUsage is orphaned (i.e.
+	// has its controller reference removed) it will be garbage collected by the
+	// ProviderConfig controller.
+	pcu := &v1beta1.ProviderConfigUsage{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            string(mg.GetUID()),
+			Labels:          map[string]string{v1beta1.LabelKeyProviderName: name},
+			OwnerReferences: []metav1.OwnerReference{meta.AsController(meta.TypedReferenceTo(mg, mg.GetObjectKind().GroupVersionKind()))},
+		},
+		ProviderRef: v1alpha1.Reference{Name: name},
+		ResourceRef: v1alpha1.TypedReference{
+			APIVersion: mg.GetObjectKind().GroupVersionKind().GroupVersion().String(),
+			Kind:       mg.GetObjectKind().GroupVersionKind().Kind,
+			Name:       mg.GetName(),
+		},
+	}
+
+	if err := resource.NewAPIUpdatingApplicator(c).Apply(ctx, pcu, resource.MustBeControllableBy(mg.GetUID())); err != nil {
+		return "", nil, errors.Wrap(err, "cannot use provider")
+	}
+
 	return pc.Spec.ProjectID, option.WithCredentialsJSON(s.Data[pc.Spec.CredentialsSecretRef.Key]), nil
 }
 

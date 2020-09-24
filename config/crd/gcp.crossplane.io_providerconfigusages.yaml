@@ -1,0 +1,91 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: providerconfigusages.gcp.crossplane.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .metadata.creationTimestamp
+    name: AGE
+    type: date
+  - JSONPath: .providerRef.name
+    name: PROVIDER-NAME
+    type: string
+  - JSONPath: .resourceRef.kind
+    name: RESOURCE-KIND
+    type: string
+  - JSONPath: .resourceRef.name
+    name: RESOURCE-NAME
+    type: string
+  group: gcp.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - provider
+    - gcp
+    kind: ProviderConfigUsage
+    listKind: ProviderConfigUsageList
+    plural: providerconfigusages
+    singular: providerconfigusage
+  scope: Cluster
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: A ProviderConfigUsage indicates that a resource is using a ProviderConfig.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        providerRef:
+          description: A Reference to a named object.
+          properties:
+            name:
+              description: Name of the referenced object.
+              type: string
+          required:
+          - name
+          type: object
+        resourceRef:
+          description: A TypedReference refers to an object by Name, Kind, and APIVersion. It is commonly used to reference cluster-scoped objects or objects where the namespace is already known.
+          properties:
+            apiVersion:
+              description: APIVersion of the referenced object.
+              type: string
+            kind:
+              description: Kind of the referenced object.
+              type: string
+            name:
+              description: Name of the referenced object.
+              type: string
+            uid:
+              description: UID of the referenced object.
+              type: string
+          required:
+          - apiVersion
+          - kind
+          - name
+          type: object
+      required:
+      - providerRef
+      - resourceRef
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
