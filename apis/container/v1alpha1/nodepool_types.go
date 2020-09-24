@@ -17,8 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 )
@@ -588,39 +589,4 @@ type NodePoolList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []NodePool `json:"items"`
-}
-
-// A NodePoolClassSpecTemplate is a template for the spec of a dynamically
-// provisioned NodePool.
-type NodePoolClassSpecTemplate struct {
-	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
-	NodePoolParameters                `json:",inline"`
-}
-
-// +kubebuilder:object:root=true
-
-// A NodePoolClass is a resource class. It defines the desired spec of
-// resource claims that use it to dynamically provision a managed
-// resource.
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
-// +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
-// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,class,gcp}
-type NodePoolClass struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// SpecTemplate is a template for the spec of a dynamically provisioned
-	// NodePool.
-	SpecTemplate NodePoolClassSpecTemplate `json:"specTemplate"`
-}
-
-// +kubebuilder:object:root=true
-
-// NodePoolClassList contains a list of cloud memorystore resource classes.
-type NodePoolClassList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []NodePoolClass `json:"items"`
 }

@@ -1,14 +1,15 @@
 ---
 apiVersion: storage.gcp.crossplane.io/v1alpha3
-kind: BucketClass
+kind: Bucket
 metadata:
-  name: gcsbucket-standard
+  name: example
   labels:
     example: "true"
-specTemplate:
-  writeConnectionSecretsToNamespace: crossplane-system
+  annotations:
+    crossplane.io/external-name: crossplane-example-bucket
+spec:
   location: US
   storageClass: MULTI_REGIONAL
   providerConfigRef:
     name: example
-  reclaimPolicy: Delete
+  deletionPolicy: Delete

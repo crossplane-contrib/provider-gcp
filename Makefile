@@ -28,8 +28,6 @@ NPROCS ?= 1
 # to half the number of CPU cores.
 GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 
-GO_INTEGRATION_TESTS_SUBDIRS = test
-
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
 GO_LDFLAGS += -X $(GO_PROJECT)/pkg/version.Version=$(VERSION)
 GO_SUBDIRS += cmd pkg apis
@@ -84,18 +82,6 @@ check-diff: reviewable
 	@$(INFO) checking that branch is clean
 	@test -z "$$(git status --porcelain)" || $(FAIL)
 	@$(OK) branch is clean
-
-# integration tests
-e2e.run: test-integration
-
-# Run integration tests.
-test-integration: $(KIND) $(KUBECTL)
-	@$(INFO) running integration tests using kind $(KIND_VERSION)
-	@$(ROOT_DIR)/cluster/local/integration_tests.sh || $(FAIL)
-	@$(OK) integration tests passed
-
-go-integration:
-	GO_TEST_FLAGS="-timeout 1h -v" GO_TAGS=integration $(MAKE) go.test.integration
 
 # Update the submodules, such as the common build scripts.
 submodules:
@@ -163,7 +149,7 @@ clean-package:
 manifests:
 	@$(INFO) Deprecated. Run make generate instead.
 
-.PHONY: cobertura reviewable submodules fallthrough test-integration run clean-package build-package manifests go-integration dev dev-clean
+.PHONY: cobertura reviewable submodules fallthrough run clean-package build-package manifests dev dev-clean
 
 # ====================================================================================
 # Special Targets

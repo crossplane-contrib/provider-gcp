@@ -753,7 +753,7 @@ type BucketOutputAttrs struct {
 	BucketPolicyOnly *BucketPolicyOnly `json:"bucketPolicyOnly,omitempty"`
 
 	// Created is the creation time of the bucket.
-	Created metav1.Time `json:"created,omitempty"`
+	Created *metav1.Time `json:"created,omitempty"`
 
 	// Retention policy enforces a minimum retention time for all objects
 	// contained in the bucket. A RetentionPolicy of nil implies the bucket
@@ -770,13 +770,14 @@ func NewBucketOutputAttrs(attrs *storage.BucketAttrs) BucketOutputAttrs {
 	if attrs == nil {
 		return BucketOutputAttrs{}
 	}
-	return BucketOutputAttrs{
+	ao := BucketOutputAttrs{
 		BucketPolicyOnly: NewBucketPolicyOnly(attrs.BucketPolicyOnly),
-		Created: metav1.Time{
-			Time: attrs.Created,
-		},
-		RetentionPolicy: NewRetentionPolicyStatus(attrs.RetentionPolicy),
+		RetentionPolicy:  NewRetentionPolicyStatus(attrs.RetentionPolicy),
 	}
+	if !attrs.Created.IsZero() {
+		ao.Created = &metav1.Time{Time: attrs.Created}
+	}
+	return ao
 }
 
 // BucketParameters define the desired state of a Google Cloud Storage Bucket.
@@ -784,9 +785,6 @@ func NewBucketOutputAttrs(attrs *storage.BucketAttrs) BucketOutputAttrs {
 // https://cloud.google.com/storage/docs/json_api/v1/buckets#resource
 type BucketParameters struct {
 	BucketSpecAttrs `json:",inline"`
-	// ServiceAccountSecretRef contains GCP ServiceAccount secret that will be used
-	// for bucket connection secret credentials
-	ServiceAccountSecretRef *runtimev1alpha1.SecretReference `json:"serviceAccountSecretRef,omitempty"`
 }
 
 // A BucketSpec defines the desired state of a Bucket.
@@ -828,39 +826,4 @@ type BucketList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Bucket `json:"items"`
-}
-
-// BucketClassSpecTemplate is the Schema for the resource class
-
-// A BucketClassSpecTemplate is a template for the spec of a dynamically
-// provisioned Bucket.
-type BucketClassSpecTemplate struct {
-	runtimev1alpha1.ClassSpecTemplate `json:",inline"`
-	BucketParameters                  `json:",inline"`
-}
-
-// +kubebuilder:object:root=true
-
-// A BucketClass is a resource class. It defines the desired spec of resource
-// claims that use it to dynamically provision a managed resource.
-// +kubebuilder:printcolumn:name="PROVIDER-REF",type="string",JSONPath=".specTemplate.providerRef.name"
-// +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".specTemplate.reclaimPolicy"
-// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,class,gcp}
-type BucketClass struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// SpecTemplate is a template for the spec of a dynamically provisioned
-	// Bucket.
-	SpecTemplate BucketClassSpecTemplate `json:"specTemplate"`
-}
-
-// +kubebuilder:object:root=true
-
-// BucketClassList contains a list of cloud memorystore resource classes.
-type BucketClassList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []BucketClass `json:"items"`
 }

@@ -873,7 +873,7 @@ func TestCopyBucketSpecAttrs(t *testing.T) {
 
 var (
 	testBucketOutputAttrs = BucketOutputAttrs{
-		Created:         metav1.NewTime(now),
+		Created:         func() *metav1.Time { t := metav1.NewTime(now); return &t }(),
 		RetentionPolicy: testRetentionPolicyStatus,
 	}
 

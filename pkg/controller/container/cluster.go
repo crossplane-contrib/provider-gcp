@@ -112,7 +112,6 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 	switch cr.Status.AtProvider.Status {
 	case v1beta1.ClusterStateRunning, v1beta1.ClusterStateReconciling:
 		cr.Status.SetConditions(v1alpha1.Available())
-		resource.SetBindable(cr)
 	case v1beta1.ClusterStateProvisioning:
 		cr.Status.SetConditions(v1alpha1.Creating())
 	case v1beta1.ClusterStateUnspecified, v1beta1.ClusterStateDegraded, v1beta1.ClusterStateError:

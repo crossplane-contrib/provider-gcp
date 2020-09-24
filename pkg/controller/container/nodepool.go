@@ -109,7 +109,6 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	switch cr.Status.AtProvider.Status {
 	case v1alpha1.NodePoolStateRunning, v1alpha1.NodePoolStateReconciling:
 		cr.Status.SetConditions(runtimev1alpha1.Available())
-		resource.SetBindable(cr)
 	case v1alpha1.NodePoolStateProvisioning:
 		cr.Status.SetConditions(runtimev1alpha1.Creating())
 	case v1alpha1.NodePoolStateUnspecified, v1alpha1.NodePoolStateRunningError, v1alpha1.NodePoolStateError:
