@@ -22,7 +22,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
@@ -47,6 +49,8 @@ const (
 	errGetPC        = "cannot get ProviderConfig"
 	errListPCUs     = "cannot list ProviderConfigUsages"
 	errDeletePCU    = "cannot delete ProviderConfigUsage"
+	errGetSecret    = "cannot get credentials secret"
+	errUpdateSecret = "cannot update credentials secret"
 	errUpdate       = "cannot update ProviderConfig"
 	errUpdateStatus = "cannot update ProviderConfig status"
 )
@@ -54,6 +58,7 @@ const (
 // Event reasons.
 const (
 	reasonAccount event.Reason = "UsageAccounting"
+	reasonSecret  event.Reason = "ClaimSecretOwnership"
 )
 
 // Setup adds a controller that reconciles a ProviderConfig by accounting for
@@ -159,7 +164,6 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 			usages--
 		}
 	}
-
 	log = log.WithValues("usages", usages)
 
 	if meta.WasDeleted(pc) {
@@ -185,6 +189,21 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	if err := r.client.Update(ctx, pc); err != nil {
 		r.log.Debug(errUpdate, "error", err)
 		return reconcile.Result{RequeueAfter: shortWait}, nil
+	}
+
+	s := &corev1.Secret{}
+	nn := types.NamespacedName{
+		Namespace: pc.Spec.CredentialsSecretRef.Namespace,
+		Name:      pc.Spec.CredentialsSecretRef.Name,
+	}
+	if err := r.client.Get(ctx, nn, s); err != nil {
+		log.Debug(errGetSecret, "error", err)
+		r.record.Event(pc, event.Warning(reasonSecret, errors.Wrap(err, errGetSecret)))
+	}
+	meta.AddOwnerReference(s, meta.AsOwner(meta.TypedReferenceTo(pc, v1beta1.ProviderConfigGroupVersionKind)))
+	if err := r.client.Update(ctx, s); err != nil {
+		log.Debug(errUpdateSecret, "error", err)
+		r.record.Event(pc, event.Warning(reasonSecret, errors.Wrap(err, errUpdateSecret)))
 	}
 
 	// There's no need to requeue explicitly - we're watching all PCs.
