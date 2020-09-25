@@ -1,0 +1,7 @@
+apiVersion: meta.pkg.crossplane.io/v1alpha1
+kind: Provider
+metadata:
+  name: provider-gcp
+spec:
+  controller:
+    image: crossplane/provider-gcp-controller:master
