@@ -1,9 +1,0 @@
-id: provider
-title: Provider
-titlePlural: Providers
-category:
-overviewShort: "A Provider configures a GCP 'provider', i.e. a connection to a particular GCP project using a particular GCP service account"
-overview: |
- "A Provider configures a GCP 'provider', i.e. a connection to a particular GCP project using a particular GCP service account"
-readme: |
- Full documentation can be found in the Crossplane [API Reference docs](https://doc.crds.dev/github.com/crossplane/provider-gcp/gcp.crossplane.io/Provider/v1alpha3).
