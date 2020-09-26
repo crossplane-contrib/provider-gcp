@@ -68,10 +68,15 @@ cobertura:
 		$(GOCOVER_COBERTURA) > $(GO_TEST_OUTPUT)/cobertura-coverage.xml
 
 crds.clean:
-	@sed -i '1,2d' package/crds/*.yaml
+	@$(INFO) cleaning generated CRDs
+	@find package/crds -name *.yaml -exec sed -i '.sed' -e '1,2d' {} \;
+	@find package/crds -name *.yaml.sed -delete
+	@$(OK) cleaned generated CRDs
+
+generate: crds.clean
 
 # Ensure a PR is ready for review.
-reviewable: generate crds.clean lint
+reviewable: generate lint
 	@go mod tidy
 
 # Ensure branch is clean.
