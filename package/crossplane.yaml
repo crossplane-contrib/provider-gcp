@@ -4,4 +4,4 @@ metadata:
   name: provider-gcp
 spec:
   controller:
-    image: crossplane/provider-gcp-controller:master
+    image: crossplane/provider-gcp-controller:VERSION
