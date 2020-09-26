@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// nolint:gocritic,golint // Deprecation comment format false positives.
 package v1beta1
 
 import (
@@ -1543,6 +1544,7 @@ type NodeTaintClusterStatus struct {
 // configuration to expose to
 // workloads on the node pool.
 type WorkloadMetadataConfigClusterStatus struct {
+
 	// NodeMetadata: NodeMetadata is the configuration for how to expose
 	// metadata to the
 	// workloads running on the node.
