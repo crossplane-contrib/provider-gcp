@@ -378,5 +378,5 @@ func GetFullyQualifiedName(p v1alpha1.NodePoolParameters, name string) string {
 	// Zonal clusters use /zones/ in their path instead of /locations/. We
 	// manage node pools using the locations API endpoint so we must modify the
 	// path.
-	return strings.Replace(fmt.Sprintf(NodePoolNameFormat, p.Cluster, name), "/zones/", "/locations/", -1)
+	return strings.ReplaceAll(fmt.Sprintf(NodePoolNameFormat, p.Cluster, name), "/zones/", "/locations/")
 }

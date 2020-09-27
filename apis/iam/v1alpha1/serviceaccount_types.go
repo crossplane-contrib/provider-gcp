@@ -54,7 +54,7 @@ type ServiceAccountObservation struct {
 	// ProjectID is the id of the project that owns the service account.
 	ProjectID string `json:"projectId,omitempty"`
 
-	//The unique and stable id of the service account.
+	// The unique and stable id of the service account.
 	UniqueID string `json:"uniqueId,omitempty"`
 
 	// Email is the the email address of the service account.
