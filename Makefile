@@ -69,8 +69,8 @@ cobertura:
 
 crds.clean:
 	@$(INFO) cleaning generated CRDs
-	@find package/crds -name *.yaml -exec sed -i '.sed' -e '1,2d' {} \;
-	@find package/crds -name *.yaml.sed -delete
+	@find package/crds -name *.yaml -exec sed -i.sed -e '1,2d' {} \; || $(FAIL)
+	@find package/crds -name *.yaml.sed -delete || $(FAIL)
 	@$(OK) cleaned generated CRDs
 
 generate: crds.clean
