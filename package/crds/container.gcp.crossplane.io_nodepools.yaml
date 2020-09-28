@@ -19,12 +19,6 @@ spec:
   - JSONPath: .spec.forProvider.clusterRef.name
     name: CLUSTER-REF
     type: string
-  - JSONPath: .spec.classRef.name
-    name: NODE-POOL-CLASS
-    type: string
-  - JSONPath: .spec.reclaimPolicy
-    name: RECLAIM-POLICY
-    type: string
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
