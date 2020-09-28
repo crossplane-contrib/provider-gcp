@@ -22,9 +22,6 @@ spec:
   - JSONPath: .spec.forProvider.location
     name: LOCATION
     type: string
-  - JSONPath: .spec.reclaimPolicy
-    name: RECLAIM-POLICY
-    type: string
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date

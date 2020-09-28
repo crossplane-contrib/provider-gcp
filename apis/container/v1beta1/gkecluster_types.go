@@ -1628,7 +1628,6 @@ type GKEClusterStatus struct {
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
 // +kubebuilder:printcolumn:name="ENDPOINT",type="string",JSONPath=".status.atProvider.endpoint"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
-// +kubebuilder:printcolumn:name="RECLAIM-POLICY",type="string",JSONPath=".spec.reclaimPolicy"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 type GKECluster struct {
