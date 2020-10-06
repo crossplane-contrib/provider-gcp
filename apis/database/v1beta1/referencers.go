@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -35,7 +36,7 @@ func (mg *CloudSQLInstance) ResolveReferences(ctx context.Context, c client.Read
 
 	r := reference.NewAPIResolver(c, mg)
 
-	// Resolve spec.network
+	// Resolve spec.forProvider.settings.ipConfiguration.privateNetwork
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
 		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Settings.IPConfiguration.PrivateNetwork),
 		Reference:    mg.Spec.ForProvider.Settings.IPConfiguration.PrivateNetworkRef,
@@ -44,7 +45,7 @@ func (mg *CloudSQLInstance) ResolveReferences(ctx context.Context, c client.Read
 		Extract:      v1beta1.NetworkURL(),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "spec.forProvider.settings.ipConfiguration.privateNetwork")
 	}
 	mg.Spec.ForProvider.Settings.IPConfiguration.PrivateNetwork = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.Settings.IPConfiguration.PrivateNetworkRef = rsp.ResolvedReference

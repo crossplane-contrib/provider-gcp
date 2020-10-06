@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -39,7 +40,7 @@ func (mg *NodePool) ResolveReferences(ctx context.Context, c client.Reader) erro
 		Extract:      v1beta1.GKEClusterURL(),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "spec.forProvider.cluster")
 	}
 	mg.Spec.ForProvider.Cluster = rsp.ResolvedValue
 	mg.Spec.ForProvider.ClusterRef = rsp.ResolvedReference
