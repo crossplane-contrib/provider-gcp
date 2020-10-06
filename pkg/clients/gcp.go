@@ -22,8 +22,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/crossplane/provider-gcp/apis/v1beta1"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"google.golang.org/api/googleapi"
@@ -38,6 +36,7 @@ import (
 
 	cmpv1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 	"github.com/crossplane/provider-gcp/apis/v1alpha3"
+	"github.com/crossplane/provider-gcp/apis/v1beta1"
 )
 
 // GetAuthInfo returns the necessary authentication information that is necessary
@@ -47,6 +46,10 @@ func GetAuthInfo(ctx context.Context, kube client.Client, cr resource.Managed) (
 	pc := &v1beta1.ProviderConfig{}
 	switch {
 	case cr.GetProviderConfigReference() != nil && cr.GetProviderConfigReference().Name != "":
+		t := resource.NewProviderConfigUsageTracker(kube, &v1beta1.ProviderConfigUsage{})
+		if err := t.Track(ctx, cr); err != nil {
+			return "", nil, err
+		}
 		nn := types.NamespacedName{Name: cr.GetProviderConfigReference().Name}
 		if err := kube.Get(ctx, nn, pc); err != nil {
 			return "", nil, err
@@ -58,7 +61,7 @@ func GetAuthInfo(ctx context.Context, kube client.Client, cr resource.Managed) (
 			return "", nil, err
 		}
 		p.ObjectMeta.DeepCopyInto(&pc.ObjectMeta)
-		p.Spec.CredentialsSecretRef.DeepCopyInto(&pc.Spec.CredentialsSecretRef)
+		p.Spec.CredentialsSecretRef.DeepCopyInto(pc.Spec.CredentialsSecretRef)
 		pc.Spec.ProjectID = p.Spec.ProjectID
 	default:
 		return "", nil, errors.New("neither providerConfigRef nor providerRef is given")

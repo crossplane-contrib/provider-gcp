@@ -23,6 +23,7 @@ import (
 
 	"github.com/crossplane/provider-gcp/pkg/controller/cache"
 	"github.com/crossplane/provider-gcp/pkg/controller/compute"
+	"github.com/crossplane/provider-gcp/pkg/controller/config"
 	"github.com/crossplane/provider-gcp/pkg/controller/container"
 	"github.com/crossplane/provider-gcp/pkg/controller/database"
 	"github.com/crossplane/provider-gcp/pkg/controller/iam"
@@ -35,6 +36,7 @@ import (
 // the supplied manager.
 func Setup(mgr ctrl.Manager, l logging.Logger) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger) error{
+		config.Setup,
 		cache.SetupCloudMemorystoreInstance,
 		compute.SetupGlobalAddress,
 		compute.SetupNetwork,
