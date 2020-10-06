@@ -20,6 +20,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -52,7 +53,7 @@ func SubnetworkURL() reference.ExtractValueFn {
 func (mg *GlobalAddress) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, mg)
 
-	// Resolve spec.network
+	// Resolve spec.forProvider.network
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
 		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Network),
 		Reference:    mg.Spec.ForProvider.NetworkRef,
@@ -61,7 +62,7 @@ func (mg *GlobalAddress) ResolveReferences(ctx context.Context, c client.Reader)
 		Extract:      NetworkURL(),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "spec.forProvider.network")
 	}
 	mg.Spec.ForProvider.Network = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.NetworkRef = rsp.ResolvedReference
@@ -73,7 +74,7 @@ func (mg *GlobalAddress) ResolveReferences(ctx context.Context, c client.Reader)
 func (mg *Subnetwork) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, mg)
 
-	// Resolve spec.network
+	// Resolve spec.forProvider.network
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
 		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Network),
 		Reference:    mg.Spec.ForProvider.NetworkRef,
@@ -82,7 +83,7 @@ func (mg *Subnetwork) ResolveReferences(ctx context.Context, c client.Reader) er
 		Extract:      NetworkURL(),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "spec.forProvider.network")
 	}
 	mg.Spec.ForProvider.Network = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.NetworkRef = rsp.ResolvedReference

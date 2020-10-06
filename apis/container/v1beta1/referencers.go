@@ -20,6 +20,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -52,7 +53,7 @@ func (mg *GKECluster) ResolveReferences(ctx context.Context, c client.Reader) er
 		Extract:      v1beta1.NetworkURL(),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "spec.forProvider.network")
 	}
 	mg.Spec.ForProvider.Network = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.NetworkRef = rsp.ResolvedReference
@@ -66,7 +67,7 @@ func (mg *GKECluster) ResolveReferences(ctx context.Context, c client.Reader) er
 		Extract:      v1beta1.SubnetworkURL(),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "spec.forProvider.subnetwork")
 	}
 	mg.Spec.ForProvider.Subnetwork = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.SubnetworkRef = rsp.ResolvedReference

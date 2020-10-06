@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -39,7 +40,7 @@ func (mg *Connection) ResolveReferences(ctx context.Context, c client.Reader) er
 		Extract:      v1beta1.NetworkURL(),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "spec.forProvider.network")
 	}
 	mg.Spec.ForProvider.Network = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.NetworkRef = rsp.ResolvedReference
@@ -53,7 +54,7 @@ func (mg *Connection) ResolveReferences(ctx context.Context, c client.Reader) er
 		Extract:       reference.ExternalName(),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "spec.forProvider.reservedPeeringRanges")
 	}
 	mg.Spec.ForProvider.ReservedPeeringRanges = mrsp.ResolvedValues
 	mg.Spec.ForProvider.ReservedPeeringRangeRefs = mrsp.ResolvedReferences
