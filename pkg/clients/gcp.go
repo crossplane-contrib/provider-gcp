@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	cmpv1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
@@ -42,40 +43,60 @@ import (
 // GetAuthInfo returns the necessary authentication information that is necessary
 // to use when the controller connects to GCP API in order to reconcile the managed
 // resource.
-func GetAuthInfo(ctx context.Context, kube client.Client, cr resource.Managed) (projectID string, opts option.ClientOption, err error) {
-	pc := &v1beta1.ProviderConfig{}
+func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts option.ClientOption, err error) {
 	switch {
-	case cr.GetProviderConfigReference() != nil && cr.GetProviderConfigReference().Name != "":
-		t := resource.NewProviderConfigUsageTracker(kube, &v1beta1.ProviderConfigUsage{})
-		if err := t.Track(ctx, cr); err != nil {
-			return "", nil, err
-		}
-		nn := types.NamespacedName{Name: cr.GetProviderConfigReference().Name}
-		if err := kube.Get(ctx, nn, pc); err != nil {
-			return "", nil, err
-		}
-	case cr.GetProviderReference() != nil && cr.GetProviderReference().Name != "":
-		p := &v1alpha3.Provider{}
-		nn := types.NamespacedName{Name: cr.GetProviderReference().Name}
-		if err := kube.Get(ctx, nn, p); err != nil {
-			return "", nil, err
-		}
-		p.ObjectMeta.DeepCopyInto(&pc.ObjectMeta)
-		p.Spec.CredentialsSecretRef.DeepCopyInto(pc.Spec.CredentialsSecretRef)
-		pc.Spec.ProjectID = p.Spec.ProjectID
+	case mg.GetProviderConfigReference() != nil:
+		return UseProviderConfig(ctx, c, mg)
+	case mg.GetProviderReference() != nil:
+		return UseProvider(ctx, c, mg)
 	default:
 		return "", nil, errors.New("neither providerConfigRef nor providerRef is given")
+	}
+}
+
+// UseProvider to return GCP authentication information.
+// Deprecated: Use UseProviderConfig
+func UseProvider(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts option.ClientOption, err error) {
+	p := &v1alpha3.Provider{}
+	if err := c.Get(ctx, types.NamespacedName{Name: mg.GetProviderReference().Name}, p); err != nil {
+		return "", nil, err
+	}
+
+	ref := p.Spec.CredentialsSecretRef
+	s := &v1.Secret{}
+	if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
+		return "", nil, err
+	}
+	return p.Spec.ProjectID, option.WithCredentialsJSON(s.Data[ref.Key]), nil
+}
+
+// UseProviderConfig to return GCP authentication information.
+func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts option.ClientOption, err error) {
+	pc := &v1beta1.ProviderConfig{}
+	t := resource.NewProviderConfigUsageTracker(c, &v1beta1.ProviderConfigUsage{})
+	if err := t.Track(ctx, mg); err != nil {
+		return "", nil, err
+	}
+	if err := c.Get(ctx, types.NamespacedName{Name: mg.GetProviderConfigReference().Name}, pc); err != nil {
+		return "", nil, err
 	}
 
 	// NOTE(muvaf): When we implement the workload identity, we will only need to
 	// return a different type of option.ClientOption, which is WithTokenSource().
+	if s := pc.Spec.Credentials.Source; s != runtimev1alpha1.CredentialsSourceSecret {
+		return "", nil, errors.Errorf("unsupported credentials source %q", s)
+	}
+
+	ref := pc.Spec.Credentials.SecretRef
+	if ref == nil {
+		return "", nil, errors.New("no credentials secret reference was provided")
+	}
 
 	s := &v1.Secret{}
-	nn := types.NamespacedName{Name: pc.Spec.CredentialsSecretRef.Name, Namespace: pc.Spec.CredentialsSecretRef.Namespace}
-	if err := kube.Get(ctx, nn, s); err != nil {
+	if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
 		return "", nil, err
 	}
-	return pc.Spec.ProjectID, option.WithCredentialsJSON(s.Data[pc.Spec.CredentialsSecretRef.Key]), nil
+	return pc.Spec.ProjectID, option.WithCredentialsJSON(s.Data[ref.Key]), nil
 }
 
 // IsErrorNotFoundGRPC gets a value indicating whether the given error represents
