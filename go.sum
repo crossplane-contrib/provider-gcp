@@ -102,10 +102,10 @@ github.com/crossplane/crossplane v0.13.0-rc.0.20200924053741-18324aa15a19 h1:EG5
 github.com/crossplane/crossplane v0.13.0-rc.0.20200924053741-18324aa15a19/go.mod h1:8p1eEPxkMSJ9rHS/INbs444kRw8Eq43rhx4VxRZe4ak=
 github.com/crossplane/crossplane-runtime v0.9.1-0.20200918014829-e7742464e49b h1:SXxCTD2/JJwGa6HeigMDhJf7zix94epiQFU1vt9QzUU=
 github.com/crossplane/crossplane-runtime v0.9.1-0.20200918014829-e7742464e49b/go.mod h1:cJl5ZZONisre4v6wTmbrC8Jh3AI+erq/lNaxZzv9tnU=
-github.com/crossplane/crossplane-runtime v0.9.1-0.20201005140116-dc04a11d0062 h1:Mkl9z4DZLVacC2WI8NciBNmNCtAAVLhlku8hMIrDS8k=
-github.com/crossplane/crossplane-runtime v0.9.1-0.20201005140116-dc04a11d0062/go.mod h1:cJl5ZZONisre4v6wTmbrC8Jh3AI+erq/lNaxZzv9tnU=
-github.com/crossplane/crossplane-tools v0.0.0-20201001224552-fb258cc0eb30 h1:NoiOGZCsnrpY4U6sqfiz0RQhi+ohWxFu58rQGoX7MVE=
-github.com/crossplane/crossplane-tools v0.0.0-20201001224552-fb258cc0eb30/go.mod h1:C735A9X0x0lR8iGVOOxb49Mt70Ua4EM2b7PGaRPBLd4=
+github.com/crossplane/crossplane-runtime v0.9.1-0.20201008065523-51c117eff562 h1:o28gUhy3uHtow+5mLU4FEvJrZfFKXU244bzFzYWGnzc=
+github.com/crossplane/crossplane-runtime v0.9.1-0.20201008065523-51c117eff562/go.mod h1:cJl5ZZONisre4v6wTmbrC8Jh3AI+erq/lNaxZzv9tnU=
+github.com/crossplane/crossplane-tools v0.0.0-20201007233256-88b291e145bb h1:j09j/Gk1qH64HUtf/fcTjMAxLxUdOuQXySWu46WTVTU=
+github.com/crossplane/crossplane-tools v0.0.0-20201007233256-88b291e145bb/go.mod h1:C735A9X0x0lR8iGVOOxb49Mt70Ua4EM2b7PGaRPBLd4=
 github.com/dave/jennifer v1.3.0 h1:p3tl41zjjCZTNBytMwrUuiAnherNUZktlhPTKoF/sEk=
 github.com/dave/jennifer v1.3.0/go.mod h1:fIb+770HOpJ2fmN9EPPKOqm1vMGhB+TwXKMZhrIygKg=
 github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
