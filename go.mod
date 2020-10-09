@@ -2,6 +2,12 @@ module github.com/crossplane/provider-gcp
 
 go 1.13
 
+replace (
+	google.golang.org/api => google.golang.org/api v0.21.0
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
+	google.golang.org/grpc => google.golang.org/grpc v1.28.0
+)
+
 require (
 	cloud.google.com/go v0.57.0
 	cloud.google.com/go/pubsub v1.3.1
