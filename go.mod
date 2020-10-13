@@ -2,6 +2,8 @@ module github.com/crossplane/provider-gcp
 
 go 1.13
 
+replace github.com/crossplane/crossplane-runtime => github.com/negz/crossplane-runtime v0.0.0-20201013014754-ee8aafd46cb5
+
 replace (
 	google.golang.org/api => google.golang.org/api v0.21.0
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940

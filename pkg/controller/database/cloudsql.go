@@ -85,11 +85,10 @@ func (c *cloudsqlConnector) Connect(ctx context.Context, mg resource.Managed) (m
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	return &cloudsqlExternal{kube: c.kube, db: s.Instances, projectID: projectID}, nil
+	return &cloudsqlExternal{db: s.Instances, projectID: projectID}, nil
 }
 
 type cloudsqlExternal struct {
-	kube      client.Client
 	db        *sqladmin.InstancesService
 	projectID string
 }
@@ -101,17 +100,12 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	}
 	instance, err := c.db.Get(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
+		return managed.ExternalObservation{ResourceExists: false}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
 	}
-	currentSpec := cr.Spec.ForProvider.DeepCopy()
+
+	beforeLateInit := cr.Spec.ForProvider.DeepCopy()
 	cloudsql.LateInitializeSpec(&cr.Spec.ForProvider, *instance)
-	// TODO(muvaf): reflection in production code might cause performance bottlenecks. Generating comparison
-	// methods would make more sense.
-	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
-		if err := c.kube.Update(ctx, cr); err != nil {
-			return managed.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
-		}
-	}
+
 	cr.Status.AtProvider = cloudsql.GenerateObservation(*instance)
 	switch cr.Status.AtProvider.State {
 	case v1beta1.StateRunnable:
@@ -126,10 +120,12 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
 	}
+
 	return managed.ExternalObservation{
-		ResourceExists:    true,
-		ResourceUpToDate:  upToDate,
-		ConnectionDetails: getConnectionDetails(cr, instance),
+		ResourceExists:          true,
+		ResourceLateInitialized: !cmp.Equal(beforeLateInit, &cr.Spec.ForProvider),
+		ResourceUpToDate:        upToDate,
+		ConnectionDetails:       getConnectionDetails(cr, instance),
 	}, nil
 }
 

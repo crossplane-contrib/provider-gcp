@@ -49,8 +49,6 @@ const (
 	connectionName = "some:connection:name"
 )
 
-var errBoom = errors.New("boom")
-
 type instanceModifier func(*v1beta1.CloudSQLInstance)
 
 func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
@@ -159,7 +157,6 @@ func TestObserve(t *testing.T) {
 
 	cases := map[string]struct {
 		handler http.Handler
-		kube    client.Client
 		args    args
 		want    want
 	}{
@@ -197,7 +194,7 @@ func TestObserve(t *testing.T) {
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetFailed),
 			},
 		},
-		"NotUpToDateSpecUpdateFailed": {
+		"LateInitialized": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
 				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
@@ -209,16 +206,18 @@ func TestObserve(t *testing.T) {
 				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance), instance.Spec.ForProvider, db)
 				_ = json.NewEncoder(w).Encode(db)
 			}),
-			kube: &test.MockClient{
-				MockUpdate: test.NewMockUpdateFn(errBoom),
-			},
 			args: args{
-
 				mg: instance(),
 			},
 			want: want{
+				obs: managed.ExternalObservation{
+					ResourceExists:          true,
+					ResourceUpToDate:        true,
+					ResourceLateInitialized: true,
+					ConnectionDetails:       connDetails("", ""),
+				},
 				mg:  instance(withBackupConfigurationStartTime("22:00")),
-				err: errors.Wrap(errBoom, errManagedUpdateFailed),
+				err: nil,
 			},
 		},
 		"Creating": {
@@ -282,9 +281,6 @@ func TestObserve(t *testing.T) {
 				db.State = v1beta1.StateRunnable
 				_ = json.NewEncoder(w).Encode(db)
 			}),
-			kube: &test.MockClient{
-				MockGet: test.NewMockGetFn(nil),
-			},
 			args: args{
 				mg: instance(),
 			},
@@ -308,7 +304,6 @@ func TestObserve(t *testing.T) {
 			defer server.Close()
 			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			e := cloudsqlExternal{
-				kube:      tc.kube,
 				projectID: projectID,
 				db:        s.Instances,
 			}
@@ -316,11 +311,11 @@ func TestObserve(t *testing.T) {
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
+					t.Errorf("Observe(...): -want error string, +got error string:\n%s", diff)
 				}
 			} else {
 				if diff := cmp.Diff(tc.want.err, err); diff != "" {
-					t.Errorf("Observe(...): want error != got error:\n%s", diff)
+					t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
 				}
 			}
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
@@ -426,7 +421,6 @@ func TestCreate(t *testing.T) {
 			defer server.Close()
 			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			e := cloudsqlExternal{
-				kube:      tc.kube,
 				projectID: projectID,
 				db:        s.Instances,
 			}
@@ -544,7 +538,6 @@ func TestDelete(t *testing.T) {
 			defer server.Close()
 			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			e := cloudsqlExternal{
-				kube:      tc.kube,
 				projectID: projectID,
 				db:        s.Instances,
 			}
@@ -644,7 +637,6 @@ func TestUpdate(t *testing.T) {
 			defer server.Close()
 			s, _ := sqladmin.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			e := cloudsqlExternal{
-				kube:      tc.kube,
 				projectID: projectID,
 				db:        s.Instances,
 			}
