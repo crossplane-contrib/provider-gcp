@@ -41,8 +41,6 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		compute.SetupGlobalAddress,
 		compute.SetupNetwork,
 		compute.SetupSubnetwork,
-		container.SetupGKEClusterTarget,
-		container.SetupGKEClusterSecret,
 		container.SetupGKECluster,
 		container.SetupNodePool,
 		database.SetupCloudSQLInstance,
