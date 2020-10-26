@@ -2,6 +2,13 @@ apiVersion: meta.pkg.crossplane.io/v1alpha1
 kind: Provider
 metadata:
   name: provider-gcp
+  annotations:
+    company: Crossplane
+    maintainer: Nic Cope <negz@upbound.io>
+    source: github.com/crossplane/provider-gcp
+    license: Apache-2.0
+    description: |
+      provider-gcp is the Crossplane infrastructure provider for the Google Cloud Platform.
 spec:
   controller:
     image: crossplane/provider-gcp-controller:VERSION
