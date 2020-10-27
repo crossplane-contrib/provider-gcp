@@ -4,7 +4,7 @@ metadata:
   name: provider-gcp
   annotations:
     company: Crossplane
-    maintainer: Nic Cope <negz@upbound.io>
+    maintainer: Crossplane Maintainers <info@crossplane.io>
     source: github.com/crossplane/provider-gcp
     license: Apache-2.0
     description: |
