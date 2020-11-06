@@ -7,8 +7,26 @@ metadata:
     maintainer: Crossplane Maintainers <info@crossplane.io>
     source: github.com/crossplane/provider-gcp
     license: Apache-2.0
+    descriptionShort: |
+      The GCP Crossplane provider enables infrastructure management for the
+      Google Cloud Platform. 
+
     description: |
-      provider-gcp is the Crossplane infrastructure provider for the Google Cloud Platform.
+      The Google Cloud Platform (GCP) Crossplane provider adds support for
+      managing GCP resources in Kubernetes.
+
+    readme: |
+      `provider-gcp` is the Crossplane infrastructure provider for the [Google
+      Cloud Platform (GCP)](https://cloud.google.com/).
+
+      Available resources and their fields can be found in the [CRD
+      Docs](https://doc.crds.dev/github.com/crossplane/provider-gcp).
+
+      If you encounter an issue please reach out on
+      [slack.crossplane.io](https://slack.crossplane.io) and create an issue in
+      the [crossplane/provider-gcp](https://github.com/crossplane/provider-gcp)
+      repo.
+
 spec:
   controller:
     image: crossplane/provider-gcp-controller:VERSION
