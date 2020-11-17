@@ -300,11 +300,6 @@ type GKEClusterParameters struct {
 	// +immutable
 	SubnetworkSelector *xpv1.Selector `json:"subnetworkSelector,omitempty"`
 
-	// TierSettings: Cluster tier settings.
-	// +optional
-	// +immutable
-	TierSettings *TierSettings `json:"tierSettings,omitempty"`
-
 	// VerticalPodAutoscaling: Cluster-level Vertical Pod Autoscaling
 	// configuration.
 	// +optional
@@ -1072,10 +1067,6 @@ type PodSecurityPolicyConfig struct {
 
 // PrivateClusterConfigSpec is configuration options for private clusters.
 type PrivateClusterConfigSpec struct {
-	// EnablePeeringRouteSharing: Whether to enable route sharing over the
-	// network peering.
-	EnablePeeringRouteSharing *bool `json:"enablePeeringRouteSharing,omitempty"`
-
 	// EnablePrivateEndpoint: Whether the master's internal IP address is
 	// used as the cluster endpoint.
 	// +optional

@@ -27,6 +27,7 @@ import (
 	"github.com/crossplane/provider-gcp/pkg/controller/config"
 	"github.com/crossplane/provider-gcp/pkg/controller/container"
 	"github.com/crossplane/provider-gcp/pkg/controller/database"
+	"github.com/crossplane/provider-gcp/pkg/controller/dns"
 	"github.com/crossplane/provider-gcp/pkg/controller/iam"
 	"github.com/crossplane/provider-gcp/pkg/controller/kms"
 	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
@@ -56,6 +57,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		storage.SetupBucket,
 		storage.SetupBucketPolicy,
 		storage.SetupBucketPolicyMember,
+		dns.SetupResourceRecordSet,
 	} {
 		if err := setup(mgr, l, rl); err != nil {
 			return err

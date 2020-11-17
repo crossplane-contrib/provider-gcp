@@ -94,7 +94,6 @@ func GenerateCluster(name string, in v1beta1.GKEClusterParameters, cluster *cont
 	GeneratePodSecurityPolicyConfig(in.PodSecurityPolicyConfig, cluster)
 	GeneratePrivateClusterConfig(in.PrivateClusterConfig, cluster)
 	GenerateResourceUsageExportConfig(in.ResourceUsageExportConfig, cluster)
-	GenerateTierSettings(in.TierSettings, cluster)
 	GenerateVerticalPodAutoscaling(in.VerticalPodAutoscaling, cluster)
 	GenerateWorkloadIdentityConfig(in.WorkloadIdentityConfig, cluster)
 }
@@ -367,7 +366,6 @@ func GeneratePrivateClusterConfig(in *v1beta1.PrivateClusterConfigSpec, cluster 
 		if cluster.PrivateClusterConfig == nil {
 			cluster.PrivateClusterConfig = &container.PrivateClusterConfig{}
 		}
-		cluster.PrivateClusterConfig.EnablePeeringRouteSharing = gcp.BoolValue(in.EnablePeeringRouteSharing)
 		cluster.PrivateClusterConfig.EnablePrivateEndpoint = gcp.BoolValue(in.EnablePrivateEndpoint)
 		cluster.PrivateClusterConfig.EnablePrivateNodes = gcp.BoolValue(in.EnablePrivateNodes)
 		cluster.PrivateClusterConfig.MasterIpv4CidrBlock = gcp.StringValue(in.MasterIpv4CidrBlock)
@@ -395,16 +393,6 @@ func GenerateResourceUsageExportConfig(in *v1beta1.ResourceUsageExportConfig, cl
 			}
 			cluster.ResourceUsageExportConfig.ConsumptionMeteringConfig.Enabled = in.ConsumptionMeteringConfig.Enabled
 		}
-	}
-}
-
-// GenerateTierSettings generates *container.TierSettings from *TierSettings.
-func GenerateTierSettings(in *v1beta1.TierSettings, cluster *container.Cluster) {
-	if in != nil {
-		if cluster.TierSettings == nil {
-			cluster.TierSettings = &container.TierSettings{}
-		}
-		cluster.TierSettings.Tier = in.Tier
 	}
 }
 
@@ -778,7 +766,6 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 		if spec.PrivateClusterConfig == nil {
 			spec.PrivateClusterConfig = &v1beta1.PrivateClusterConfigSpec{}
 		}
-		spec.PrivateClusterConfig.EnablePeeringRouteSharing = gcp.LateInitializeBool(spec.PrivateClusterConfig.EnablePeeringRouteSharing, in.PrivateClusterConfig.EnablePeeringRouteSharing)
 		spec.PrivateClusterConfig.EnablePrivateEndpoint = gcp.LateInitializeBool(spec.PrivateClusterConfig.EnablePrivateEndpoint, in.PrivateClusterConfig.EnablePrivateEndpoint)
 		spec.PrivateClusterConfig.EnablePrivateNodes = gcp.LateInitializeBool(spec.PrivateClusterConfig.EnablePrivateNodes, in.PrivateClusterConfig.EnablePrivateNodes)
 		spec.PrivateClusterConfig.MasterIpv4CidrBlock = gcp.LateInitializeString(spec.PrivateClusterConfig.MasterIpv4CidrBlock, in.PrivateClusterConfig.MasterIpv4CidrBlock)
@@ -804,12 +791,6 @@ func LateInitializeSpec(spec *v1beta1.GKEClusterParameters, in container.Cluster
 	}
 
 	spec.Subnetwork = gcp.LateInitializeString(spec.Subnetwork, in.Subnetwork)
-
-	if spec.TierSettings == nil && in.TierSettings != nil {
-		spec.TierSettings = &v1beta1.TierSettings{
-			Tier: in.TierSettings.Tier,
-		}
-	}
 
 	if spec.VerticalPodAutoscaling == nil && in.VerticalPodAutoscaling != nil {
 		spec.VerticalPodAutoscaling = &v1beta1.VerticalPodAutoscaling{

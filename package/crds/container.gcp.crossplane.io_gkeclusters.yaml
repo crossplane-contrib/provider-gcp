@@ -418,9 +418,6 @@ spec:
                   privateClusterConfig:
                     description: 'PrivateClusterConfig: Configuration for private cluster.'
                     properties:
-                      enablePeeringRouteSharing:
-                        description: 'EnablePeeringRouteSharing: Whether to enable route sharing over the network peering.'
-                        type: boolean
                       enablePrivateEndpoint:
                         description: 'EnablePrivateEndpoint: Whether the master''s internal IP address is used as the cluster endpoint.'
                         type: boolean
@@ -484,15 +481,6 @@ spec:
                           type: string
                         description: MatchLabels ensures an object with matching labels is selected.
                         type: object
-                    type: object
-                  tierSettings:
-                    description: 'TierSettings: Cluster tier settings.'
-                    properties:
-                      tier:
-                        description: "Tier: Cluster tier. \n Possible values:   \"UNSPECIFIED\" - UNSPECIFIED is the default value. If this value is set during create or update, it defaults to the project level tier setting.   \"STANDARD\" - Represents the standard tier or base Google Kubernetes Engine offering.   \"ADVANCED\" - Represents the advanced tier."
-                        type: string
-                    required:
-                    - tier
                     type: object
                   verticalPodAutoscaling:
                     description: 'VerticalPodAutoscaling: Cluster-level Vertical Pod Autoscaling configuration.'
