@@ -70,7 +70,7 @@ spec:
                     description: 'TTL: Number of seconds that this ResourceRecordSet can be cached by resolvers.'
                     type: integer
                   type:
-                    description: "Type: The identifier of a supported record type. See the list of Supported DNS record types. https://cloud.google.com/dns/docs/overview#supported_dns_record_types \n Possible values:   \"A\"   \"AAAA\"   \"CAA\" \t \"CNAME\" \t \"IPSECKEY\" \t \"MX\" \t \"NAPTR\" \t \"NS\" \t \"PTR\" \t \"SOA\" \t \"SPF\" \t \"SRV\" \t \"SSHFP\" \t \"TLSA\" \t \"TXT\""
+                    description: "Type: The identifier of a supported record type. See the list of Supported DNS record types. https://cloud.google.com/dns/docs/overview#supported_dns_record_types \n Possible values:   \"A\"   \"AAAA\"   \"CAA\"   \"CNAME\"   \"IPSECKEY\"   \"MX\"   \"NAPTR\"   \"NS\"   \"PTR\"   \"SOA\"   \"SPF\"   \"SRV\"   \"SSHFP\"   \"TLSA\"   \"TXT\""
                     enum:
                     - A
                     - AAAA
@@ -91,7 +91,6 @@ spec:
                 required:
                 - managedZone
                 - name
-                - rrdatas
                 - ttl
                 - type
                 type: object
@@ -154,11 +153,6 @@ spec:
                   type:
                     description: 'Type: The identifier of a supported record type. See the list of Supported DNS record types.'
                     type: string
-                required:
-                - name
-                - rrdatas
-                - ttl
-                - type
                 type: object
               conditions:
                 description: Conditions of the resource.
