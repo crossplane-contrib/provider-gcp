@@ -103,7 +103,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFoundGRPC, err), errGetTopic)
 	}
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
-	topic.LateInitialize(&cr.Spec.ForProvider, *t)
+	topic.LateInitialize(&cr.Spec.ForProvider, t)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.client.Update(ctx, cr); err != nil {
 			return managed.ExternalObservation{}, errors.Wrap(err, errKubeUpdateTopic)
@@ -112,7 +112,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	cr.SetConditions(xpv1.Available())
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: topic.IsUpToDate(cr.Spec.ForProvider, *t),
+		ResourceUpToDate: topic.IsUpToDate(cr.Spec.ForProvider, t),
 		ConnectionDetails: managed.ConnectionDetails{
 			v1alpha1.ConnectionSecretKeyTopic:       []byte(meta.GetExternalName(cr)),
 			v1alpha1.ConnectionSecretKeyProjectName: []byte(e.projectID),
@@ -143,7 +143,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetTopic)
 	}
 
-	_, err = e.ps.UpdateTopic(ctx, topic.GenerateUpdateRequest(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider, *t))
+	_, err = e.ps.UpdateTopic(ctx, topic.GenerateUpdateRequest(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider, t))
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateTopic)
 }
 

@@ -111,7 +111,7 @@ func GenerateRedisInstance(id InstanceID, s v1beta1.CloudMemorystoreInstancePara
 
 // GenerateObservation is used to produce an observation object from GCP's Redis
 // Instance object.
-func GenerateObservation(r redisv1pb.Instance) v1beta1.CloudMemorystoreInstanceObservation {
+func GenerateObservation(r *redisv1pb.Instance) v1beta1.CloudMemorystoreInstanceObservation {
 	o := v1beta1.CloudMemorystoreInstanceObservation{
 		Name:                   r.Name,
 		Host:                   r.Host,
@@ -129,7 +129,7 @@ func GenerateObservation(r redisv1pb.Instance) v1beta1.CloudMemorystoreInstanceO
 }
 
 // LateInitializeSpec fills empty spec fields with the data retrieved from GCP.
-func LateInitializeSpec(spec *v1beta1.CloudMemorystoreInstanceParameters, r redisv1pb.Instance) {
+func LateInitializeSpec(spec *v1beta1.CloudMemorystoreInstanceParameters, r *redisv1pb.Instance) {
 	if spec.Tier == "" {
 		spec.Tier = r.Tier.String()
 	}

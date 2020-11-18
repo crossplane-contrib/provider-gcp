@@ -107,13 +107,13 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetInstance)
 	}
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
-	cloudmemorystore.LateInitializeSpec(&cr.Spec.ForProvider, *existing)
+	cloudmemorystore.LateInitializeSpec(&cr.Spec.ForProvider, existing)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.kube.Update(ctx, cr); err != nil {
 			return managed.ExternalObservation{}, errors.Wrap(err, errUpdateCR)
 		}
 	}
-	cr.Status.AtProvider = cloudmemorystore.GenerateObservation(*existing)
+	cr.Status.AtProvider = cloudmemorystore.GenerateObservation(existing)
 	conn := managed.ConnectionDetails{}
 	switch cr.Status.AtProvider.State {
 	case cloudmemorystore.StateReady:

@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/genproto/googleapis/pubsub/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
@@ -81,7 +82,7 @@ func TestGenerateTopic(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			got := GenerateTopic(tc.projectID, tc.name, tc.s)
-			if diff := cmp.Diff(tc.out, got); diff != "" {
+			if diff := cmp.Diff(tc.out, got, protocmp.Transform()); diff != "" {
 				t.Errorf("GenerateTopic(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -90,7 +91,7 @@ func TestGenerateTopic(t *testing.T) {
 
 func TestLateInitialize(t *testing.T) {
 	type args struct {
-		obs   pubsub.Topic
+		obs   *pubsub.Topic
 		param *v1alpha1.TopicParameters
 	}
 	cases := map[string]struct {
@@ -99,7 +100,7 @@ func TestLateInitialize(t *testing.T) {
 	}{
 		"Full": {
 			args: args{
-				obs: *topic(),
+				obs: topic(),
 				param: &v1alpha1.TopicParameters{
 					KmsKeyName: params().KmsKeyName,
 				},
@@ -120,7 +121,7 @@ func TestLateInitialize(t *testing.T) {
 
 func TestIsUpToDate(t *testing.T) {
 	type args struct {
-		obs   pubsub.Topic
+		obs   *pubsub.Topic
 		param v1alpha1.TopicParameters
 	}
 	cases := map[string]struct {
@@ -129,7 +130,7 @@ func TestIsUpToDate(t *testing.T) {
 	}{
 		"NotUpToDate": {
 			args: args{
-				obs: *topic(),
+				obs: topic(),
 				param: v1alpha1.TopicParameters{
 					KmsKeyName: params().KmsKeyName,
 				},
@@ -138,7 +139,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"UpToDate": {
 			args: args{
-				obs:   *topic(),
+				obs:   topic(),
 				param: *params(),
 			},
 			result: true,
@@ -161,7 +162,7 @@ func TestGenerateUpdateRequest(t *testing.T) {
 	type args struct {
 		projectID string
 		name      string
-		obs       pubsub.Topic
+		obs       *pubsub.Topic
 		param     v1alpha1.TopicParameters
 	}
 	cases := map[string]struct {
@@ -172,7 +173,7 @@ func TestGenerateUpdateRequest(t *testing.T) {
 			args: args{
 				projectID: projectID,
 				name:      name,
-				obs:       pubsub.Topic{},
+				obs:       &pubsub.Topic{},
 				param:     *params(),
 			},
 			result: &pubsub.UpdateTopicRequest{
@@ -188,7 +189,7 @@ func TestGenerateUpdateRequest(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			got := GenerateUpdateRequest(tc.args.projectID, tc.args.name, tc.args.param, tc.args.obs)
-			if diff := cmp.Diff(tc.result, got); diff != "" {
+			if diff := cmp.Diff(tc.result, got, protocmp.Transform()); diff != "" {
 				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
 			}
 		})

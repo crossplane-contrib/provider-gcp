@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/testing/protocmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -188,7 +189,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			id := NewInstanceID(tc.project, tc.i)
 			got := NewCreateInstanceRequest(id, tc.i)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			if diff := cmp.Diff(tc.want, got, protocmp.Transform()); diff != "" {
 				t.Errorf("NewCreateInstanceRequest(...): -want, +got:\n%v", diff)
 			}
 		})
@@ -236,7 +237,7 @@ func TestNewUpdateInstanceRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			id := NewInstanceID(tc.project, tc.i)
 			got := NewUpdateInstanceRequest(id, tc.i)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			if diff := cmp.Diff(tc.want, got, protocmp.Transform()); diff != "" {
 				t.Errorf("NewUpdateInstanceRequest(...): -want, +got:\n%v", diff)
 			}
 		})
@@ -380,7 +381,7 @@ func TestNewDeleteInstanceRequest(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := NewDeleteInstanceRequest(tc.id)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			if diff := cmp.Diff(tc.want, got, protocmp.Transform()); diff != "" {
 				t.Errorf("NewDeleteInstanceRequest(...): -want, +got:\n%v", diff)
 			}
 		})
@@ -405,7 +406,7 @@ func TestNewGetInstanceRequest(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := NewGetInstanceRequest(tc.id)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			if diff := cmp.Diff(tc.want, got, protocmp.Transform()); diff != "" {
 				t.Errorf("NewGetInstanceRequest(...): -want, +got:\n%v", diff)
 			}
 		})
