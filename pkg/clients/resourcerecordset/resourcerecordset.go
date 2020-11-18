@@ -36,11 +36,12 @@ const (
 
 type resourceRecordSetService interface {
 	Create(project string, managedZone string, resourcerecordset *dns.ResourceRecordSet) *dns.ProjectsManagedZonesRrsetsCreateCall
-	Get(project string, managedZone string, name string, type_ string) *dns.ProjectsManagedZonesRrsetsGetCall
-	Patch(project string, managedZone string, name string, type_ string, resourcerecordset *dns.ResourceRecordSet) *dns.ProjectsManagedZonesRrsetsPatchCall
-	Delete(project string, managedZone string, name string, type_ string) *dns.ProjectsManagedZonesRrsetsDeleteCall
+	Get(project string, managedZone string, name string, rType string) *dns.ProjectsManagedZonesRrsetsGetCall
+	Patch(project string, managedZone string, name string, rType string, resourcerecordset *dns.ResourceRecordSet) *dns.ProjectsManagedZonesRrsetsPatchCall
+	Delete(project string, managedZone string, name string, rType string) *dns.ProjectsManagedZonesRrsetsDeleteCall
 }
 
+// Client defines the actions that can be taken on ResourceRecordSets
 type Client interface {
 	Get(ctx context.Context, cr *v1alpha1.ResourceRecordSet) (*dns.ResourceRecordSet, error)
 	Create(ctx context.Context, cr *v1alpha1.ResourceRecordSet) (*dns.ResourceRecordSet, error)
@@ -53,6 +54,7 @@ type recordClient struct {
 	projectID string
 }
 
+// NewClient initializes a new Client for ResourceRecordSets
 func NewClient(ctx context.Context, projectID string, opts option.ClientOption) (Client, error) {
 	s, err := dns.NewService(ctx, opts)
 	if err != nil {
@@ -61,11 +63,13 @@ func NewClient(ctx context.Context, projectID string, opts option.ClientOption) 
 	return recordClient{rrs: dns.NewProjectsManagedZonesRrsetsService(s), projectID: projectID}, nil
 }
 
+// Get a ResourceRecordSet
 func (c recordClient) Get(ctx context.Context, cr *v1alpha1.ResourceRecordSet) (*dns.ResourceRecordSet, error) {
 	req := c.rrs.Get(c.projectID, cr.Spec.ForProvider.ManagedZone, cr.Spec.ForProvider.Name, cr.Spec.ForProvider.Type)
 	return req.Context(ctx).Do()
 }
 
+// Create a ResourceRecordSet
 func (c recordClient) Create(ctx context.Context, cr *v1alpha1.ResourceRecordSet) (*dns.ResourceRecordSet, error) {
 	r := &dns.ResourceRecordSet{
 		Kind:             resourceRecordSetKind,
@@ -82,6 +86,7 @@ func (c recordClient) Create(ctx context.Context, cr *v1alpha1.ResourceRecordSet
 	return req.Context(ctx).Do()
 }
 
+// Update a ResourceRecordSet
 func (c recordClient) Update(ctx context.Context, cr *v1alpha1.ResourceRecordSet) (*dns.ResourceRecordSet, error) {
 	r := &dns.ResourceRecordSet{}
 	populateProviderFromCR(r, cr)
@@ -89,6 +94,7 @@ func (c recordClient) Update(ctx context.Context, cr *v1alpha1.ResourceRecordSet
 	return req.Context(ctx).Do()
 }
 
+// Delete a ResourceRecordSet
 func (c recordClient) Delete(ctx context.Context, cr *v1alpha1.ResourceRecordSet) (*dns.ResourceRecordSetsDeleteResponse, error) {
 	req := c.rrs.Delete(c.projectID, cr.Spec.ForProvider.ManagedZone, getFQDNFromExternalName(cr), cr.Spec.ForProvider.Type)
 	return req.Context(ctx).Do()
