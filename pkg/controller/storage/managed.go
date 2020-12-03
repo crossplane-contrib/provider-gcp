@@ -59,7 +59,6 @@ func SetupBucket(mgr ctrl.Manager, l logging.Logger) error {
 			resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
 			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 			managed.WithLogger(l.WithValues("controller", name)),
-			managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
