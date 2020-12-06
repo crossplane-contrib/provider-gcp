@@ -1,0 +1,79 @@
+apiVersion: container.gcp.crossplane.io/v1beta1
+kind: GKECluster
+metadata:
+  name: example-cluster
+spec:
+  forProvider:
+    addonsConfig:
+      cloudRunConfig:
+        disabled: true
+      dnsCacheConfig:
+        enabled: false
+      gcePersistentDiskCsiDriverConfig:
+        enabled: true
+      horizontalPodAutoscaling:
+        disabled: true
+      httpLoadBalancing:
+        disabled: true
+      istioConfig:
+        disabled: true
+        auth: "AUTH_NONE"
+      kalmConfig:
+        enabled: true
+      kubernetesDashboard:
+        disabled: true
+      networkPolicyConfig:
+        disabled: false
+    location: northamerica-northeast1-a
+    binaryAuthorization: 
+      enabled: false
+    ipAllocationPolicy:
+      useIpAliases: true
+      createSubnetwork: true
+    legacyAbac:
+      enabled: false
+    loggingService: "logging.googleapis.com/kubernetes"
+    masterAuth:
+      clientCertificateConfig:
+        issueClientCertificate: false
+    monitoringService: "monitoring.googleapis.com/kubernetes"
+    network: "gke-test" 
+    networkPolicy:
+      enabled: true
+      provider: CALICO
+    podSecurityPolicyConfig:
+      enabled: true
+---
+apiVersion: container.gcp.crossplane.io/v1alpha1
+kind: NodePool
+metadata:
+  name: crossplane-np
+spec:
+  forProvider:
+    autoscaling:
+      autoprovisioned: false
+      enabled: true
+      maxNodeCount: 5
+      minNodeCount: 3  
+    clusterRef:
+      name: example-cluster
+    config:
+      machineType: n1-standard-1
+      sandboxConfig:
+        sandboxType: gvisor
+      diskSizeGb: 120
+      diskType: pd-ssd
+      imageType: cos_containerd
+      labels:
+        test-label: crossplane-created
+      machineType: n1-standard-2
+      oauthScopes:
+      - "https://www.googleapis.com/auth/devstorage.read_only"
+      - "https://www.googleapis.com/auth/logging.write"
+      - "https://www.googleapis.com/auth/monitoring"
+      - "https://www.googleapis.com/auth/servicecontrol"
+      - "https://www.googleapis.com/auth/service.management.readonly"
+      - "https://www.googleapis.com/auth/trace.append"      
+    initialNodeCount: 3
+    locations:
+      - "northamerica-northeast1-a"
