@@ -26,8 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -111,11 +110,11 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 
 	switch cr.Status.AtProvider.Status {
 	case v1beta1.ClusterStateRunning, v1beta1.ClusterStateReconciling:
-		cr.Status.SetConditions(v1alpha1.Available())
+		cr.Status.SetConditions(xpv1.Available())
 	case v1beta1.ClusterStateProvisioning:
-		cr.Status.SetConditions(v1alpha1.Creating())
+		cr.Status.SetConditions(xpv1.Creating())
 	case v1beta1.ClusterStateUnspecified, v1beta1.ClusterStateDegraded, v1beta1.ClusterStateError:
-		cr.Status.SetConditions(v1alpha1.Unavailable())
+		cr.Status.SetConditions(xpv1.Unavailable())
 	}
 
 	u, _, err := gke.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, existing)
@@ -135,7 +134,7 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCluster)
 	}
-	cr.SetConditions(v1alpha1.Creating())
+	cr.SetConditions(xpv1.Creating())
 
 	// Wait until creation is complete if already provisioning.
 	if cr.Status.AtProvider.Status == v1beta1.ClusterStateProvisioning {
@@ -197,7 +196,7 @@ func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error
 	if !ok {
 		return errors.New(errNotCluster)
 	}
-	cr.SetConditions(runtimev1alpha1.Deleting())
+	cr.SetConditions(xpv1.Deleting())
 	// Wait until delete is complete if already deleting.
 	if cr.Status.AtProvider.Status == v1beta1.ClusterStateStopping {
 		return nil
@@ -218,13 +217,13 @@ func connectionDetails(cluster *container.Cluster) managed.ConnectionDetails {
 		return nil
 	}
 	cd := managed.ConnectionDetails{
-		runtimev1alpha1.ResourceCredentialsSecretEndpointKey:   []byte(config.Clusters[cluster.Name].Server),
-		runtimev1alpha1.ResourceCredentialsSecretUserKey:       []byte(config.AuthInfos[cluster.Name].Username),
-		runtimev1alpha1.ResourceCredentialsSecretPasswordKey:   []byte(config.AuthInfos[cluster.Name].Password),
-		runtimev1alpha1.ResourceCredentialsSecretCAKey:         config.Clusters[cluster.Name].CertificateAuthorityData,
-		runtimev1alpha1.ResourceCredentialsSecretClientCertKey: config.AuthInfos[cluster.Name].ClientCertificateData,
-		runtimev1alpha1.ResourceCredentialsSecretClientKeyKey:  config.AuthInfos[cluster.Name].ClientKeyData,
-		runtimev1alpha1.ResourceCredentialsSecretKubeconfigKey: rawConfig,
+		xpv1.ResourceCredentialsSecretEndpointKey:   []byte(config.Clusters[cluster.Name].Server),
+		xpv1.ResourceCredentialsSecretUserKey:       []byte(config.AuthInfos[cluster.Name].Username),
+		xpv1.ResourceCredentialsSecretPasswordKey:   []byte(config.AuthInfos[cluster.Name].Password),
+		xpv1.ResourceCredentialsSecretCAKey:         config.Clusters[cluster.Name].CertificateAuthorityData,
+		xpv1.ResourceCredentialsSecretClientCertKey: config.AuthInfos[cluster.Name].ClientCertificateData,
+		xpv1.ResourceCredentialsSecretClientKeyKey:  config.AuthInfos[cluster.Name].ClientKeyData,
+		xpv1.ResourceCredentialsSecretKubeconfigKey: rawConfig,
 	}
 	return cd
 }

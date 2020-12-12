@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -43,7 +43,7 @@ import (
 
 type nodePoolModifier func(*v1alpha1.NodePool)
 
-func npWithConditions(c ...runtimev1alpha1.Condition) nodePoolModifier {
+func npWithConditions(c ...xpv1.Condition) nodePoolModifier {
 	return func(i *v1alpha1.NodePool) { i.Status.SetConditions(c...) }
 }
 
@@ -65,8 +65,8 @@ func nodePool(im ...nodePoolModifier) *v1alpha1.NodePool {
 			},
 		},
 		Spec: v1alpha1.NodePoolSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				ProviderReference: &runtimev1alpha1.Reference{Name: providerName},
+			ResourceSpec: xpv1.ResourceSpec{
+				ProviderReference: &xpv1.Reference{Name: providerName},
 			},
 			ForProvider: v1alpha1.NodePoolParameters{},
 		},
@@ -173,7 +173,7 @@ func TestNodePoolObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateProvisioning), npWithConditions(runtimev1alpha1.Creating())),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateProvisioning), npWithConditions(xpv1.Creating())),
 			},
 		},
 		"Unavailable": {
@@ -196,7 +196,7 @@ func TestNodePoolObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateError), npWithConditions(runtimev1alpha1.Unavailable())),
+				mg: nodePool(npWithProviderStatus(v1alpha1.NodePoolStateError), npWithConditions(xpv1.Unavailable())),
 			},
 		},
 		"RunnableUnbound": {
@@ -224,7 +224,7 @@ func TestNodePoolObserve(t *testing.T) {
 				},
 				mg: nodePool(
 					npWithProviderStatus(v1alpha1.NodePoolStateRunning),
-					npWithConditions(runtimev1alpha1.Available())),
+					npWithConditions(xpv1.Available())),
 			},
 		},
 		"BoundUnavailable": {
@@ -245,7 +245,7 @@ func TestNodePoolObserve(t *testing.T) {
 			args: args{
 				mg: nodePool(
 					npWithProviderStatus(v1alpha1.NodePoolStateRunning),
-					npWithConditions(runtimev1alpha1.Available()),
+					npWithConditions(xpv1.Available()),
 				),
 			},
 			want: want{
@@ -255,7 +255,7 @@ func TestNodePoolObserve(t *testing.T) {
 				},
 				mg: nodePool(
 					npWithProviderStatus(v1alpha1.NodePoolStateError),
-					npWithConditions(runtimev1alpha1.Unavailable())),
+					npWithConditions(xpv1.Unavailable())),
 			},
 		},
 	}
@@ -330,7 +330,7 @@ func TestNodePoolCreate(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				mg:  nodePool(npWithConditions(runtimev1alpha1.Creating())),
+				mg:  nodePool(npWithConditions(xpv1.Creating())),
 				cre: managed.ExternalCreation{},
 				err: nil,
 			},
@@ -360,7 +360,7 @@ func TestNodePoolCreate(t *testing.T) {
 			},
 			want: want{
 				mg: nodePool(
-					npWithConditions(runtimev1alpha1.Creating()),
+					npWithConditions(xpv1.Creating()),
 					npWithProviderStatus(v1alpha1.NodePoolStateProvisioning),
 				),
 				cre: managed.ExternalCreation{},
@@ -380,7 +380,7 @@ func TestNodePoolCreate(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				mg:  nodePool(npWithConditions(runtimev1alpha1.Creating())),
+				mg:  nodePool(npWithConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateNodePool),
 			},
 		},
@@ -397,7 +397,7 @@ func TestNodePoolCreate(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				mg:  nodePool(npWithConditions(runtimev1alpha1.Creating())),
+				mg:  nodePool(npWithConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateNodePool),
 			},
 		},
@@ -459,7 +459,7 @@ func TestNodePoolDelete(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				mg:  nodePool(npWithConditions(runtimev1alpha1.Deleting())),
+				mg:  nodePool(npWithConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -479,7 +479,7 @@ func TestNodePoolDelete(t *testing.T) {
 			},
 			want: want{
 				mg: nodePool(
-					npWithConditions(runtimev1alpha1.Deleting()),
+					npWithConditions(xpv1.Deleting()),
 					npWithProviderStatus(v1alpha1.NodePoolStateStopping),
 				),
 				err: nil,
@@ -498,7 +498,7 @@ func TestNodePoolDelete(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				mg:  nodePool(npWithConditions(runtimev1alpha1.Deleting())),
+				mg:  nodePool(npWithConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -515,7 +515,7 @@ func TestNodePoolDelete(t *testing.T) {
 				mg: nodePool(),
 			},
 			want: want{
-				mg:  nodePool(npWithConditions(runtimev1alpha1.Deleting())),
+				mg:  nodePool(npWithConditions(xpv1.Deleting())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteNodePool),
 			},
 		},

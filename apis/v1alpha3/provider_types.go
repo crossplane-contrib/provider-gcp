@@ -19,14 +19,14 @@ package v1alpha3
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // A ProviderSpec defines the desired state of a Provider.
 type ProviderSpec struct {
 	// CredentialsSecretRef references a specific secret's key that contains
 	// the credentials that are used to connect to the GCP API.
-	CredentialsSecretRef runtimev1alpha1.SecretKeySelector `json:"credentialsSecretRef"`
+	CredentialsSecretRef xpv1.SecretKeySelector `json:"credentialsSecretRef"`
 
 	// ProjectID is the project name (not numerical ID) of this GCP Provider.
 	ProjectID string `json:"projectID"`

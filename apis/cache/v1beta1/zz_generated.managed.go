@@ -18,20 +18,20 @@ limitations under the License.
 
 package v1beta1
 
-import runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+import xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
 // GetCondition of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+func (mg *CloudMemorystoreInstance) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
 // GetDeletionPolicy of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+func (mg *CloudMemorystoreInstance) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
 // GetProviderConfigReference of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) GetProviderConfigReference() *runtimev1alpha1.Reference {
+func (mg *CloudMemorystoreInstance) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
@@ -39,27 +39,27 @@ func (mg *CloudMemorystoreInstance) GetProviderConfigReference() *runtimev1alpha
 GetProviderReference of this CloudMemorystoreInstance.
 Deprecated: Use GetProviderConfigReference.
 */
-func (mg *CloudMemorystoreInstance) GetProviderReference() *runtimev1alpha1.Reference {
+func (mg *CloudMemorystoreInstance) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
 }
 
 // GetWriteConnectionSecretToReference of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
+func (mg *CloudMemorystoreInstance) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
 // SetConditions of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) SetConditions(c ...runtimev1alpha1.Condition) {
+func (mg *CloudMemorystoreInstance) SetConditions(c ...xpv1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
 // SetDeletionPolicy of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+func (mg *CloudMemorystoreInstance) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
 // SetProviderConfigReference of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+func (mg *CloudMemorystoreInstance) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
@@ -67,11 +67,11 @@ func (mg *CloudMemorystoreInstance) SetProviderConfigReference(r *runtimev1alpha
 SetProviderReference of this CloudMemorystoreInstance.
 Deprecated: Use SetProviderConfigReference.
 */
-func (mg *CloudMemorystoreInstance) SetProviderReference(r *runtimev1alpha1.Reference) {
+func (mg *CloudMemorystoreInstance) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
 // SetWriteConnectionSecretToReference of this CloudMemorystoreInstance.
-func (mg *CloudMemorystoreInstance) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
+func (mg *CloudMemorystoreInstance) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }

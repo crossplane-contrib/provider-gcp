@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -54,7 +54,7 @@ var _ managed.ExternalClient = &gaExternal{}
 
 type addressModifier func(*v1beta1.GlobalAddress)
 
-func addressWithConditions(c ...runtimev1alpha1.Condition) addressModifier {
+func addressWithConditions(c ...xpv1.Condition) addressModifier {
 	return func(i *v1beta1.GlobalAddress) { i.Status.SetConditions(c...) }
 }
 
@@ -199,7 +199,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 					ResourceUpToDate: true,
 				},
 				mg: addressObj(
-					addressWithConditions(runtimev1alpha1.Creating()),
+					addressWithConditions(xpv1.Creating()),
 					addressWithStatus(v1beta1.StatusReserving),
 				),
 			},
@@ -228,7 +228,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 					ResourceUpToDate: true,
 				},
 				mg: addressObj(
-					addressWithConditions(runtimev1alpha1.Available()),
+					addressWithConditions(xpv1.Available()),
 					addressWithStatus(v1beta1.StatusReserved),
 				),
 			},
@@ -308,7 +308,7 @@ func TestGlobalAddressCreate(t *testing.T) {
 				mg: addressObj(),
 			},
 			want: want{
-				mg:  addressObj(addressWithConditions(runtimev1alpha1.Creating())),
+				mg:  addressObj(addressWithConditions(xpv1.Creating())),
 				cre: managed.ExternalCreation{},
 				err: nil,
 			},
@@ -326,7 +326,7 @@ func TestGlobalAddressCreate(t *testing.T) {
 				mg: addressObj(),
 			},
 			want: want{
-				mg:  addressObj(addressWithConditions(runtimev1alpha1.Creating())),
+				mg:  addressObj(addressWithConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateAddress),
 			},
 		},
@@ -343,7 +343,7 @@ func TestGlobalAddressCreate(t *testing.T) {
 				mg: addressObj(),
 			},
 			want: want{
-				mg:  addressObj(addressWithConditions(runtimev1alpha1.Creating())),
+				mg:  addressObj(addressWithConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateAddress),
 			},
 		},
@@ -408,7 +408,7 @@ func TestGlobalAddressDelete(t *testing.T) {
 				mg: addressObj(),
 			},
 			want: want{
-				mg:  addressObj(addressWithConditions(runtimev1alpha1.Deleting())),
+				mg:  addressObj(addressWithConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -425,7 +425,7 @@ func TestGlobalAddressDelete(t *testing.T) {
 				mg: addressObj(),
 			},
 			want: want{
-				mg:  addressObj(addressWithConditions(runtimev1alpha1.Deleting())),
+				mg:  addressObj(addressWithConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -442,7 +442,7 @@ func TestGlobalAddressDelete(t *testing.T) {
 				mg: addressObj(),
 			},
 			want: want{
-				mg:  addressObj(addressWithConditions(runtimev1alpha1.Deleting())),
+				mg:  addressObj(addressWithConditions(xpv1.Deleting())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteAddress),
 			},
 		},

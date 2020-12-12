@@ -27,7 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
@@ -154,7 +154,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotConnection)
 	}
 
-	cn.Status.SetConditions(runtimev1alpha1.Creating())
+	cn.Status.SetConditions(xpv1.Creating())
 	conn := connection.FromParameters(cn.Spec.ForProvider)
 	// We use Patch instead of Create, because the resource is not created
 	// if we're creating a connection in a VPC whose name had been used
@@ -182,7 +182,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotConnection)
 	}
 
-	cn.Status.SetConditions(runtimev1alpha1.Deleting())
+	cn.Status.SetConditions(xpv1.Deleting())
 	rm := &compute.NetworksRemovePeeringRequest{Name: cn.Status.AtProvider.Peering}
 	_, err := e.compute.Networks.RemovePeering(e.projectID, path.Base(gcp.StringValue(cn.Spec.ForProvider.Network)), rm).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteConnection)

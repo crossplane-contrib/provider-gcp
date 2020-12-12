@@ -26,7 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -115,11 +115,11 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	cr.Status.AtProvider = cloudsql.GenerateObservation(*instance)
 	switch cr.Status.AtProvider.State {
 	case v1beta1.StateRunnable:
-		cr.Status.SetConditions(v1alpha1.Available())
+		cr.Status.SetConditions(xpv1.Available())
 	case v1beta1.StateCreating:
-		cr.Status.SetConditions(v1alpha1.Creating())
+		cr.Status.SetConditions(xpv1.Creating())
 	case v1beta1.StateCreationFailed, v1beta1.StateSuspended, v1beta1.StateMaintenance, v1beta1.StateUnknownState:
-		cr.Status.SetConditions(v1alpha1.Unavailable())
+		cr.Status.SetConditions(xpv1.Unavailable())
 	}
 
 	upToDate, err := cloudsql.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, instance)
@@ -138,7 +138,7 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (man
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCloudSQL)
 	}
-	cr.SetConditions(v1alpha1.Creating())
+	cr.SetConditions(xpv1.Creating())
 	instance := &sqladmin.DatabaseInstance{}
 	cloudsql.GenerateDatabaseInstance(meta.GetExternalName(cr), cr.Spec.ForProvider, instance)
 	pw, err := password.Generate()
@@ -157,7 +157,7 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (man
 	}
 
 	cd := managed.ConnectionDetails{
-		v1alpha1.ResourceCredentialsSecretPasswordKey: []byte(pw),
+		xpv1.ResourceCredentialsSecretPasswordKey: []byte(pw),
 	}
 	return managed.ExternalCreation{ConnectionDetails: cd}, nil
 }
@@ -183,7 +183,7 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	if !ok {
 		return errors.New(errNotCloudSQL)
 	}
-	cr.SetConditions(v1alpha1.Deleting())
+	cr.SetConditions(xpv1.Deleting())
 	_, err := c.db.Delete(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if gcp.IsErrorNotFound(err) {
 		return nil
@@ -193,8 +193,8 @@ func (c *cloudsqlExternal) Delete(ctx context.Context, mg resource.Managed) erro
 
 func getConnectionDetails(cr *v1beta1.CloudSQLInstance, instance *sqladmin.DatabaseInstance) managed.ConnectionDetails {
 	m := managed.ConnectionDetails{
-		v1alpha1.ResourceCredentialsSecretUserKey: []byte(cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
-		v1beta1.CloudSQLSecretConnectionName:      []byte(instance.ConnectionName),
+		xpv1.ResourceCredentialsSecretUserKey: []byte(cloudsql.DatabaseUserName(cr.Spec.ForProvider)),
+		v1beta1.CloudSQLSecretConnectionName:  []byte(instance.ConnectionName),
 	}
 
 	// TODO(muvaf): There might be cases where more than 1 private and/or public IP address has been assigned. We should
@@ -204,12 +204,12 @@ func getConnectionDetails(cr *v1beta1.CloudSQLInstance, instance *sqladmin.Datab
 			m[v1beta1.PrivateIPKey] = []byte(ip.IPAddress)
 			// TODO(muvaf): we explicitly enforce use of private IP if it's available. But this should be configured
 			// by resource class or claim.
-			m[v1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(ip.IPAddress)
+			m[xpv1.ResourceCredentialsSecretEndpointKey] = []byte(ip.IPAddress)
 		}
 		if ip.Type == v1beta1.PublicIPType {
 			m[v1beta1.PublicIPKey] = []byte(ip.IPAddress)
-			if len(m[v1alpha1.ResourceCredentialsSecretEndpointKey]) == 0 {
-				m[v1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(ip.IPAddress)
+			if len(m[xpv1.ResourceCredentialsSecretEndpointKey]) == 0 {
+				m[xpv1.ResourceCredentialsSecretEndpointKey] = []byte(ip.IPAddress)
 			}
 		}
 	}

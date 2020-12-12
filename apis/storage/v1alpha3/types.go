@@ -22,7 +22,7 @@ import (
 	"cloud.google.com/go/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // ProjectTeam is the project team associated with the entity, if any.
@@ -789,13 +789,13 @@ type BucketParameters struct {
 
 // A BucketSpec defines the desired state of a Bucket.
 type BucketSpec struct {
-	runtimev1alpha1.ResourceSpec `json:",inline"`
-	BucketParameters             `json:",inline"`
+	xpv1.ResourceSpec `json:",inline"`
+	BucketParameters  `json:",inline"`
 }
 
 // A BucketStatus represents the observed state of a Bucket.
 type BucketStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
+	xpv1.ResourceStatus `json:",inline"`
 
 	BucketOutputAttrs `json:"attributes,omitempty"`
 }

@@ -19,7 +19,7 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // NetworkParameters define the desired state of a Google Compute Engine VPC
@@ -143,14 +143,14 @@ type NetworkRoutingConfig struct {
 
 // A NetworkSpec defines the desired state of a Network.
 type NetworkSpec struct {
-	v1alpha1.ResourceSpec `json:",inline"`
-	ForProvider           NetworkParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       NetworkParameters `json:"forProvider"`
 }
 
 // A NetworkStatus represents the observed state of a Network.
 type NetworkStatus struct {
-	v1alpha1.ResourceStatus `json:",inline"`
-	AtProvider              NetworkObservation `json:"atProvider,omitempty"`
+	xpv1.ResourceStatus `json:",inline"`
+	AtProvider          NetworkObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

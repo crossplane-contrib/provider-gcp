@@ -25,7 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -110,9 +110,9 @@ func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 
 	switch cr.Status.AtProvider.Status {
 	case v1beta1.StatusReserving:
-		cr.SetConditions(runtimev1alpha1.Creating())
+		cr.SetConditions(xpv1.Creating())
 	case v1beta1.StatusInUse, v1beta1.StatusReserved:
-		cr.SetConditions(runtimev1alpha1.Available())
+		cr.SetConditions(xpv1.Available())
 	}
 
 	return eo, errors.Wrap(err, errManagedAddressUpdate)
@@ -124,7 +124,7 @@ func (e *gaExternal) Create(ctx context.Context, mg resource.Managed) (managed.E
 		return managed.ExternalCreation{}, errors.New(errNotGlobalAddress)
 	}
 
-	cr.Status.SetConditions(runtimev1alpha1.Creating())
+	cr.Status.SetConditions(xpv1.Creating())
 	address := &compute.Address{}
 	globaladdress.GenerateGlobalAddress(meta.GetExternalName(cr), cr.Spec.ForProvider, address)
 	_, err := e.GlobalAddresses.Insert(e.projectID, address).Context(ctx).Do()
@@ -142,7 +142,7 @@ func (e *gaExternal) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotGlobalAddress)
 	}
 
-	cr.Status.SetConditions(runtimev1alpha1.Deleting())
+	cr.Status.SetConditions(xpv1.Deleting())
 	_, err := e.GlobalAddresses.Delete(e.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteAddress)
 }

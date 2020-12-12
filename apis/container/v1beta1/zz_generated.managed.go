@@ -18,20 +18,20 @@ limitations under the License.
 
 package v1beta1
 
-import runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+import xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
 // GetCondition of this GKECluster.
-func (mg *GKECluster) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+func (mg *GKECluster) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
 // GetDeletionPolicy of this GKECluster.
-func (mg *GKECluster) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+func (mg *GKECluster) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
 // GetProviderConfigReference of this GKECluster.
-func (mg *GKECluster) GetProviderConfigReference() *runtimev1alpha1.Reference {
+func (mg *GKECluster) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
@@ -39,27 +39,27 @@ func (mg *GKECluster) GetProviderConfigReference() *runtimev1alpha1.Reference {
 GetProviderReference of this GKECluster.
 Deprecated: Use GetProviderConfigReference.
 */
-func (mg *GKECluster) GetProviderReference() *runtimev1alpha1.Reference {
+func (mg *GKECluster) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
 }
 
 // GetWriteConnectionSecretToReference of this GKECluster.
-func (mg *GKECluster) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
+func (mg *GKECluster) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
 // SetConditions of this GKECluster.
-func (mg *GKECluster) SetConditions(c ...runtimev1alpha1.Condition) {
+func (mg *GKECluster) SetConditions(c ...xpv1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
 // SetDeletionPolicy of this GKECluster.
-func (mg *GKECluster) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+func (mg *GKECluster) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
 // SetProviderConfigReference of this GKECluster.
-func (mg *GKECluster) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+func (mg *GKECluster) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
@@ -67,11 +67,11 @@ func (mg *GKECluster) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
 SetProviderReference of this GKECluster.
 Deprecated: Use SetProviderConfigReference.
 */
-func (mg *GKECluster) SetProviderReference(r *runtimev1alpha1.Reference) {
+func (mg *GKECluster) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
 // SetWriteConnectionSecretToReference of this GKECluster.
-func (mg *GKECluster) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
+func (mg *GKECluster) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }

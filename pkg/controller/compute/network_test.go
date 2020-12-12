@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -61,7 +61,7 @@ func gError(code int, message string) *googleapi.Error {
 
 type networkModifier func(*v1beta1.Network)
 
-func networkWithConditions(c ...runtimev1alpha1.Condition) networkModifier {
+func networkWithConditions(c ...xpv1.Condition) networkModifier {
 	return func(i *v1beta1.Network) { i.Status.SetConditions(c...) }
 }
 
@@ -196,7 +196,7 @@ func TestNetworkObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: networkObj(networkWithConditions(runtimev1alpha1.Available())),
+				mg: networkObj(networkWithConditions(xpv1.Available())),
 			},
 		},
 	}
@@ -274,7 +274,7 @@ func TestNetworkCreate(t *testing.T) {
 				mg: networkObj(),
 			},
 			want: want{
-				mg:  networkObj(networkWithConditions(runtimev1alpha1.Creating())),
+				mg:  networkObj(networkWithConditions(xpv1.Creating())),
 				cre: managed.ExternalCreation{},
 				err: nil,
 			},
@@ -292,7 +292,7 @@ func TestNetworkCreate(t *testing.T) {
 				mg: networkObj(),
 			},
 			want: want{
-				mg:  networkObj(networkWithConditions(runtimev1alpha1.Creating())),
+				mg:  networkObj(networkWithConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusConflict, ""), errNetworkCreateFailed),
 			},
 		},
@@ -309,7 +309,7 @@ func TestNetworkCreate(t *testing.T) {
 				mg: networkObj(),
 			},
 			want: want{
-				mg:  networkObj(networkWithConditions(runtimev1alpha1.Creating())),
+				mg:  networkObj(networkWithConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errNetworkCreateFailed),
 			},
 		},
@@ -374,7 +374,7 @@ func TestNetworkDelete(t *testing.T) {
 				mg: networkObj(),
 			},
 			want: want{
-				mg:  networkObj(networkWithConditions(runtimev1alpha1.Deleting())),
+				mg:  networkObj(networkWithConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -391,7 +391,7 @@ func TestNetworkDelete(t *testing.T) {
 				mg: networkObj(),
 			},
 			want: want{
-				mg:  networkObj(networkWithConditions(runtimev1alpha1.Deleting())),
+				mg:  networkObj(networkWithConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -408,7 +408,7 @@ func TestNetworkDelete(t *testing.T) {
 				mg: networkObj(),
 			},
 			want: want{
-				mg:  networkObj(networkWithConditions(runtimev1alpha1.Deleting())),
+				mg:  networkObj(networkWithConditions(xpv1.Deleting())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errNetworkDeleteFailed),
 			},
 		},
