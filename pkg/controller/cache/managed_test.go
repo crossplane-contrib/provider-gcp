@@ -30,7 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -67,7 +67,7 @@ type strange struct {
 
 type instanceModifier func(*v1beta1.CloudMemorystoreInstance)
 
-func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
+func withConditions(c ...xpv1.Condition) instanceModifier {
 	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.SetConditions(c...) }
 }
 
@@ -101,8 +101,8 @@ func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
 			},
 		},
 		Spec: v1beta1.CloudMemorystoreInstanceSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
+			ResourceSpec: xpv1.ResourceSpec{
+				WriteConnectionSecretToReference: &xpv1.SecretReference{
 					Namespace: namespace,
 					Name:      connectionSecretName,
 				},
@@ -161,7 +161,7 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				mg: instance(
-					withConditions(runtimev1alpha1.Available()),
+					withConditions(xpv1.Available()),
 					withState(cloudmemorystore.StateReady),
 					withHost(host),
 					withPort(port),
@@ -170,8 +170,8 @@ func TestObserve(t *testing.T) {
 				observation: managed.ExternalObservation{
 					ResourceExists: true,
 					ConnectionDetails: managed.ConnectionDetails{
-						runtimev1alpha1.ResourceCredentialsSecretEndpointKey: []byte(host),
-						runtimev1alpha1.ResourceCredentialsSecretPortKey:     []byte(strconv.Itoa(port)),
+						xpv1.ResourceCredentialsSecretEndpointKey: []byte(host),
+						xpv1.ResourceCredentialsSecretPortKey:     []byte(strconv.Itoa(port)),
 					},
 				},
 			},
@@ -194,7 +194,7 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				mg: instance(
-					withConditions(runtimev1alpha1.Creating()),
+					withConditions(xpv1.Creating()),
 					withState(cloudmemorystore.StateCreating),
 					withFullName(qualifiedName),
 					withTier(redisv1pb.Instance_TIER_UNSPECIFIED.String())),
@@ -222,7 +222,7 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				mg: instance(
-					withConditions(runtimev1alpha1.Deleting()),
+					withConditions(xpv1.Deleting()),
 					withState(cloudmemorystore.StateDeleting),
 					withFullName(qualifiedName),
 					withTier(redisv1pb.Instance_TIER_UNSPECIFIED.String())),
@@ -321,7 +321,7 @@ func TestCreate(t *testing.T) {
 				mg:  instance(),
 			},
 			want: want{
-				mg: instance(withConditions(runtimev1alpha1.Creating())),
+				mg: instance(withConditions(xpv1.Creating())),
 			},
 		},
 		"NotCloudMemorystoreInstance": {
@@ -347,7 +347,7 @@ func TestCreate(t *testing.T) {
 				mg:  instance(),
 			},
 			want: want{
-				mg:  instance(withConditions(runtimev1alpha1.Creating())),
+				mg:  instance(withConditions(xpv1.Creating())),
 				err: errors.Wrap(errorBoom, errCreateInstance),
 			},
 		},
@@ -475,7 +475,7 @@ func TestDelete(t *testing.T) {
 				mg:  instance(),
 			},
 			want: want{
-				mg: instance(withConditions(runtimev1alpha1.Deleting())),
+				mg: instance(withConditions(xpv1.Deleting())),
 			},
 		},
 		"NotCloudMemorystoreInstance": {
@@ -501,7 +501,7 @@ func TestDelete(t *testing.T) {
 				mg:  instance(),
 			},
 			want: want{
-				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
+				mg:  instance(withConditions(xpv1.Deleting())),
 				err: errors.Wrap(errorBoom, errDeleteInstance),
 			},
 		},

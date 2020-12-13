@@ -19,7 +19,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // Keys used in connection secret.
@@ -64,14 +64,14 @@ type MessageStoragePolicy struct {
 // TopicSpec defines the desired state of a
 // Topic.
 type TopicSpec struct {
-	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  TopicParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       TopicParameters `json:"forProvider"`
 }
 
 // TopicStatus represents the observed state of a
 // Topic.
 type TopicStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
+	xpv1.ResourceStatus `json:",inline"`
 }
 
 // +kubebuilder:object:root=true

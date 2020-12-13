@@ -22,7 +22,7 @@ import (
 	compute "google.golang.org/api/compute/v1"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
 	"github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
@@ -73,7 +73,7 @@ func UpdateStatus(s *v1beta1.ConnectionStatus, o Observation) {
 	s.AtProvider.Service = o.Connection.Service
 
 	if len(o.Network.Peerings) == 0 {
-		s.SetConditions(runtimev1alpha1.Unavailable())
+		s.SetConditions(xpv1.Unavailable())
 		return
 	}
 
@@ -81,9 +81,9 @@ func UpdateStatus(s *v1beta1.ConnectionStatus, o Observation) {
 		if p.Name == o.Connection.Peering {
 			switch p.State {
 			case PeeringStateActive:
-				s.SetConditions(runtimev1alpha1.Available())
+				s.SetConditions(xpv1.Available())
 			case PeeringStateInactive:
-				s.SetConditions(runtimev1alpha1.Unavailable())
+				s.SetConditions(xpv1.Unavailable())
 			}
 		}
 	}

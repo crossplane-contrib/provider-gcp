@@ -21,7 +21,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/apis/common/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -391,12 +391,12 @@ func (in *IPConfiguration) DeepCopyInto(out *IPConfiguration) {
 	}
 	if in.PrivateNetworkRef != nil {
 		in, out := &in.PrivateNetworkRef, &out.PrivateNetworkRef
-		*out = new(v1alpha1.Reference)
+		*out = new(v1.Reference)
 		**out = **in
 	}
 	if in.PrivateNetworkSelector != nil {
 		in, out := &in.PrivateNetworkSelector, &out.PrivateNetworkSelector
-		*out = new(v1alpha1.Selector)
+		*out = new(v1.Selector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.RequireSsl != nil {

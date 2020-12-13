@@ -19,7 +19,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // ServiceAccountParameters defines parameters for a desired IAM ServiceAccount
@@ -74,15 +74,15 @@ type ServiceAccountObservation struct {
 // ServiceAccountSpec defines the desired state of a
 // ServiceAccount.
 type ServiceAccountSpec struct {
-	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  ServiceAccountParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       ServiceAccountParameters `json:"forProvider"`
 }
 
 // ServiceAccountStatus represents the observed state of a
 // ServiceAccount.
 type ServiceAccountStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     ServiceAccountObservation `json:"atProvider,omitempty"`
+	xpv1.ResourceStatus `json:",inline"`
+	AtProvider          ServiceAccountObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

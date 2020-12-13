@@ -23,7 +23,7 @@ import (
 	compute "google.golang.org/api/compute/v1"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
@@ -111,9 +111,9 @@ func TestUpdateStatus(t *testing.T) {
 				},
 			},
 			want: &v1beta1.ConnectionStatus{
-				ResourceStatus: runtimev1alpha1.ResourceStatus{
-					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
-						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Available()},
+				ResourceStatus: xpv1.ResourceStatus{
+					ConditionedStatus: xpv1.ConditionedStatus{
+						Conditions: []xpv1.Condition{xpv1.Available()},
 					},
 				},
 				AtProvider: v1beta1.ConnectionObservation{
@@ -137,9 +137,9 @@ func TestUpdateStatus(t *testing.T) {
 				},
 			},
 			want: &v1beta1.ConnectionStatus{
-				ResourceStatus: runtimev1alpha1.ResourceStatus{
-					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
-						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Unavailable()},
+				ResourceStatus: xpv1.ResourceStatus{
+					ConditionedStatus: xpv1.ConditionedStatus{
+						Conditions: []xpv1.Condition{xpv1.Unavailable()},
 					},
 				},
 				AtProvider: v1beta1.ConnectionObservation{
@@ -158,9 +158,9 @@ func TestUpdateStatus(t *testing.T) {
 				Network: &compute.Network{},
 			},
 			want: &v1beta1.ConnectionStatus{
-				ResourceStatus: runtimev1alpha1.ResourceStatus{
-					ConditionedStatus: runtimev1alpha1.ConditionedStatus{
-						Conditions: []runtimev1alpha1.Condition{runtimev1alpha1.Unavailable()},
+				ResourceStatus: xpv1.ResourceStatus{
+					ConditionedStatus: xpv1.ConditionedStatus{
+						Conditions: []xpv1.Condition{xpv1.Unavailable()},
 					},
 				},
 				AtProvider: v1beta1.ConnectionObservation{

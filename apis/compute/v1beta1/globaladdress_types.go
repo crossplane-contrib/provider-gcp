@@ -19,8 +19,7 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // Known Address statuses.
@@ -78,12 +77,12 @@ type GlobalAddressParameters struct {
 	// NetworkRef references a Network to retrieve its URI
 	// +optional
 	// +immutable
-	NetworkRef *runtimev1alpha1.Reference `json:"networkRef,omitempty"`
+	NetworkRef *xpv1.Reference `json:"networkRef,omitempty"`
 
 	// NetworkSelector selects a reference to a Network
 	// +optional
 	// +immutable
-	NetworkSelector *runtimev1alpha1.Selector `json:"networkSelector,omitempty"`
+	NetworkSelector *xpv1.Selector `json:"networkSelector,omitempty"`
 
 	// PrefixLength: The prefix length if the resource represents an IP
 	// range.
@@ -122,12 +121,12 @@ type GlobalAddressParameters struct {
 	// SubnetworkRef references a Subnetwork to retrieve its URI
 	// +optional
 	// +immutable
-	SubnetworkRef *v1alpha1.Reference `json:"subnetworkRef,omitempty"`
+	SubnetworkRef *xpv1.Reference `json:"subnetworkRef,omitempty"`
 
 	// SubnetworkSelector selects a reference to a Subnetwork
 	// +optional
 	// +immutable
-	SubnetworkSelector *v1alpha1.Selector `json:"subnetworkSelector,omitempty"`
+	SubnetworkSelector *xpv1.Selector `json:"subnetworkSelector,omitempty"`
 }
 
 // A GlobalAddressObservation reflects the observed state of a GlobalAddress on GCP.
@@ -159,14 +158,14 @@ type GlobalAddressObservation struct {
 
 // A GlobalAddressSpec defines the desired state of a GlobalAddress.
 type GlobalAddressSpec struct {
-	v1alpha1.ResourceSpec `json:",inline"`
-	ForProvider           GlobalAddressParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       GlobalAddressParameters `json:"forProvider"`
 }
 
 // A GlobalAddressStatus represents the observed state of a GlobalAddress.
 type GlobalAddressStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     GlobalAddressObservation `json:"atProvider,omitempty"`
+	xpv1.ResourceStatus `json:",inline"`
+	AtProvider          GlobalAddressObservation `json:"atProvider,omitempty"`
 }
 
 // A GlobalAddress is a managed resource that represents a Google Compute Engine

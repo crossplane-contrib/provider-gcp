@@ -20,7 +20,7 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // Cluster states.
@@ -235,12 +235,12 @@ type GKEClusterParameters struct {
 	// NetworkRef references to a Network and retrieves its URI
 	// +optional
 	// +immutable
-	NetworkRef *runtimev1alpha1.Reference `json:"networkRef,omitempty"`
+	NetworkRef *xpv1.Reference `json:"networkRef,omitempty"`
 
 	// NetworkSelector selects a reference to a Network and retrieves its URI
 	// +optional
 	// +immutable
-	NetworkSelector *runtimev1alpha1.Selector `json:"networkSelector,omitempty"`
+	NetworkSelector *xpv1.Selector `json:"networkSelector,omitempty"`
 
 	// NOTE(hasheddan): only intranode visibility can be updated in
 	// NetworkConfig
@@ -292,13 +292,13 @@ type GKEClusterParameters struct {
 	// SubnetworkRef references to a Subnetwork and retrieves its URI
 	// +optional
 	// +immutable
-	SubnetworkRef *runtimev1alpha1.Reference `json:"subnetworkRef,omitempty"`
+	SubnetworkRef *xpv1.Reference `json:"subnetworkRef,omitempty"`
 
 	// SubnetworkSelector selects a reference to a Subnetwork and retrieves its
 	// URI
 	// +optional
 	// +immutable
-	SubnetworkSelector *runtimev1alpha1.Selector `json:"subnetworkSelector,omitempty"`
+	SubnetworkSelector *xpv1.Selector `json:"subnetworkSelector,omitempty"`
 
 	// TierSettings: Cluster tier settings.
 	// +optional
@@ -1608,14 +1608,14 @@ type AutoUpgradeOptionsClusterStatus struct {
 
 // A GKEClusterSpec defines the desired state of a GKECluster.
 type GKEClusterSpec struct {
-	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  GKEClusterParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       GKEClusterParameters `json:"forProvider"`
 }
 
 // A GKEClusterStatus represents the observed state of a GKECluster.
 type GKEClusterStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     GKEClusterObservation `json:"atProvider,omitempty"`
+	xpv1.ResourceStatus `json:",inline"`
+	AtProvider          GKEClusterObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

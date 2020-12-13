@@ -26,7 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
@@ -111,15 +111,15 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	conn := managed.ConnectionDetails{}
 	switch cr.Status.AtProvider.State {
 	case cloudmemorystore.StateReady:
-		cr.Status.SetConditions(runtimev1alpha1.Available())
-		conn[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(cr.Status.AtProvider.Host)
-		conn[runtimev1alpha1.ResourceCredentialsSecretPortKey] = []byte(strconv.Itoa(int(cr.Status.AtProvider.Port)))
+		cr.Status.SetConditions(xpv1.Available())
+		conn[xpv1.ResourceCredentialsSecretEndpointKey] = []byte(cr.Status.AtProvider.Host)
+		conn[xpv1.ResourceCredentialsSecretPortKey] = []byte(strconv.Itoa(int(cr.Status.AtProvider.Port)))
 	case cloudmemorystore.StateCreating:
-		cr.Status.SetConditions(runtimev1alpha1.Creating())
+		cr.Status.SetConditions(xpv1.Creating())
 	case cloudmemorystore.StateDeleting:
-		cr.Status.SetConditions(runtimev1alpha1.Deleting())
+		cr.Status.SetConditions(xpv1.Deleting())
 	default:
-		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
+		cr.Status.SetConditions(xpv1.Unavailable())
 	}
 
 	u, err := cloudmemorystore.IsUpToDate(id, &cr.Spec.ForProvider, existing)
@@ -144,7 +144,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	id := cloudmemorystore.NewInstanceID(e.projectID, i)
-	i.Status.SetConditions(runtimev1alpha1.Creating())
+	i.Status.SetConditions(xpv1.Creating())
 
 	_, err := e.cms.CreateInstance(ctx, cloudmemorystore.NewCreateInstanceRequest(id, i))
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateInstance)
@@ -165,7 +165,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotInstance)
 	}
-	i.SetConditions(runtimev1alpha1.Deleting())
+	i.SetConditions(xpv1.Deleting())
 
 	id := cloudmemorystore.NewInstanceID(e.projectID, i)
 	_, err := e.cms.DeleteInstance(ctx, cloudmemorystore.NewDeleteInstanceRequest(id))

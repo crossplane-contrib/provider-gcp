@@ -20,7 +20,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 )
@@ -109,13 +109,13 @@ type NodePoolParameters struct {
 	// referenced Crossplane GKECluster managed resource.
 	// +immutable
 	// +optional
-	ClusterRef *runtimev1alpha1.Reference `json:"clusterRef,omitempty"`
+	ClusterRef *xpv1.Reference `json:"clusterRef,omitempty"`
 
 	// ClusterSelector selects a reference to resolve the resource link of the
 	// referenced Crossplane GKECluster managed resource.
 	// +immutable
 	// +optional
-	ClusterSelector *runtimev1alpha1.Selector `json:"clusterSelector,omitempty"`
+	ClusterSelector *xpv1.Selector `json:"clusterSelector,omitempty"`
 
 	// NOTE(hasheddan): Autoscaling can only be updated via setAutoscaling
 	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters.nodePools/setAutoscaling
@@ -552,14 +552,14 @@ type AutoUpgradeOptions struct {
 
 // A NodePoolSpec defines the desired state of a NodePool.
 type NodePoolSpec struct {
-	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  NodePoolParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       NodePoolParameters `json:"forProvider"`
 }
 
 // A NodePoolStatus represents the observed state of a NodePool.
 type NodePoolStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     NodePoolObservation `json:"atProvider,omitempty"`
+	xpv1.ResourceStatus `json:",inline"`
+	AtProvider          NodePoolObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

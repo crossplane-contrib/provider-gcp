@@ -19,7 +19,7 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // CloudMemorystoreInstanceParameters define the desired state of an Google
@@ -159,15 +159,15 @@ type CloudMemorystoreInstanceObservation struct {
 // A CloudMemorystoreInstanceSpec defines the desired state of a
 // CloudMemorystoreInstance.
 type CloudMemorystoreInstanceSpec struct {
-	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  CloudMemorystoreInstanceParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       CloudMemorystoreInstanceParameters `json:"forProvider"`
 }
 
 // A CloudMemorystoreInstanceStatus represents the observed state of a
 // CloudMemorystoreInstance.
 type CloudMemorystoreInstanceStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     CloudMemorystoreInstanceObservation `json:"atProvider,omitempty"`
+	xpv1.ResourceStatus `json:",inline"`
+	AtProvider          CloudMemorystoreInstanceObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

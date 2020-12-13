@@ -19,7 +19,7 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // SubnetworkParameters define the desired state of a Google Compute Engine VPC
@@ -45,12 +45,12 @@ type SubnetworkParameters struct {
 	// NetworkRef references a Network and retrieves its URI
 	// +optional
 	// +immutable
-	NetworkRef *runtimev1alpha1.Reference `json:"networkRef,omitempty"`
+	NetworkRef *xpv1.Reference `json:"networkRef,omitempty"`
 
 	// NetworkSelector selects a reference to a Network
 	// +optional
 	// +immutable
-	NetworkSelector *runtimev1alpha1.Selector `json:"networkSelector,omitempty"`
+	NetworkSelector *xpv1.Selector `json:"networkSelector,omitempty"`
 
 	// Region: URL of the region where the Subnetwork resides. This field
 	// can be set only at resource creation time.
@@ -135,14 +135,14 @@ type SubnetworkSecondaryRange struct {
 
 // A SubnetworkSpec defines the desired state of a Subnetwork.
 type SubnetworkSpec struct {
-	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  SubnetworkParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       SubnetworkParameters `json:"forProvider"`
 }
 
 // A SubnetworkStatus represents the observed state of a Subnetwork.
 type SubnetworkStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     SubnetworkObservation `json:"atProvider,omitempty"`
+	xpv1.ResourceStatus `json:",inline"`
+	AtProvider          SubnetworkObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

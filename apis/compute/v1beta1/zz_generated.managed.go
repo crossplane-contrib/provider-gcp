@@ -18,20 +18,20 @@ limitations under the License.
 
 package v1beta1
 
-import runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+import xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
 // GetCondition of this GlobalAddress.
-func (mg *GlobalAddress) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+func (mg *GlobalAddress) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
 // GetDeletionPolicy of this GlobalAddress.
-func (mg *GlobalAddress) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+func (mg *GlobalAddress) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
 // GetProviderConfigReference of this GlobalAddress.
-func (mg *GlobalAddress) GetProviderConfigReference() *runtimev1alpha1.Reference {
+func (mg *GlobalAddress) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
@@ -39,27 +39,27 @@ func (mg *GlobalAddress) GetProviderConfigReference() *runtimev1alpha1.Reference
 GetProviderReference of this GlobalAddress.
 Deprecated: Use GetProviderConfigReference.
 */
-func (mg *GlobalAddress) GetProviderReference() *runtimev1alpha1.Reference {
+func (mg *GlobalAddress) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
 }
 
 // GetWriteConnectionSecretToReference of this GlobalAddress.
-func (mg *GlobalAddress) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
+func (mg *GlobalAddress) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
 // SetConditions of this GlobalAddress.
-func (mg *GlobalAddress) SetConditions(c ...runtimev1alpha1.Condition) {
+func (mg *GlobalAddress) SetConditions(c ...xpv1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
 // SetDeletionPolicy of this GlobalAddress.
-func (mg *GlobalAddress) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+func (mg *GlobalAddress) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
 // SetProviderConfigReference of this GlobalAddress.
-func (mg *GlobalAddress) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+func (mg *GlobalAddress) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
@@ -67,27 +67,27 @@ func (mg *GlobalAddress) SetProviderConfigReference(r *runtimev1alpha1.Reference
 SetProviderReference of this GlobalAddress.
 Deprecated: Use SetProviderConfigReference.
 */
-func (mg *GlobalAddress) SetProviderReference(r *runtimev1alpha1.Reference) {
+func (mg *GlobalAddress) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
 // SetWriteConnectionSecretToReference of this GlobalAddress.
-func (mg *GlobalAddress) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
+func (mg *GlobalAddress) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
 // GetCondition of this Network.
-func (mg *Network) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+func (mg *Network) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
 // GetDeletionPolicy of this Network.
-func (mg *Network) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+func (mg *Network) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
 // GetProviderConfigReference of this Network.
-func (mg *Network) GetProviderConfigReference() *runtimev1alpha1.Reference {
+func (mg *Network) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
@@ -95,27 +95,27 @@ func (mg *Network) GetProviderConfigReference() *runtimev1alpha1.Reference {
 GetProviderReference of this Network.
 Deprecated: Use GetProviderConfigReference.
 */
-func (mg *Network) GetProviderReference() *runtimev1alpha1.Reference {
+func (mg *Network) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
 }
 
 // GetWriteConnectionSecretToReference of this Network.
-func (mg *Network) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
+func (mg *Network) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
 // SetConditions of this Network.
-func (mg *Network) SetConditions(c ...runtimev1alpha1.Condition) {
+func (mg *Network) SetConditions(c ...xpv1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
 // SetDeletionPolicy of this Network.
-func (mg *Network) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+func (mg *Network) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
 // SetProviderConfigReference of this Network.
-func (mg *Network) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+func (mg *Network) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
@@ -123,27 +123,27 @@ func (mg *Network) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
 SetProviderReference of this Network.
 Deprecated: Use SetProviderConfigReference.
 */
-func (mg *Network) SetProviderReference(r *runtimev1alpha1.Reference) {
+func (mg *Network) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
 // SetWriteConnectionSecretToReference of this Network.
-func (mg *Network) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
+func (mg *Network) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
 // GetCondition of this Subnetwork.
-func (mg *Subnetwork) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+func (mg *Subnetwork) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
 // GetDeletionPolicy of this Subnetwork.
-func (mg *Subnetwork) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+func (mg *Subnetwork) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
 // GetProviderConfigReference of this Subnetwork.
-func (mg *Subnetwork) GetProviderConfigReference() *runtimev1alpha1.Reference {
+func (mg *Subnetwork) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
@@ -151,27 +151,27 @@ func (mg *Subnetwork) GetProviderConfigReference() *runtimev1alpha1.Reference {
 GetProviderReference of this Subnetwork.
 Deprecated: Use GetProviderConfigReference.
 */
-func (mg *Subnetwork) GetProviderReference() *runtimev1alpha1.Reference {
+func (mg *Subnetwork) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
 }
 
 // GetWriteConnectionSecretToReference of this Subnetwork.
-func (mg *Subnetwork) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
+func (mg *Subnetwork) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
 // SetConditions of this Subnetwork.
-func (mg *Subnetwork) SetConditions(c ...runtimev1alpha1.Condition) {
+func (mg *Subnetwork) SetConditions(c ...xpv1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
 // SetDeletionPolicy of this Subnetwork.
-func (mg *Subnetwork) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+func (mg *Subnetwork) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
 // SetProviderConfigReference of this Subnetwork.
-func (mg *Subnetwork) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+func (mg *Subnetwork) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
@@ -179,11 +179,11 @@ func (mg *Subnetwork) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
 SetProviderReference of this Subnetwork.
 Deprecated: Use SetProviderConfigReference.
 */
-func (mg *Subnetwork) SetProviderReference(r *runtimev1alpha1.Reference) {
+func (mg *Subnetwork) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
 // SetWriteConnectionSecretToReference of this Subnetwork.
-func (mg *Subnetwork) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
+func (mg *Subnetwork) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }

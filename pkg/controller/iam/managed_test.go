@@ -25,16 +25,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"google.golang.org/api/googleapi"
 	iamv1 "google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 )
@@ -107,8 +108,8 @@ func serviceAccount(im ...valueModifier) *v1alpha1.ServiceAccount {
 			Finalizers: []string{},
 		},
 		Spec: v1alpha1.ServiceAccountSpec{
-			ResourceSpec: runtimev1alpha1.ResourceSpec{
-				WriteConnectionSecretToReference: &runtimev1alpha1.SecretReference{
+			ResourceSpec: xpv1.ResourceSpec{
+				WriteConnectionSecretToReference: &xpv1.SecretReference{
 					Namespace: namespace,
 					Name:      connectionSecretName,
 				},

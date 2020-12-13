@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -50,7 +50,7 @@ var _ managed.ExternalClient = &subnetworkExternal{}
 
 type subnetworkModifier func(*v1beta1.Subnetwork)
 
-func subnetworkWithConditions(c ...runtimev1alpha1.Condition) subnetworkModifier {
+func subnetworkWithConditions(c ...xpv1.Condition) subnetworkModifier {
 	return func(i *v1beta1.Subnetwork) { i.Status.SetConditions(c...) }
 }
 
@@ -189,7 +189,7 @@ func TestSubnetworkObserve(t *testing.T) {
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Available())),
+				mg: subnetworkObj(subnetworkWithConditions(xpv1.Available())),
 			},
 		},
 	}
@@ -267,7 +267,7 @@ func TestSubnetworkCreate(t *testing.T) {
 				mg: subnetworkObj(),
 			},
 			want: want{
-				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Creating())),
+				mg:  subnetworkObj(subnetworkWithConditions(xpv1.Creating())),
 				cre: managed.ExternalCreation{},
 				err: nil,
 			},
@@ -285,7 +285,7 @@ func TestSubnetworkCreate(t *testing.T) {
 				mg: subnetworkObj(),
 			},
 			want: want{
-				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Creating())),
+				mg:  subnetworkObj(subnetworkWithConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateSubnetworkFailed),
 			},
 		},
@@ -302,7 +302,7 @@ func TestSubnetworkCreate(t *testing.T) {
 				mg: subnetworkObj(),
 			},
 			want: want{
-				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Creating())),
+				mg:  subnetworkObj(subnetworkWithConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateSubnetworkFailed),
 			},
 		},
@@ -367,7 +367,7 @@ func TestSubnetworkDelete(t *testing.T) {
 				mg: subnetworkObj(),
 			},
 			want: want{
-				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Deleting())),
+				mg:  subnetworkObj(subnetworkWithConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -384,7 +384,7 @@ func TestSubnetworkDelete(t *testing.T) {
 				mg: subnetworkObj(),
 			},
 			want: want{
-				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Deleting())),
+				mg:  subnetworkObj(subnetworkWithConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -401,7 +401,7 @@ func TestSubnetworkDelete(t *testing.T) {
 				mg: subnetworkObj(),
 			},
 			want: want{
-				mg:  subnetworkObj(subnetworkWithConditions(runtimev1alpha1.Deleting())),
+				mg:  subnetworkObj(subnetworkWithConditions(xpv1.Deleting())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteSubnetworkFailed),
 			},
 		},

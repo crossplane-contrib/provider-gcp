@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	corev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -352,12 +352,12 @@ func (in *NodePoolParameters) DeepCopyInto(out *NodePoolParameters) {
 	*out = *in
 	if in.ClusterRef != nil {
 		in, out := &in.ClusterRef, &out.ClusterRef
-		*out = new(corev1alpha1.Reference)
+		*out = new(v1.Reference)
 		**out = **in
 	}
 	if in.ClusterSelector != nil {
 		in, out := &in.ClusterSelector, &out.ClusterSelector
-		*out = new(corev1alpha1.Selector)
+		*out = new(v1.Selector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Autoscaling != nil {

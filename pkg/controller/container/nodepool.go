@@ -25,7 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -108,11 +108,11 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 
 	switch cr.Status.AtProvider.Status {
 	case v1alpha1.NodePoolStateRunning, v1alpha1.NodePoolStateReconciling:
-		cr.Status.SetConditions(runtimev1alpha1.Available())
+		cr.Status.SetConditions(xpv1.Available())
 	case v1alpha1.NodePoolStateProvisioning:
-		cr.Status.SetConditions(runtimev1alpha1.Creating())
+		cr.Status.SetConditions(xpv1.Creating())
 	case v1alpha1.NodePoolStateUnspecified, v1alpha1.NodePoolStateRunningError, v1alpha1.NodePoolStateError:
-		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
+		cr.Status.SetConditions(xpv1.Unavailable())
 	}
 
 	u, _, err := np.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, existing)
@@ -131,7 +131,7 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotNodePool)
 	}
-	cr.SetConditions(runtimev1alpha1.Creating())
+	cr.SetConditions(xpv1.Creating())
 
 	// Wait until creation is complete if already provisioning.
 	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateProvisioning {
@@ -189,7 +189,7 @@ func (e *nodePoolExternal) Delete(ctx context.Context, mg resource.Managed) erro
 	if !ok {
 		return errors.New(errNotNodePool)
 	}
-	cr.SetConditions(runtimev1alpha1.Deleting())
+	cr.SetConditions(xpv1.Deleting())
 	// Wait until deletion is complete if already stopping.
 	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateStopping {
 		return nil

@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -53,7 +53,7 @@ var errBoom = errors.New("boom")
 
 type instanceModifier func(*v1beta1.CloudSQLInstance)
 
-func withConditions(c ...runtimev1alpha1.Condition) instanceModifier {
+func withConditions(c ...xpv1.Condition) instanceModifier {
 	return func(i *v1beta1.CloudSQLInstance) { i.Status.SetConditions(c...) }
 }
 
@@ -117,16 +117,16 @@ func instance(im ...instanceModifier) *v1beta1.CloudSQLInstance {
 
 func connDetails(privateIP, publicIP string, additions ...map[string][]byte) managed.ConnectionDetails {
 	m := managed.ConnectionDetails{
-		runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
-		v1beta1.CloudSQLSecretConnectionName:             []byte(""),
+		xpv1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
+		v1beta1.CloudSQLSecretConnectionName:  []byte(""),
 	}
 	if publicIP != "" {
 		m[v1beta1.PublicIPKey] = []byte(publicIP)
-		m[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(publicIP)
+		m[xpv1.ResourceCredentialsSecretEndpointKey] = []byte(publicIP)
 	}
 	if privateIP != "" {
 		m[v1beta1.PrivateIPKey] = []byte(privateIP)
-		m[runtimev1alpha1.ResourceCredentialsSecretEndpointKey] = []byte(privateIP)
+		m[xpv1.ResourceCredentialsSecretEndpointKey] = []byte(privateIP)
 	}
 	for _, a := range additions {
 		for k, v := range a {
@@ -242,7 +242,7 @@ func TestObserve(t *testing.T) {
 					ResourceUpToDate:  true,
 					ConnectionDetails: connDetails("", ""),
 				},
-				mg: instance(withProviderState(v1beta1.StateCreating), withConditions(runtimev1alpha1.Creating())),
+				mg: instance(withProviderState(v1beta1.StateCreating), withConditions(xpv1.Creating())),
 			},
 		},
 		"Unavailable": {
@@ -266,7 +266,7 @@ func TestObserve(t *testing.T) {
 					ResourceUpToDate:  true,
 					ConnectionDetails: connDetails("", ""),
 				},
-				mg: instance(withProviderState(v1beta1.StateMaintenance), withConditions(runtimev1alpha1.Unavailable())),
+				mg: instance(withProviderState(v1beta1.StateMaintenance), withConditions(xpv1.Unavailable())),
 			},
 		},
 		"RunnableUnbound": {
@@ -296,7 +296,7 @@ func TestObserve(t *testing.T) {
 				},
 				mg: instance(
 					withProviderState(v1beta1.StateRunnable),
-					withConditions(runtimev1alpha1.Available()),
+					withConditions(xpv1.Available()),
 					withConnectionName(connectionName)),
 			},
 		},
@@ -377,9 +377,9 @@ func TestCreate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg: instance(withConditions(runtimev1alpha1.Creating())),
+				mg: instance(withConditions(xpv1.Creating())),
 				cre: managed.ExternalCreation{ConnectionDetails: managed.ConnectionDetails{
-					runtimev1alpha1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
+					xpv1.ResourceCredentialsSecretPasswordKey: []byte(wantRandom),
 				}},
 				err: nil,
 			},
@@ -397,7 +397,7 @@ func TestCreate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(withConditions(runtimev1alpha1.Creating())),
+				mg:  instance(withConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusConflict, ""), errNameInUse),
 			},
 		},
@@ -414,7 +414,7 @@ func TestCreate(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(withConditions(runtimev1alpha1.Creating())),
+				mg:  instance(withConditions(xpv1.Creating())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateFailed),
 			},
 		},
@@ -448,8 +448,8 @@ func TestCreate(t *testing.T) {
 				// special password value it falls back to default compare
 				// semantics.
 
-				av := string(a[runtimev1alpha1.ResourceCredentialsSecretPasswordKey])
-				bv := string(b[runtimev1alpha1.ResourceCredentialsSecretPasswordKey])
+				av := string(a[xpv1.ResourceCredentialsSecretPasswordKey])
+				bv := string(b[xpv1.ResourceCredentialsSecretPasswordKey])
 
 				if av == wantRandom {
 					return len(bv) > 0
@@ -498,7 +498,7 @@ func TestDelete(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
+				mg:  instance(withConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -515,7 +515,7 @@ func TestDelete(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
+				mg:  instance(withConditions(xpv1.Deleting())),
 				err: nil,
 			},
 		},
@@ -532,7 +532,7 @@ func TestDelete(t *testing.T) {
 				mg: instance(),
 			},
 			want: want{
-				mg:  instance(withConditions(runtimev1alpha1.Deleting())),
+				mg:  instance(withConditions(xpv1.Deleting())),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteFailed),
 			},
 		},
@@ -629,7 +629,7 @@ func TestUpdate(t *testing.T) {
 			want: want{
 				upd: managed.ExternalUpdate{
 					ConnectionDetails: map[string][]byte{
-						runtimev1alpha1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
+						xpv1.ResourceCredentialsSecretUserKey: []byte(v1beta1.MysqlDefaultUser),
 					},
 				},
 				mg:  instance(),

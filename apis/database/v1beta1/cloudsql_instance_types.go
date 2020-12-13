@@ -19,7 +19,7 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // CloudSQL instance states
@@ -359,11 +359,11 @@ type IPConfiguration struct {
 	// PrivateNetworkRef sets the PrivateNetwork field by resolving the resource
 	// link of the referenced Crossplane Network managed resource.
 	// +optional
-	PrivateNetworkRef *runtimev1alpha1.Reference `json:"privateNetworkRef,omitempty"`
+	PrivateNetworkRef *xpv1.Reference `json:"privateNetworkRef,omitempty"`
 
 	// PrivateNetworkSelector selects a PrivateNetworkRef.
 	// +optional
-	PrivateNetworkSelector *runtimev1alpha1.Selector `json:"privateNetworkSelector,omitempty"`
+	PrivateNetworkSelector *xpv1.Selector `json:"privateNetworkSelector,omitempty"`
 
 	// RequireSsl: Whether SSL connections over IP should be enforced or
 	// not.
@@ -522,14 +522,14 @@ type DatabaseInstanceFailoverReplicaStatus struct {
 
 // A CloudSQLInstanceSpec defines the desired state of a CloudSQLInstance.
 type CloudSQLInstanceSpec struct {
-	runtimev1alpha1.ResourceSpec `json:",inline"`
-	ForProvider                  CloudSQLInstanceParameters `json:"forProvider"`
+	xpv1.ResourceSpec `json:",inline"`
+	ForProvider       CloudSQLInstanceParameters `json:"forProvider"`
 }
 
 // A CloudSQLInstanceStatus represents the observed state of a CloudSQLInstance.
 type CloudSQLInstanceStatus struct {
-	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     CloudSQLInstanceObservation `json:"atProvider,omitempty"`
+	xpv1.ResourceStatus `json:",inline"`
+	AtProvider          CloudSQLInstanceObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
