@@ -1,0 +1,10 @@
+---
+apiVersion: kms.gcp.crossplane.io/v1alpha1
+kind: KeyRing
+metadata:
+  name: hello-from-crossplane
+spec:
+  forProvider:
+    location: global
+  providerConfigRef:
+    name: gcp-provider

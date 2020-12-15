@@ -1,0 +1,165 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: cryptokeys.kms.gcp.crossplane.io
+spec:
+  group: kms.gcp.crossplane.io
+  names:
+    kind: CryptoKey
+    listKind: CryptoKeyList
+    plural: cryptokeys
+    singular: cryptokey
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .spec.forProvider.displayName
+      name: DISPLAYNAME
+      type: string
+    - jsonPath: .status.atProvider.email
+      name: EMAIL
+      type: string
+    - jsonPath: .status.atProvider.disabled
+      name: DISABLED
+      type: boolean
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: CryptoKey is a managed resource that represents a Google KMS Service Account.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CryptoKeySpec defines the desired state of a CryptoKey.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: CryptoKeyParameters defines parameters for a desired KMS CryptoKey https://cloud.google.com/kms/docs/reference/rest/v1/projects.serviceAccounts The name of the service account (ie the `accountId` parameter of the Create call) is determined by the value of the `crossplane.io/external-name` annotation. Unless overridden by the user, this annotation is automatically populated with the value of the `metadata.name` attribute.
+                properties:
+                  description:
+                    description: Description is an optional user-specified opaque description of the service account. Must be less than or equal to 256 characters.
+                    type: string
+                  displayName:
+                    description: DisplayName is an optional user-specified name for the service account. Must be less than or equal to 100 characters.
+                    type: string
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: CryptoKeyStatus represents the observed state of a CryptoKey.
+            properties:
+              atProvider:
+                description: CryptoKeyObservation is used to show the observed state of the CryptoKey resource on GCP. All fields in this structure should only be populated from GCP responses; any changes made to the k8s resource outside of the crossplane gcp controller will be ignored and overwritten.
+                properties:
+                  disabled:
+                    description: Disabled is a bool indicating if the service account is disabled. The field is currently in alpha phase.
+                    type: boolean
+                  email:
+                    description: Email is the the email address of the service account. This matches the EMAIL field you would see using `gcloud kms service-accounts list`
+                    type: string
+                  name:
+                    description: 'Name is the "relative resource name" of the service account in the following format: projects/{PROJECT_ID}/serviceAccounts/{external-name}. part of https://godoc.org/google.golang.org/genproto/googleapis/kms/admin/v1#CryptoKey not to be confused with CreateCryptoKeyRequest.Name aka CryptoKeyParameters.ProjectName'
+                    type: string
+                  oauth2ClientId:
+                    description: OAuth2ClientId is the value GCP will use in conjunction with the OAuth2 clientconfig API to make three legged OAuth2 (3LO) flows to access the data of Google users.
+                    type: string
+                  projectId:
+                    description: ProjectID is the id of the project that owns the service account.
+                    type: string
+                  uniqueId:
+                    description: The unique and stable id of the service account.
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True, False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
