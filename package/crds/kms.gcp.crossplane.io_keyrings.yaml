@@ -47,7 +47,7 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: KeyRingParameters defines parameters for a desired KMS KeyRing https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings The name of the service account (ie the `accountId` parameter of the Create call) is determined by the value of the `crossplane.io/external-name` annotation. Unless overridden by the user, this annotation is automatically populated with the value of the `metadata.name` attribute.
+                description: KeyRingParameters defines parameters for a desired KMS KeyRing https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings The name of the key ring (ie the `keyRingId` parameter of the Create call) is determined by the value of the `crossplane.io/external-name` annotation. Unless overridden by the user, this annotation is automatically populated with the value of the `metadata.name` attribute.
                 properties:
                   location:
                     description: The location for the KeyRing. A full list of valid locations can be found by running 'gcloud kms locations list'.

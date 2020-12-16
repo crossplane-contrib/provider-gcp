@@ -20,13 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-
 	"github.com/pkg/errors"
 	kmsv1 "google.golang.org/api/cloudkms/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -42,8 +41,9 @@ import (
 const (
 	errNewClient  = "cannot create new GCP KMS API client"
 	errNotKeyRing = "managed resource is not a GCP KeyRing"
-	errGet        = "cannot get GCP KeyRing object via KMS API"
-	errCreate     = "cannot create GCP KeyRing object via KMS API"
+	errGet        = "cannot get GCP object via KMS API"
+	errCreate     = "cannot create GCP object via KMS API"
+	errUpdate     = "cannot update GCP object via KMS API"
 )
 
 // SetupKeyRing adds a controller that reconciles KeyRings.
@@ -55,17 +55,17 @@ func SetupKeyRing(mgr ctrl.Manager, l logging.Logger) error {
 		For(&v1alpha1.KeyRing{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.KeyRingGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
+			managed.WithExternalConnecter(&keyRingConnecter{client: mgr.GetClient()}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
-type connecter struct {
+type keyRingConnecter struct {
 	client client.Client
 }
 
 // Connect sets up kms client using credentials from the provider
-func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
+func (c *keyRingConnecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*v1alpha1.KeyRing)
 	if !ok {
 		return nil, errors.New(errNotKeyRing)
@@ -79,23 +79,35 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	rrn := NewRelativeResourceNamer(projectID, cr.Spec.ForProvider.Location)
-	return &external{keyrings: kmsv1.NewProjectsLocationsKeyRingsService(s), rrn: rrn}, errors.Wrap(err, errNewClient)
+	rrn := NewRelativeResourceNamerKeyRing(projectID, cr.Spec.ForProvider.Location)
+	return &keyRingExternal{keyrings: kmsv1.NewProjectsLocationsKeyRingsService(s), rrn: rrn}, nil
 }
 
-type external struct {
+type keyRingExternal struct {
 	keyrings keyring.Client
-	rrn      RelativeResourceNamer
+	rrn      RelativeResourceNamerKeyRing
 }
 
-func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
+func (e *keyRingExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.KeyRing)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotKeyRing)
 	}
 
+	// Hack to cleanup CR without deleting actual resource.
+	// It is not possible to delete KMS KeyRings, there is no "delete" method defined:
+	// https://cloud.google.com/kms/docs/reference/rest#rest-resource:-v1.projects.locations.keyrings
+	// Also see related faq: https://cloud.google.com/kms/docs/faq#cannot_delete
+	if meta.WasDeleted(cr) {
+		return managed.ExternalObservation{
+			ResourceExists:    false,
+			ResourceUpToDate:  false,
+			ConnectionDetails: managed.ConnectionDetails{},
+		}, nil
+	}
+
 	call := e.keyrings.Get(e.rrn.ResourceName(cr))
-	fromProvider, err := call.Context(ctx).Do()
+	instance, err := call.Context(ctx).Do()
 	if gcp.IsErrorNotFound(err) {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
@@ -103,90 +115,74 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGet)
 	}
 	cr.Status.SetConditions(xpv1.Available())
-	populateCRFromProvider(cr, fromProvider)
-
-	exists := true
-	// Hack to cleanup CR without deleting actual resource.
-	// It is not possible to delete KMS KeyRings, there is no "delete" method defined:
-	// https://cloud.google.com/kms/docs/reference/rest#rest-resource:-v1.projects.locations.keyrings
-	// Also see related faq: https://cloud.google.com/kms/docs/faq#cannot_delete
-	if meta.WasDeleted(cr) {
-		exists = false
-	}
+	cr.Status.AtProvider = keyring.GenerateObservation(*instance)
 
 	return managed.ExternalObservation{
-		ResourceExists:    exists,
+		ResourceExists:    true,
 		ResourceUpToDate:  true,
 		ConnectionDetails: managed.ConnectionDetails{},
 	}, nil
 }
 
 // https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings/create
-func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+func (e *keyRingExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.KeyRing)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotKeyRing)
 	}
+	cr.SetConditions(xpv1.Creating())
+	instance := &kmsv1.KeyRing{}
 
-	ckrr := &kmsv1.KeyRing{}
-	call := e.keyrings.Create(e.rrn.Location(), ckrr)
-
-	fromProvider, err := call.KeyRingId(meta.GetExternalName(cr)).Context(ctx).Do()
-	if err != nil {
+	if _, err := e.keyrings.Create(e.rrn.LocationRRN(), instance).
+		KeyRingId(meta.GetExternalName(cr)).Context(ctx).Do(); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
 	}
 
-	populateCRFromProvider(cr, fromProvider)
-	return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
+	return managed.ExternalCreation{}, nil
 }
 
-func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+func (e *keyRingExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	// It is not possible to update KMS KeyRings, there is no "patch" method defined:
 	// https://cloud.google.com/kms/docs/reference/rest#rest-resource:-v1.projects.locations.keyrings
 	return managed.ExternalUpdate{}, nil
 }
 
-func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (e *keyRingExternal) Delete(ctx context.Context, mg resource.Managed) error {
 	// It is not possible to delete KMS KeyRings, there is no "delete" method defined:
 	// https://cloud.google.com/kms/docs/reference/rest#rest-resource:-v1.projects.locations.keyrings
 	// Also see related faq: https://cloud.google.com/kms/docs/faq#cannot_delete
 	return nil
 }
 
-// NewRelativeResourceNamer makes an instance of the RelativeResourceNamer
+// NewRelativeResourceNamerKeyRing makes an instance of the RelativeResourceNamerKeyRing
 // which is the only type that is allowed to know how to construct GCP resource names
 // for the KMS Keyring type.
-func NewRelativeResourceNamer(projectName, location string) RelativeResourceNamer {
-	return RelativeResourceNamer{projectName: projectName, location: location}
+func NewRelativeResourceNamerKeyRing(projectName, location string) RelativeResourceNamerKeyRing {
+	return RelativeResourceNamerKeyRing{projectName: projectName, location: location}
 }
 
-// RelativeResourceNamer allows the controller to generate the "relative resource name"
-// for the service account and GCP project based on the external-name annotation.
+// RelativeResourceNamerKeyRing allows the controller to generate the "relative resource name"
+// for the KeyRing and GCP project based on the keyRing external-name annotation.
 // https://cloud.google.com/apis/design/resource_names#relative_resource_name
-// The relative resource name for service accounts has the following format:
-// projects/{projectName}/locations/{location}
-type RelativeResourceNamer struct {
+// The relative resource name for KeyRing has the following format:
+// projects/{projectName}/locations/{location}/keyRings/{keyRingName}
+type RelativeResourceNamerKeyRing struct {
 	projectName string
 	location    string
 }
 
-// ProjectName yields the relative resource name for a GCP project
-func (rrn RelativeResourceNamer) ProjectName() string {
+// ProjectRRN yields the relative resource name for a GCP project
+func (rrn RelativeResourceNamerKeyRing) ProjectRRN() string {
 	return fmt.Sprintf("projects/%s", rrn.projectName)
 }
 
-// Location yields the relative resource name for a GCP Project Location
-func (rrn RelativeResourceNamer) Location() string {
-	return fmt.Sprintf("projects/%s/locations/%s", rrn.projectName, rrn.location)
+// LocationRRN yields the relative resource name for a GCP Project Location
+func (rrn RelativeResourceNamerKeyRing) LocationRRN() string {
+	return fmt.Sprintf("%s/locations/%s", rrn.ProjectRRN(), rrn.location)
 }
 
 // ResourceName yields the relative resource name for the KeyRing resource
-func (rrn RelativeResourceNamer) ResourceName(kr *v1alpha1.KeyRing) string {
-	return fmt.Sprintf("projects/%s/locations/%s/keyRings/%s",
-		rrn.projectName, rrn.location, meta.GetExternalName(kr))
-}
-
-func populateCRFromProvider(cr *v1alpha1.KeyRing, fromProvider *kmsv1.KeyRing) {
-	cr.Status.AtProvider.Name = fromProvider.Name
-	cr.Status.AtProvider.CreateTime = fromProvider.CreateTime
+func (rrn RelativeResourceNamerKeyRing) ResourceName(kr *v1alpha1.KeyRing) string {
+	return fmt.Sprintf("%s/keyRings/%s",
+		rrn.LocationRRN(), meta.GetExternalName(kr))
 }

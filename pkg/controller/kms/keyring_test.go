@@ -47,6 +47,10 @@ type strange struct {
 type valueModifier func(ring *v1alpha1.KeyRing)
 
 func withName(s string) valueModifier {
+	return func(i *v1alpha1.KeyRing) { i.Name = s }
+}
+
+func withAtProviderName(s string) valueModifier {
 	return func(i *v1alpha1.KeyRing) { i.Status.AtProvider.Name = s }
 }
 
@@ -99,7 +103,7 @@ func keyRing(im ...valueModifier) *v1alpha1.KeyRing {
 
 func TestRelativeResourceNamer(t *testing.T) {
 	type args struct {
-		rrn RelativeResourceNamer
+		rrn RelativeResourceNamerKeyRing
 		mg  *v1alpha1.KeyRing
 	}
 
@@ -115,7 +119,7 @@ func TestRelativeResourceNamer(t *testing.T) {
 	}{
 		"Empty": {
 			args: args{
-				rrn: NewRelativeResourceNamer("", ""),
+				rrn: NewRelativeResourceNamerKeyRing("", ""),
 				mg:  keyRing(withExternalNameAnnotation("")),
 			},
 			want: want{
@@ -126,7 +130,7 @@ func TestRelativeResourceNamer(t *testing.T) {
 		},
 		"PerfectProjectName": {
 			args: args{
-				rrn: NewRelativeResourceNamer("perfect", "home"),
+				rrn: NewRelativeResourceNamerKeyRing("perfect", "home"),
 				mg:  keyRing(withExternalNameAnnotation("my-keyring")),
 			},
 			want: want{
@@ -139,17 +143,17 @@ func TestRelativeResourceNamer(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			projectName := tc.args.rrn.ProjectName()
-			location := tc.args.rrn.Location()
+			projectName := tc.args.rrn.ProjectRRN()
+			location := tc.args.rrn.LocationRRN()
 			resourceName := tc.args.rrn.ResourceName(tc.args.mg)
 			if diff := cmp.Diff(tc.want.projectName, projectName, test.EquateConditions()); diff != "" {
-				t.Errorf("RelativeResourceNamer.ProjectName(): -want, +got:\n%s", diff)
+				t.Errorf("RelativeResourceNamerKeyRing.ProjectName(): -want, +got:\n%s", diff)
 			}
 			if diff := cmp.Diff(tc.want.location, location, test.EquateConditions()); diff != "" {
-				t.Errorf("RelativeResourceNamer.Location(): -want, +got:\n%s", diff)
+				t.Errorf("RelativeResourceNamerKeyRing.Location(): -want, +got:\n%s", diff)
 			}
 			if diff := cmp.Diff(tc.want.resourceName, resourceName, test.EquateConditions()); diff != "" {
-				t.Errorf("RelativeResourceNamer.ResourceName(...): -want, +got:\n%s", diff)
+				t.Errorf("RelativeResourceNamerKeyRing.ResourceName(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -187,15 +191,16 @@ func TestObserve(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				mg: keyRing(
-					withName(fqName),
-					withExternalNameAnnotation(fqName),
+					withName(metadataName),
+					withExternalNameAnnotation(metadataName),
 				),
 			},
 			want: want{
 				mg: keyRing(
-					withName(fqName),
+					withName(metadataName),
 					withLocation(location),
-					withExternalNameAnnotation(fqName),
+					withExternalNameAnnotation(metadataName),
+					withAtProviderName(fqName),
 					withCondition(xpv1.Available())),
 				observation: managed.ExternalObservation{
 					ResourceExists:    true,
@@ -219,21 +224,20 @@ func TestObserve(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				mg: keyRing(
-					withName(fqName),
-					withExternalNameAnnotation(fqName),
+					withName(metadataName),
+					withExternalNameAnnotation(metadataName),
 					withDeletionTimestamp(now),
 				),
 			},
 			want: want{
 				mg: keyRing(
-					withName(fqName),
+					withName(metadataName),
 					withLocation(location),
-					withExternalNameAnnotation(fqName),
-					withCondition(xpv1.Available()),
+					withExternalNameAnnotation(metadataName),
 					withDeletionTimestamp(now)),
 				observation: managed.ExternalObservation{
 					ResourceExists:    false,
-					ResourceUpToDate:  true,
+					ResourceUpToDate:  false,
 					ConnectionDetails: managed.ConnectionDetails{},
 				},
 			},
@@ -270,8 +274,8 @@ func TestObserve(t *testing.T) {
 			defer server.Close()
 			s, _ := kmsv1.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			keyrings := kmsv1.NewProjectsLocationsKeyRingsService(s)
-			rrn := NewRelativeResourceNamer(project, location)
-			e := &external{keyrings: keyrings, rrn: rrn}
+			rrn := NewRelativeResourceNamerKeyRing(project, location)
+			e := &keyRingExternal{keyrings: keyrings, rrn: rrn}
 			obs, err := e.Observe(context.Background(), tc.args.mg)
 
 			if err != nil {
@@ -320,7 +324,7 @@ func TestCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				id := r.URL.Query()["keyRingId"]
-				if diff := cmp.Diff(id[0], fqName); diff != "" {
+				if diff := cmp.Diff(id[0], metadataName); diff != "" {
 					t.Errorf("keyRingId: -want, +got:\n%s", diff)
 				}
 				kr := &kmsv1.KeyRing{
@@ -332,15 +336,16 @@ func TestCreate(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				mg: keyRing(
-					withName(fqName),
+					withName(metadataName),
 					withLocation(location),
-					withExternalNameAnnotation(fqName)),
+					withExternalNameAnnotation(metadataName)),
 			},
 			want: want{
 				mg: keyRing(
-					withName(fqName),
+					withName(metadataName),
 					withLocation(location),
-					withExternalNameAnnotation(fqName)),
+					withCondition(xpv1.Creating()),
+					withExternalNameAnnotation(metadataName)),
 			},
 		},
 		"NotKeyRing": {
@@ -362,13 +367,14 @@ func TestCreate(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				mg: keyRing(
-					withName(fqName),
+					withName(metadataName),
 					withLocation(location)),
 			},
 			want: want{
 				mg: keyRing(
-					withName(fqName),
-					withLocation(location)),
+					withName(metadataName),
+					withLocation(location),
+					withCondition(xpv1.Creating())),
 				err: errors.Wrap(err500, errCreate),
 			},
 		},
@@ -380,8 +386,8 @@ func TestCreate(t *testing.T) {
 			defer server.Close()
 			s, _ := kmsv1.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
 			keyrings := kmsv1.NewProjectsLocationsKeyRingsService(s)
-			rrn := NewRelativeResourceNamer(project, location)
-			e := &external{keyrings: keyrings, rrn: rrn}
+			rrn := NewRelativeResourceNamerKeyRing(project, location)
+			e := &keyRingExternal{keyrings: keyrings, rrn: rrn}
 			_, err := e.Create(context.Background(), tc.args.mg)
 
 			if err != nil {
@@ -425,8 +431,8 @@ func TestUpdate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s, _ := kmsv1.NewService(context.Background(), option.WithEndpoint(""), option.WithoutAuthentication())
 			keyrings := kmsv1.NewProjectsLocationsKeyRingsService(s)
-			rrn := NewRelativeResourceNamer(project, location)
-			e := &external{keyrings: keyrings, rrn: rrn}
+			rrn := NewRelativeResourceNamerKeyRing(project, location)
+			e := &keyRingExternal{keyrings: keyrings, rrn: rrn}
 			_, err := e.Update(context.Background(), keyRing())
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
 				t.Errorf("Update(...): want error != got error:\n%s", diff)
@@ -454,8 +460,8 @@ func TestDelete(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s, _ := kmsv1.NewService(context.Background(), option.WithEndpoint(""), option.WithoutAuthentication())
 			keyrings := kmsv1.NewProjectsLocationsKeyRingsService(s)
-			rrn := NewRelativeResourceNamer(project, location)
-			e := &external{keyrings: keyrings, rrn: rrn}
+			rrn := NewRelativeResourceNamerKeyRing(project, location)
+			e := &keyRingExternal{keyrings: keyrings, rrn: rrn}
 			err := e.Delete(context.Background(), keyRing())
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
 				t.Errorf("Update(...): want error != got error:\n%s", diff)

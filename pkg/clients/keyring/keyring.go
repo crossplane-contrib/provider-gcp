@@ -18,10 +18,20 @@ package keyring
 
 import (
 	"google.golang.org/api/cloudkms/v1"
+
+	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
 )
 
 // Client should be satisfied to conduct SA operations.
 type Client interface {
 	Create(parent string, keyring *cloudkms.KeyRing) *cloudkms.ProjectsLocationsKeyRingsCreateCall
 	Get(name string) *cloudkms.ProjectsLocationsKeyRingsGetCall
+}
+
+// GenerateObservation produces KeyRingObservation object from cloudkms.KeyRing object.
+func GenerateObservation(in cloudkms.KeyRing) v1alpha1.KeyRingObservation { // nolint:gocyclo
+	return v1alpha1.KeyRingObservation{
+		Name:       in.Name,
+		CreateTime: in.CreateTime,
+	}
 }
