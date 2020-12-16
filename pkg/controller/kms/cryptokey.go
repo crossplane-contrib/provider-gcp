@@ -115,7 +115,7 @@ func (e *cryptoKeyExternal) Observe(ctx context.Context, mg resource.Managed) (m
 	cr.Status.AtProvider = cryptokey.GenerateObservation(*instance)
 	cr.Status.SetConditions(xpv1.Available())
 
-	upToDate, _, err := cryptokey.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, instance)
+	upToDate, _, err := cryptokey.IsUpToDate(&cr.Spec.ForProvider, instance)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
 	}
@@ -134,7 +134,7 @@ func (e *cryptoKeyExternal) Create(ctx context.Context, mg resource.Managed) (ma
 	}
 	cr.SetConditions(xpv1.Creating())
 	instance := &kmsv1.CryptoKey{}
-	cryptokey.GenerateCryptoKeyInstance(meta.GetExternalName(cr), cr.Spec.ForProvider, instance)
+	cryptokey.GenerateCryptoKeyInstance(cr.Spec.ForProvider, instance)
 
 	if _, err := e.cryptokeys.Create(gcp.StringValue(cr.Spec.ForProvider.KeyRing), instance).
 		CryptoKeyId(meta.GetExternalName(cr)).Context(ctx).Do(); err != nil {
@@ -155,7 +155,7 @@ func (e *cryptoKeyExternal) Update(ctx context.Context, mg resource.Managed) (ma
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGet)
 	}
 
-	u, um, err := cryptokey.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, instance)
+	u, um, err := cryptokey.IsUpToDate(&cr.Spec.ForProvider, instance)
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errCheckUpToDate)
 	}
@@ -163,7 +163,7 @@ func (e *cryptoKeyExternal) Update(ctx context.Context, mg resource.Managed) (ma
 		return managed.ExternalUpdate{}, nil
 	}
 
-	cryptokey.GenerateCryptoKeyInstance(meta.GetExternalName(cr), cr.Spec.ForProvider, instance)
+	cryptokey.GenerateCryptoKeyInstance(cr.Spec.ForProvider, instance)
 	if _, err := e.cryptokeys.Patch(cryptoKeyRRN(cr), instance).UpdateMask(um).
 		Context(ctx).Do(); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdate)

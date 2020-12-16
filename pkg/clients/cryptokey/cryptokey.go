@@ -39,7 +39,7 @@ type Client interface {
 }
 
 // GenerateCryptoKeyInstance generates *kmsv1.CryptoKey instance from CryptoKeyParameters.
-func GenerateCryptoKeyInstance(name string, in v1alpha1.CryptoKeyParameters, ck *cloudkms.CryptoKey) {
+func GenerateCryptoKeyInstance(in v1alpha1.CryptoKeyParameters, ck *cloudkms.CryptoKey) {
 	ck.Labels = in.Labels
 	ck.Purpose = in.Purpose
 	ck.RotationPeriod = gcp.StringValue(in.RotationPeriod)
@@ -109,7 +109,7 @@ func LateInitializeSpec(spec *v1alpha1.CryptoKeyParameters, in cloudkms.CryptoKe
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(name string, in *v1alpha1.CryptoKeyParameters, observed *cloudkms.CryptoKey) (bool, string, error) { // nolint:gocyclo
+func IsUpToDate(in *v1alpha1.CryptoKeyParameters, observed *cloudkms.CryptoKey) (bool, string, error) { // nolint:gocyclo
 	um := make([]string, 0, 6)
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
@@ -119,7 +119,7 @@ func IsUpToDate(name string, in *v1alpha1.CryptoKeyParameters, observed *cloudkm
 	if !ok {
 		return true, "", errors.New(errCheckUpToDate)
 	}
-	GenerateCryptoKeyInstance(name, *in, desired)
+	GenerateCryptoKeyInstance(*in, desired)
 
 	if !cmp.Equal(desired.Labels, observed.Labels, cmpopts.EquateEmpty()) {
 		um = append(um, "labels")
