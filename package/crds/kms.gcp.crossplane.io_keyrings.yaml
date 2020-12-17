@@ -8,6 +8,10 @@ metadata:
 spec:
   group: kms.gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
     kind: KeyRing
     listKind: KeyRingList
     plural: keyrings

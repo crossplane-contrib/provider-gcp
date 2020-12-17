@@ -234,11 +234,6 @@ func TestObserve(t *testing.T) {
 					withLocation(location),
 					withExternalNameAnnotation(metadataName),
 					withDeletionTimestamp(now)),
-				observation: managed.ExternalObservation{
-					ResourceExists:    false,
-					ResourceUpToDate:  false,
-					ConnectionDetails: managed.ConnectionDetails{},
-				},
 			},
 		},
 		"ObservedKeyRingDoesNotExist": {

@@ -8,6 +8,10 @@ metadata:
 spec:
   group: kms.gcp.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
     kind: CryptoKey
     listKind: CryptoKeyList
     plural: cryptokeys

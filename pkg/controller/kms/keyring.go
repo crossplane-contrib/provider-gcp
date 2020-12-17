@@ -99,11 +99,7 @@ func (e *keyRingExternal) Observe(ctx context.Context, mg resource.Managed) (man
 	// https://cloud.google.com/kms/docs/reference/rest#rest-resource:-v1.projects.locations.keyrings
 	// Also see related faq: https://cloud.google.com/kms/docs/faq#cannot_delete
 	if meta.WasDeleted(cr) {
-		return managed.ExternalObservation{
-			ResourceExists:    false,
-			ResourceUpToDate:  false,
-			ConnectionDetails: managed.ConnectionDetails{},
-		}, nil
+		return managed.ExternalObservation{}, nil
 	}
 
 	call := e.keyrings.Get(e.rrn.ResourceName(cr))

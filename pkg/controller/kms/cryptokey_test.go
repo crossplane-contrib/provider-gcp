@@ -194,9 +194,8 @@ func TestCryptoKeyObserve(t *testing.T) {
 					ckWithAtProviderName(keyRingRRN),
 					ckWithCondition(xpv1.Available())),
 				observation: managed.ExternalObservation{
-					ResourceExists:    true,
-					ResourceUpToDate:  true,
-					ConnectionDetails: managed.ConnectionDetails{},
+					ResourceExists:   true,
+					ResourceUpToDate: true,
 				},
 			},
 		},
@@ -226,9 +225,8 @@ func TestCryptoKeyObserve(t *testing.T) {
 					ckWithExternalNameAnnotation(ckMetadataName),
 					ckWithDeletionTimestamp(now)),
 				observation: managed.ExternalObservation{
-					ResourceExists:    false,
-					ResourceUpToDate:  false,
-					ConnectionDetails: managed.ConnectionDetails{},
+					ResourceExists:   false,
+					ResourceUpToDate: false,
 				},
 			},
 		},

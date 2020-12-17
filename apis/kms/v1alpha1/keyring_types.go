@@ -31,6 +31,7 @@ import (
 type KeyRingParameters struct {
 	// The location for the KeyRing.
 	// A full list of valid locations can be found by running 'gcloud kms locations list'.
+	// +immutable
 	Location string `json:"location"`
 }
 
@@ -67,6 +68,7 @@ type KeyRingStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 type KeyRing struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

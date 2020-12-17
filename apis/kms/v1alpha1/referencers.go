@@ -41,7 +41,7 @@ func KeyRingRRN() reference.ExtractValueFn {
 func (in *CryptoKey) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, in)
 
-	// Resolve spec.forProvider.network
+	// Resolve spec.forProvider.keyRing
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
 		CurrentValue: reference.FromPtrValue(in.Spec.ForProvider.KeyRing),
 		Reference:    in.Spec.ForProvider.KeyRingRef,
@@ -50,7 +50,7 @@ func (in *CryptoKey) ResolveReferences(ctx context.Context, c client.Reader) err
 		Extract:      KeyRingRRN(),
 	})
 	if err != nil {
-		return errors.Wrap(err, "spec.forProvider.network")
+		return errors.Wrap(err, "spec.forProvider.keyRing")
 	}
 
 	in.Spec.ForProvider.KeyRing = reference.ToPtrValue(rsp.ResolvedValue)

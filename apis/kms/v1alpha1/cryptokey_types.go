@@ -38,7 +38,6 @@ type CryptoKeyParameters struct {
 
 	// KeyRingSelector selects a reference to a KeyRing
 	// +optional
-	// +immutable
 	KeyRingSelector *xpv1.Selector `json:"keyRingSelector,omitempty"`
 
 	// Labels: Labels with user-defined metadata. For more information,
@@ -430,6 +429,7 @@ type CryptoKeyStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="PURPOSE",type="string",JSONPath=".spec.forProvider.purpose"
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 type CryptoKey struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

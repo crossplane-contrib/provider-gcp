@@ -39,9 +39,8 @@ import (
 )
 
 const (
-	errNotCryptoKey        = "managed resource is not a GCP CryptoKey"
-	errManagedUpdateFailed = "cannot update CryptoKey custom resource"
-	errCheckUpToDate       = "cannot determine if CryptoKey instance is up to date"
+	errNotCryptoKey  = "managed resource is not a GCP CryptoKey"
+	errCheckUpToDate = "cannot determine if CryptoKey instance is up to date"
 )
 
 // SetupCryptoKey adds a controller that reconciles CryptoKeys.
@@ -92,11 +91,7 @@ func (e *cryptoKeyExternal) Observe(ctx context.Context, mg resource.Managed) (m
 	// https://cloud.google.com/kms/docs/reference/rest#rest-resource:-v1.projects.locations.keyrings.cryptokeys
 	// Also see related faq: https://cloud.google.com/kms/docs/faq#cannot_delete
 	if meta.WasDeleted(cr) {
-		return managed.ExternalObservation{
-			ResourceExists:    false,
-			ResourceUpToDate:  false,
-			ConnectionDetails: managed.ConnectionDetails{},
-		}, nil
+		return managed.ExternalObservation{}, nil
 	}
 
 	instance, err := e.cryptokeys.Get(cryptoKeyRRN(cr)).Context(ctx).Do()
@@ -104,12 +99,11 @@ func (e *cryptoKeyExternal) Observe(ctx context.Context, mg resource.Managed) (m
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGet)
 	}
 
+	lateInitialized := false
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	cryptokey.LateInitializeSpec(&cr.Spec.ForProvider, *instance)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
-		if err := e.kube.Update(ctx, cr); err != nil {
-			return managed.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
-		}
+		lateInitialized = true
 	}
 
 	cr.Status.AtProvider = cryptokey.GenerateObservation(*instance)
@@ -121,9 +115,9 @@ func (e *cryptoKeyExternal) Observe(ctx context.Context, mg resource.Managed) (m
 	}
 
 	return managed.ExternalObservation{
-		ResourceExists:    true,
-		ResourceUpToDate:  upToDate,
-		ConnectionDetails: managed.ConnectionDetails{},
+		ResourceExists:          true,
+		ResourceLateInitialized: lateInitialized,
+		ResourceUpToDate:        upToDate,
 	}, nil
 }
 
