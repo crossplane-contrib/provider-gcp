@@ -1,0 +1,260 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: cryptokeys.kms.gcp.crossplane.io
+spec:
+  group: kms.gcp.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
+    kind: CryptoKey
+    listKind: CryptoKeyList
+    plural: cryptokeys
+    singular: cryptokey
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .spec.forProvider.purpose
+      name: PURPOSE
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: CryptoKey is a managed resource that represents a Google KMS Crypto Key.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CryptoKeySpec defines the desired state of a CryptoKey.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: CryptoKeyParameters defines parameters for a desired KMS CryptoKey https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys
+                properties:
+                  keyRing:
+                    description: 'KeyRing: The RRN of the KeyRing to which this CryptoKey belongs, provided by the client when initially creating the CryptoKey.'
+                    type: string
+                  keyRingRef:
+                    description: KeyRingRef references a KeyRing and retrieves its URI
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  keyRingSelector:
+                    description: KeyRingSelector selects a reference to a KeyRing
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels is selected.
+                        type: object
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: 'Labels: Labels with user-defined metadata. For more information, see [Labeling Keys](/kms/docs/labeling-keys).'
+                    type: object
+                  nextRotationTime:
+                    description: "NextRotationTime: At next_rotation_time, the Key Management Service will automatically: \n 1. Create a new version of this CryptoKey. 2. Mark the new version as primary. \n Key rotations performed manually via CreateCryptoKeyVersion and UpdateCryptoKeyPrimaryVersion do not affect next_rotation_time. \n Keys with purpose ENCRYPT_DECRYPT support automatic rotation. For other keys, this field must be omitted."
+                    type: string
+                  purpose:
+                    description: "Purpose: Immutable. The immutable purpose of this CryptoKey. \n Possible values:   \"CRYPTO_KEY_PURPOSE_UNSPECIFIED\" - Not specified.   \"ENCRYPT_DECRYPT\" - CryptoKeys with this purpose may be used with Encrypt and Decrypt.   \"ASYMMETRIC_SIGN\" - CryptoKeys with this purpose may be used with AsymmetricSign and GetPublicKey.   \"ASYMMETRIC_DECRYPT\" - CryptoKeys with this purpose may be used with AsymmetricDecrypt and GetPublicKey."
+                    enum:
+                    - ENCRYPT_DECRYPT
+                    - ASYMMETRIC_SIGN
+                    - ASYMMETRIC_DECRYPT
+                    type: string
+                  rotationPeriod:
+                    description: "RotationPeriod: next_rotation_time will be advanced by this period when the service automatically rotates a key. Must be at least 24 hours and at most 876,000 hours. \n If rotation_period is set, next_rotation_time must also be set. \n Keys with purpose ENCRYPT_DECRYPT support automatic rotation. For other keys, this field must be omitted."
+                    type: string
+                  versionTemplate:
+                    description: 'VersionTemplate: A template describing settings for new CryptoKeyVersion instances. The properties of new CryptoKeyVersion instances created by either CreateCryptoKeyVersion or auto-rotation are controlled by this template.'
+                    properties:
+                      algorithm:
+                        description: "Algorithm: Required. Algorithm to use when creating a CryptoKeyVersion based on this template. \n For backwards compatibility, GOOGLE_SYMMETRIC_ENCRYPTION is implied if both this field is omitted and CryptoKey.purpose is ENCRYPT_DECRYPT. \n Possible values:   \"CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED\" - Not specified.   \"GOOGLE_SYMMETRIC_ENCRYPTION\" - Creates symmetric encryption keys.   \"RSA_SIGN_PSS_2048_SHA256\" - RSASSA-PSS 2048 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_3072_SHA256\" - RSASSA-PSS 3072 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_4096_SHA256\" - RSASSA-PSS 4096 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_4096_SHA512\" - RSASSA-PSS 4096 bit key with a SHA512 digest.   \"RSA_SIGN_PKCS1_2048_SHA256\" - RSASSA-PKCS1-v1_5 with a 2048 bit key and a SHA256 digest.   \"RSA_SIGN_PKCS1_3072_SHA256\" - RSASSA-PKCS1-v1_5 with a 3072 bit key and a SHA256 digest.   \"RSA_SIGN_PKCS1_4096_SHA256\" - RSASSA-PKCS1-v1_5 with a 4096 bit key and a SHA256 digest.   \"RSA_SIGN_PKCS1_4096_SHA512\" - RSASSA-PKCS1-v1_5 with a 4096 bit key and a SHA512 digest.   \"RSA_DECRYPT_OAEP_2048_SHA256\" - RSAES-OAEP 2048 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_3072_SHA256\" - RSAES-OAEP 3072 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_4096_SHA256\" - RSAES-OAEP 4096 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_4096_SHA512\" - RSAES-OAEP 4096 bit key with a SHA512 digest.   \"EC_SIGN_P256_SHA256\" - ECDSA on the NIST P-256 curve with a SHA256 digest.   \"EC_SIGN_P384_SHA384\" - ECDSA on the NIST P-384 curve with a SHA384 digest.   \"EXTERNAL_SYMMETRIC_ENCRYPTION\" - Algorithm representing symmetric encryption by an external key manager."
+                        type: string
+                      protectionLevel:
+                        description: "ProtectionLevel: ProtectionLevel to use when creating a CryptoKeyVersion based on this template. Immutable. Defaults to SOFTWARE. \n Possible values:   \"PROTECTION_LEVEL_UNSPECIFIED\" - Not specified.   \"SOFTWARE\" - Crypto operations are performed in software.   \"HSM\" - Crypto operations are performed in a Hardware Security Module.   \"EXTERNAL\" - Crypto operations are performed by an external key manager."
+                        enum:
+                        - SOFTWARE
+                        - HSM
+                        - EXTERNAL
+                        type: string
+                    type: object
+                required:
+                - purpose
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: CryptoKeyStatus represents the observed state of a CryptoKey.
+            properties:
+              atProvider:
+                description: CryptoKeyObservation is used to show the observed state of the CryptoKey resource on GCP. All fields in this structure should only be populated from GCP responses; any changes made to the k8s resource outside of the crossplane gcp controller will be ignored and overwritten.
+                properties:
+                  createTime:
+                    description: 'CreateTime: Output only. The time at which this CryptoKey was created.'
+                    type: string
+                  name:
+                    description: 'Name: Output only. The resource name for this CryptoKey in the format `projects/*/locations/*/keyRings/*/cryptoKeys/*`.'
+                    type: string
+                  nextRotationTime:
+                    description: "NextRotationTime: At next_rotation_time, the Key Management Service will automatically: \n 1. Create a new version of this CryptoKey. 2. Mark the new version as primary. \n Key rotations performed manually via CreateCryptoKeyVersion and UpdateCryptoKeyPrimaryVersion do not affect next_rotation_time. \n Keys with purpose ENCRYPT_DECRYPT support automatic rotation. For other keys, this field must be omitted."
+                    type: string
+                  primary:
+                    description: "Primary: Output only. A copy of the \"primary\" CryptoKeyVersion that will be used by Encrypt when this CryptoKey is given in EncryptRequest.name. \n The CryptoKey's primary version can be updated via UpdateCryptoKeyPrimaryVersion. \n Keys with purpose ENCRYPT_DECRYPT may have a primary. For other keys, this field will be omitted."
+                    properties:
+                      algorithm:
+                        description: "Algorithm: Output only. The CryptoKeyVersionAlgorithm that this CryptoKeyVersion supports. \n Possible values:   \"CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED\" - Not specified.   \"GOOGLE_SYMMETRIC_ENCRYPTION\" - Creates symmetric encryption keys.   \"RSA_SIGN_PSS_2048_SHA256\" - RSASSA-PSS 2048 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_3072_SHA256\" - RSASSA-PSS 3072 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_4096_SHA256\" - RSASSA-PSS 4096 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_4096_SHA512\" - RSASSA-PSS 4096 bit key with a SHA512 digest.   \"RSA_SIGN_PKCS1_2048_SHA256\" - RSASSA-PKCS1-v1_5 with a 2048 bit key and a SHA256 digest.   \"RSA_SIGN_PKCS1_3072_SHA256\" - RSASSA-PKCS1-v1_5 with a 3072 bit key and a SHA256 digest.   \"RSA_SIGN_PKCS1_4096_SHA256\" - RSASSA-PKCS1-v1_5 with a 4096 bit key and a SHA256 digest.   \"RSA_SIGN_PKCS1_4096_SHA512\" - RSASSA-PKCS1-v1_5 with a 4096 bit key and a SHA512 digest.   \"RSA_DECRYPT_OAEP_2048_SHA256\" - RSAES-OAEP 2048 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_3072_SHA256\" - RSAES-OAEP 3072 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_4096_SHA256\" - RSAES-OAEP 4096 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_4096_SHA512\" - RSAES-OAEP 4096 bit key with a SHA512 digest.   \"EC_SIGN_P256_SHA256\" - ECDSA on the NIST P-256 curve with a SHA256 digest.   \"EC_SIGN_P384_SHA384\" - ECDSA on the NIST P-384 curve with a SHA384 digest.   \"EXTERNAL_SYMMETRIC_ENCRYPTION\" - Algorithm representing symmetric encryption by an external key manager."
+                        type: string
+                      attestation:
+                        description: 'Attestation: Output only. Statement that was generated and signed by the HSM at key creation time. Use this statement to verify attributes of the key as stored on the HSM, independently of Google. Only provided for key versions with protection_level HSM.'
+                        properties:
+                          content:
+                            description: 'Content: Output only. The attestation data provided by the HSM when the key operation was performed.'
+                            type: string
+                          format:
+                            description: "Format: Output only. The format of the attestation data. \n Possible values:   \"ATTESTATION_FORMAT_UNSPECIFIED\" - Not specified.   \"CAVIUM_V1_COMPRESSED\" - Cavium HSM attestation compressed with gzip. Note that this format is defined by Cavium and subject to change at any time.   \"CAVIUM_V2_COMPRESSED\" - Cavium HSM attestation V2 compressed with gzip. This is a new format introduced in Cavium's version 3.2-08."
+                            type: string
+                        type: object
+                      createTime:
+                        description: 'CreateTime: Output only. The time at which this CryptoKeyVersion was created.'
+                        type: string
+                      destroyEventTime:
+                        description: 'DestroyEventTime: Output only. The time this CryptoKeyVersion''s key material was destroyed. Only present if state is DESTROYED.'
+                        type: string
+                      destroyTime:
+                        description: 'DestroyTime: Output only. The time this CryptoKeyVersion''s key material is scheduled for destruction. Only present if state is DESTROY_SCHEDULED.'
+                        type: string
+                      externalProtectionLevelOptions:
+                        description: 'ExternalProtectionLevelOptions: ExternalProtectionLevelOptions stores a group of additional fields for configuring a CryptoKeyVersion that are specific to the EXTERNAL protection level.'
+                        properties:
+                          externalKeyUri:
+                            description: 'ExternalKeyUri: The URI for an external resource that this CryptoKeyVersion represents.'
+                            type: string
+                        type: object
+                      generateTime:
+                        description: 'GenerateTime: Output only. The time this CryptoKeyVersion''s key material was generated.'
+                        type: string
+                      importFailureReason:
+                        description: 'ImportFailureReason: Output only. The root cause of an import failure. Only present if state is IMPORT_FAILED.'
+                        type: string
+                      importJob:
+                        description: 'ImportJob: Output only. The name of the ImportJob used to import this CryptoKeyVersion. Only present if the underlying key material was imported.'
+                        type: string
+                      importTime:
+                        description: 'ImportTime: Output only. The time at which this CryptoKeyVersion''s key material was imported.'
+                        type: string
+                      name:
+                        description: 'Name: Output only. The resource name for this CryptoKeyVersion in the format `projects/*/locations/*/keyRings/*/cryptoKeys/*/cryptoKeyVersio ns/*`.'
+                        type: string
+                      protectionLevel:
+                        description: "ProtectionLevel: Output only. The ProtectionLevel describing how crypto operations are performed with this CryptoKeyVersion. \n Possible values:   \"PROTECTION_LEVEL_UNSPECIFIED\" - Not specified.   \"SOFTWARE\" - Crypto operations are performed in software.   \"HSM\" - Crypto operations are performed in a Hardware Security Module.   \"EXTERNAL\" - Crypto operations are performed by an external key manager."
+                        type: string
+                      state:
+                        description: "State: The current state of the CryptoKeyVersion. \n Possible values:   \"CRYPTO_KEY_VERSION_STATE_UNSPECIFIED\" - Not specified.   \"PENDING_GENERATION\" - This version is still being generated. It may not be used, enabled, disabled, or destroyed yet. Cloud KMS will automatically mark this version ENABLED as soon as the version is ready.   \"ENABLED\" - This version may be used for cryptographic operations.   \"DISABLED\" - This version may not be used, but the key material is still available, and the version can be placed back into the ENABLED state.   \"DESTROYED\" - This version is destroyed, and the key material is no longer stored. A version may not leave this state once entered.   \"DESTROY_SCHEDULED\" - This version is scheduled for destruction, and will be destroyed soon. Call RestoreCryptoKeyVersion to put it back into the DISABLED state.   \"PENDING_IMPORT\" - This version is still being imported. It may not be used, enabled, disabled, or destroyed yet. Cloud KMS will automatically mark this version ENABLED as soon as the version is ready.   \"IMPORT_FAILED\" - This version was not imported successfully. It may not be used, enabled, disabled, or destroyed. The submitted key material has been discarded. Additional details can be found in CryptoKeyVersion.import_failure_reason."
+                        type: string
+                    type: object
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True, False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

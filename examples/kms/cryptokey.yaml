@@ -1,0 +1,16 @@
+---
+apiVersion: kms.gcp.crossplane.io/v1alpha1
+kind: CryptoKey
+metadata:
+  name: crossplane-test-key
+spec:
+  forProvider:
+    purpose: ENCRYPT_DECRYPT
+    keyRingRef:
+      name: hello-from-crossplane
+#    rotationPeriod: "2592000s"
+#    nextRotationTime: "2021-01-10T21:00:00Z"
+#    versionTemplate:
+#      protectionLevel: HSM
+  providerConfigRef:
+    name: gcp-provider
