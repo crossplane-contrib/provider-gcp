@@ -98,7 +98,6 @@ func (e *cryptoKeyPolicyExternal) Observe(ctx context.Context, mg resource.Manag
 		return managed.ExternalObservation{}, nil
 	}
 
-	cr.Status.AtProvider = cryptokeypolicy.GenerateObservation(*instance)
 	cr.Status.SetConditions(xpv1.Available())
 
 	upToDate, err := cryptokeypolicy.IsUpToDate(&cr.Spec.ForProvider, instance)
