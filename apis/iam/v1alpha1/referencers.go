@@ -20,52 +20,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// KeyRingRRN extracts the partially qualified URL of a Network.
-func KeyRingRRN() reference.ExtractValueFn {
+// ServiceAccountRRN extracts the partially qualified URL of a Network.
+func ServiceAccountRRN() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {
-		n, ok := mg.(*KeyRing)
-		if !ok {
-			return ""
-		}
-		return n.Status.AtProvider.Name
-	}
-}
-
-// ResolveReferences of this CryptoKey
-func (in *CryptoKey) ResolveReferences(ctx context.Context, c client.Reader) error {
-	r := reference.NewAPIResolver(c, in)
-
-	// Resolve spec.forProvider.keyRing
-	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
-		CurrentValue: reference.FromPtrValue(in.Spec.ForProvider.KeyRing),
-		Reference:    in.Spec.ForProvider.KeyRingRef,
-		Selector:     in.Spec.ForProvider.KeyRingSelector,
-		To:           reference.To{Managed: &KeyRing{}, List: &KeyRingList{}},
-		Extract:      KeyRingRRN(),
-	})
-	if err != nil {
-		return errors.Wrap(err, "spec.forProvider.keyRing")
-	}
-
-	in.Spec.ForProvider.KeyRing = reference.ToPtrValue(rsp.ResolvedValue)
-	in.Spec.ForProvider.KeyRingRef = rsp.ResolvedReference
-
-	return nil
-}
-
-// CryptoKeyRRN extracts the partially qualified URL of a Network.
-func CryptoKeyRRN() reference.ExtractValueFn {
-	return func(mg resource.Managed) string {
-		n, ok := mg.(*CryptoKey)
+		n, ok := mg.(*ServiceAccount)
 		if !ok {
 			return ""
 		}
@@ -76,7 +40,7 @@ func CryptoKeyRRN() reference.ExtractValueFn {
 // ServiceAccountMemberName returns member name for a given ServiceAccount Object.
 func ServiceAccountMemberName() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {
-		n, ok := mg.(*v1alpha1.ServiceAccount)
+		n, ok := mg.(*ServiceAccount)
 		if !ok {
 			return ""
 		}
@@ -84,23 +48,23 @@ func ServiceAccountMemberName() reference.ExtractValueFn {
 	}
 }
 
-// ResolveReferences of this CryptoKeyPolicy
-func (in *CryptoKeyPolicy) ResolveReferences(ctx context.Context, c client.Reader) error {
+// ResolveReferences of this ServiceAccountPolicy
+func (in *ServiceAccountPolicy) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, in)
 
-	// Resolve spec.forProvider.keyRing
+	// Resolve spec.forProvider.serviceAccount
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
-		CurrentValue: reference.FromPtrValue(in.Spec.ForProvider.CryptoKey),
-		Reference:    in.Spec.ForProvider.CryptoKeyRef,
-		Selector:     in.Spec.ForProvider.CryptoKeySelector,
-		To:           reference.To{Managed: &CryptoKey{}, List: &CryptoKeyList{}},
-		Extract:      CryptoKeyRRN(),
+		CurrentValue: reference.FromPtrValue(in.Spec.ForProvider.ServiceAccount),
+		Reference:    in.Spec.ForProvider.ServiceAccountRef,
+		Selector:     in.Spec.ForProvider.ServiceAccountSelector,
+		To:           reference.To{Managed: &ServiceAccount{}, List: &ServiceAccountList{}},
+		Extract:      ServiceAccountRRN(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "spec.forProvider.cryptoKey")
 	}
-	in.Spec.ForProvider.CryptoKey = reference.ToPtrValue(rsp.ResolvedValue)
-	in.Spec.ForProvider.CryptoKeyRef = rsp.ResolvedReference
+	in.Spec.ForProvider.ServiceAccount = reference.ToPtrValue(rsp.ResolvedValue)
+	in.Spec.ForProvider.ServiceAccountRef = rsp.ResolvedReference
 
 	// Resolve spec.ForProvider.Policy.Bindings[*].Members
 	for i := range in.Spec.ForProvider.Policy.Bindings {
@@ -108,7 +72,7 @@ func (in *CryptoKeyPolicy) ResolveReferences(ctx context.Context, c client.Reade
 			CurrentValues: in.Spec.ForProvider.Policy.Bindings[i].Members,
 			References:    in.Spec.ForProvider.Policy.Bindings[i].ServiceAccountMemberRefs,
 			Selector:      in.Spec.ForProvider.Policy.Bindings[i].ServiceAccountMemberSelector,
-			To:            reference.To{Managed: &v1alpha1.ServiceAccount{}, List: &v1alpha1.ServiceAccountList{}},
+			To:            reference.To{Managed: &ServiceAccount{}, List: &ServiceAccountList{}},
 			Extract:       ServiceAccountMemberName(),
 		})
 		if err != nil {

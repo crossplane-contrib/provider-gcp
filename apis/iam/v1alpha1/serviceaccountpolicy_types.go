@@ -20,66 +20,63 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-
-	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 )
 
-// CryptoKeyPolicyParameters defines parameters for a desired KMS CryptoKeyPolicy
-// https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys
-type CryptoKeyPolicyParameters struct {
-	// CryptoKey: The RRN of the CryptoKey to which this CryptoKeyPolicy belongs.
+// ServiceAccountPolicyParameters defines parameters for a desired IAM ServiceAccountPolicy
+type ServiceAccountPolicyParameters struct {
+	// ServiceAccount: The RRN of the ServiceAccount to which this ServiceAccountPolicy belongs.
 	// +optional
 	// +immutable
-	CryptoKey *string `json:"cryptoKey,omitempty"`
+	ServiceAccount *string `json:"serviceAccount,omitempty"`
 
-	// CryptoKeyRef references a CryptoKey and retrieves its URI
+	// ServiceAccountRef references a ServiceAccount and retrieves its URI
 	// +optional
 	// +immutable
-	CryptoKeyRef *xpv1.Reference `json:"cryptoKeyRef,omitempty"`
+	ServiceAccountRef *xpv1.Reference `json:"serviceAccountRef,omitempty"`
 
-	// CryptoKeySelector selects a reference to a CryptoKey
+	// ServiceAccountSelector selects a reference to a ServiceAccount
 	// +optional
-	CryptoKeySelector *xpv1.Selector `json:"cryptoKeySelector,omitempty"`
+	ServiceAccountSelector *xpv1.Selector `json:"serviceAccountSelector,omitempty"`
 
 	// Policy: An Identity and Access Management (IAM) policy, which
 	// specifies access controls for Google Cloud resources.
-	Policy iamv1alpha1.Policy `json:"policy,omitempty"`
+	Policy Policy `json:"policy,omitempty"`
 }
 
-// CryptoKeyPolicySpec defines the desired state of a
-// CryptoKeyPolicy.
-type CryptoKeyPolicySpec struct {
+// ServiceAccountPolicySpec defines the desired state of a
+// ServiceAccountPolicy.
+type ServiceAccountPolicySpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ForProvider       CryptoKeyPolicyParameters `json:"forProvider"`
+	ForProvider       ServiceAccountPolicyParameters `json:"forProvider"`
 }
 
-// CryptoKeyPolicyStatus represents the observed state of a
-// CryptoKeyPolicy.
-type CryptoKeyPolicyStatus struct {
+// ServiceAccountPolicyStatus represents the observed state of a
+// ServiceAccountPolicy.
+type ServiceAccountPolicyStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 }
 
 // +kubebuilder:object:root=true
 
-// CryptoKeyPolicy is a managed resource that represents a Google KMS Crypto Key.
+// ServiceAccountPolicy is a managed resource that represents a Google IAM ServiceAccount.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
-type CryptoKeyPolicy struct {
+type ServiceAccountPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CryptoKeyPolicySpec   `json:"spec"`
-	Status CryptoKeyPolicyStatus `json:"status,omitempty"`
+	Spec   ServiceAccountPolicySpec   `json:"spec"`
+	Status ServiceAccountPolicyStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// CryptoKeyPolicyList contains a list of CryptoKeyPolicy types
-type CryptoKeyPolicyList struct {
+// ServiceAccountPolicyList contains a list of ServiceAccountPolicy types
+type ServiceAccountPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CryptoKeyPolicy `json:"items"`
+	Items           []ServiceAccountPolicy `json:"items"`
 }

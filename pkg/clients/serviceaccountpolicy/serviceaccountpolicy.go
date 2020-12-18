@@ -14,16 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cryptokeypolicy
+package serviceaccountpolicy
 
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
 	"github.com/pkg/errors"
-	"google.golang.org/api/cloudkms/v1"
+	"google.golang.org/api/iam/v1"
 
-	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
+	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 )
 
 const (
@@ -38,61 +38,61 @@ const errCheckUpToDate = "unable to determine if external resource is up to date
 
 // Client should be satisfied to conduct SA operations.
 type Client interface {
-	GetIamPolicy(resource string) *cloudkms.ProjectsLocationsKeyRingsCryptoKeysGetIamPolicyCall
-	SetIamPolicy(resource string, setiampolicyrequest *cloudkms.SetIamPolicyRequest) *cloudkms.ProjectsLocationsKeyRingsCryptoKeysSetIamPolicyCall
+	GetIamPolicy(resource string) *iam.ProjectsServiceAccountsGetIamPolicyCall
+	SetIamPolicy(resource string, setiampolicyrequest *iam.SetIamPolicyRequest) *iam.ProjectsServiceAccountsSetIamPolicyCall
 }
 
-// GenerateCryptoKeyPolicyInstance generates *kmsv1.Policy instance from CryptoKeyPolicyParameters.
-func GenerateCryptoKeyPolicyInstance(in v1alpha1.CryptoKeyPolicyParameters, ck *cloudkms.Policy) {
-	ck.Bindings = make([]*cloudkms.Binding, len(in.Policy.Bindings))
+// GenerateServiceAccountPolicyInstance generates *kmsv1.Policy instance from ServiceAccountPolicyParameters.
+func GenerateServiceAccountPolicyInstance(in v1alpha1.ServiceAccountPolicyParameters, p *iam.Policy) {
+	p.Bindings = make([]*iam.Binding, len(in.Policy.Bindings))
 	for i, v := range in.Policy.Bindings {
-		ck.Bindings[i] = &cloudkms.Binding{}
+		p.Bindings[i] = &iam.Binding{}
 		if v.Condition != nil {
-			ck.Bindings[i].Condition = &cloudkms.Expr{
+			p.Bindings[i].Condition = &iam.Expr{
 				Description: v.Condition.Description,
 				Expression:  v.Condition.Expression,
 				Location:    v.Condition.Location,
 				Title:       v.Condition.Title,
 			}
 		}
-		ck.Bindings[i].Members = make([]string, len(v.Members))
-		copy(ck.Bindings[i].Members, v.Members)
-		ck.Bindings[i].Role = v.Role
+		p.Bindings[i].Members = make([]string, len(v.Members))
+		copy(p.Bindings[i].Members, v.Members)
+		p.Bindings[i].Role = v.Role
 	}
-	ck.AuditConfigs = make([]*cloudkms.AuditConfig, len(in.Policy.AuditConfigs))
+	p.AuditConfigs = make([]*iam.AuditConfig, len(in.Policy.AuditConfigs))
 	for i, v := range in.Policy.AuditConfigs {
-		ck.AuditConfigs[i] = &cloudkms.AuditConfig{}
-		ck.AuditConfigs[i].Service = v.Service
-		ck.AuditConfigs[i].AuditLogConfigs = make([]*cloudkms.AuditLogConfig, len(v.AuditLogConfigs))
+		p.AuditConfigs[i] = &iam.AuditConfig{}
+		p.AuditConfigs[i].Service = v.Service
+		p.AuditConfigs[i].AuditLogConfigs = make([]*iam.AuditLogConfig, len(v.AuditLogConfigs))
 		for ai, av := range v.AuditLogConfigs {
-			ck.AuditConfigs[i].AuditLogConfigs[ai] = &cloudkms.AuditLogConfig{}
-			ck.AuditConfigs[i].AuditLogConfigs[ai].LogType = av.LogType
-			ck.AuditConfigs[i].AuditLogConfigs[ai].ExemptedMembers = make([]string, len(av.ExemptedMembers))
-			copy(ck.AuditConfigs[i].AuditLogConfigs[ai].ExemptedMembers, av.ExemptedMembers)
+			p.AuditConfigs[i].AuditLogConfigs[ai] = &iam.AuditLogConfig{}
+			p.AuditConfigs[i].AuditLogConfigs[ai].LogType = av.LogType
+			p.AuditConfigs[i].AuditLogConfigs[ai].ExemptedMembers = make([]string, len(av.ExemptedMembers))
+			copy(p.AuditConfigs[i].AuditLogConfigs[ai].ExemptedMembers, av.ExemptedMembers)
 		}
 	}
-	ck.Version = policyVersion
+	p.Version = policyVersion
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(in *v1alpha1.CryptoKeyPolicyParameters, observed *cloudkms.Policy) (bool, error) {
+func IsUpToDate(in *v1alpha1.ServiceAccountPolicyParameters, observed *iam.Policy) (bool, error) {
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
 		return true, errors.Wrap(err, errCheckUpToDate)
 	}
-	desired, ok := generated.(*cloudkms.Policy)
+	desired, ok := generated.(*iam.Policy)
 	if !ok {
 		return true, errors.New(errCheckUpToDate)
 	}
-	GenerateCryptoKeyPolicyInstance(*in, desired)
+	GenerateServiceAccountPolicyInstance(*in, desired)
 	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(),
-		cmpopts.IgnoreFields(cloudkms.Policy{}, "Version"),
-		cmpopts.SortSlices(func(i, j *cloudkms.Binding) bool { return i.Role > j.Role }),
+		cmpopts.IgnoreFields(iam.Policy{}, "Version"),
+		cmpopts.SortSlices(func(i, j *iam.Binding) bool { return i.Role > j.Role }),
 		cmpopts.SortSlices(func(i, j string) bool { return i > j })), nil
 }
 
 // IsEmpty returns if Policy is empty
-func IsEmpty(in *cloudkms.Policy) bool {
+func IsEmpty(in *iam.Policy) bool {
 	return in.Bindings == nil && in.AuditConfigs == nil
 }

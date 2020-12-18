@@ -46,6 +46,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		container.SetupNodePool,
 		database.SetupCloudSQLInstance,
 		iam.SetupServiceAccount,
+		iam.SetupServiceAccountPolicy,
 		kms.SetupKeyRing,
 		kms.SetupCryptoKey,
 		kms.SetupCryptoKeyPolicy,

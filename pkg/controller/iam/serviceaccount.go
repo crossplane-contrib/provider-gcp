@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+
 	"github.com/crossplane/provider-gcp/pkg/clients/serviceaccount"
 
 	"github.com/pkg/errors"
@@ -99,6 +101,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGet)
 	}
 
+	cr.Status.SetConditions(xpv1.Available())
 	populateCRFromProvider(cr, fromProvider)
 	return managed.ExternalObservation{
 		ResourceExists:    true,
