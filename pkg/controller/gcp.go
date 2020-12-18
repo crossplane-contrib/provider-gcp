@@ -53,6 +53,8 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		pubsub.SetupTopic,
 		servicenetworking.SetupConnection,
 		storage.SetupBucket,
+		storage.SetupBucketPolicy,
+		storage.SetupBucketPolicyMember,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

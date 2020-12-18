@@ -29,6 +29,7 @@ import (
 	kms "github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
 	pubsub "github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	servicenetworkingv1beta1 "github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
+	storagev1alpha1 "github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
 	storagev1alpha3 "github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
 	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
 	gcpv1beta1 "github.com/crossplane/provider-gcp/apis/v1beta1"
@@ -48,6 +49,7 @@ func init() {
 		kms.SchemeBuilder.AddToScheme,
 		pubsub.SchemeBuilder.AddToScheme,
 		servicenetworkingv1beta1.SchemeBuilder.AddToScheme,
+		storagev1alpha1.SchemeBuilder.AddToScheme,
 		storagev1alpha3.SchemeBuilder.AddToScheme,
 	)
 }

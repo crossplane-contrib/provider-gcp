@@ -1,0 +1,15 @@
+---
+apiVersion: storage.gcp.crossplane.io/v1alpha1
+kind: BucketPolicyMember
+metadata:
+  name: crossplane-example-bucket-bind-member-to-role
+spec:
+  forProvider:
+    bucketRef:
+      name: example
+    # member: serviceAccount:<my-sa-email>
+    serviceAccountMemberRef:
+      name: perfect-test-sa
+    role: roles/storage.objectAdmin
+  providerConfigRef:
+    name: gcp-provider
