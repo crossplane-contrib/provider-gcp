@@ -48,6 +48,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		iam.SetupServiceAccount,
 		kms.SetupKeyRing,
 		kms.SetupCryptoKey,
+		kms.SetupCryptoKeyPolicy,
 		pubsub.SetupTopic,
 		servicenetworking.SetupConnection,
 		storage.SetupBucket,

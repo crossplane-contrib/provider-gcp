@@ -1,0 +1,19 @@
+---
+apiVersion: kms.gcp.crossplane.io/v1alpha1
+kind: CryptoKeyPolicy
+metadata:
+  name: crossplane-test-key-policy
+spec:
+  forProvider:
+    cryptoKeyRef:
+      name: crossplane-test-key
+    policy:
+      bindings:
+#        - role: roles/cloudkms.admin
+#          members:
+#            - serviceAccount:<my-sa-email>
+        - role: roles/cloudkms.cryptoKeyEncrypterDecrypter
+          serviceAccountMemberRefs:
+            - name: perfect-test-sa
+  providerConfigRef:
+    name: gcp-provider

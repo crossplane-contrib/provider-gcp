@@ -53,6 +53,14 @@ var (
 	CryptoKeyGroupVersionKind = SchemeGroupVersion.WithKind(CryptoKeyKind)
 )
 
+// CryptoKeyPolicy type metadata.
+var (
+	CryptoKeyPolicyKind             = reflect.TypeOf(CryptoKeyPolicy{}).Name()
+	CryptoKeyPolicyGroupKind        = schema.GroupKind{Group: Group, Kind: CryptoKeyPolicyKind}.String()
+	CryptoKeyPolicyKindAPIVersion   = CryptoKeyPolicyKind + "." + SchemeGroupVersion.String()
+	CryptoKeyPolicyGroupVersionKind = SchemeGroupVersion.WithKind(CryptoKeyPolicyKind)
+)
+
 func init() {
-	SchemeBuilder.Register(&KeyRing{}, &KeyRingList{}, &CryptoKey{}, &CryptoKeyList{})
+	SchemeBuilder.Register(&KeyRing{}, &KeyRingList{}, &CryptoKey{}, &CryptoKeyList{}, &CryptoKeyPolicy{}, &CryptoKeyPolicyList{})
 }

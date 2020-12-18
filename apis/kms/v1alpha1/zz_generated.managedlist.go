@@ -29,6 +29,15 @@ func (l *CryptoKeyList) GetItems() []resource.Managed {
 	return items
 }
 
+// GetItems of this CryptoKeyPolicyList.
+func (l *CryptoKeyPolicyList) GetItems() []resource.Managed {
+	items := make([]resource.Managed, len(l.Items))
+	for i := range l.Items {
+		items[i] = &l.Items[i]
+	}
+	return items
+}
+
 // GetItems of this KeyRingList.
 func (l *KeyRingList) GetItems() []resource.Managed {
 	items := make([]resource.Managed, len(l.Items))
