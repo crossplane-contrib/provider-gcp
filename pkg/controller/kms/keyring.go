@@ -44,6 +44,7 @@ const (
 	errGet        = "cannot get GCP object via KMS API"
 	errCreate     = "cannot create GCP object via KMS API"
 	errUpdate     = "cannot update GCP object via KMS API"
+	errDelete     = "cannot delete GCP object via KMS API"
 )
 
 // SetupKeyRing adds a controller that reconciles KeyRings.
