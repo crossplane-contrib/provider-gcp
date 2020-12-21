@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	// https://cloud.google.com/kms/docs/reference/rest/v1/Policy
+	// https://cloud.google.com/iam/docs/reference/rest/v1/Policy
 	// Specifies the format of the policy.
 	// Any operation that affects conditional role bindings must specify version 3.
 	// Our CR supports conditional role bindings.
@@ -42,7 +42,7 @@ type Client interface {
 	SetIamPolicy(resource string, setiampolicyrequest *iam.SetIamPolicyRequest) *iam.ProjectsServiceAccountsSetIamPolicyCall
 }
 
-// GenerateServiceAccountPolicyInstance generates *kmsv1.Policy instance from ServiceAccountPolicyParameters.
+// GenerateServiceAccountPolicyInstance generates *iam.Policy instance from ServiceAccountPolicyParameters.
 func GenerateServiceAccountPolicyInstance(in v1alpha1.ServiceAccountPolicyParameters, p *iam.Policy) {
 	p.Bindings = make([]*iam.Binding, len(in.Policy.Bindings))
 	for i, v := range in.Policy.Bindings {
@@ -86,10 +86,15 @@ func IsUpToDate(in *v1alpha1.ServiceAccountPolicyParameters, observed *iam.Polic
 		return true, errors.New(errCheckUpToDate)
 	}
 	GenerateServiceAccountPolicyInstance(*in, desired)
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(),
+	return ArePoliciesSame(desired, observed), nil
+}
+
+// ArePoliciesSame compares and returns true if two policies are same
+func ArePoliciesSame(p1, p2 *iam.Policy) bool {
+	return cmp.Equal(p1, p2, cmpopts.EquateEmpty(),
 		cmpopts.IgnoreFields(iam.Policy{}, "Version"),
 		cmpopts.SortSlices(func(i, j *iam.Binding) bool { return i.Role > j.Role }),
-		cmpopts.SortSlices(func(i, j string) bool { return i > j })), nil
+		cmpopts.SortSlices(func(i, j string) bool { return i > j }))
 }
 
 // IsEmpty returns if Policy is empty

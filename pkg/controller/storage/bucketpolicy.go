@@ -101,16 +101,16 @@ func (e *bucketPolicyExternal) Observe(ctx context.Context, mg resource.Managed)
 		return managed.ExternalObservation{}, nil
 	}
 
-	cr.Status.SetConditions(xpv1.Available())
-
-	upToDate, err := bucketpolicy.IsUpToDate(&cr.Spec.ForProvider, instance)
-	if err != nil {
+	if upToDate, err := bucketpolicy.IsUpToDate(&cr.Spec.ForProvider, instance); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
+	} else if !upToDate {
+		return managed.ExternalObservation{ResourceExists: true}, nil
 	}
 
+	cr.Status.SetConditions(xpv1.Available())
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: upToDate,
+		ResourceUpToDate: true,
 	}, nil
 }
 

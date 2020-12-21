@@ -45,6 +45,9 @@ const (
 const (
 	errNotServiceAccountPolicy = "managed resource is not a GCP ServiceAccountPolicy"
 	errCheckUpToDate           = "cannot determine if ServiceAccountPolicy instance is up to date"
+
+	errGetPolicy = "cannot get policy of CryptoKey"
+	errSetPolicy = "cannot set policy of CryptoKey"
 )
 
 // SetupServiceAccountPolicy adds a controller that reconciles ServiceAccountPolicys.
@@ -92,23 +95,23 @@ func (e *serviceAccountPolicyExternal) Observe(ctx context.Context, mg resource.
 
 	instance, err := e.serviceaccountspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGet)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetPolicy)
 	}
 	// Empty policy
 	if serviceaccountpolicy.IsEmpty(instance) {
 		return managed.ExternalObservation{}, nil
 	}
 
-	cr.Status.SetConditions(xpv1.Available())
-
-	upToDate, err := serviceaccountpolicy.IsUpToDate(&cr.Spec.ForProvider, instance)
-	if err != nil {
+	if upToDate, err := serviceaccountpolicy.IsUpToDate(&cr.Spec.ForProvider, instance); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
+	} else if !upToDate {
+		return managed.ExternalObservation{ResourceExists: true}, nil
 	}
 
+	cr.Status.SetConditions(xpv1.Available())
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: upToDate,
+		ResourceUpToDate: true,
 	}, nil
 }
 
@@ -125,7 +128,7 @@ func (e *serviceAccountPolicyExternal) Create(ctx context.Context, mg resource.M
 
 	if _, err := e.serviceaccountspolicy.SetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount), req).
 		Context(ctx).Do(); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
+		return managed.ExternalCreation{}, errors.Wrap(err, errSetPolicy)
 	}
 
 	return managed.ExternalCreation{}, nil
@@ -138,7 +141,7 @@ func (e *serviceAccountPolicyExternal) Update(ctx context.Context, mg resource.M
 	}
 	instance, err := e.serviceaccountspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errGet)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errGetPolicy)
 	}
 
 	u, err := serviceaccountpolicy.IsUpToDate(&cr.Spec.ForProvider, instance)
@@ -154,7 +157,7 @@ func (e *serviceAccountPolicyExternal) Update(ctx context.Context, mg resource.M
 
 	if _, err := e.serviceaccountspolicy.SetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount), req).
 		Context(ctx).Do(); err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errCreate)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errSetPolicy)
 	}
 
 	return managed.ExternalUpdate{}, nil
@@ -168,7 +171,7 @@ func (e *serviceAccountPolicyExternal) Delete(ctx context.Context, mg resource.M
 	req := &iamv1.SetIamPolicyRequest{Policy: &iamv1.Policy{}}
 	if _, err := e.serviceaccountspolicy.SetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount), req).
 		Context(ctx).Do(); err != nil {
-		return errors.Wrap(err, errDelete)
+		return errors.Wrap(err, errSetPolicy)
 	}
 	return nil
 }

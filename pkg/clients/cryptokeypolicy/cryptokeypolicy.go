@@ -86,10 +86,15 @@ func IsUpToDate(in *v1alpha1.CryptoKeyPolicyParameters, observed *cloudkms.Polic
 		return true, errors.New(errCheckUpToDate)
 	}
 	GenerateCryptoKeyPolicyInstance(*in, desired)
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(),
+	return ArePoliciesSame(desired, observed), nil
+}
+
+// ArePoliciesSame compares and returns true if two policies are same
+func ArePoliciesSame(p1, p2 *cloudkms.Policy) bool {
+	return cmp.Equal(p1, p2, cmpopts.EquateEmpty(),
 		cmpopts.IgnoreFields(cloudkms.Policy{}, "Version"),
 		cmpopts.SortSlices(func(i, j *cloudkms.Binding) bool { return i.Role > j.Role }),
-		cmpopts.SortSlices(func(i, j string) bool { return i > j })), nil
+		cmpopts.SortSlices(func(i, j string) bool { return i > j }))
 }
 
 // IsEmpty returns if Policy is empty

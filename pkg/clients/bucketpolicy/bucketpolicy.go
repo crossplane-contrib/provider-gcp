@@ -75,10 +75,15 @@ func IsUpToDate(in *v1alpha1.BucketPolicyParameters, observed *storage.Policy) (
 		return true, errors.New(errCheckUpToDate)
 	}
 	GenerateBucketPolicyInstance(*in, desired)
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(),
+	return ArePoliciesSame(desired, observed), nil
+}
+
+// ArePoliciesSame compares and returns true if two policies are same
+func ArePoliciesSame(p1, p2 *storage.Policy) bool {
+	return cmp.Equal(p1, p2, cmpopts.EquateEmpty(),
 		cmpopts.IgnoreFields(storage.Policy{}, "Version"),
 		cmpopts.SortSlices(func(i, j *storage.PolicyBindings) bool { return i.Role > j.Role }),
-		cmpopts.SortSlices(func(i, j string) bool { return i > j })), nil
+		cmpopts.SortSlices(func(i, j string) bool { return i > j }))
 }
 
 // IsEmpty returns if Policy is empty

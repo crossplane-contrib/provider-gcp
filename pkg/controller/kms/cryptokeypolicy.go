@@ -44,6 +44,8 @@ const (
 )
 const (
 	errNotCryptoKeyPolicy = "managed resource is not a GCP CryptoKeyPolicy"
+	errGetPolicy          = "cannot get policy of CryptoKey"
+	errSetPolicy          = "cannot set policy of CryptoKey"
 )
 
 // SetupCryptoKeyPolicy adds a controller that reconciles CryptoKeyPolicys.
@@ -91,23 +93,24 @@ func (e *cryptoKeyPolicyExternal) Observe(ctx context.Context, mg resource.Manag
 
 	instance, err := e.cryptokeyspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGet)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetPolicy)
 	}
-	// Empty policy
+
 	if cryptokeypolicy.IsEmpty(instance) {
+		// Empty policy
 		return managed.ExternalObservation{}, nil
 	}
 
-	cr.Status.SetConditions(xpv1.Available())
-
-	upToDate, err := cryptokeypolicy.IsUpToDate(&cr.Spec.ForProvider, instance)
-	if err != nil {
+	if upToDate, err := cryptokeypolicy.IsUpToDate(&cr.Spec.ForProvider, instance); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
+	} else if !upToDate {
+		return managed.ExternalObservation{ResourceExists: true}, nil
 	}
 
+	cr.Status.SetConditions(xpv1.Available())
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: upToDate,
+		ResourceUpToDate: true,
 	}, nil
 }
 
@@ -124,7 +127,7 @@ func (e *cryptoKeyPolicyExternal) Create(ctx context.Context, mg resource.Manage
 
 	if _, err := e.cryptokeyspolicy.SetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey), req).
 		Context(ctx).Do(); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
+		return managed.ExternalCreation{}, errors.Wrap(err, errSetPolicy)
 	}
 
 	return managed.ExternalCreation{}, nil
@@ -137,7 +140,7 @@ func (e *cryptoKeyPolicyExternal) Update(ctx context.Context, mg resource.Manage
 	}
 	instance, err := e.cryptokeyspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errGet)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errGetPolicy)
 	}
 
 	u, err := cryptokeypolicy.IsUpToDate(&cr.Spec.ForProvider, instance)
@@ -153,7 +156,7 @@ func (e *cryptoKeyPolicyExternal) Update(ctx context.Context, mg resource.Manage
 
 	if _, err := e.cryptokeyspolicy.SetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey), req).
 		Context(ctx).Do(); err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errCreate)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errSetPolicy)
 	}
 
 	return managed.ExternalUpdate{}, nil
@@ -167,7 +170,7 @@ func (e *cryptoKeyPolicyExternal) Delete(ctx context.Context, mg resource.Manage
 	req := &kmsv1.SetIamPolicyRequest{Policy: &kmsv1.Policy{}}
 	if _, err := e.cryptokeyspolicy.SetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey), req).
 		Context(ctx).Do(); err != nil {
-		return errors.Wrap(err, errDelete)
+		return errors.Wrap(err, errSetPolicy)
 	}
 	return nil
 }
