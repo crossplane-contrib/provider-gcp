@@ -46,12 +46,20 @@ func GenerateNodePool(name string, in v1alpha1.NodePoolParameters, pool *contain
 	pool.InitialNodeCount = gcp.Int64Value(in.InitialNodeCount)
 	pool.Locations = in.Locations
 	pool.Name = name
-	pool.Version = gcp.StringValue(in.Version)
+
+	// Special handling for auto upgrade
+	if pool.Version == "" || !isAutoUpgradeEnabled(in) {
+		pool.Version = gcp.StringValue(in.Version)
+	}
 
 	GenerateAutoscaling(in.Autoscaling, pool)
 	GenerateConfig(in.Config, pool)
 	GenerateManagement(in.Management, pool)
 	GenerateMaxPodsConstraint(in.MaxPodsConstraint, pool)
+}
+
+func isAutoUpgradeEnabled(in v1alpha1.NodePoolParameters) bool {
+	return in.Management != nil && gcp.BoolValue(in.Management.AutoUpgrade)
 }
 
 // GenerateAutoscaling generates *container.Autoscaling from *Autoscaling.

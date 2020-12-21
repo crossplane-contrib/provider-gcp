@@ -189,6 +189,64 @@ func TestGenerateNodePool(t *testing.T) {
 			},
 			want: nodePool(),
 		},
+		"AutoUpgradeEnabled_InitializesVersion": {
+			args: args{
+				nodePool: nodePool(),
+				params: params(func(p *v1alpha1.NodePoolParameters) {
+					p.Management = &v1alpha1.NodeManagementSpec{
+						AutoUpgrade: gcp.BoolPtr(true),
+					}
+					p.Version = gcp.StringPtr("0.0.1")
+				}),
+				name: name,
+			},
+			want: nodePool(func(n *container.NodePool) {
+				n.Management = &container.NodeManagement{
+					AutoUpgrade: true,
+				}
+				n.Version = "0.0.1"
+			}),
+		},
+		"AutoUpgradeEnabled_ShouldNotOverwriteVersion": {
+			args: args{
+				nodePool: nodePool(func(pool *container.NodePool) {
+					pool.Version = "0.0.2"
+				}),
+				params: params(func(p *v1alpha1.NodePoolParameters) {
+					p.Management = &v1alpha1.NodeManagementSpec{
+						AutoUpgrade: gcp.BoolPtr(true),
+					}
+					p.Version = gcp.StringPtr("0.0.1")
+				}),
+				name: name,
+			},
+			want: nodePool(func(n *container.NodePool) {
+				n.Management = &container.NodeManagement{
+					AutoUpgrade: true,
+				}
+				n.Version = "0.0.2"
+			}),
+		},
+		"AutoUpgradeDisabled_ShouldOverwriteVersion": {
+			args: args{
+				nodePool: nodePool(func(pool *container.NodePool) {
+					pool.Version = "0.0.2"
+				}),
+				params: params(func(p *v1alpha1.NodePoolParameters) {
+					p.Management = &v1alpha1.NodeManagementSpec{
+						AutoUpgrade: gcp.BoolPtr(false),
+					}
+					p.Version = gcp.StringPtr("0.0.1")
+				}),
+				name: name,
+			},
+			want: nodePool(func(n *container.NodePool) {
+				n.Management = &container.NodeManagement{
+					AutoUpgrade: false,
+				}
+				n.Version = "0.0.1"
+			}),
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
