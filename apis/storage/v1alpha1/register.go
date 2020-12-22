@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "iam.gcp.crossplane.io"
+	Group   = "storage.gcp.crossplane.io"
 	Version = "v1alpha1"
 )
 
@@ -37,22 +37,22 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// ServiceAccount type metadata.
+// BucketPolicy type metadata.
 var (
-	ServiceAccountKind             = reflect.TypeOf(ServiceAccount{}).Name()
-	ServiceAccountGroupKind        = schema.GroupKind{Group: Group, Kind: ServiceAccountKind}.String()
-	ServiceAccountKindAPIVersion   = ServiceAccountKind + "." + SchemeGroupVersion.String()
-	ServiceAccountGroupVersionKind = SchemeGroupVersion.WithKind(ServiceAccountKind)
+	BucketPolicyKind             = reflect.TypeOf(BucketPolicy{}).Name()
+	BucketPolicyGroupKind        = schema.GroupKind{Group: Group, Kind: BucketPolicyKind}.String()
+	BucketPolicyKindAPIVersion   = BucketPolicyKind + "." + SchemeGroupVersion.String()
+	BucketPolicyGroupVersionKind = SchemeGroupVersion.WithKind(BucketPolicyKind)
 )
 
-// ServiceAccountPolicy type metadata.
+// BucketPolicyMember type metadata.
 var (
-	ServiceAccountPolicyKind             = reflect.TypeOf(ServiceAccountPolicy{}).Name()
-	ServiceAccountPolicyGroupKind        = schema.GroupKind{Group: Group, Kind: ServiceAccountPolicyKind}.String()
-	ServiceAccountPolicyKindAPIVersion   = ServiceAccountPolicyKind + "." + SchemeGroupVersion.String()
-	ServiceAccountPolicyGroupVersionKind = SchemeGroupVersion.WithKind(ServiceAccountPolicyKind)
+	BucketPolicyMemberKind             = reflect.TypeOf(BucketPolicyMember{}).Name()
+	BucketPolicyMemberGroupKind        = schema.GroupKind{Group: Group, Kind: BucketPolicyMemberKind}.String()
+	BucketPolicyMemberKindAPIVersion   = BucketPolicyMemberKind + "." + SchemeGroupVersion.String()
+	BucketPolicyMemberGroupVersionKind = SchemeGroupVersion.WithKind(BucketPolicyMemberKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&ServiceAccount{}, &ServiceAccountList{}, &ServiceAccountPolicy{}, &ServiceAccountPolicyList{})
+	SchemeBuilder.Register(&BucketPolicy{}, &BucketPolicyList{}, &BucketPolicyMember{}, &BucketPolicyMemberList{})
 }

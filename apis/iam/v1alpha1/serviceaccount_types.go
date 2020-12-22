@@ -95,6 +95,7 @@ type ServiceAccountStatus struct {
 // +kubebuilder:printcolumn:name="EMAIL",type="string",JSONPath=".status.atProvider.email"
 // +kubebuilder:printcolumn:name="DISABLED",type="boolean",JSONPath=".status.atProvider.disabled"
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 type ServiceAccount struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

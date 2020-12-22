@@ -20,8 +20,8 @@ package v1alpha1
 
 import resource "github.com/crossplane/crossplane-runtime/pkg/resource"
 
-// GetItems of this ServiceAccountList.
-func (l *ServiceAccountList) GetItems() []resource.Managed {
+// GetItems of this BucketPolicyList.
+func (l *BucketPolicyList) GetItems() []resource.Managed {
 	items := make([]resource.Managed, len(l.Items))
 	for i := range l.Items {
 		items[i] = &l.Items[i]
@@ -29,8 +29,8 @@ func (l *ServiceAccountList) GetItems() []resource.Managed {
 	return items
 }
 
-// GetItems of this ServiceAccountPolicyList.
-func (l *ServiceAccountPolicyList) GetItems() []resource.Managed {
+// GetItems of this BucketPolicyMemberList.
+func (l *BucketPolicyMemberList) GetItems() []resource.Managed {
 	items := make([]resource.Managed, len(l.Items))
 	for i := range l.Items {
 		items[i] = &l.Items[i]

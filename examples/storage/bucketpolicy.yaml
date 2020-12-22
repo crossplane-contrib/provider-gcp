@@ -1,0 +1,28 @@
+---
+# !!! Please note, this managed resource represents the entire IAMPolicy for
+# the associated GCP Bucket. Any existing value for the IAMPolicy will be
+# overwritten, including any existing bindings and audit configs.
+# This might cause removal of policy which allows you to access to the bucket.
+# Consider using BucketPolicyMember to bind a role to a member instead.
+apiVersion: storage.gcp.crossplane.io/v1alpha1
+kind: BucketPolicy
+metadata:
+  name: crossplane-example-bucket-policy
+spec:
+  forProvider:
+    bucketRef:
+      name: example
+    policy:
+      bindings:
+        - role: roles/storage.legacyBucketOwner
+          members:
+            - "projectEditor:<gcp-project>"
+            - "projectOwner:<gcp-project>"
+        - role: roles/storage.legacyBucketReader
+          members:
+            - "projectViewer:<gcp-project>"
+        - role: roles/storage.objectAdmin
+          serviceAccountMemberRefs:
+            - name: perfect-test-sa
+  providerConfigRef:
+    name: gcp-provider

@@ -4,18 +4,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: serviceaccounts.iam.gcp.crossplane.io
+  name: bucketpolicymembers.storage.gcp.crossplane.io
 spec:
-  group: iam.gcp.crossplane.io
+  group: storage.gcp.crossplane.io
   names:
     categories:
     - crossplane
     - managed
     - gcp
-    kind: ServiceAccount
-    listKind: ServiceAccountList
-    plural: serviceaccounts
-    singular: serviceaccount
+    kind: BucketPolicyMember
+    listKind: BucketPolicyMemberList
+    plural: bucketpolicymembers
+    singular: bucketpolicymember
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -25,19 +25,10 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
-    - jsonPath: .spec.forProvider.displayName
-      name: DISPLAYNAME
-      type: string
-    - jsonPath: .status.atProvider.email
-      name: EMAIL
-      type: string
-    - jsonPath: .status.atProvider.disabled
-      name: DISABLED
-      type: boolean
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ServiceAccount is a managed resource that represents a Google IAM Service Account.
+        description: BucketPolicyMember is a managed resource that represents a Google KMS Crypto Key.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -48,7 +39,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ServiceAccountSpec defines the desired state of a ServiceAccount.
+            description: BucketPolicyMemberSpec defines the desired state of a BucketPolicyMember.
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
@@ -57,14 +48,61 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: ServiceAccountParameters defines parameters for a desired IAM ServiceAccount https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts The name of the service account (ie the `accountId` parameter of the Create call) is determined by the value of the `crossplane.io/external-name` annotation. Unless overridden by the user, this annotation is automatically populated with the value of the `metadata.name` attribute.
+                description: BucketPolicyMemberParameters defines parameters for a desired KMS BucketPolicyMember
                 properties:
-                  description:
-                    description: Description is an optional user-specified opaque description of the service account. Must be less than or equal to 256 characters.
+                  bucket:
+                    description: 'Bucket: The RRN of the Bucket to which this BucketPolicyMember belongs.'
                     type: string
-                  displayName:
-                    description: DisplayName is an optional user-specified name for the service account. Must be less than or equal to 100 characters.
+                  bucketRef:
+                    description: BucketRef references a Bucket and retrieves its URI
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  bucketSelector:
+                    description: BucketSelector selects a reference to a Bucket
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels is selected.
+                        type: object
+                    type: object
+                  member:
+                    description: "Member: Specifies the identity requesting access for a Cloud Platform resource. `member` can have the following values: \n * `allUsers`: A special identifier that represents anyone who is    on the internet; with or without a Google account. \n * `allAuthenticatedUsers`: A special identifier that represents anyone    who is authenticated with a Google account or a service account. \n * `user:{emailid}`: An email address that represents a specific Google    account. For example, `alice@example.com` . \n * `serviceAccount:{emailid}`: An email address that represents a service    account. For example, `my-other-app@appspot.gserviceaccount.com`. \n * `group:{emailid}`: An email address that represents a Google group.    For example, `admins@example.com`. \n * `deleted:user:{emailid}?uid={uniqueid}`: An email address (plus unique    identifier) representing a user that has been recently deleted. For    example, `alice@example.com?uid=123456789012345678901`. If the user is    recovered, this value reverts to `user:{emailid}` and the recovered user    retains the role in the binding. \n * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email address (plus    unique identifier) representing a service account that has been recently    deleted. For example, \n `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`. \n    If the service account is undeleted, this value reverts to    `serviceAccount:{emailid}` and the undeleted service account retains the    role in the binding. \n * `deleted:group:{emailid}?uid={uniqueid}`: An email address (plus unique    identifier) representing a Google group that has been recently    deleted. For example, `admins@example.com?uid=123456789012345678901`. If    the group is recovered, this value reverts to `group:{emailid}` and the    recovered group retains the role in the binding. \n * `domain:{domain}`: The G Suite domain (primary) that represents all the    users of that domain. For example, `google.com` or `example.com`."
                     type: string
+                  role:
+                    description: 'Role: Role that is assigned to `members`. For example, `roles/viewer`, `roles/editor`, or `roles/owner`.'
+                    type: string
+                  serviceAccountMemberRef:
+                    description: ServiceAccountMemberRef is reference to ServiceAccount used to set the Member.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  serviceAccountMemberSelector:
+                    description: ServiceAccountMemberSelector selects reference to ServiceAccount used to set the Member.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels is selected.
+                        type: object
+                    type: object
+                required:
+                - role
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -101,30 +139,8 @@ spec:
             - forProvider
             type: object
           status:
-            description: ServiceAccountStatus represents the observed state of a ServiceAccount.
+            description: BucketPolicyMemberStatus represents the observed state of a BucketPolicyMember.
             properties:
-              atProvider:
-                description: ServiceAccountObservation is used to show the observed state of the ServiceAccount resource on GCP. All fields in this structure should only be populated from GCP responses; any changes made to the k8s resource outside of the crossplane gcp controller will be ignored and overwritten.
-                properties:
-                  disabled:
-                    description: Disabled is a bool indicating if the service account is disabled. The field is currently in alpha phase.
-                    type: boolean
-                  email:
-                    description: Email is the the email address of the service account. This matches the EMAIL field you would see using `gcloud iam service-accounts list`
-                    type: string
-                  name:
-                    description: 'Name is the "relative resource name" of the service account in the following format: projects/{PROJECT_ID}/serviceAccounts/{external-name}. part of https://godoc.org/google.golang.org/genproto/googleapis/iam/admin/v1#ServiceAccount not to be confused with CreateServiceAccountRequest.Name aka ServiceAccountParameters.ProjectName'
-                    type: string
-                  oauth2ClientId:
-                    description: OAuth2ClientId is the value GCP will use in conjunction with the OAuth2 clientconfig API to make three legged OAuth2 (3LO) flows to access the data of Google users.
-                    type: string
-                  projectId:
-                    description: ProjectID is the id of the project that owns the service account.
-                    type: string
-                  uniqueId:
-                    description: The unique and stable id of the service account.
-                    type: string
-                type: object
               conditions:
                 description: Conditions of the resource.
                 items:

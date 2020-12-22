@@ -92,6 +92,10 @@ func withDisabled(b bool) valueModifier {
 	return func(i *v1alpha1.ServiceAccount) { i.Status.AtProvider.Disabled = b }
 }
 
+func withCondition(condition xpv1.Condition) valueModifier {
+	return func(i *v1alpha1.ServiceAccount) { i.SetConditions(condition) }
+}
+
 func withExternalNameAnnotation(externalName string) valueModifier {
 	return func(i *v1alpha1.ServiceAccount) {
 		if i.ObjectMeta.Annotations == nil {
@@ -227,6 +231,7 @@ func TestObserve(t *testing.T) {
 					withEmail(accountEmail),
 					withDisplayName(displayName),
 					withExternalNameAnnotation(fqName),
+					withCondition(xpv1.Available()),
 					withDisabled(false)),
 				observation: managed.ExternalObservation{
 					ResourceExists:    true,

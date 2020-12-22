@@ -20,13 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/crossplane/provider-gcp/pkg/clients/serviceaccount"
-
 	"github.com/pkg/errors"
 	iamv1 "google.golang.org/api/iam/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -35,6 +34,7 @@ import (
 
 	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
+	"github.com/crossplane/provider-gcp/pkg/clients/serviceaccount"
 )
 
 // Error strings.
@@ -100,6 +100,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	populateCRFromProvider(cr, fromProvider)
+	if fromProvider.Email != "" {
+		cr.Status.SetConditions(xpv1.Available())
+	}
 	return managed.ExternalObservation{
 		ResourceExists:    true,
 		ResourceUpToDate:  isUpToDate(&cr.Spec.ForProvider, fromProvider),
