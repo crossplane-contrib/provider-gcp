@@ -24,14 +24,8 @@ import (
 	"google.golang.org/api/iam/v1"
 
 	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-)
-
-const (
-	// https://cloud.google.com/iam/docs/reference/rest/v1/Policy
-	// Specifies the format of the policy.
-	// Any operation that affects conditional role bindings must specify version 3.
-	// Our CR supports conditional role bindings.
-	policyVersion = 3
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 const errCheckUpToDate = "unable to determine if external resource is up to date"
@@ -49,10 +43,10 @@ func GenerateServiceAccountPolicyInstance(in v1alpha1.ServiceAccountPolicyParame
 		p.Bindings[i] = &iam.Binding{}
 		if v.Condition != nil {
 			p.Bindings[i].Condition = &iam.Expr{
-				Description: v.Condition.Description,
+				Description: gcp.StringValue(v.Condition.Description),
 				Expression:  v.Condition.Expression,
-				Location:    v.Condition.Location,
-				Title:       v.Condition.Title,
+				Location:    gcp.StringValue(v.Condition.Location),
+				Title:       gcp.StringValue(v.Condition.Title),
 			}
 		}
 		p.Bindings[i].Members = make([]string, len(v.Members))
@@ -71,7 +65,7 @@ func GenerateServiceAccountPolicyInstance(in v1alpha1.ServiceAccountPolicyParame
 			copy(p.AuditConfigs[i].AuditLogConfigs[ai].ExemptedMembers, av.ExemptedMembers)
 		}
 	}
-	p.Version = policyVersion
+	p.Version = iamv1alpha1.PolicyVersion
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given

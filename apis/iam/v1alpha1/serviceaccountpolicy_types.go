@@ -40,7 +40,7 @@ type ServiceAccountPolicyParameters struct {
 
 	// Policy: An Identity and Access Management (IAM) policy, which
 	// specifies access controls for Google Cloud resources.
-	Policy Policy `json:"policy,omitempty"`
+	Policy Policy `json:"policy"`
 }
 
 // ServiceAccountPolicySpec defines the desired state of a

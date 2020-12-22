@@ -42,7 +42,7 @@ type BucketPolicyParameters struct {
 
 	// Policy: An Identity and Access Management (IAM) policy, which
 	// specifies access controls for Google Cloud resources.
-	Policy iamv1alpha1.Policy `json:"policy,omitempty"`
+	Policy iamv1alpha1.Policy `json:"policy"`
 }
 
 // BucketPolicyObservation is used to show the observed state of the

@@ -30,6 +30,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/bucketpolicy"
@@ -82,7 +83,7 @@ func (e *bucketPolicyMemberExternal) Observe(ctx context.Context, mg resource.Ma
 		return managed.ExternalObservation{}, errors.New(errNotBucketPolicyMember)
 	}
 
-	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(iamv1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetPolicy)
 	}
@@ -104,7 +105,7 @@ func (e *bucketPolicyMemberExternal) Create(ctx context.Context, mg resource.Man
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotBucketPolicyMember)
 	}
-	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(iamv1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errGetPolicy)
 	}
@@ -132,7 +133,7 @@ func (e *bucketPolicyMemberExternal) Delete(ctx context.Context, mg resource.Man
 	if !ok {
 		return errors.New(errNotBucketPolicyMember)
 	}
-	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(iamv1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return errors.Wrap(err, errGetPolicy)
 	}

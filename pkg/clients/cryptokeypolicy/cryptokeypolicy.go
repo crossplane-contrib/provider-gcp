@@ -23,15 +23,9 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/api/cloudkms/v1"
 
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
-)
-
-const (
-	// https://cloud.google.com/kms/docs/reference/rest/v1/Policy
-	// Specifies the format of the policy.
-	// Any operation that affects conditional role bindings must specify version 3.
-	// Our CR supports conditional role bindings.
-	policyVersion = 3
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 const errCheckUpToDate = "unable to determine if external resource is up to date"
@@ -49,10 +43,10 @@ func GenerateCryptoKeyPolicyInstance(in v1alpha1.CryptoKeyPolicyParameters, ck *
 		ck.Bindings[i] = &cloudkms.Binding{}
 		if v.Condition != nil {
 			ck.Bindings[i].Condition = &cloudkms.Expr{
-				Description: v.Condition.Description,
+				Description: gcp.StringValue(v.Condition.Description),
 				Expression:  v.Condition.Expression,
-				Location:    v.Condition.Location,
-				Title:       v.Condition.Title,
+				Location:    gcp.StringValue(v.Condition.Location),
+				Title:       gcp.StringValue(v.Condition.Title),
 			}
 		}
 		ck.Bindings[i].Members = make([]string, len(v.Members))
@@ -71,7 +65,7 @@ func GenerateCryptoKeyPolicyInstance(in v1alpha1.CryptoKeyPolicyParameters, ck *
 			copy(ck.AuditConfigs[i].AuditLogConfigs[ai].ExemptedMembers, av.ExemptedMembers)
 		}
 	}
-	ck.Version = policyVersion
+	ck.Version = iamv1alpha1.PolicyVersion
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given

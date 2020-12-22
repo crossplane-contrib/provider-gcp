@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/storage/v1"
 
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
 )
 
@@ -46,7 +47,7 @@ func TestBindRoleToMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 		},
@@ -65,7 +66,7 @@ func TestBindRoleToMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 			want: want{
@@ -79,7 +80,7 @@ func TestBindRoleToMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 		},
@@ -99,7 +100,7 @@ func TestBindRoleToMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 			want: want{
@@ -115,7 +116,7 @@ func TestBindRoleToMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 		},
@@ -135,7 +136,7 @@ func TestBindRoleToMember(t *testing.T) {
 							Role: "some-other-role",
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 			want: want{
@@ -156,7 +157,7 @@ func TestBindRoleToMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 		},
@@ -215,7 +216,7 @@ func TestUnbindRoleFromMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 			want: want{
@@ -227,7 +228,7 @@ func TestUnbindRoleFromMember(t *testing.T) {
 							Role:    testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 		},
@@ -248,7 +249,7 @@ func TestUnbindRoleFromMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 			want: want{
@@ -263,7 +264,7 @@ func TestUnbindRoleFromMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 		},
@@ -283,7 +284,7 @@ func TestUnbindRoleFromMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 			want: want{
@@ -298,7 +299,7 @@ func TestUnbindRoleFromMember(t *testing.T) {
 							Role: testRole,
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 		},
@@ -317,7 +318,7 @@ func TestUnbindRoleFromMember(t *testing.T) {
 							Role: "some-other-role",
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 			want: want{
@@ -331,7 +332,7 @@ func TestUnbindRoleFromMember(t *testing.T) {
 							Role: "some-other-role",
 						},
 					},
-					Version: policyVersion,
+					Version: iamv1alpha1.PolicyVersion,
 				},
 			},
 		},

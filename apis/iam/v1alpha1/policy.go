@@ -2,7 +2,15 @@ package v1alpha1
 
 import xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-// Policy An Identity and Access Management (IAM) policy, which
+const (
+	// PolicyVersion Specifies the format of the policy.
+	// Any operation that affects conditional role bindings must specify version 3.
+	// Our CR supports conditional role bindings.
+	// https://cloud.google.com/kms/docs/reference/rest/v1/Policy
+	PolicyVersion = 3
+)
+
+// Policy is an Identity and Access Management (IAM) policy, which
 // specifies access
 // controls for Google Cloud resources.
 //
@@ -194,6 +202,7 @@ type AuditLogConfig struct {
 	//   "ADMIN_READ" - Admin reads. Example: CloudIAM getIamPolicy
 	//   "DATA_WRITE" - Data writes. Example: CloudSQL Users create
 	//   "DATA_READ" - Data reads. Example: CloudSQL Users list
+	// +kubebuilder:validation:Enum=ADMIN_READ;DATA_WRITE;DATA_READ
 	LogType string `json:"logType,omitempty"`
 }
 
@@ -286,7 +295,7 @@ type Binding struct {
 
 	// Role: Role that is assigned to `members`.
 	// For example, `roles/viewer`, `roles/editor`, or `roles/owner`.
-	Role string `json:"role,omitempty"`
+	Role string `json:"role"`
 }
 
 // Expr Represents a textual expression in the Common Expression
@@ -332,7 +341,8 @@ type Expr struct {
 	// Description: Optional. Description of the expression. This is a
 	// longer text which
 	// describes the expression, e.g. when hovered over it in a UI.
-	Description string `json:"description,omitempty"`
+	// +optional
+	Description *string `json:"description,omitempty"`
 
 	// Expression: Textual representation of an expression in Common
 	// Expression Language
@@ -342,12 +352,14 @@ type Expr struct {
 	// Location: Optional. String indicating the location of the expression
 	// for error
 	// reporting, e.g. a file name and a position in the file.
-	Location string `json:"location,omitempty"`
+	// +optional
+	Location *string `json:"location,omitempty"`
 
 	// Title: Optional. Title for the expression, i.e. a short string
 	// describing
 	// its purpose. This can be used e.g. in UIs which allow to enter
 	// the
 	// expression.
-	Title string `json:"title,omitempty"`
+	// +optional
+	Title *string `json:"title,omitempty"`
 }

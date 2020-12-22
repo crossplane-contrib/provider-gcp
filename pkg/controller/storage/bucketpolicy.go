@@ -19,6 +19,8 @@ package storage
 import (
 	"context"
 
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
+
 	"github.com/pkg/errors"
 	"google.golang.org/api/storage/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,13 +37,6 @@ import (
 	"github.com/crossplane/provider-gcp/pkg/clients/bucketpolicy"
 )
 
-const (
-	// https://cloud.google.com/iam/docs/reference/rest/v1/Policy
-	// Specifies the format of the policy.
-	// Any operation that affects conditional role bindings must specify version 3.
-	// Our CR supports conditional role bindings.
-	policyVersion = 3
-)
 const (
 	errNotBucketPolicy = "managed resource is not a GCP BucketPolicy"
 	errCheckUpToDate   = "cannot determine if BucketPolicy instance is up to date"
@@ -92,7 +87,7 @@ func (e *bucketPolicyExternal) Observe(ctx context.Context, mg resource.Managed)
 		return managed.ExternalObservation{}, errors.New(errNotBucketPolicy)
 	}
 
-	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(iamv1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetPolicy)
 	}
@@ -136,7 +131,7 @@ func (e *bucketPolicyExternal) Update(ctx context.Context, mg resource.Managed) 
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotBucketPolicy)
 	}
-	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(iamv1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetPolicy)
 	}

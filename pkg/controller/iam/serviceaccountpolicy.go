@@ -36,13 +36,6 @@ import (
 )
 
 const (
-	// https://cloud.google.com/iam/docs/reference/rest/v1/Policy
-	// Specifies the format of the policy.
-	// Any operation that affects conditional role bindings must specify version 3.
-	// Our CR supports conditional role bindings.
-	policyVersion = 3
-)
-const (
 	errNotServiceAccountPolicy = "managed resource is not a GCP ServiceAccountPolicy"
 	errCheckUpToDate           = "cannot determine if ServiceAccountPolicy instance is up to date"
 
@@ -93,7 +86,7 @@ func (e *serviceAccountPolicyExternal) Observe(ctx context.Context, mg resource.
 		return managed.ExternalObservation{}, errors.New(errNotServiceAccountPolicy)
 	}
 
-	instance, err := e.serviceaccountspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.serviceaccountspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount)).OptionsRequestedPolicyVersion(v1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetPolicy)
 	}
@@ -139,7 +132,7 @@ func (e *serviceAccountPolicyExternal) Update(ctx context.Context, mg resource.M
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotServiceAccountPolicy)
 	}
-	instance, err := e.serviceaccountspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.serviceaccountspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount)).OptionsRequestedPolicyVersion(v1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetPolicy)
 	}

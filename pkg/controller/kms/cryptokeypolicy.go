@@ -30,18 +30,12 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/cryptokeypolicy"
 )
 
-const (
-	// https://cloud.google.com/kms/docs/reference/rest/v1/Policy
-	// Specifies the format of the policy.
-	// Any operation that affects conditional role bindings must specify version 3.
-	// Our CR supports conditional role bindings.
-	policyVersion = 3
-)
 const (
 	errNotCryptoKeyPolicy = "managed resource is not a GCP CryptoKeyPolicy"
 	errGetPolicy          = "cannot get policy of CryptoKey"
@@ -91,7 +85,7 @@ func (e *cryptoKeyPolicyExternal) Observe(ctx context.Context, mg resource.Manag
 		return managed.ExternalObservation{}, errors.New(errNotCryptoKeyPolicy)
 	}
 
-	instance, err := e.cryptokeyspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.cryptokeyspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey)).OptionsRequestedPolicyVersion(iamv1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetPolicy)
 	}
@@ -138,7 +132,7 @@ func (e *cryptoKeyPolicyExternal) Update(ctx context.Context, mg resource.Manage
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotCryptoKeyPolicy)
 	}
-	instance, err := e.cryptokeyspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey)).OptionsRequestedPolicyVersion(policyVersion).Context(ctx).Do()
+	instance, err := e.cryptokeyspolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.CryptoKey)).OptionsRequestedPolicyVersion(iamv1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetPolicy)
 	}

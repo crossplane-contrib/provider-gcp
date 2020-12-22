@@ -43,7 +43,7 @@ type CryptoKeyPolicyParameters struct {
 
 	// Policy: An Identity and Access Management (IAM) policy, which
 	// specifies access controls for Google Cloud resources.
-	Policy iamv1alpha1.Policy `json:"policy,omitempty"`
+	Policy iamv1alpha1.Policy `json:"policy"`
 }
 
 // CryptoKeyPolicySpec defines the desired state of a

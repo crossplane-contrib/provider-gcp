@@ -23,16 +23,9 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/api/storage/v1"
 
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-)
-
-const (
-	// https://cloud.google.com/iam/docs/policies
-	// Specifies the format of the policy.
-	// Any operation that affects conditional role bindings must specify version 3.
-	// Our CR supports conditional role bindings.
-	policyVersion = 3
 )
 
 const errCheckUpToDate = "unable to determine if external resource is up to date"
@@ -50,17 +43,17 @@ func GenerateBucketPolicyInstance(in v1alpha1.BucketPolicyParameters, ck *storag
 		ck.Bindings[i] = &storage.PolicyBindings{}
 		if v.Condition != nil {
 			ck.Bindings[i].Condition = &storage.Expr{
-				Description: v.Condition.Description,
+				Description: gcp.StringValue(v.Condition.Description),
 				Expression:  v.Condition.Expression,
-				Location:    v.Condition.Location,
-				Title:       v.Condition.Title,
+				Location:    gcp.StringValue(v.Condition.Location),
+				Title:       gcp.StringValue(v.Condition.Title),
 			}
 		}
 		ck.Bindings[i].Members = make([]string, len(v.Members))
 		copy(ck.Bindings[i].Members, v.Members)
 		ck.Bindings[i].Role = v.Role
 	}
-	ck.Version = policyVersion
+	ck.Version = iamv1alpha1.PolicyVersion
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
@@ -94,7 +87,7 @@ func IsEmpty(in *storage.Policy) bool {
 // BindRoleToMember updates *storage.Policy instance with BucketPolicyMemberParameters.
 // returns true if policy changed
 func BindRoleToMember(in v1alpha1.BucketPolicyMemberParameters, ck *storage.Policy) bool {
-	ck.Version = policyVersion
+	ck.Version = iamv1alpha1.PolicyVersion
 	for _, b := range ck.Bindings {
 		if b.Role == in.Role {
 			for _, m := range b.Members {
