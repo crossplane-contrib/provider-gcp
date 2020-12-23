@@ -44,6 +44,9 @@ func ServiceAccountMemberName() reference.ExtractValueFn {
 		if !ok {
 			return ""
 		}
+		if n.Status.AtProvider.Email == "" {
+			return ""
+		}
 		return fmt.Sprintf("serviceAccount:%s", n.Status.AtProvider.Email)
 	}
 }
