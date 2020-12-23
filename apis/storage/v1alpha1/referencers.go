@@ -18,27 +18,14 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
 )
-
-// ServiceAccountMemberName returns member name for a given ServiceAccount Object.
-func ServiceAccountMemberName() reference.ExtractValueFn {
-	return func(mg resource.Managed) string {
-		n, ok := mg.(*v1alpha1.ServiceAccount)
-		if !ok {
-			return ""
-		}
-		return fmt.Sprintf("serviceAccount:%s", n.Status.AtProvider.Email)
-	}
-}
 
 // ResolveReferences of this BucketPolicy
 func (in *BucketPolicy) ResolveReferences(ctx context.Context, c client.Reader) error {
@@ -64,8 +51,8 @@ func (in *BucketPolicy) ResolveReferences(ctx context.Context, c client.Reader) 
 			CurrentValues: in.Spec.ForProvider.Policy.Bindings[i].Members,
 			References:    in.Spec.ForProvider.Policy.Bindings[i].ServiceAccountMemberRefs,
 			Selector:      in.Spec.ForProvider.Policy.Bindings[i].ServiceAccountMemberSelector,
-			To:            reference.To{Managed: &v1alpha1.ServiceAccount{}, List: &v1alpha1.ServiceAccountList{}},
-			Extract:       ServiceAccountMemberName(),
+			To:            reference.To{Managed: &iamv1alpha1.ServiceAccount{}, List: &iamv1alpha1.ServiceAccountList{}},
+			Extract:       iamv1alpha1.ServiceAccountMemberName(),
 		})
 		if err != nil {
 			return errors.Wrapf(err, "spec.forProvider.Policy.Bindings[%d].Members", i)
@@ -100,8 +87,8 @@ func (in *BucketPolicyMember) ResolveReferences(ctx context.Context, c client.Re
 		CurrentValue: reference.FromPtrValue(in.Spec.ForProvider.Member),
 		Reference:    in.Spec.ForProvider.ServiceAccountMemberRef,
 		Selector:     in.Spec.ForProvider.ServiceAccountMemberSelector,
-		To:           reference.To{Managed: &v1alpha1.ServiceAccount{}, List: &v1alpha1.ServiceAccountList{}},
-		Extract:      ServiceAccountMemberName(),
+		To:           reference.To{Managed: &iamv1alpha1.ServiceAccount{}, List: &iamv1alpha1.ServiceAccountList{}},
+		Extract:      iamv1alpha1.ServiceAccountMemberName(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "spec.forProvider.member")

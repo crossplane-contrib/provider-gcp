@@ -18,15 +18,14 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+
+	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 )
 
 // KeyRingRRN extracts the partially qualified URL of a Network.
@@ -73,17 +72,6 @@ func CryptoKeyRRN() reference.ExtractValueFn {
 	}
 }
 
-// ServiceAccountMemberName returns member name for a given ServiceAccount Object.
-func ServiceAccountMemberName() reference.ExtractValueFn {
-	return func(mg resource.Managed) string {
-		n, ok := mg.(*v1alpha1.ServiceAccount)
-		if !ok {
-			return ""
-		}
-		return fmt.Sprintf("serviceAccount:%s", n.Status.AtProvider.Email)
-	}
-}
-
 // ResolveReferences of this CryptoKeyPolicy
 func (in *CryptoKeyPolicy) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, in)
@@ -108,8 +96,8 @@ func (in *CryptoKeyPolicy) ResolveReferences(ctx context.Context, c client.Reade
 			CurrentValues: in.Spec.ForProvider.Policy.Bindings[i].Members,
 			References:    in.Spec.ForProvider.Policy.Bindings[i].ServiceAccountMemberRefs,
 			Selector:      in.Spec.ForProvider.Policy.Bindings[i].ServiceAccountMemberSelector,
-			To:            reference.To{Managed: &v1alpha1.ServiceAccount{}, List: &v1alpha1.ServiceAccountList{}},
-			Extract:       ServiceAccountMemberName(),
+			To:            reference.To{Managed: &iamv1alpha1.ServiceAccount{}, List: &iamv1alpha1.ServiceAccountList{}},
+			Extract:       iamv1alpha1.ServiceAccountMemberName(),
 		})
 		if err != nil {
 			return errors.Wrapf(err, "spec.forProvider.Policy.Bindings[%d].Members", i)
