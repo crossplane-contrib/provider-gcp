@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	cmpv1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
@@ -80,23 +79,11 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 	if err := c.Get(ctx, types.NamespacedName{Name: mg.GetProviderConfigReference().Name}, pc); err != nil {
 		return "", nil, err
 	}
-
-	// NOTE(muvaf): When we implement the workload identity, we will only need to
-	// return a different type of option.ClientOption, which is WithTokenSource().
-	if s := pc.Spec.Credentials.Source; s != xpv1.CredentialsSourceSecret {
-		return "", nil, errors.Errorf("unsupported credentials source %q", s)
+	data, err := resource.CommonCredentialExtractor(ctx, pc.Spec.Credentials.Source, c, pc.Spec.Credentials.CommonCredentialSelectors)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "cannot get credentials")
 	}
-
-	ref := pc.Spec.Credentials.SecretRef
-	if ref == nil {
-		return "", nil, errors.New("no credentials secret reference was provided")
-	}
-
-	s := &v1.Secret{}
-	if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
-		return "", nil, err
-	}
-	return pc.Spec.ProjectID, option.WithCredentialsJSON(s.Data[ref.Key]), nil
+	return pc.Spec.ProjectID, option.WithCredentialsJSON(data), nil
 }
 
 // IsErrorNotFoundGRPC gets a value indicating whether the given error represents
