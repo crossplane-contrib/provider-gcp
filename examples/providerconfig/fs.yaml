@@ -1,0 +1,11 @@
+apiVersion: gcp.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: example
+spec:
+  projectID: PROJECT_ID
+  credentials:
+    source: Filesystem
+    fs:
+      # relative to controller process working directory
+      path: ./crossplane-gcp-provider-key.json
