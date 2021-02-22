@@ -24,13 +24,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -50,11 +53,14 @@ const (
 )
 
 // SetupTopic adds a controller that reconciles Topics.
-func SetupTopic(mgr ctrl.Manager, l logging.Logger) error {
+func SetupTopic(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.TopicGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
+		WithOptions(controller.Options{
+			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		}).
 		For(&v1alpha1.Topic{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.TopicGroupVersionKind),

@@ -21,12 +21,15 @@ import (
 
 	"github.com/pkg/errors"
 	iamv1 "google.golang.org/api/iam/v1"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -44,11 +47,14 @@ const (
 )
 
 // SetupServiceAccountPolicy adds a controller that reconciles ServiceAccountPolicys.
-func SetupServiceAccountPolicy(mgr ctrl.Manager, l logging.Logger) error {
+func SetupServiceAccountPolicy(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.ServiceAccountPolicyGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
+		WithOptions(controller.Options{
+			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		}).
 		For(&v1alpha1.ServiceAccountPolicy{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.ServiceAccountPolicyGroupVersionKind),

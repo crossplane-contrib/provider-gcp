@@ -23,13 +23,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -49,11 +52,14 @@ const (
 )
 
 // SetupBucket adds a controller that reconciles Buckets.
-func SetupBucket(mgr ctrl.Manager, l logging.Logger) error {
+func SetupBucket(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha3.BucketGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
+		WithOptions(controller.Options{
+			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		}).
 		For(&v1alpha3.Bucket{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
