@@ -23,13 +23,16 @@ import (
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -52,11 +55,14 @@ const (
 
 // SetupGKECluster adds a controller that reconciles GKECluster
 // managed resources.
-func SetupGKECluster(mgr ctrl.Manager, l logging.Logger) error {
+func SetupGKECluster(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1beta1.GKEClusterGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
+		WithOptions(controller.Options{
+			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		}).
 		For(&v1beta1.GKECluster{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind),

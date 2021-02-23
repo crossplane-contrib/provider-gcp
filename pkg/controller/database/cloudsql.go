@@ -23,14 +23,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/password"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -55,7 +58,7 @@ const (
 
 // SetupCloudSQLInstance adds a controller that reconciles
 // CloudSQLInstance managed resources.
-func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
+func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1beta1.CloudSQLInstanceGroupKind)
 
 	r := managed.NewReconciler(mgr,
@@ -68,6 +71,9 @@ func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
+		WithOptions(controller.Options{
+			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		}).
 		For(&v1beta1.CloudSQLInstance{}).
 		Complete(r)
 }

@@ -23,12 +23,15 @@ import (
 	redisv1 "cloud.google.com/go/redis/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -51,11 +54,14 @@ const (
 
 // SetupCloudMemorystoreInstance adds a controller that reconciles
 // CloudMemorystoreInstances.
-func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger) error {
+func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1beta1.CloudMemorystoreInstanceGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
+		WithOptions(controller.Options{
+			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		}).
 		For(&v1beta1.CloudMemorystoreInstance{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),

@@ -22,13 +22,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	googlecompute "google.golang.org/api/compute/v1"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -52,11 +55,14 @@ const (
 
 // SetupSubnetwork adds a controller that reconciles Subnetwork
 // managed resources.
-func SetupSubnetwork(mgr ctrl.Manager, l logging.Logger) error {
+func SetupSubnetwork(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1beta1.SubnetworkGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
+		WithOptions(controller.Options{
+			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		}).
 		For(&v1beta1.Subnetwork{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.SubnetworkGroupVersionKind),
