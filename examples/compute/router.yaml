@@ -1,0 +1,12 @@
+apiVersion: compute.gcp.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: example
+spec:
+  forProvider:
+    region: us-central1
+    network: projects/crossplane-playground/global/networks/default
+    nats:
+      - name: default-nat
+        natIpAllocateOption: AUTO_ONLY
+        sourceSubnetworkIpRangesToNat: ALL_SUBNETWORKS_ALL_IP_RANGES

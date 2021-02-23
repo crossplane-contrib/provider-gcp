@@ -6,18 +6,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: keyrings.kms.gcp.crossplane.io
+  name: instancegroups.compute.gcp.crossplane.io
 spec:
-  group: kms.gcp.crossplane.io
+  group: compute.gcp.crossplane.io
   names:
     categories:
     - crossplane
     - managed
     - gcp
-    kind: KeyRing
-    listKind: KeyRingList
-    plural: keyrings
-    singular: keyring
+    kind: InstanceGroup
+    listKind: InstanceGroupList
+    plural: instancegroups
+    singular: instancegroup
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -27,13 +27,10 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
-    - jsonPath: .spec.forProvider.location
-      name: LOCATION
-      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: KeyRing is a managed resource that represents a Google KMS KeyRing
+        description: A InstanceGroup is a managed resource that represents a Google Compute Engine VPC InstanceGroup.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -44,7 +41,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: KeyRingSpec defines the desired state of a KeyRing.
+            description: A InstanceGroupSpec defines the desired state of a InstanceGroup.
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
@@ -53,13 +50,49 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: KeyRingParameters defines parameters for a desired KMS KeyRing https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings The name of the key ring (ie the `keyRingId` parameter of the Create call) is determined by the value of the `crossplane.io/external-name` annotation. Unless overridden by the user, this annotation is automatically populated with the value of the `metadata.name` attribute.
+                description: 'InstanceGroupParameters define the desired state of a Google Compute Engine VPC InstanceGroup. Most fields map directly to a InstanceGroup: https://cloud.google.com/compute/docs/reference/rest/v1/networks'
                 properties:
-                  location:
-                    description: The location for the KeyRing. A full list of valid locations can be found by running 'gcloud kms locations list'.
+                  description:
+                    description: 'Description: An optional description of this resource. Provide this property when you create the resource.'
                     type: string
-                required:
-                - location
+                  namedPorts:
+                    description: "NamedPorts: Assigns a name to a port number. For example: {name: \"http\", port: 80} \n This allows the system to reference ports by the assigned name instead of a port number. Named ports can also contain multiple ports. For example: [{name: \"http\", port: 80},{name: \"http\", port: 8080}] \n Named ports apply to all instances in this instance group."
+                    items:
+                      description: 'NamedPort is the named port. For example: .'
+                      properties:
+                        name:
+                          description: 'Name: The name for this named port. The name must be 1-63 characters long, and comply with RFC1035.'
+                          type: string
+                        port:
+                          description: 'Port: The port number, which can be a value between 1 and 65535.'
+                          format: int64
+                          type: integer
+                      type: object
+                    type: array
+                  network:
+                    description: 'Network: The URL of the network to which all instances in the instance group belong.'
+                    type: string
+                  networkRef:
+                    description: NetworkRef references a Network and retrieves its URI
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  networkSelector:
+                    description: NetworkSelector selects a reference to a Network
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels is selected.
+                        type: object
+                    type: object
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -96,16 +129,39 @@ spec:
             - forProvider
             type: object
           status:
-            description: KeyRingStatus represents the observed state of a KeyRing.
+            description: A InstanceGroupStatus represents the observed state of a InstanceGroup.
             properties:
               atProvider:
-                description: KeyRingObservation is used to show the observed state of the KeyRing resource on GCP. All fields in this structure should only be populated from GCP responses; any changes made to the k8s resource outside of the crossplane gcp controller will be ignored and overwritten.
+                description: A InstanceGroupObservation represents the observed state of a Google Compute Engine VPC InstanceGroup.
                 properties:
-                  createTime:
-                    description: 'CreateTime: Output only. The time at which this KeyRing was created.'
+                  creationTimestamp:
+                    description: 'CreationTimestamp: [Output Only] The creation timestamp for this instance group in RFC3339 text format.'
                     type: string
-                  name:
-                    description: 'Name: Output only. The resource name for the KeyRing in the format `projects/*/locations/*/keyRings/*`.'
+                  fingerprint:
+                    description: 'Fingerprint: [Output Only] The fingerprint of the named ports. The system uses this fingerprint to detect conflicts when multiple users change the named ports concurrently.'
+                    type: string
+                  id:
+                    description: 'Id: [Output Only] A unique identifier for this instance group, generated by the server.'
+                    format: int64
+                    type: integer
+                  kind:
+                    description: 'Kind: [Output Only] The resource type, which is always compute#instanceGroup for instance groups.'
+                    type: string
+                  region:
+                    description: 'Region: [Output Only] The URL of the region where the instance group is located (for regional resources).'
+                    type: string
+                  selfLink:
+                    description: 'SelfLink: [Output Only] The URL for this instance group. The server generates this URL.'
+                    type: string
+                  size:
+                    description: 'Size: [Output Only] The total number of instances in the instance group.'
+                    format: int64
+                    type: integer
+                  subnetwork:
+                    description: 'Subnetwork: [Output Only] The URL of the subnetwork to which all instances in the instance group belong.'
+                    type: string
+                  zone:
+                    description: 'Zone: [Output Only] The URL of the zone where the instance group is located (for zonal resources).'
                     type: string
                 type: object
               conditions:

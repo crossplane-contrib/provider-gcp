@@ -1,0 +1,14 @@
+apiVersion: compute.gcp.crossplane.io/v1alpha1
+kind: HealthCheck
+metadata:
+  name: capi-hc
+spec:
+  forProvider:
+    type: SSL
+    sslHealthCheck:
+      port: 6443
+      portSpecification: "USE_FIXED_PORT"
+    checkIntervalSec: 10
+    timeoutSec: 5
+    healthyThreshold: 5
+    unhealthyThreshold: 3
