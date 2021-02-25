@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	v1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -70,14 +70,14 @@ type ResourceRecordSetObservation struct {
 
 // A ResourceRecordSetSpec defines the desired state of a ResourceRecordSet.
 type ResourceRecordSetSpec struct {
-	v1alpha1.ResourceSpec `json:",inline"`
-	ForProvider           ResourceRecordSetParameters `json:"forProvider"`
+	v1.ResourceSpec `json:",inline"`
+	ForProvider     ResourceRecordSetParameters `json:"forProvider"`
 }
 
 // A ResourceRecordSetStatus represents the observed state of a ResourceRecordSet.
 type ResourceRecordSetStatus struct {
-	v1alpha1.ResourceStatus `json:",inline"`
-	AtProvider              ResourceRecordSetObservation `json:"atProvider,omitempty"`
+	v1.ResourceStatus `json:",inline"`
+	AtProvider        ResourceRecordSetObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
