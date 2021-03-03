@@ -12,7 +12,7 @@ require (
 	cloud.google.com/go v0.57.0
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.6.0
-	github.com/crossplane/crossplane-runtime v0.12.1-0.20210219155338-30a941c3c3c6
+	github.com/crossplane/crossplane-runtime v0.13.0
 	github.com/crossplane/crossplane-tools v0.0.0-20201201125637-9ddc70edfd0d
 	github.com/google/go-cmp v0.5.2
 	github.com/googleapis/gax-go v1.0.3
