@@ -67,10 +67,11 @@ cobertura:
 		grep -v zz_generated.deepcopy | \
 		$(GOCOVER_COBERTURA) > $(GO_TEST_OUTPUT)/cobertura-coverage.xml
 
+CRD_DIR=package/crds
 crds.clean:
 	@$(INFO) cleaning generated CRDs
-	@find package/crds -name *.yaml -exec sed -i.sed -e '1,2d' {} \; || $(FAIL)
-	@find package/crds -name *.yaml.sed -delete || $(FAIL)
+	@find $(CRD_DIR) -name *.yaml -exec sed -i.sed -e '1,2d' {} \; || $(FAIL)
+	@find $(CRD_DIR) -name *.yaml.sed -delete || $(FAIL)
 	@$(OK) cleaned generated CRDs
 
 generate: crds.clean
