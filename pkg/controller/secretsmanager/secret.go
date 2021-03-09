@@ -24,13 +24,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	sm "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -51,14 +54,17 @@ const (
 )
 
 // SetupSecret adds a controller that reconciles Secrets.
-func SetupSecret(mgr ctrl.Manager, l logging.Logger) error {
+func SetupSecret(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.SecretGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
+		WithOptions(controller.Options{
+			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		}).
 		For(&v1alpha1.Secret{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1alpha1.TopicGroupVersionKind),
+			resource.ManagedKind(v1alpha1.SecretGroupVersionKind),
 			managed.WithExternalConnecter(&connector{client: mgr.GetClient()}),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))

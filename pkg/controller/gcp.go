@@ -31,6 +31,7 @@ import (
 	"github.com/crossplane/provider-gcp/pkg/controller/kms"
 	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
 	"github.com/crossplane/provider-gcp/pkg/controller/secretsmanager"
+	"github.com/crossplane/provider-gcp/pkg/controller/secretversion"
 	"github.com/crossplane/provider-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplane/provider-gcp/pkg/controller/storage"
 )
@@ -54,6 +55,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		kms.SetupCryptoKeyPolicy,
 		pubsub.SetupTopic,
 		secretsmanager.SetupSecret,
+		secretversion.SetupSecretVersion,
 		servicenetworking.SetupConnection,
 		storage.SetupBucket,
 		storage.SetupBucketPolicy,

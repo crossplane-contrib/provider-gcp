@@ -110,7 +110,7 @@ func GenerateUpdateRequest(projectID, name string, sp v1alpha1.SecretParameters,
 	return us
 }
 
-// Observation of a secret and
+// Observation of a secret
 type Observation struct {
 	// CreateTime is the time at which secret was created
 	CreateTime string

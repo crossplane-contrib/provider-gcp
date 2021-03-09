@@ -14,6 +14,7 @@ require (
 	cloud.google.com/go/storage v1.6.0
 	github.com/crossplane/crossplane-runtime v0.12.1-0.20210219155338-30a941c3c3c6
 	github.com/crossplane/crossplane-tools v0.0.0-20201201125637-9ddc70edfd0d
+	github.com/docker/swarmkit v1.12.0
 	github.com/google/go-cmp v0.5.2
 	github.com/googleapis/gax-go v1.0.3
 	github.com/googleapis/gax-go/v2 v2.0.5

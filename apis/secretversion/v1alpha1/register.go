@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "secretsmanager.gcp.crossplane.io"
+	Group   = "secretversion.gcp.crossplane.io"
 	Version = "v1alpha1"
 )
 
@@ -39,12 +39,12 @@ var (
 
 // Secret type metadata.
 var (
-	SecretKind             = reflect.TypeOf(Secret{}).Name()
-	SecretGroupKind        = schema.GroupKind{Group: Group, Kind: SecretKind}.String()
-	SecretKindAPIVersion   = SecretKind + "." + SchemeGroupVersion.String()
-	SecretGroupVersionKind = SchemeGroupVersion.WithKind(SecretKind)
+	SecretVersionKind             = reflect.TypeOf(SecretVersion{}).Name()
+	SecretVersionGroupKind        = schema.GroupKind{Group: Group, Kind: SecretVersionKind}.String()
+	SecretVersionKindAPIVersion   = SecretVersionKind + "." + SchemeGroupVersion.String()
+	SecretVersionGroupVersionKind = SchemeGroupVersion.WithKind(SecretVersionKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&Secret{}, &SecretList{})
+	SchemeBuilder.Register(&SecretVersion{}, &SecretVersionList{})
 }
