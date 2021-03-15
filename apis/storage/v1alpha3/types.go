@@ -495,7 +495,7 @@ type BucketWebsite struct {
 	// If the requested object path is missing, and any mainPageSuffix object is
 	// missing, if applicable, the service will return the named object from this
 	// bucket as the content for a 404 Not Found result.
-	NotFoundPage string `json:"notFundPage,omitempty"`
+	NotFoundPage string `json:"notFoundPage,omitempty"`
 }
 
 // NewBucketWebsite creates a new instance of BucketWebsite from the storage counterpart
