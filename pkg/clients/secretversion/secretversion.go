@@ -20,11 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/crossplane/provider-gcp/apis/secretversion/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
 	"google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+
+	"github.com/crossplane/provider-gcp/apis/secretversion/v1alpha1"
 )
 
 // Client is interface that lists the required functions for the reconciler
