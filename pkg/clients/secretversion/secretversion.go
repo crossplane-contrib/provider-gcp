@@ -40,13 +40,22 @@ type Client interface {
 }
 
 // NewAddSecretVersionRequest produces a Secret that is configured via given SecretParameters.
-func NewAddSecretVersionRequest(projectID string, sp v1alpha1.SecretVersionParameters) *secretmanager.AddSecretVersionRequest {
-
+func NewAddSecretVersionRequest(projectID string, sp v1alpha1.SecretVersionParameters, kubesecret []byte) *secretmanager.AddSecretVersionRequest {
+	payload := &secretmanager.SecretPayload{}
 	parent := fmt.Sprintf("projects/%s/secrets/%s", projectID, sp.SecretRef)
 
-	payload := &secretmanager.SecretPayload{
-		Data: []byte(sp.Payload.Data),
+	if sp.Payload != nil {
+		payload = &secretmanager.SecretPayload{
+			Data: []byte(sp.Payload.Data),
+		}
+	} else {
+		if kubesecret != nil {
+			payload = &secretmanager.SecretPayload{
+				Data: kubesecret,
+			}
+		}
 	}
+
 	req := &secretmanager.AddSecretVersionRequest{
 		Parent:  parent,
 		Payload: payload,
@@ -58,24 +67,23 @@ func NewAddSecretVersionRequest(projectID string, sp v1alpha1.SecretVersionParam
 // LateInitialize fills the empty fields of SecretVersionParameters if the corresponding
 // fields are given in Secret Version.
 func LateInitialize(sp *v1alpha1.SecretVersionParameters, sv *secretmanager.SecretVersion, data []byte, secretRef string) {
-
-	// if sv.State != secretmanagerpb.SecretVersion_State(sp.DesiredSecretVersionState) {
-	// 	sp.DesiredSecretVersionState = v1alpha1.SecretVersionState(sv.State)
-	// }
 	if sp.SecretRef == "" {
 		sp.SecretRef = secretRef
 	}
-
-	if sp.Payload.Data == "" && data != nil {
+	if sp.Payload == nil && sp.KubeSecretRef == nil && data != nil {
 		sp.Payload.Data = string(data)
 	}
-
+	// Assuming creating/populating the Kubernetes secret with the data would be out of scope
 }
 
 // IsUpToDate checks whether Secret is configured with given SecretParameters.
 func IsUpToDate(sp v1alpha1.SecretVersionParameters, sv *secretmanager.SecretVersion) bool {
 	observed := &v1alpha1.SecretVersionParameters{}
-	LateInitialize(observed, sv, []byte(sp.Payload.Data), sp.SecretRef)
+	if sp.Payload != nil {
+		LateInitialize(observed, sv, []byte(sp.Payload.Data), sp.SecretRef)
+	} else {
+		LateInitialize(observed, sv, nil, sp.SecretRef)
+	}
 	result := cmp.Equal(observed, &sp)
 	return result
 }

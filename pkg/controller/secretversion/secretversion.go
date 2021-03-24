@@ -18,27 +18,28 @@ package secretversion
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	sm "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/pkg/errors"
-
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-
 	"github.com/crossplane/provider-gcp/apis/secretversion/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/secretversion"
@@ -52,8 +53,9 @@ const (
 	errKubeUpdateSecretVersion = "cannot update Secret Version custom resource"
 	errCreateSecretVersion     = "cannot create Secret Version"
 	errGetSecretPayload        = "cannot get secret payload"
-
-	errDeleteSecretVersion = "cannot delete Secret Version"
+	errGetKubeSecretFailed     = "cannot get kubernetes secret"
+	errFmtKeyNotFound          = "key %s is not found in referenced Kubernetes secret"
+	errDeleteSecretVersion     = "cannot delete Secret Version"
 )
 
 // SetupSecretVersion adds a controller that reconciles Secret versions.
@@ -136,6 +138,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if data == nil {
 		secretversion.LateInitialize(&cr.Spec.ForProvider, s, nil, cr.Spec.ForProvider.SecretRef)
 	} else {
+		// This could be data from Kubernetes secret too
 		secretversion.LateInitialize(&cr.Spec.ForProvider, s, data.Payload.Data, cr.Spec.ForProvider.SecretRef)
 	}
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
@@ -158,12 +161,21 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 // Create initiates creation of external resource.
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+	var err error
 	cr, ok := mg.(*v1alpha1.SecretVersion)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotSecretVersion)
 	}
 	cr.SetConditions(xpv1.Creating())
-	_, err := e.sc.AddSecretVersion(ctx, secretversion.NewAddSecretVersionRequest(e.projectID, cr.Spec.ForProvider))
+	if cr.Spec.ForProvider.KubeSecretRef != nil {
+		kubesec, err := e.GetKubeSecret(ctx, cr.Spec.ForProvider)
+		if err != nil {
+			return managed.ExternalCreation{}, errors.Wrap(err, errCreateSecretVersion)
+		}
+		_, err = e.sc.AddSecretVersion(ctx, secretversion.NewAddSecretVersionRequest(e.projectID, cr.Spec.ForProvider, kubesec))
+	} else {
+		_, err = e.sc.AddSecretVersion(ctx, secretversion.NewAddSecretVersionRequest(e.projectID, cr.Spec.ForProvider, nil))
+	}
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateSecretVersion)
 }
 
@@ -222,4 +234,35 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 	_, err := e.sc.DestroySecretVersion(ctx, &sm.DestroySecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%s", e.projectID, cr.Spec.ForProvider.SecretRef, meta.GetExternalName(cr))})
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFoundGRPC, err), errDeleteSecretVersion)
+}
+
+// GetKubeSecret gets the kubernetes secret
+func (e *external) GetKubeSecret(ctx context.Context, sp v1alpha1.SecretVersionParameters) ([]byte, error) {
+	kc := &corev1.Secret{}
+	nn := types.NamespacedName{
+		Name:      sp.KubeSecretRef.Name,
+		Namespace: sp.KubeSecretRef.Namespace,
+	}
+	if err := e.client.Get(ctx, nn, kc); err != nil {
+		return nil, errors.Wrap(err, errGetKubeSecretFailed)
+	}
+	if sp.KubeSecretRef.Key != nil {
+		val, ok := kc.Data[gcp.StringValue(sp.KubeSecretRef.Key)]
+		if !ok {
+			return nil, errors.New(fmt.Sprintf(errFmtKeyNotFound, gcp.StringValue(sp.KubeSecretRef.Key)))
+		}
+		return val, nil
+	}
+	allKeys := map[string]string{}
+	for k, v := range kc.Data {
+		allKeys[k] = string(v)
+	}
+
+	payload, err := json.Marshal(allKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	return payload, nil
+
 }
