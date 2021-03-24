@@ -23,22 +23,20 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	sm "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/pkg/errors"
-
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-
 	"github.com/crossplane/provider-gcp/apis/secretversion/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/secretversion"

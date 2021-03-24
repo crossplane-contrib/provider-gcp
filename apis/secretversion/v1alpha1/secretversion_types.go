@@ -57,13 +57,25 @@ var SecretVersionStateValue = map[string]int32{
 // SecretVersionParameters defines parameters for a desired Secret Manager's secret version.
 type SecretVersionParameters struct {
 	// SecretRef refers to the secret object(GCP) created in Kubernetes
-	SecretRef string `json:"secretref,omitempty"`
+	// Required
+	SecretRef string `json:"secretRef,omitempty"`
 
 	// Payload is the secret payload of the [SecretVersion][google.cloud.secretmanager.v1.SecretVersion].
-	Payload SecretPayload `json:"payload,omitempty"`
+	// Either this or KubeSecretRef should be provided
+	// +optional
+	Payload *SecretPayload `json:"payload,omitempty"`
 
 	// DesiredSecretVersionState is the desired state the end user wants for the secret version
-	DesiredSecretVersionState SecretVersionState `json:"desiredsecretversionstate,omitempty"`
+	// SecretVersionENABLED represents that SecretVersion state  may be accessed.
+	// SecretVersionENABLED SecretVersionState = 1
+	// SecretVersionDISABLED represents that SecretVersion state may not be accessed, but the secret data
+	// is still available and can be placed back into the [ENABLED] state.
+	// SecretVersionDISABLED SecretVersionState = 2
+	// SecretVersionDESTROYED represents that SecretVersion state is destroyed and the secret data is no longer
+	// stored. A version may not leave this state once entered.
+	// SecretVersionDESTROYED SecretVersionState = 3
+	// +kubebuilder:validation:Enum=1;2;3
+	DesiredSecretVersionState SecretVersionState `json:"desiredSecretVersionState,omitempty"`
 }
 
 // SecretPayload is a secret payload resource in the Secret Manager API. This contains the
