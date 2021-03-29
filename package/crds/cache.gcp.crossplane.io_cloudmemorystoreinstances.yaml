@@ -65,6 +65,12 @@ spec:
                   authorizedNetwork:
                     description: The full name of the Google Compute Engine [network](/compute/docs/networks-and-firewalls#networks) to which the instance is connected. If left unspecified, the `default` network will be used.
                     type: string
+                  connectMode:
+                    description: "ConnectMode: Optional. The network connect mode of the Redis instance. If not provided, the connect mode defaults to DIRECT_PEERING. \n Possible values:   \"CONNECT_MODE_UNSPECIFIED\" - Not set.   \"DIRECT_PEERING\" - Connect via direct peering to the Memorystore for Redis hosted service.   \"PRIVATE_SERVICE_ACCESS\" - Connect your Memorystore for Redis instance using Private Services Access. Private services access provides an IP address range for multiple Google Cloud services, including Memorystore."
+                    enum:
+                    - DIRECT_PEERING
+                    - PRIVATE_SERVICE_ACCESS
+                    type: string
                   displayName:
                     description: An arbitrary and optional user-provided name for the instance.
                     type: string

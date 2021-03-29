@@ -108,6 +108,23 @@ type CloudMemorystoreInstanceParameters struct {
 	// +optional
 	// +immutable
 	AuthorizedNetwork *string `json:"authorizedNetwork,omitempty"`
+
+	// ConnectMode: Optional. The network connect mode of the Redis
+	// instance. If not provided, the connect mode defaults to
+	// DIRECT_PEERING.
+	//
+	// Possible values:
+	//   "CONNECT_MODE_UNSPECIFIED" - Not set.
+	//   "DIRECT_PEERING" - Connect via direct peering to the Memorystore
+	// for Redis hosted service.
+	//   "PRIVATE_SERVICE_ACCESS" - Connect your Memorystore for Redis
+	// instance using Private Services Access. Private services access
+	// provides an IP address range for multiple Google Cloud services,
+	// including Memorystore.
+	// +kubebuilder:validation:Enum=DIRECT_PEERING;PRIVATE_SERVICE_ACCESS
+	// +optional
+	// +immutable
+	ConnectMode *string `json:"connectMode,omitempty"`
 }
 
 // CloudMemorystoreInstanceObservation is used to show the observed state of the
