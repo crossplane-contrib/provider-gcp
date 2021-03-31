@@ -44,6 +44,7 @@ var (
 	alternativeLocationID = region + "-b"
 	reservedIPRange       = "172.16.0.0/16"
 	authorizedNetwork     = "default"
+	connectMode           = "DIRECT_PEERING"
 	redisVersion          = "REDIS_3_2"
 	displayName           = "my-precious-memory"
 
@@ -134,6 +135,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 						ReservedIPRange:       &reservedIPRange,
 						RedisConfigs:          redisConfigs,
 						AuthorizedNetwork:     &authorizedNetwork,
+						ConnectMode:           &connectMode,
 					},
 				},
 			},
@@ -152,6 +154,7 @@ func TestNewCreateInstanceRequest(t *testing.T) {
 					Tier:                  redisv1pb.Instance_BASIC,
 					MemorySizeGb:          memorySizeGB,
 					AuthorizedNetwork:     authorizedNetwork,
+					ConnectMode:           redisv1pb.Instance_DIRECT_PEERING,
 				},
 			},
 		},

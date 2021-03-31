@@ -107,6 +107,7 @@ func GenerateRedisInstance(id InstanceID, s v1beta1.CloudMemorystoreInstancePara
 	r.RedisVersion = gcp.StringValue(s.RedisVersion)
 	r.ReservedIpRange = gcp.StringValue(s.ReservedIPRange)
 	r.AuthorizedNetwork = gcp.StringValue(s.AuthorizedNetwork)
+	r.ConnectMode = redisv1pb.Instance_ConnectMode(redisv1pb.Instance_ConnectMode_value[gcp.StringValue(s.ConnectMode)])
 }
 
 // GenerateObservation is used to produce an observation object from GCP's Redis
@@ -144,6 +145,7 @@ func LateInitializeSpec(spec *v1beta1.CloudMemorystoreInstanceParameters, r redi
 	spec.ReservedIPRange = gcp.LateInitializeString(spec.ReservedIPRange, r.ReservedIpRange)
 	spec.RedisConfigs = gcp.LateInitializeStringMap(spec.RedisConfigs, r.RedisConfigs)
 	spec.AuthorizedNetwork = gcp.LateInitializeString(spec.AuthorizedNetwork, r.AuthorizedNetwork)
+	spec.ConnectMode = gcp.LateInitializeString(spec.ConnectMode, r.ConnectMode.String())
 }
 
 // NewCreateInstanceRequest creates a request to create an instance suitable for
