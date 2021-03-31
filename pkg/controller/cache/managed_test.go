@@ -56,9 +56,9 @@ const (
 
 var (
 	authorizedNetwork = "default"
-
-	errorBoom    = errors.New("boom")
-	redisConfigs = map[string]string{"cool": "socool"}
+	connectMode       = "DIRECT_PEERING"
+	errorBoom         = errors.New("boom")
+	redisConfigs      = map[string]string{"cool": "socool"}
 )
 
 type strange struct {
@@ -111,6 +111,7 @@ func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
 				MemorySizeGB:      memorySizeGB,
 				RedisConfigs:      redisConfigs,
 				AuthorizedNetwork: &authorizedNetwork,
+				ConnectMode:       &connectMode,
 			},
 		},
 	}
