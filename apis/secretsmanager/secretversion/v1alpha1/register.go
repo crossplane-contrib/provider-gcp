@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "secretversion.gcp.crossplane.io"
+	Group   = "secretsmanager.gcp.crossplane.io"
 	Version = "v1alpha1"
 )
 

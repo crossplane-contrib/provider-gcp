@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/crossplane/provider-gcp/apis/secretsmanager/v1alpha1"
+	"github.com/crossplane/provider-gcp/apis/secretsmanager/secret/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
 	"google.golang.org/genproto/googleapis/cloud/secretmanager/v1"

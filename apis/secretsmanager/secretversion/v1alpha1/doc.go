@@ -14,5 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package secretversion contains GCP Secrets Manager's secret manager's secret versions
-package secretversion
+// Package v1alpha1 contains managed resources, such as
+// secret versions
+// +kubebuilder:object:generate=true
+// +groupName=secretsmanager.gcp.crossplane.io
+// +versionName=v1alpha1
+package v1alpha1

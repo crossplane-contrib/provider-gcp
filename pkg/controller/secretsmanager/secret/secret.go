@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package secretsmanager
+package secret
 
 import (
 	"context"
@@ -36,9 +36,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/crossplane/provider-gcp/apis/secretsmanager/v1alpha1"
+	"github.com/crossplane/provider-gcp/apis/secretsmanager/secret/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	"github.com/crossplane/provider-gcp/pkg/clients/secret"
+	"github.com/crossplane/provider-gcp/pkg/clients/secretsmanager/secret"
 )
 
 const (
