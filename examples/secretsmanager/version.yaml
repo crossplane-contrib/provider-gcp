@@ -1,14 +1,14 @@
 ---
-apiVersion: secretversion.gcp.crossplane.io/v1alpha1
+apiVersion: secretsmanager.gcp.crossplane.io/v1alpha1
 kind: SecretVersion
 metadata:
   name: "1"
 spec:
   forProvider:
     payload:
-      data: thisisahugesecret
-    secretref: real
-    desiredsecretversionstate: 3
+      data: thisisatinysecret
+    secretRef: real
+    desiredSecretVersionState: ENABLED
 
   deletionPolicy: Delete
   providerConfigRef:
