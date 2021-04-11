@@ -66,14 +66,7 @@ type SecretVersionParameters struct {
 	Payload *SecretPayload `json:"payload,omitempty"`
 
 	// DesiredSecretVersionState is the desired state the end user wants for the secret version
-	// SecretVersionENABLED represents that SecretVersion state  may be accessed.
-	// SecretVersionENABLED SecretVersionState = 1
-	// SecretVersionDISABLED represents that SecretVersion state may not be accessed, but the secret data
-	// is still available and can be placed back into the [ENABLED] state.
-	// SecretVersionDISABLED SecretVersionState = 2
-	// SecretVersionDESTROYED represents that SecretVersion state is destroyed and the secret data is no longer
-	// stored. A version may not leave this state once entered.
-	// SecretVersionDESTROYED SecretVersionState = 3
+	// There are three states possible: ENABLED;DISABLED;DESTROYED
 	// +kubebuilder:validation:Enum=ENABLED;DISABLED;DESTROYED
 	DesiredSecretVersionState string `json:"desiredSecretVersionState,omitempty"`
 }
@@ -82,6 +75,7 @@ type SecretVersionParameters struct {
 // sensitive secret data that is associated with a [SecretVersion][google.cloud.secretmanager.v1.SecretVersion].
 type SecretPayload struct {
 	// Data is the secret data. Must be no larger than 64KiB.
+	// +immutable
 	Data string `json:"data,omitempty"`
 }
 
@@ -92,15 +86,15 @@ type SecretPayload struct {
 type SecretVersionObservation struct {
 
 	// Output only. The time at which the [SecretVersion][google.cloud.secretmanager.v1.SecretVersion] was created.
-	CreateTime *string `json:"create_time,omitempty"`
+	CreateTime string `json:"create_time,omitempty"`
 
 	// Output only. The time this [SecretVersion][google.cloud.secretmanager.v1.SecretVersion] was destroyed.
 	// Only present if [state][google.cloud.secretmanager.v1.SecretVersion.state] is
 	// [DESTROYED][google.cloud.secretmanager.v1.SecretVersion.State.DESTROYED].
-	DestroyTime *string `json:"destroy_time,omitempty"`
+	DestroyTime string `json:"destroy_time,omitempty"`
 
 	// Output only. The current state of the [SecretVersion][google.cloud.secretmanager.v1.SecretVersion].
-	State SecretVersionState `json:"state,omitempty"`
+	State string `json:"state,omitempty"`
 }
 
 // SecretVersionSpec defines the desired state of a

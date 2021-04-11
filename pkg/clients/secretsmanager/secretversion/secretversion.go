@@ -19,6 +19,7 @@ package secretversion
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
@@ -57,25 +58,34 @@ func NewAddSecretVersionRequest(projectID string, sp v1alpha1.SecretVersionParam
 
 // LateInitialize fills the empty fields of SecretVersionParameters if the corresponding
 // fields are given in Secret Version.
-func LateInitialize(sp *v1alpha1.SecretVersionParameters, sv *secretmanager.SecretVersion, data []byte, secretRef string) {
+func LateInitialize(sp *v1alpha1.SecretVersionParameters, sv *secretmanager.SecretVersion, data []byte) {
 
-	// if sv.State != secretmanagerpb.SecretVersion_State(sp.DesiredSecretVersionState) {
-	// 	sp.DesiredSecretVersionState = v1alpha1.SecretVersionState(sv.State)
-	// }
+	if sp.DesiredSecretVersionState == "" {
+		if strings.Compare(sv.State.String(), sp.DesiredSecretVersionState) != 0 {
+			sp.DesiredSecretVersionState = sv.State.String()
+		}
+	}
 	if sp.SecretRef == "" {
-		sp.SecretRef = secretRef
+		secRef := strings.Split(sv.GetName(), "/")
+		sp.SecretRef = secRef[3]
 	}
 
 	if sp.Payload.Data == "" && data != nil {
 		sp.Payload.Data = string(data)
 	}
-
 }
 
 // IsUpToDate checks whether Secret is configured with given SecretParameters.
 func IsUpToDate(sp v1alpha1.SecretVersionParameters, sv *secretmanager.SecretVersion) bool {
-	observed := &v1alpha1.SecretVersionParameters{}
-	LateInitialize(observed, sv, []byte(sp.Payload.Data), sp.SecretRef)
+	payload := &v1alpha1.SecretPayload{
+		Data: "",
+	}
+	observed := &v1alpha1.SecretVersionParameters{
+		Payload: payload,
+	}
+
+	// Since the field is immutable , populating the field from GCP
+	LateInitialize(observed, sv, []byte(sp.Payload.Data))
 	result := cmp.Equal(observed, &sp)
 	return result
 }
@@ -92,12 +102,12 @@ type Observation struct {
 	DestroyTime string
 
 	// State of the secret version
-	State v1alpha1.SecretVersionState
+	State string
 }
 
 // UpdateStatus updates any fields of the supplied SecretVersionStatus
 func UpdateStatus(s *v1alpha1.SecretVersionStatus, o Observation) {
-	s.AtProvider.CreateTime = &o.CreateTime
-	s.AtProvider.DestroyTime = &o.DestroyTime
+	s.AtProvider.CreateTime = o.CreateTime
+	s.AtProvider.DestroyTime = o.DestroyTime
 	s.AtProvider.State = o.State
 }

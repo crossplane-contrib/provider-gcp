@@ -126,16 +126,18 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	if s.GetDestroyTime() != nil {
-		o.DestroyTime = s.CreateTime.String()
+		o.DestroyTime = s.GetDestroyTime().String()
+	} else {
+		o.DestroyTime = ""
 	}
 
-	o.State = v1alpha1.SecretVersionState(s.State)
+	o.State = s.State.String()
 
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	if data == nil {
-		secretversion.LateInitialize(&cr.Spec.ForProvider, s, nil, cr.Spec.ForProvider.SecretRef)
+		secretversion.LateInitialize(&cr.Spec.ForProvider, s, nil)
 	} else {
-		secretversion.LateInitialize(&cr.Spec.ForProvider, s, data.Payload.Data, cr.Spec.ForProvider.SecretRef)
+		secretversion.LateInitialize(&cr.Spec.ForProvider, s, data.Payload.Data)
 	}
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.client.Update(ctx, cr); err != nil {
@@ -147,10 +149,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	cr.SetConditions(xpv1.Available())
 
-	isSynced := secretversion.IsUpToDate(cr.Spec.ForProvider, s)
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: isSynced,
+		ResourceUpToDate: secretversion.IsUpToDate(cr.Spec.ForProvider, s),
 	}, nil
 
 }
@@ -183,8 +184,8 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetSecretVersion)
 	}
 
-	if val, ok := v1alpha1.SecretVersionStateValue[cr.Spec.ForProvider.DesiredSecretVersionState]; ok {
-		if v1alpha1.SecretVersionState(val) == v1alpha1.SecretVersionEnabled {
+	if desiredState, ok := v1alpha1.SecretVersionStateValue[cr.Spec.ForProvider.DesiredSecretVersionState]; ok {
+		if v1alpha1.SecretVersionState(desiredState) == v1alpha1.SecretVersionEnabled {
 			if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionEnabled) || s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDestroyed) {
 				_, err = e.sc.EnableSecretVersion(ctx, &sm.EnableSecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
 				if err != nil {
@@ -192,10 +193,8 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 				}
 			}
 		}
-	}
 
-	if val, ok := v1alpha1.SecretVersionStateValue[cr.Spec.ForProvider.DesiredSecretVersionState]; ok {
-		if v1alpha1.SecretVersionState(val) == v1alpha1.SecretVersionDisabled {
+		if v1alpha1.SecretVersionState(desiredState) == v1alpha1.SecretVersionDisabled {
 			if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDisabled) || s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDestroyed) {
 				_, err = e.sc.DisableSecretVersion(ctx, &sm.DisableSecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
 				if err != nil {
@@ -203,10 +202,8 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 				}
 			}
 		}
-	}
 
-	if val, ok := v1alpha1.SecretVersionStateValue[cr.Spec.ForProvider.DesiredSecretVersionState]; ok {
-		if v1alpha1.SecretVersionState(val) == v1alpha1.SecretVersionDestroyed {
+		if v1alpha1.SecretVersionState(desiredState) == v1alpha1.SecretVersionDestroyed {
 			if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDestroyed) {
 				_, err = e.sc.DestroySecretVersion(ctx, &sm.DestroySecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
 				if err != nil {
