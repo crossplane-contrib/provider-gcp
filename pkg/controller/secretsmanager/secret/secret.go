@@ -36,6 +36,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+
 	"github.com/crossplane/provider-gcp/apis/secretsmanager/secret/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/secretsmanager/secret"
@@ -103,10 +104,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFoundGRPC, err), errGetSecret)
 	}
 
-	o := secret.Observation{SecretID: meta.GetExternalName(cr)}
-	if o.SecretID == "" {
-		return managed.ExternalObservation{ResourceExists: false}, nil
-	}
+	o := secret.Observation{}
+
 	o.CreateTime = s.CreateTime.String()
 	if o.CreateTime == "" {
 		return managed.ExternalObservation{ResourceExists: false}, nil

@@ -37,6 +37,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+
 	"github.com/crossplane/provider-gcp/apis/secretsmanager/secretversion/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/secretsmanager/secretversion"
@@ -95,7 +96,7 @@ type external struct {
 }
 
 // Observe makes observation about the external resource.
-func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
+func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
 	cr, ok := mg.(*v1alpha1.SecretVersion)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotSecretVersion)
@@ -166,7 +167,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 // Update initiates an update to the external resource.
-func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) { // nolint:gocyclo
 	cr, ok := mg.(*v1alpha1.SecretVersion)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotSecretVersion)
@@ -182,34 +183,41 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetSecretVersion)
 	}
 
-	if cr.Spec.ForProvider.DesiredSecretVersionState == v1alpha1.SecretVersionENABLED {
-		if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionENABLED) || s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDESTROYED) {
-			_, err = e.sc.EnableSecretVersion(ctx, &sm.EnableSecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
-			if err != nil {
-				return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSecretVersion)
+	if val, ok := v1alpha1.SecretVersionStateValue[cr.Spec.ForProvider.DesiredSecretVersionState]; ok {
+		if v1alpha1.SecretVersionState(val) == v1alpha1.SecretVersionEnabled {
+			if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionEnabled) || s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDestroyed) {
+				_, err = e.sc.EnableSecretVersion(ctx, &sm.EnableSecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
+				if err != nil {
+					return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSecretVersion)
+				}
 			}
 		}
 	}
 
-	if cr.Spec.ForProvider.DesiredSecretVersionState == v1alpha1.SecretVersionDISABLED {
-		if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDISABLED) || s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDESTROYED) {
-			_, err = e.sc.DisableSecretVersion(ctx, &sm.DisableSecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
-			if err != nil {
-				return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSecretVersion)
+	if val, ok := v1alpha1.SecretVersionStateValue[cr.Spec.ForProvider.DesiredSecretVersionState]; ok {
+		if v1alpha1.SecretVersionState(val) == v1alpha1.SecretVersionDisabled {
+			if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDisabled) || s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDestroyed) {
+				_, err = e.sc.DisableSecretVersion(ctx, &sm.DisableSecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
+				if err != nil {
+					return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSecretVersion)
+				}
 			}
 		}
 	}
 
-	if cr.Spec.ForProvider.DesiredSecretVersionState == v1alpha1.SecretVersionDESTROYED {
-		if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDESTROYED) {
-			_, err = e.sc.DestroySecretVersion(ctx, &sm.DestroySecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
-			if err != nil {
-				return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSecretVersion)
+	if val, ok := v1alpha1.SecretVersionStateValue[cr.Spec.ForProvider.DesiredSecretVersionState]; ok {
+		if v1alpha1.SecretVersionState(val) == v1alpha1.SecretVersionDestroyed {
+			if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDestroyed) {
+				_, err = e.sc.DestroySecretVersion(ctx, &sm.DestroySecretVersionRequest{Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", e.projectID, cr.Spec.ForProvider.SecretRef, version)})
+				if err != nil {
+					return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSecretVersion)
+				}
 			}
 		}
 	}
 
 	return managed.ExternalUpdate{}, nil
+
 }
 
 // Delete initiates an deletion of the external resource.

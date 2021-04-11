@@ -71,9 +71,8 @@ type ReplicationType struct {
 
 // ReplicationAutomatic has fields for automatic replication of secrets
 type ReplicationAutomatic struct {
-	// +optional
-	// +immutable
-	// +nullable
+	// intentionally empty since the GCP SDK of current version has no fields.
+	// TODO: Add new fields when GCP SDK is updated
 }
 
 // ReplicationUserManaged has fields for user managed replication of secrets
@@ -98,10 +97,6 @@ type ReplicationUserManagedReplica struct {
 type SecretObservation struct {
 	// CreateTime: Output only. The time at which this Secret was created.
 	CreateTime string `json:"createTime,omitempty"`
-
-	// Output only. This must be unique within the project. External name of the object is set to this field, hence making it optional
-	// +optional
-	SecretID *string `json:"secretid,omitempty"`
 }
 
 // SecretSpec defines the desired state of a

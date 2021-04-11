@@ -26,16 +26,16 @@ import (
 type SecretVersionState int32
 
 const (
-	// SecretVersionSTATEUNSPECIFIED represents that SecretVersion state is not specified. This value is unused and invalid.
-	SecretVersionSTATEUNSPECIFIED SecretVersionState = 0
-	// SecretVersionENABLED represents that SecretVersion state  may be accessed.
-	SecretVersionENABLED SecretVersionState = 1
-	// SecretVersionDISABLED represents that SecretVersion state may not be accessed, but the secret data
+	// SecretVersionStateUnspecified represents that SecretVersion state is not specified. This value is unused and invalid.
+	SecretVersionStateUnspecified SecretVersionState = 0
+	// SecretVersionEnabled represents that SecretVersion state  may be accessed.
+	SecretVersionEnabled SecretVersionState = 1
+	// SecretVersionDisabled represents that SecretVersion state may not be accessed, but the secret data
 	// is still available and can be placed back into the [ENABLED] state.
-	SecretVersionDISABLED SecretVersionState = 2
-	// SecretVersionDESTROYED represents that SecretVersion state is destroyed and the secret data is no longer
+	SecretVersionDisabled SecretVersionState = 2
+	// SecretVersionDestroyed represents that SecretVersion state is destroyed and the secret data is no longer
 	// stored. A version may not leave this state once entered.
-	SecretVersionDESTROYED SecretVersionState = 3
+	SecretVersionDestroyed SecretVersionState = 3
 )
 
 // SecretVersionStateName is to map integers with states
@@ -74,8 +74,8 @@ type SecretVersionParameters struct {
 	// SecretVersionDESTROYED represents that SecretVersion state is destroyed and the secret data is no longer
 	// stored. A version may not leave this state once entered.
 	// SecretVersionDESTROYED SecretVersionState = 3
-	// +kubebuilder:validation:Enum=1;2;3
-	DesiredSecretVersionState SecretVersionState `json:"desiredSecretVersionState,omitempty"`
+	// +kubebuilder:validation:Enum=ENABLED;DISABLED;DESTROYED
+	DesiredSecretVersionState string `json:"desiredSecretVersionState,omitempty"`
 }
 
 // SecretPayload is a secret payload resource in the Secret Manager API. This contains the
@@ -98,10 +98,6 @@ type SecretVersionObservation struct {
 	// Only present if [state][google.cloud.secretmanager.v1.SecretVersion.state] is
 	// [DESTROYED][google.cloud.secretmanager.v1.SecretVersion.State.DESTROYED].
 	DestroyTime *string `json:"destroy_time,omitempty"`
-
-	// Output only. This must be unique within the project. External name of the object is set to this field, hence making it optional
-	// +optional
-	SecretID *string `json:"secretid,omitempty"`
 
 	// Output only. The current state of the [SecretVersion][google.cloud.secretmanager.v1.SecretVersion].
 	State SecretVersionState `json:"state,omitempty"`

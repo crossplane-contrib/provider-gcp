@@ -20,12 +20,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/crossplane/provider-gcp/apis/secretsmanager/secret/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
 	"google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
+
+	"github.com/crossplane/provider-gcp/apis/secretsmanager/secret/v1alpha1"
 )
 
 // Client is interface that lists the required functions for the reconciler
@@ -113,14 +114,11 @@ func GenerateUpdateRequest(projectID, name string, sp v1alpha1.SecretParameters,
 type Observation struct {
 	// CreateTime is the time at which secret was created
 	CreateTime string
-	// SecretID is the name of the secret represented in GCP secret manager
-	SecretID string
 }
 
 // UpdateStatus updates any fields of the supplied SecretStatus
 func UpdateStatus(s *v1alpha1.SecretStatus, o Observation) {
 	s.AtProvider.CreateTime = o.CreateTime
-	s.AtProvider.SecretID = &o.SecretID
 }
 
 func convertCrossplaneReplicasToGCPReplicas(cr []*v1alpha1.ReplicationUserManagedReplica) []*secretmanagerpb.Replication_UserManaged_Replica {
