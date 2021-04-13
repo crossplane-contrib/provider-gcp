@@ -61,17 +61,17 @@ func NewAddSecretVersionRequest(projectID string, sp v1alpha1.SecretVersionParam
 func LateInitialize(sp *v1alpha1.SecretVersionParameters, sv *secretmanager.SecretVersion, data []byte) {
 
 	if sp.DesiredSecretVersionState == "" {
-		if strings.Compare(sv.State.String(), sp.DesiredSecretVersionState) != 0 {
-			sp.DesiredSecretVersionState = sv.State.String()
-		}
+		sp.DesiredSecretVersionState = sv.State.String()
 	}
 	if sp.SecretRef == "" {
 		secRef := strings.Split(sv.GetName(), "/")
 		sp.SecretRef = secRef[3]
 	}
-
-	if sp.Payload.Data == "" && data != nil {
-		sp.Payload.Data = string(data)
+	// Since Payload is mandatory for GCP API but marked as optional in Kubernetes
+	if sp.Payload != nil {
+		if sp.Payload.Data == "" && data != nil {
+			sp.Payload.Data = string(data)
+		}
 	}
 }
 
