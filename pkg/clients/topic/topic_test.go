@@ -189,7 +189,7 @@ func TestGenerateUpdateRequest(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := GenerateUpdateRequest(tc.args.projectID, tc.args.name, tc.args.param, tc.args.obs)
 			if diff := cmp.Diff(tc.result, got); diff != "" {
-				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+				t.Errorf("GenerateUpdateRequest(...): -want, +got:\n%s", diff)
 			}
 		})
 	}

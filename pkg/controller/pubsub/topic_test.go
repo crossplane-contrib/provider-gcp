@@ -224,10 +224,10 @@ func TestCreate(t *testing.T) {
 			e := &external{client: tc.args.kube, ps: tc.args.ps, projectID: projectID}
 			got, err := e.Create(context.Background(), tc.args.mg)
 			if diff := cmp.Diff(tc.want.eo, got); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
+				t.Errorf("Create(...): -want error, +got error:\n%s", diff)
 			}
 		})
 	}
@@ -302,10 +302,10 @@ func TestUpdate(t *testing.T) {
 			e := &external{client: tc.args.kube, ps: tc.args.ps, projectID: projectID}
 			got, err := e.Update(context.Background(), tc.args.mg)
 			if diff := cmp.Diff(tc.want.eo, got); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf("Update(...): -want, +got:\n%s", diff)
 			}
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
+				t.Errorf("Update(...): -want error, +got error:\n%s", diff)
 			}
 		})
 	}
@@ -370,7 +370,7 @@ func TestDelete(t *testing.T) {
 			e := &external{client: tc.args.kube, ps: tc.args.ps, projectID: projectID}
 			err := e.Delete(context.Background(), tc.args.mg)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
+				t.Errorf("Delete(...): -want error, +got error:\n%s", diff)
 			}
 		})
 	}
