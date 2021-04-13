@@ -184,6 +184,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetSecretVersion)
 	}
 
+	// If https://github.com/crossplane/crossplane-runtime/issues/41 is solved, we should utilise that in case the current state is DESTROYED
 	if desiredState, ok := v1alpha1.SecretVersionStateValue[cr.Spec.ForProvider.DesiredSecretVersionState]; ok {
 		if v1alpha1.SecretVersionState(desiredState) == v1alpha1.SecretVersionEnabled {
 			if s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionEnabled) || s.GetState() != sm.SecretVersion_State(v1alpha1.SecretVersionDestroyed) {

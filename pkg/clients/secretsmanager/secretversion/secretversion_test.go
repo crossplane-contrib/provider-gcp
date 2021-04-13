@@ -30,7 +30,6 @@ import (
 const (
 	projectID = "fooproject"
 	name      = "barname"
-	location  = "us-east1"
 	payload   = "data"
 )
 

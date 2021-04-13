@@ -58,7 +58,7 @@ var SecretVersionStateValue = map[string]int32{
 type SecretVersionParameters struct {
 	// SecretRef refers to the secret object(GCP) created in Kubernetes
 	// Required
-	SecretRef string `json:"secretRef,omitempty"`
+	SecretRef string `json:"secretRef"`
 
 	// Payload is the secret payload of the [SecretVersion][google.cloud.secretmanager.v1.SecretVersion].
 	// Either this or KubeSecretRef should be provided
@@ -68,7 +68,7 @@ type SecretVersionParameters struct {
 	// DesiredSecretVersionState is the desired state the end user wants for the secret version
 	// There are three states possible: ENABLED;DISABLED;DESTROYED
 	// +kubebuilder:validation:Enum=ENABLED;DISABLED;DESTROYED
-	DesiredSecretVersionState string `json:"desiredSecretVersionState,omitempty"`
+	DesiredSecretVersionState string `json:"desiredSecretVersionState"`
 }
 
 // SecretPayload is a secret payload resource in the Secret Manager API. This contains the
@@ -76,7 +76,7 @@ type SecretVersionParameters struct {
 type SecretPayload struct {
 	// Data is the secret data. Must be no larger than 64KiB.
 	// +immutable
-	Data string `json:"data,omitempty"`
+	Data string `json:"data"`
 }
 
 // SecretVersionObservation is used to show the observed state of the
