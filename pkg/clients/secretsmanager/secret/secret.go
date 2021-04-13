@@ -19,6 +19,7 @@ package secret
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/googleapis/gax-go"
@@ -40,7 +41,8 @@ type Client interface {
 
 // GenerateSecret is used to convert Crossplane SecretParameters
 // to GCP's Secret object.
-func GenerateSecret(name string, sp v1alpha1.SecretParameters, s *secretmanager.Secret) {
+func GenerateSecret(sp v1alpha1.SecretParameters) *secretmanager.Secret {
+	s := secretmanager.Secret{}
 	s.Labels = sp.Labels
 	if sp.Replication != nil {
 		if sp.Replication.ReplicationType.UserManaged.Replicas != nil {
@@ -60,14 +62,13 @@ func GenerateSecret(name string, sp v1alpha1.SecretParameters, s *secretmanager.
 			},
 		}
 	}
-
+	return &s
 }
 
 // NewCreateSecretRequest produces a Secret that is configured via given SecretParameters.
 func NewCreateSecretRequest(projectID, name string, sp v1alpha1.SecretParameters) *secretmanager.CreateSecretRequest {
-	secret := &secretmanager.Secret{}
 
-	GenerateSecret(name, sp, secret)
+	secret := GenerateSecret(sp)
 	req := &secretmanager.CreateSecretRequest{
 		Parent:   sp.Parent,
 		SecretId: name,
@@ -80,6 +81,11 @@ func NewCreateSecretRequest(projectID, name string, sp v1alpha1.SecretParameters
 // LateInitialize fills the empty fields of SecretParameters if the corresponding
 // fields are given in Secret.
 func LateInitialize(sp *v1alpha1.SecretParameters, s secretmanager.Secret) {
+
+	if sp.Parent == "" {
+		projectName := strings.Split(s.GetName(), "/")
+		sp.Parent = fmt.Sprintf("projects/%s", projectName[1])
+	}
 	if len(sp.Labels) == 0 && len(s.Labels) != 0 {
 		sp.Labels = map[string]string{}
 		for k, v := range s.Labels {
@@ -87,6 +93,15 @@ func LateInitialize(sp *v1alpha1.SecretParameters, s secretmanager.Secret) {
 		}
 	}
 
+	if s.Replication.GetUserManaged() != nil {
+		sp.Replication = &v1alpha1.Replication{
+			ReplicationType: &v1alpha1.ReplicationType{
+				UserManaged: &v1alpha1.ReplicationUserManaged{
+					Replicas: convertGCPReplicasToCrossplaneReplicas(s.GetReplication().GetUserManaged().Replicas),
+				},
+			},
+		}
+	}
 }
 
 // IsUpToDate checks whether Secret is configured with given SecretParameters.
@@ -96,7 +111,7 @@ func IsUpToDate(sp v1alpha1.SecretParameters, s secretmanager.Secret) bool {
 	return cmp.Equal(observed, &sp)
 }
 
-// GenerateUpdateRequest produces an UpdateTopicRequest with the difference
+// GenerateUpdateRequest produces an UpdateSecretRequest with the difference
 // between SecretParameters and Secret.
 func GenerateUpdateRequest(projectID, name string, sp v1alpha1.SecretParameters, s secretmanager.Secret) *secretmanager.UpdateSecretRequest {
 	observed := &v1alpha1.SecretParameters{}
@@ -131,6 +146,21 @@ func convertCrossplaneReplicasToGCPReplicas(cr []*v1alpha1.ReplicationUserManage
 			Location: cv.Location,
 		}
 		replicas = append(replicas, gcpv)
+	}
+
+	return replicas
+}
+
+func convertGCPReplicasToCrossplaneReplicas(gcp []*secretmanagerpb.Replication_UserManaged_Replica) []*v1alpha1.ReplicationUserManagedReplica {
+	replicas := make([]*v1alpha1.ReplicationUserManagedReplica, 0)
+
+	var crv *v1alpha1.ReplicationUserManagedReplica
+	for _, gcpv := range gcp {
+
+		crv = &v1alpha1.ReplicationUserManagedReplica{
+			Location: gcpv.Location,
+		}
+		replicas = append(replicas, crv)
 	}
 
 	return replicas
