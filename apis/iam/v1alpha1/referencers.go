@@ -20,11 +20,38 @@ import (
 	"context"
 	"fmt"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// ServiceAccountReferer defines a reference to a ServiceAccount either via its RRN,
+// or via a v1alpha1.ServiceAccount object or via a selector. RRN is the
+// relative resource name as defined by Google Cloud API design docs here:
+// https://cloud.google.com/apis/design/resource_names#relative_resource_name
+// An example value for the ServiceAccount field is as follows:
+// projects/<project-name>>/serviceAccounts/perfect-test-sa@crossplane-playground.iam.gserviceaccount.com
+type ServiceAccountReferer struct {
+	// ServiceAccount: The RRN of the referred ServiceAccount
+	// RRN is the relative resource name as defined by Google Cloud API design docs here:
+	// https://cloud.google.com/apis/design/resource_names#relative_resource_name
+	// An example value for the ServiceAccount field is as follows:
+	// projects/<project-name>/serviceAccounts/perfect-test-sa@crossplane-playground.iam.gserviceaccount.com
+	// +optional
+	// +immutable
+	ServiceAccount *string `json:"serviceAccount,omitempty"`
+
+	// ServiceAccountRef references a ServiceAccount and retrieves its URI
+	// +optional
+	// +immutable
+	ServiceAccountRef *xpv1.Reference `json:"serviceAccountRef,omitempty"`
+
+	// ServiceAccountSelector selects a reference to a ServiceAccount
+	// +optional
+	ServiceAccountSelector *xpv1.Selector `json:"serviceAccountSelector,omitempty"`
+}
 
 // ServiceAccountRRN extracts the partially qualified URL of a Network.
 func ServiceAccountRRN() reference.ExtractValueFn {
@@ -51,23 +78,39 @@ func ServiceAccountMemberName() reference.ExtractValueFn {
 	}
 }
 
+func (sar *ServiceAccountReferer) resolveReferences(ctx context.Context, resolver *reference.APIResolver) error {
+	// Resolve spec.forProvider.serviceAccount
+	rsp, err := resolver.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(sar.ServiceAccount),
+		Reference:    sar.ServiceAccountRef,
+		Selector:     sar.ServiceAccountSelector,
+		To:           reference.To{Managed: &ServiceAccount{}, List: &ServiceAccountList{}},
+		Extract:      ServiceAccountRRN(),
+	})
+
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("could not resolve ServiceAccount reference: %v", *sar))
+	}
+
+	sar.ServiceAccount = reference.ToPtrValue(rsp.ResolvedValue)
+	sar.ServiceAccountRef = rsp.ResolvedReference
+
+	return nil
+}
+
+// ResolveReferences of this ServiceAccountKey
+func (in *ServiceAccountKey) ResolveReferences(ctx context.Context, c client.Reader) error {
+	return errors.Wrap(in.Spec.ForProvider.ServiceAccountReferer.resolveReferences(ctx, reference.NewAPIResolver(c, in)),
+		"spec.forProvider.serviceAccount")
+}
+
 // ResolveReferences of this ServiceAccountPolicy
 func (in *ServiceAccountPolicy) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, in)
 
-	// Resolve spec.forProvider.serviceAccount
-	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
-		CurrentValue: reference.FromPtrValue(in.Spec.ForProvider.ServiceAccount),
-		Reference:    in.Spec.ForProvider.ServiceAccountRef,
-		Selector:     in.Spec.ForProvider.ServiceAccountSelector,
-		To:           reference.To{Managed: &ServiceAccount{}, List: &ServiceAccountList{}},
-		Extract:      ServiceAccountRRN(),
-	})
-	if err != nil {
-		return errors.Wrap(err, "spec.forProvider.cryptoKey")
+	if err := in.Spec.ForProvider.ServiceAccountReferer.resolveReferences(ctx, r); err != nil {
+		return err
 	}
-	in.Spec.ForProvider.ServiceAccount = reference.ToPtrValue(rsp.ResolvedValue)
-	in.Spec.ForProvider.ServiceAccountRef = rsp.ResolvedReference
 
 	// Resolve spec.ForProvider.Policy.Bindings[*].Members
 	for i := range in.Spec.ForProvider.Policy.Bindings {

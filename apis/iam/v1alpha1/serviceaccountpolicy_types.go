@@ -24,19 +24,8 @@ import (
 
 // ServiceAccountPolicyParameters defines parameters for a desired IAM ServiceAccountPolicy
 type ServiceAccountPolicyParameters struct {
-	// ServiceAccount: The RRN of the ServiceAccount to which this ServiceAccountPolicy belongs.
-	// +optional
-	// +immutable
-	ServiceAccount *string `json:"serviceAccount,omitempty"`
-
-	// ServiceAccountRef references a ServiceAccount and retrieves its URI
-	// +optional
-	// +immutable
-	ServiceAccountRef *xpv1.Reference `json:"serviceAccountRef,omitempty"`
-
-	// ServiceAccountSelector selects a reference to a ServiceAccount
-	// +optional
-	ServiceAccountSelector *xpv1.Selector `json:"serviceAccountSelector,omitempty"`
+	// ServiceAccountRef is a reference to a ServiceAccount which this policy is associated with
+	ServiceAccountReferer `json:",inline"`
 
 	// Policy: An Identity and Access Management (IAM) policy, which
 	// specifies access controls for Google Cloud resources.

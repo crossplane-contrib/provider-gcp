@@ -79,7 +79,9 @@ func ServiceAccountPolicy(im ...sapValueModifier) *v1alpha1.ServiceAccountPolicy
 		},
 		Spec: v1alpha1.ServiceAccountPolicySpec{
 			ForProvider: v1alpha1.ServiceAccountPolicyParameters{
-				ServiceAccount: &testServiceAccountRRN,
+				ServiceAccountReferer: v1alpha1.ServiceAccountReferer{
+					ServiceAccount: &testServiceAccountRRN,
+				},
 				Policy: iamv1alpha1.Policy{
 					Bindings: []*iamv1alpha1.Binding{
 						{
