@@ -45,6 +45,14 @@ var (
 	ServiceAccountGroupVersionKind = SchemeGroupVersion.WithKind(ServiceAccountKind)
 )
 
+// ServiceAccountKey type metadata.
+var (
+	ServiceAccountKeyKind             = reflect.TypeOf(ServiceAccountKey{}).Name()
+	ServiceAccountKeyGroupKind        = schema.GroupKind{Group: Group, Kind: ServiceAccountKeyKind}.String()
+	ServiceAccountKeyKindAPIVersion   = ServiceAccountKeyKind + "." + SchemeGroupVersion.String()
+	ServiceAccountKeyGroupVersionKind = SchemeGroupVersion.WithKind(ServiceAccountKeyKind)
+)
+
 // ServiceAccountPolicy type metadata.
 var (
 	ServiceAccountPolicyKind             = reflect.TypeOf(ServiceAccountPolicy{}).Name()
@@ -54,5 +62,7 @@ var (
 )
 
 func init() {
-	SchemeBuilder.Register(&ServiceAccount{}, &ServiceAccountList{}, &ServiceAccountPolicy{}, &ServiceAccountPolicyList{})
+	SchemeBuilder.Register(&ServiceAccount{}, &ServiceAccountList{},
+		&ServiceAccountKey{}, &ServiceAccountKeyList{},
+		&ServiceAccountPolicy{}, &ServiceAccountPolicyList{})
 }
