@@ -22,15 +22,8 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
-	"github.com/crossplane/provider-gcp/pkg/controller/cache"
-	"github.com/crossplane/provider-gcp/pkg/controller/compute"
 	"github.com/crossplane/provider-gcp/pkg/controller/config"
-	"github.com/crossplane/provider-gcp/pkg/controller/container"
-	"github.com/crossplane/provider-gcp/pkg/controller/database"
 	"github.com/crossplane/provider-gcp/pkg/controller/iam"
-	"github.com/crossplane/provider-gcp/pkg/controller/kms"
-	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
-	"github.com/crossplane/provider-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplane/provider-gcp/pkg/controller/storage"
 )
 
@@ -39,21 +32,21 @@ import (
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter) error{
 		config.Setup,
-		cache.SetupCloudMemorystoreInstance,
-		compute.SetupGlobalAddress,
-		compute.SetupNetwork,
-		compute.SetupSubnetwork,
-		container.SetupGKECluster,
-		container.SetupNodePool,
-		database.SetupCloudSQLInstance,
+		//cache.SetupCloudMemorystoreInstance,
+		//compute.SetupGlobalAddress,
+		//compute.SetupNetwork,
+		//compute.SetupSubnetwork,
+		//container.SetupGKECluster,
+		//container.SetupNodePool,
+		//database.SetupCloudSQLInstance,
 		iam.SetupServiceAccount,
-		iam.SetupServiceAccountKey,
+		//iam.SetupServiceAccountKey,
 		iam.SetupServiceAccountPolicy,
-		kms.SetupKeyRing,
-		kms.SetupCryptoKey,
-		kms.SetupCryptoKeyPolicy,
-		pubsub.SetupTopic,
-		servicenetworking.SetupConnection,
+		//kms.SetupKeyRing,
+		//kms.SetupCryptoKey,
+		//kms.SetupCryptoKeyPolicy,
+		//pubsub.SetupTopic,
+		//servicenetworking.SetupConnection,
 		storage.SetupBucket,
 		storage.SetupBucketPolicy,
 		storage.SetupBucketPolicyMember,

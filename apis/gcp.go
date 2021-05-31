@@ -20,14 +20,7 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
-	cachev1beta1 "github.com/crossplane/provider-gcp/apis/cache/v1beta1"
-	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
-	containerv1alpha1 "github.com/crossplane/provider-gcp/apis/container/v1alpha1"
-	containerv1beta1 "github.com/crossplane/provider-gcp/apis/container/v1beta1"
-	databasev1beta1 "github.com/crossplane/provider-gcp/apis/database/v1beta1"
 	iam "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-	kms "github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
-	pubsub "github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	servicenetworkingv1beta1 "github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
 	storagev1alpha1 "github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
 	storagev1alpha3 "github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
@@ -40,14 +33,14 @@ func init() {
 	AddToSchemes = append(AddToSchemes,
 		gcpv1alpha3.SchemeBuilder.AddToScheme,
 		gcpv1beta1.SchemeBuilder.AddToScheme,
-		cachev1beta1.SchemeBuilder.AddToScheme,
-		computev1beta1.SchemeBuilder.AddToScheme,
-		containerv1beta1.SchemeBuilder.AddToScheme,
-		containerv1alpha1.SchemeBuilder.AddToScheme,
-		databasev1beta1.SchemeBuilder.AddToScheme,
+		//cachev1beta1.SchemeBuilder.AddToScheme,
+		//computev1beta1.SchemeBuilder.AddToScheme,
+		//containerv1beta1.SchemeBuilder.AddToScheme,
+		//containerv1alpha1.SchemeBuilder.AddToScheme,
+		//databasev1beta1.SchemeBuilder.AddToScheme,
 		iam.SchemeBuilder.AddToScheme,
-		kms.SchemeBuilder.AddToScheme,
-		pubsub.SchemeBuilder.AddToScheme,
+		//kms.SchemeBuilder.AddToScheme,
+		//pubsub.SchemeBuilder.AddToScheme,
 		servicenetworkingv1beta1.SchemeBuilder.AddToScheme,
 		storagev1alpha1.SchemeBuilder.AddToScheme,
 		storagev1alpha3.SchemeBuilder.AddToScheme,
