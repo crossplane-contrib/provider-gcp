@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains managed resources for GCP compute services such as
+// Package v1beta1 contains managed resources for GCP compute services such as
 // GKE.
 // +kubebuilder:object:generate=true
 // +groupName=container.gcp.crossplane.io
-// +versionName=v1alpha1
-package v1alpha1
+// +versionName=v1beta1
+package v1beta1

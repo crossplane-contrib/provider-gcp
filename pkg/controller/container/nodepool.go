@@ -35,7 +35,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	np "github.com/crossplane/provider-gcp/pkg/clients/nodepool"
 )
@@ -54,16 +54,16 @@ const (
 // SetupNodePool adds a controller that reconciles NodePool managed
 // resources.
 func SetupNodePool(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1alpha1.NodePoolGroupKind)
+	name := managed.ControllerName(v1beta1.NodePoolGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(controller.Options{
 			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
 		}).
-		For(&v1alpha1.NodePool{}).
+		For(&v1beta1.NodePool{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1alpha1.NodePoolGroupVersionKind),
+			resource.ManagedKind(v1beta1.NodePoolGroupVersionKind),
 			managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l),
@@ -93,7 +93,7 @@ type nodePoolExternal struct {
 }
 
 func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
-	cr, ok := mg.(*v1alpha1.NodePool)
+	cr, ok := mg.(*v1beta1.NodePool)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotNodePool)
 	}
@@ -113,11 +113,11 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	}
 
 	switch cr.Status.AtProvider.Status {
-	case v1alpha1.NodePoolStateRunning, v1alpha1.NodePoolStateReconciling:
+	case v1beta1.NodePoolStateRunning, v1beta1.NodePoolStateReconciling:
 		cr.Status.SetConditions(xpv1.Available())
-	case v1alpha1.NodePoolStateProvisioning:
+	case v1beta1.NodePoolStateProvisioning:
 		cr.Status.SetConditions(xpv1.Creating())
-	case v1alpha1.NodePoolStateUnspecified, v1alpha1.NodePoolStateRunningError, v1alpha1.NodePoolStateError:
+	case v1beta1.NodePoolStateUnspecified, v1beta1.NodePoolStateRunningError, v1beta1.NodePoolStateError:
 		cr.Status.SetConditions(xpv1.Unavailable())
 	}
 
@@ -133,14 +133,14 @@ func (e *nodePoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 }
 
 func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.NodePool)
+	cr, ok := mg.(*v1beta1.NodePool)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotNodePool)
 	}
 	cr.SetConditions(xpv1.Creating())
 
 	// Wait until creation is complete if already provisioning.
-	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateProvisioning {
+	if cr.Status.AtProvider.Status == v1beta1.NodePoolStateProvisioning {
 		return managed.ExternalCreation{}, nil
 	}
 
@@ -157,13 +157,13 @@ func (e *nodePoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 }
 
 func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.NodePool)
+	cr, ok := mg.(*v1beta1.NodePool)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotNodePool)
 	}
 	// Do not issue another update until the node pool finishes the previous
 	// one.
-	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateReconciling || cr.Status.AtProvider.Status == v1alpha1.NodePoolStateProvisioning {
+	if cr.Status.AtProvider.Status == v1beta1.NodePoolStateReconciling || cr.Status.AtProvider.Status == v1beta1.NodePoolStateProvisioning {
 		return managed.ExternalUpdate{}, nil
 	}
 
@@ -191,13 +191,13 @@ func (e *nodePoolExternal) Update(ctx context.Context, mg resource.Managed) (man
 }
 
 func (e *nodePoolExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.NodePool)
+	cr, ok := mg.(*v1beta1.NodePool)
 	if !ok {
 		return errors.New(errNotNodePool)
 	}
 	cr.SetConditions(xpv1.Deleting())
 	// Wait until deletion is complete if already stopping.
-	if cr.Status.AtProvider.Status == v1alpha1.NodePoolStateStopping {
+	if cr.Status.AtProvider.Status == v1beta1.NodePoolStateStopping {
 		return nil
 	}
 

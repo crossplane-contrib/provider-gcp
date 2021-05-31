@@ -22,8 +22,8 @@ import (
 
 	cachev1beta1 "github.com/crossplane/provider-gcp/apis/cache/v1beta1"
 	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
-	containerv1alpha1 "github.com/crossplane/provider-gcp/apis/container/v1alpha1"
-	containerv1beta1 "github.com/crossplane/provider-gcp/apis/container/v1beta2"
+	containerv1beta1 "github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	containerv1beta2 "github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	databasev1beta1 "github.com/crossplane/provider-gcp/apis/database/v1beta1"
 	iam "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	kms "github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
@@ -42,8 +42,8 @@ func init() {
 		gcpv1beta1.SchemeBuilder.AddToScheme,
 		cachev1beta1.SchemeBuilder.AddToScheme,
 		computev1beta1.SchemeBuilder.AddToScheme,
+		containerv1beta2.SchemeBuilder.AddToScheme,
 		containerv1beta1.SchemeBuilder.AddToScheme,
-		containerv1alpha1.SchemeBuilder.AddToScheme,
 		databasev1beta1.SchemeBuilder.AddToScheme,
 		iam.SchemeBuilder.AddToScheme,
 		kms.SchemeBuilder.AddToScheme,

@@ -27,7 +27,7 @@ import (
 	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1beta1"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
@@ -42,7 +42,7 @@ const (
 )
 
 // GenerateNodePool generates *container.NodePool instance from NodePoolParameters.
-func GenerateNodePool(name string, in v1alpha1.NodePoolParameters, pool *container.NodePool) { // nolint:gocyclo
+func GenerateNodePool(name string, in v1beta1.NodePoolParameters, pool *container.NodePool) { // nolint:gocyclo
 	pool.InitialNodeCount = gcp.Int64Value(in.InitialNodeCount)
 	pool.Locations = in.Locations
 	pool.Name = name
@@ -59,12 +59,12 @@ func GenerateNodePool(name string, in v1alpha1.NodePoolParameters, pool *contain
 	GenerateUpgradeSettings(in.UpgradeSettings, pool)
 }
 
-func isAutoUpgradeEnabled(in v1alpha1.NodePoolParameters) bool {
+func isAutoUpgradeEnabled(in v1beta1.NodePoolParameters) bool {
 	return in.Management != nil && gcp.BoolValue(in.Management.AutoUpgrade)
 }
 
 // GenerateAutoscaling generates *container.Autoscaling from *Autoscaling.
-func GenerateAutoscaling(in *v1alpha1.NodePoolAutoscaling, pool *container.NodePool) {
+func GenerateAutoscaling(in *v1beta1.NodePoolAutoscaling, pool *container.NodePool) {
 	if in != nil {
 		if pool.Autoscaling == nil {
 			pool.Autoscaling = &container.NodePoolAutoscaling{}
@@ -77,7 +77,7 @@ func GenerateAutoscaling(in *v1alpha1.NodePoolAutoscaling, pool *container.NodeP
 }
 
 // GenerateConfig generates *container.Config from *NodeConfig.
-func GenerateConfig(in *v1alpha1.NodeConfig, pool *container.NodePool) { // nolint:gocyclo
+func GenerateConfig(in *v1beta1.NodeConfig, pool *container.NodePool) { // nolint:gocyclo
 	if in != nil {
 		if pool.Config == nil {
 			pool.Config = &container.NodeConfig{}
@@ -172,7 +172,7 @@ func GenerateConfig(in *v1alpha1.NodeConfig, pool *container.NodePool) { // noli
 }
 
 // GenerateManagement generates *container.NodeManagement from *NodeManagementSpec.
-func GenerateManagement(in *v1alpha1.NodeManagementSpec, pool *container.NodePool) {
+func GenerateManagement(in *v1beta1.NodeManagementSpec, pool *container.NodePool) {
 	if in != nil {
 		if pool.Management == nil {
 			pool.Management = &container.NodeManagement{}
@@ -204,8 +204,8 @@ func GenerateUpgradeSettings(in *v1beta2.UpgradeSettings, pool *container.NodePo
 }
 
 // GenerateObservation produces NodePoolObservation object from *container.NodePool object.
-func GenerateObservation(in container.NodePool) v1alpha1.NodePoolObservation { // nolint:gocyclo
-	o := v1alpha1.NodePoolObservation{
+func GenerateObservation(in container.NodePool) v1beta1.NodePoolObservation { // nolint:gocyclo
+	o := v1beta1.NodePoolObservation{
 		InstanceGroupUrls: in.InstanceGroupUrls,
 		PodIpv4CidrSize:   in.PodIpv4CidrSize,
 		SelfLink:          in.SelfLink,
@@ -223,8 +223,8 @@ func GenerateObservation(in container.NodePool) v1alpha1.NodePoolObservation { /
 	}
 
 	if in.Management != nil && in.Management.UpgradeOptions != nil {
-		o.Management = &v1alpha1.NodeManagementStatus{
-			UpgradeOptions: &v1alpha1.AutoUpgradeOptions{
+		o.Management = &v1beta1.NodeManagementStatus{
+			UpgradeOptions: &v1beta1.AutoUpgradeOptions{
 				AutoUpgradeStartTime: in.Management.UpgradeOptions.AutoUpgradeStartTime,
 				Description:          in.Management.UpgradeOptions.Description,
 			},
@@ -236,7 +236,7 @@ func GenerateObservation(in container.NodePool) v1alpha1.NodePoolObservation { /
 }
 
 // GenerateNodePoolUpdate produces NodePoolObservation object from *container.NodePool object.
-func GenerateNodePoolUpdate(in *v1alpha1.NodePoolParameters) *container.UpdateNodePoolRequest { // nolint:gocyclo
+func GenerateNodePoolUpdate(in *v1beta1.NodePoolParameters) *container.UpdateNodePoolRequest { // nolint:gocyclo
 	o := &container.UpdateNodePoolRequest{
 		Locations:   in.Locations,
 		NodeVersion: gcp.StringValue(in.Version),
@@ -256,10 +256,10 @@ func GenerateNodePoolUpdate(in *v1alpha1.NodePoolParameters) *container.UpdateNo
 }
 
 // LateInitializeSpec fills unassigned fields with the values in container.NodePool object.
-func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool) { // nolint:gocyclo
+func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool) { // nolint:gocyclo
 	if in.Autoscaling != nil {
 		if spec.Autoscaling == nil {
-			spec.Autoscaling = &v1alpha1.NodePoolAutoscaling{}
+			spec.Autoscaling = &v1beta1.NodePoolAutoscaling{}
 		}
 
 		spec.Autoscaling.Autoprovisioned = gcp.LateInitializeBool(spec.Autoscaling.Autoprovisioned, in.Autoscaling.Autoprovisioned)
@@ -270,13 +270,13 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 
 	if in.Config != nil {
 		if spec.Config == nil {
-			spec.Config = &v1alpha1.NodeConfig{}
+			spec.Config = &v1beta1.NodeConfig{}
 		}
 
 		if len(in.Config.Accelerators) != 0 && len(spec.Config.Accelerators) == 0 {
-			spec.Config.Accelerators = make([]*v1alpha1.AcceleratorConfig, len(in.Config.Accelerators))
+			spec.Config.Accelerators = make([]*v1beta1.AcceleratorConfig, len(in.Config.Accelerators))
 			for i, a := range in.Config.Accelerators {
-				spec.Config.Accelerators[i] = &v1alpha1.AcceleratorConfig{
+				spec.Config.Accelerators[i] = &v1beta1.AcceleratorConfig{
 					AcceleratorCount: a.AcceleratorCount,
 					AcceleratorType:  a.AcceleratorType,
 				}
@@ -298,7 +298,7 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 
 		if in.Config.KubeletConfig != nil {
 			if spec.Config.KubeletConfig == nil {
-				spec.Config.KubeletConfig = &v1alpha1.NodeKubeletConfig{}
+				spec.Config.KubeletConfig = &v1beta1.NodeKubeletConfig{}
 			}
 			spec.Config.KubeletConfig.CpuCfsQuota = gcp.LateInitializeBool(spec.Config.KubeletConfig.CpuCfsQuota, in.Config.KubeletConfig.CpuCfsQuota)
 			spec.Config.KubeletConfig.CpuCfsQuotaPeriod = gcp.LateInitializeString(spec.Config.KubeletConfig.CpuCfsQuotaPeriod, in.Config.KubeletConfig.CpuCfsQuotaPeriod)
@@ -306,14 +306,14 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 		}
 
 		if in.Config.LinuxNodeConfig != nil && spec.Config.LinuxNodeConfig == nil {
-			spec.Config.LinuxNodeConfig = &v1alpha1.LinuxNodeConfig{
+			spec.Config.LinuxNodeConfig = &v1beta1.LinuxNodeConfig{
 				Sysctls: in.Config.LinuxNodeConfig.Sysctls,
 			}
 		}
 
 		if in.Config.ReservationAffinity != nil {
 			if spec.Config.ReservationAffinity == nil {
-				spec.Config.ReservationAffinity = &v1alpha1.ReservationAffinity{}
+				spec.Config.ReservationAffinity = &v1beta1.ReservationAffinity{}
 			}
 			spec.Config.ReservationAffinity.ConsumeReservationType = gcp.LateInitializeString(spec.Config.ReservationAffinity.ConsumeReservationType, in.Config.ReservationAffinity.ConsumeReservationType)
 			spec.Config.ReservationAffinity.Key = gcp.LateInitializeString(spec.Config.ReservationAffinity.Key, in.Config.ReservationAffinity.Key)
@@ -321,7 +321,7 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 		}
 
 		if in.Config.SandboxConfig != nil && spec.Config.SandboxConfig == nil {
-			spec.Config.SandboxConfig = &v1alpha1.SandboxConfig{
+			spec.Config.SandboxConfig = &v1beta1.SandboxConfig{
 				SandboxType: in.Config.SandboxConfig.SandboxType,
 			}
 		}
@@ -330,7 +330,7 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 
 		if in.Config.ShieldedInstanceConfig != nil {
 			if spec.Config.ShieldedInstanceConfig == nil {
-				spec.Config.ShieldedInstanceConfig = &v1alpha1.ShieldedInstanceConfig{}
+				spec.Config.ShieldedInstanceConfig = &v1beta1.ShieldedInstanceConfig{}
 			}
 			spec.Config.ShieldedInstanceConfig.EnableIntegrityMonitoring = gcp.LateInitializeBool(spec.Config.ShieldedInstanceConfig.EnableIntegrityMonitoring, in.Config.ShieldedInstanceConfig.EnableIntegrityMonitoring)
 			spec.Config.ShieldedInstanceConfig.EnableSecureBoot = gcp.LateInitializeBool(spec.Config.ShieldedInstanceConfig.EnableSecureBoot, in.Config.ShieldedInstanceConfig.EnableSecureBoot)
@@ -339,9 +339,9 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 		spec.Config.Tags = gcp.LateInitializeStringSlice(spec.Config.Tags, in.Config.Tags)
 
 		if len(in.Config.Taints) != 0 && len(spec.Config.Taints) == 0 {
-			spec.Config.Taints = make([]*v1alpha1.NodeTaint, len(in.Config.Taints))
+			spec.Config.Taints = make([]*v1beta1.NodeTaint, len(in.Config.Taints))
 			for i, t := range in.Config.Taints {
-				spec.Config.Taints[i] = &v1alpha1.NodeTaint{
+				spec.Config.Taints[i] = &v1beta1.NodeTaint{
 					Effect: t.Effect,
 					Key:    t.Key,
 					Value:  t.Value,
@@ -350,7 +350,7 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 		}
 
 		if in.Config.WorkloadMetadataConfig != nil && spec.Config.WorkloadMetadataConfig == nil {
-			spec.Config.WorkloadMetadataConfig = &v1alpha1.WorkloadMetadataConfig{
+			spec.Config.WorkloadMetadataConfig = &v1beta1.WorkloadMetadataConfig{
 				NodeMetadata: in.Config.WorkloadMetadataConfig.NodeMetadata,
 			}
 		}
@@ -361,7 +361,7 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 
 	if in.Management != nil {
 		if spec.Management == nil {
-			spec.Management = &v1alpha1.NodeManagementSpec{}
+			spec.Management = &v1beta1.NodeManagementSpec{}
 		}
 
 		spec.Management.AutoRepair = gcp.LateInitializeBool(spec.Management.AutoRepair, in.Management.AutoRepair)
@@ -386,7 +386,7 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 }
 
 // newAutoscalingUpdateFn returns a function that updates the Autoscaling of a node pool.
-func newAutoscalingUpdateFn(in *v1alpha1.NodePoolAutoscaling) UpdateFn {
+func newAutoscalingUpdateFn(in *v1beta1.NodePoolAutoscaling) UpdateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
 		out := &container.NodePool{}
 		GenerateAutoscaling(in, out)
@@ -398,7 +398,7 @@ func newAutoscalingUpdateFn(in *v1alpha1.NodePoolAutoscaling) UpdateFn {
 }
 
 // newManagementUpdateFn returns a function that updates the Management of a node pool.
-func newManagementUpdateFn(in *v1alpha1.NodeManagementSpec) UpdateFn {
+func newManagementUpdateFn(in *v1beta1.NodeManagementSpec) UpdateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
 		out := &container.NodePool{}
 		GenerateManagement(in, out)
@@ -410,7 +410,7 @@ func newManagementUpdateFn(in *v1alpha1.NodeManagementSpec) UpdateFn {
 }
 
 // newGeneralUpdateFn returns a function that updates a node pool.
-func newGeneralUpdateFn(in *v1alpha1.NodePoolParameters) UpdateFn {
+func newGeneralUpdateFn(in *v1beta1.NodePoolParameters) UpdateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
 		return s.Projects.Locations.Clusters.NodePools.Update(name, GenerateNodePoolUpdate(in)).Context(ctx).Do()
 	}
@@ -425,7 +425,7 @@ type UpdateFn func(context.Context, *container.Service, string) (*container.Oper
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(name string, in *v1alpha1.NodePoolParameters, observed *container.NodePool) (bool, UpdateFn, error) {
+func IsUpToDate(name string, in *v1beta1.NodePoolParameters, observed *container.NodePool) (bool, UpdateFn, error) {
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
 		return true, noOpUpdate, errors.Wrap(err, errCheckUpToDate)
@@ -455,7 +455,7 @@ func IsUpToDate(name string, in *v1alpha1.NodePoolParameters, observed *containe
 }
 
 // GetFullyQualifiedName builds the fully qualified name of the cluster.
-func GetFullyQualifiedName(p v1alpha1.NodePoolParameters, name string) string {
+func GetFullyQualifiedName(p v1beta1.NodePoolParameters, name string) string {
 	// Zonal clusters use /zones/ in their path instead of /locations/. We
 	// manage node pools using the locations API endpoint so we must modify the
 	// path.
