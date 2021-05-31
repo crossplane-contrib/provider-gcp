@@ -56,6 +56,7 @@ func GenerateNodePool(name string, in v1alpha1.NodePoolParameters, pool *contain
 	GenerateConfig(in.Config, pool)
 	GenerateManagement(in.Management, pool)
 	GenerateMaxPodsConstraint(in.MaxPodsConstraint, pool)
+	GenerateUpgradeSettings(in.UpgradeSettings, pool)
 }
 
 func isAutoUpgradeEnabled(in v1alpha1.NodePoolParameters) bool {
@@ -81,6 +82,7 @@ func GenerateConfig(in *v1alpha1.NodeConfig, pool *container.NodePool) { // noli
 		if pool.Config == nil {
 			pool.Config = &container.NodeConfig{}
 		}
+		pool.Config.BootDiskKmsKey = gcp.StringValue(in.BootDiskKmsKey)
 		pool.Config.DiskSizeGb = gcp.Int64Value(in.DiskSizeGb)
 		pool.Config.DiskType = gcp.StringValue(in.DiskType)
 		pool.Config.ImageType = gcp.StringValue(in.ImageType)
@@ -89,6 +91,7 @@ func GenerateConfig(in *v1alpha1.NodeConfig, pool *container.NodePool) { // noli
 		pool.Config.MachineType = gcp.StringValue(in.MachineType)
 		pool.Config.Metadata = in.Metadata
 		pool.Config.MinCpuPlatform = gcp.StringValue(in.MinCPUPlatform)
+		pool.Config.NodeGroup = gcp.StringValue(in.NodeGroup)
 		pool.Config.OauthScopes = in.OauthScopes
 		pool.Config.Preemptible = gcp.BoolValue(in.Preemptible)
 		pool.Config.ServiceAccount = gcp.StringValue(in.ServiceAccount)
@@ -104,6 +107,31 @@ func GenerateConfig(in *v1alpha1.NodeConfig, pool *container.NodePool) { // noli
 					AcceleratorType:  a.AcceleratorType,
 				}
 			}
+		}
+
+		if in.KubeletConfig != nil {
+			if pool.Config.KubeletConfig == nil {
+				pool.Config.KubeletConfig = &container.NodeKubeletConfig{}
+			}
+			pool.Config.KubeletConfig.CpuCfsQuota = gcp.BoolValue(in.KubeletConfig.CpuCfsQuota)
+			pool.Config.KubeletConfig.CpuCfsQuotaPeriod = gcp.StringValue(in.KubeletConfig.CpuCfsQuotaPeriod)
+			pool.Config.KubeletConfig.CpuManagerPolicy = gcp.StringValue(in.KubeletConfig.CpuManagerPolicy)
+		}
+
+		if in.LinuxNodeConfig != nil {
+			if pool.Config.LinuxNodeConfig == nil {
+				pool.Config.LinuxNodeConfig = &container.LinuxNodeConfig{}
+			}
+			pool.Config.LinuxNodeConfig.Sysctls = in.LinuxNodeConfig.Sysctls
+		}
+
+		if in.ReservationAffinity != nil {
+			if pool.Config.ReservationAffinity == nil {
+				pool.Config.ReservationAffinity = &container.ReservationAffinity{}
+			}
+			pool.Config.ReservationAffinity.ConsumeReservationType = gcp.StringValue(in.ReservationAffinity.ConsumeReservationType)
+			pool.Config.ReservationAffinity.Key = gcp.StringValue(in.ReservationAffinity.Key)
+			pool.Config.ReservationAffinity.Values = in.ReservationAffinity.Values
 		}
 
 		if in.SandboxConfig != nil {
@@ -161,6 +189,17 @@ func GenerateMaxPodsConstraint(in *v1beta2.MaxPodsConstraint, pool *container.No
 			pool.MaxPodsConstraint = &container.MaxPodsConstraint{}
 		}
 		pool.MaxPodsConstraint.MaxPodsPerNode = in.MaxPodsPerNode
+	}
+}
+
+// GenerateUpgradeSettings generates *container.UpgradeSettings from *UpgradeSettings.
+func GenerateUpgradeSettings(in *v1beta2.UpgradeSettings, pool *container.NodePool) {
+	if in != nil {
+		if pool.UpgradeSettings == nil {
+			pool.UpgradeSettings = &container.UpgradeSettings{}
+		}
+		pool.UpgradeSettings.MaxSurge = gcp.Int64Value(in.MaxSurge)
+		pool.UpgradeSettings.MaxUnavailable = gcp.Int64Value(in.MaxUnavailable)
 	}
 }
 
@@ -244,6 +283,7 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 			}
 		}
 
+		spec.Config.BootDiskKmsKey = gcp.LateInitializeString(spec.Config.BootDiskKmsKey, in.Config.BootDiskKmsKey)
 		spec.Config.DiskSizeGb = gcp.LateInitializeInt64(spec.Config.DiskSizeGb, in.Config.DiskSizeGb)
 		spec.Config.DiskType = gcp.LateInitializeString(spec.Config.DiskType, in.Config.DiskType)
 		spec.Config.ImageType = gcp.LateInitializeString(spec.Config.ImageType, in.Config.ImageType)
@@ -252,8 +292,33 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 		spec.Config.MachineType = gcp.LateInitializeString(spec.Config.MachineType, in.Config.MachineType)
 		spec.Config.Metadata = gcp.LateInitializeStringMap(spec.Config.Metadata, in.Config.Metadata)
 		spec.Config.MinCPUPlatform = gcp.LateInitializeString(spec.Config.MinCPUPlatform, in.Config.MinCpuPlatform)
+		spec.Config.NodeGroup = gcp.LateInitializeString(spec.Config.NodeGroup, in.Config.NodeGroup)
 		spec.Config.OauthScopes = gcp.LateInitializeStringSlice(spec.Config.OauthScopes, in.Config.OauthScopes)
 		spec.Config.Preemptible = gcp.LateInitializeBool(spec.Config.Preemptible, in.Config.Preemptible)
+
+		if in.Config.KubeletConfig != nil {
+			if spec.Config.KubeletConfig == nil {
+				spec.Config.KubeletConfig = &v1alpha1.NodeKubeletConfig{}
+			}
+			spec.Config.KubeletConfig.CpuCfsQuota = gcp.LateInitializeBool(spec.Config.KubeletConfig.CpuCfsQuota, in.Config.KubeletConfig.CpuCfsQuota)
+			spec.Config.KubeletConfig.CpuCfsQuotaPeriod = gcp.LateInitializeString(spec.Config.KubeletConfig.CpuCfsQuotaPeriod, in.Config.KubeletConfig.CpuCfsQuotaPeriod)
+			spec.Config.KubeletConfig.CpuManagerPolicy = gcp.LateInitializeString(spec.Config.KubeletConfig.CpuManagerPolicy, in.Config.KubeletConfig.CpuManagerPolicy)
+		}
+
+		if in.Config.LinuxNodeConfig != nil && spec.Config.LinuxNodeConfig == nil {
+			spec.Config.LinuxNodeConfig = &v1alpha1.LinuxNodeConfig{
+				Sysctls: in.Config.LinuxNodeConfig.Sysctls,
+			}
+		}
+
+		if in.Config.ReservationAffinity != nil {
+			if spec.Config.ReservationAffinity == nil {
+				spec.Config.ReservationAffinity = &v1alpha1.ReservationAffinity{}
+			}
+			spec.Config.ReservationAffinity.ConsumeReservationType = gcp.LateInitializeString(spec.Config.ReservationAffinity.ConsumeReservationType, in.Config.ReservationAffinity.ConsumeReservationType)
+			spec.Config.ReservationAffinity.Key = gcp.LateInitializeString(spec.Config.ReservationAffinity.Key, in.Config.ReservationAffinity.Key)
+			spec.Config.ReservationAffinity.Values = gcp.LateInitializeStringSlice(spec.Config.ReservationAffinity.Values, in.Config.ReservationAffinity.Values)
+		}
 
 		if in.Config.SandboxConfig != nil && spec.Config.SandboxConfig == nil {
 			spec.Config.SandboxConfig = &v1alpha1.SandboxConfig{
@@ -307,6 +372,14 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 		spec.MaxPodsConstraint = &v1beta2.MaxPodsConstraint{
 			MaxPodsPerNode: in.MaxPodsConstraint.MaxPodsPerNode,
 		}
+	}
+
+	if in.UpgradeSettings != nil {
+		if spec.UpgradeSettings == nil {
+			spec.UpgradeSettings = &v1beta2.UpgradeSettings{}
+		}
+		spec.UpgradeSettings.MaxSurge = gcp.LateInitializeInt64(spec.UpgradeSettings.MaxSurge, in.UpgradeSettings.MaxSurge)
+		spec.UpgradeSettings.MaxUnavailable = gcp.LateInitializeInt64(spec.UpgradeSettings.MaxUnavailable, in.UpgradeSettings.MaxUnavailable)
 	}
 
 	spec.Version = gcp.LateInitializeString(spec.Version, in.Version)

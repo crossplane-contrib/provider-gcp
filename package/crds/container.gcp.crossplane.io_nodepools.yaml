@@ -118,6 +118,9 @@ spec:
                               type: string
                           type: object
                         type: array
+                      bootDiskKmsKey:
+                        description: 'BootDiskKmsKey:  The Customer Managed Encryption Key used to encrypt the boot disk attached to each node in the node pool. This should be of the form projects/[KEY_PROJECT_ID]/locations/[LOCATION]/keyRings/[RING_NAME]/cr yptoKeys/[KEY_NAME]. For more information about protecting resources with Cloud KMS Keys please see: https://cloud.google.com/compute/docs/disks/customer-managed-encryption'
+                        type: string
                       diskSizeGb:
                         description: "DiskSizeGb: Size of the disk attached to each node, specified in GB. The smallest allowed disk size is 10GB. \n If unspecified, the default disk size is 100GB."
                         format: int64
@@ -128,10 +131,34 @@ spec:
                       imageType:
                         description: 'ImageType: The image type to use for this node. Note that for a given image type, the latest version of it will be used.'
                         type: string
+                      kubeletConfig:
+                        description: 'KubeletConfig: Node kubelet configs.'
+                        properties:
+                          cpuCfsQuota:
+                            description: 'CpuCfsQuota: Enable CPU CFS quota enforcement for containers that specify CPU limits. This option is enabled by default which makes kubelet use CFS quota (https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt) to enforce container CPU limits. Otherwise, CPU limits will not be enforced at all. Disable this option to mitigate CPU throttling problems while still having your pods to be in Guaranteed QoS class by specifying the CPU limits. The default value is ''true'' if unspecified.'
+                            type: boolean
+                          cpuCfsQuotaPeriod:
+                            description: 'CpuCfsQuotaPeriod: Set the CPU CFS quota period value ''cpu.cfs_period_us''. The string must be a sequence of decimal numbers, each with optional fraction and a unit suffix, such as "300ms". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h". The value must be a positive duration.'
+                            type: string
+                          cpuManagerPolicy:
+                            description: 'CpuManagerPolicy: Control the CPU management policy on the node. See https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/ The following values are allowed. - "none": the default, which represents the existing scheduling behavior. - "static": allows pods with certain resource characteristics to be granted increased CPU affinity and exclusivity on the node. The default value is ''none'' if unspecified.'
+                            type: string
+                        type: object
                       labels:
                         additionalProperties:
                           type: string
                         description: 'Labels: The map of Kubernetes labels (key/value pairs) to be applied to each node. These will added in addition to any default label(s) that Kubernetes may apply to the node. In case of conflict in label keys, the applied set may differ depending on the Kubernetes version -- it''s best to assume the behavior is undefined and conflicts should be avoided. For more information, including usage and the valid values, see: https://kubernetes.io/docs/concepts/overview/working-with-objects /labels/'
+                        type: object
+                      linuxNodeConfig:
+                        description: 'LinuxNodeConfig: Parameters that can be configured on Linux nodes.'
+                        properties:
+                          sysctls:
+                            additionalProperties:
+                              type: string
+                            description: 'Sysctls: The Linux kernel parameters to be applied to the nodes and all pods running on the nodes. The following parameters are supported. net.core.netdev_max_backlog net.core.rmem_max net.core.wmem_default net.core.wmem_max net.core.optmem_max net.core.somaxconn net.ipv4.tcp_rmem net.ipv4.tcp_wmem net.ipv4.tcp_tw_reuse'
+                            type: object
+                        required:
+                        - sysctls
                         type: object
                       localSsdCount:
                         description: "LocalSsdCount: The number of local SSD disks to be attached to the node. \n The limit for this value is dependant upon the maximum number of disks available on a machine per zone. See: https://cloud.google.com/compute/docs/disks/local-ssd#local_ssd_l imits for more information."
@@ -148,6 +175,9 @@ spec:
                       minCpuPlatform:
                         description: 'MinCpuPlatform: Minimum CPU platform to be used by this instance. The instance may be scheduled on the specified or newer CPU platform. Applicable values are the friendly names of CPU platforms, such as <code>minCpuPlatform: &quot;Intel Haswell&quot;</code> or <code>minCpuPlatform: &quot;Intel Sandy Bridge&quot;</code>. For more information, read [how to specify min CPU platform](https://cloud.google.com/compute/docs/instances/specify- min-cpu-platform)'
                         type: string
+                      nodeGroup:
+                        description: 'NodeGroup: Setting this field will assign instances of this pool to run on the specified node group. This is useful for running workloads on sole tenant nodes (https://cloud.google.com/compute/docs/nodes/sole-tenant-nodes).'
+                        type: string
                       oauthScopes:
                         description: "OauthScopes: The set of Google API scopes to be made available on all of the node VMs under the \"default\" service account. \n The following scopes are recommended, but not required, and by default are not included: \n * `https://www.googleapis.com/auth/compute` is required for mounting persistent storage on your nodes. * `https://www.googleapis.com/auth/devstorage.read_only` is required for communicating with **gcr.io** (the [Google Container Registry](/container-registry/)). \n If unspecified, no scopes are added, unless Cloud Logging or Cloud Monitoring are enabled, in which case their required scopes will be added."
                         items:
@@ -156,6 +186,21 @@ spec:
                       preemptible:
                         description: 'Preemptible: Whether the nodes are created as preemptible VM instances. See: https://cloud.google.com/compute/docs/instances/preemptible for more inforamtion about preemptible VM instances.'
                         type: boolean
+                      reservationAffinity:
+                        description: 'ReservationAffinity: The optional reservation affinity. Setting this field will apply the specified Zonal Compute Reservation (https://cloud.google.com/compute/docs/instances/reserving-zonal-resources) to this node pool.'
+                        properties:
+                          consumeReservationType:
+                            description: "ConsumeReservationType: Corresponds to the type of reservation consumption. \n Possible values:   \"UNSPECIFIED\" - Default value. This should not be used.   \"NO_RESERVATION\" - Do not consume from any reserved capacity.   \"ANY_RESERVATION\" - Consume any reservation available.   \"SPECIFIC_RESERVATION\" - Must consume from a specific reservation. Must specify key value fields for specifying the reservations."
+                            type: string
+                          key:
+                            description: 'Key: Corresponds to the label key of a reservation resource. To target a SPECIFIC_RESERVATION by name, specify "googleapis.com/reservation-name" as the key and specify the name of your reservation as its value.'
+                            type: string
+                          values:
+                            description: 'Values: Corresponds to the label value(s) of reservation resource(s).'
+                            items:
+                              type: string
+                            type: array
+                        type: object
                       sandboxConfig:
                         description: 'SandboxConfig: Sandbox configuration for this node.'
                         properties:
@@ -241,6 +286,18 @@ spec:
                         type: integer
                     required:
                     - maxPodsPerNode
+                    type: object
+                  upgradeSettings:
+                    description: 'UpgradeSettings: Upgrade settings control disruption and speed of the upgrade.'
+                    properties:
+                      maxSurge:
+                        description: 'MaxSurge: The maximum number of nodes that can be created beyond the current size of the node pool during the upgrade process.'
+                        format: int64
+                        type: integer
+                      maxUnavailable:
+                        description: 'MaxUnavailable: The maximum number of nodes that can be simultaneously unavailable during the upgrade process. A node is considered available if its status is Ready.'
+                        format: int64
+                        type: integer
                     type: object
                   version:
                     description: 'Version: The version of the Kubernetes of this node.'

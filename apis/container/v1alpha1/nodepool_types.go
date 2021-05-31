@@ -169,6 +169,10 @@ type NodePoolParameters struct {
 	// +immutable
 	MaxPodsConstraint *v1beta2.MaxPodsConstraint `json:"maxPodsConstraint,omitempty"`
 
+	// UpgradeSettings: Upgrade settings control disruption and speed of the
+	// upgrade.
+	UpgradeSettings *v1beta2.UpgradeSettings `json:"upgradeSettings,omitempty"`
+
 	// Version: The version of the Kubernetes of this node.
 	// +optional
 	Version *string `json:"version,omitempty"`
@@ -209,6 +213,17 @@ type NodeConfig struct {
 	// +immutable
 	Accelerators []*AcceleratorConfig `json:"accelerators,omitempty"`
 
+	// BootDiskKmsKey:  The Customer Managed Encryption Key used to encrypt
+	// the boot disk attached to each node in the node pool. This should be
+	// of the form
+	// projects/[KEY_PROJECT_ID]/locations/[LOCATION]/keyRings/[RING_NAME]/cr
+	// yptoKeys/[KEY_NAME]. For more information about protecting resources
+	// with Cloud KMS Keys please see:
+	// https://cloud.google.com/compute/docs/disks/customer-managed-encryption
+	// +immutable
+	// +optional
+	BootDiskKmsKey *string `json:"bootDiskKmsKey,omitempty"`
+
 	// DiskSizeGb: Size of the disk attached to each node, specified in
 	// GB.
 	// The smallest allowed disk size is 10GB.
@@ -232,6 +247,11 @@ type NodeConfig struct {
 	// +optional
 	ImageType *string `json:"imageType,omitempty"`
 
+	// KubeletConfig: Node kubelet configs.
+	// +immutable
+	// +optional
+	KubeletConfig *NodeKubeletConfig `json:"kubeletConfig,omitempty"`
+
 	// Labels: The map of Kubernetes labels (key/value pairs) to be applied
 	// to each node.
 	// These will added in addition to any default label(s) that
@@ -248,6 +268,9 @@ type NodeConfig struct {
 	// +immutable
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// LinuxNodeConfig: Parameters that can be configured on Linux nodes.
+	LinuxNodeConfig *LinuxNodeConfig `json:"linuxNodeConfig,omitempty"`
 
 	// LocalSsdCount: The number of local SSD disks to be attached to the
 	// node.
@@ -331,6 +354,12 @@ type NodeConfig struct {
 	// +optional
 	MinCPUPlatform *string `json:"minCpuPlatform,omitempty"`
 
+	// NodeGroup: Setting this field will assign instances of this pool to
+	// run on the specified node group. This is useful for running workloads
+	// on sole tenant nodes
+	// (https://cloud.google.com/compute/docs/nodes/sole-tenant-nodes).
+	NodeGroup *string `json:"nodeGroup,omitempty"`
+
 	// OauthScopes: The set of Google API scopes to be made available on all
 	// of the
 	// node VMs under the "default" service account.
@@ -364,6 +393,12 @@ type NodeConfig struct {
 	// +immutable
 	// +optional
 	Preemptible *bool `json:"preemptible,omitempty"`
+
+	// ReservationAffinity: The optional reservation affinity. Setting this
+	// field will apply the specified Zonal Compute Reservation
+	// (https://cloud.google.com/compute/docs/instances/reserving-zonal-resources)
+	// to this node pool.
+	ReservationAffinity *ReservationAffinity `json:"reservationAffinity,omitempty"`
 
 	// SandboxConfig: Sandbox configuration for this node.
 	// +immutable
@@ -408,6 +443,73 @@ type NodeConfig struct {
 	// node.
 	// +optional
 	WorkloadMetadataConfig *WorkloadMetadataConfig `json:"workloadMetadataConfig,omitempty"`
+}
+
+// NodeKubeletConfig is configuration for the Node's Kubelet.
+type NodeKubeletConfig struct {
+	// CpuCfsQuota: Enable CPU CFS quota enforcement for containers that
+	// specify CPU limits. This option is enabled by default which makes
+	// kubelet use CFS quota
+	// (https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt) to
+	// enforce container CPU limits. Otherwise, CPU limits will not be
+	// enforced at all. Disable this option to mitigate CPU throttling
+	// problems while still having your pods to be in Guaranteed QoS class
+	// by specifying the CPU limits. The default value is 'true' if
+	// unspecified.
+	CpuCfsQuota *bool `json:"cpuCfsQuota,omitempty"`
+
+	// CpuCfsQuotaPeriod: Set the CPU CFS quota period value
+	// 'cpu.cfs_period_us'. The string must be a sequence of decimal
+	// numbers, each with optional fraction and a unit suffix, such as
+	// "300ms". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m",
+	// "h". The value must be a positive duration.
+	CpuCfsQuotaPeriod *string `json:"cpuCfsQuotaPeriod,omitempty"`
+
+	// CpuManagerPolicy: Control the CPU management policy on the node. See
+	// https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/
+	// The following values are allowed. - "none": the default, which
+	// represents the existing scheduling behavior. - "static": allows pods
+	// with certain resource characteristics to be granted increased CPU
+	// affinity and exclusivity on the node. The default value is 'none' if
+	// unspecified.
+	CpuManagerPolicy *string `json:"cpuManagerPolicy,omitempty"`
+}
+
+// LinuxNodeConfig contains configuration for Linux Nodes.
+type LinuxNodeConfig struct {
+	// Sysctls: The Linux kernel parameters to be applied to the nodes and
+	// all pods running on the nodes. The following parameters are
+	// supported. net.core.netdev_max_backlog net.core.rmem_max
+	// net.core.wmem_default net.core.wmem_max net.core.optmem_max
+	// net.core.somaxconn net.ipv4.tcp_rmem net.ipv4.tcp_wmem
+	// net.ipv4.tcp_tw_reuse
+	Sysctls map[string]string `json:"sysctls"`
+}
+
+// ReservationAffinity: ReservationAffinity
+// (https://cloud.google.com/compute/docs/instances/reserving-zonal-resources)
+// is the configuration of desired reservation which instances could take
+// capacity from.
+type ReservationAffinity struct {
+	// ConsumeReservationType: Corresponds to the type of reservation
+	// consumption.
+	//
+	// Possible values:
+	//   "UNSPECIFIED" - Default value. This should not be used.
+	//   "NO_RESERVATION" - Do not consume from any reserved capacity.
+	//   "ANY_RESERVATION" - Consume any reservation available.
+	//   "SPECIFIC_RESERVATION" - Must consume from a specific reservation.
+	// Must specify key value fields for specifying the reservations.
+	ConsumeReservationType *string `json:"consumeReservationType,omitempty"`
+
+	// Key: Corresponds to the label key of a reservation resource. To
+	// target a SPECIFIC_RESERVATION by name, specify
+	// "googleapis.com/reservation-name" as the key and specify the name of
+	// your reservation as its value.
+	Key *string `json:"key,omitempty"`
+
+	// Values: Corresponds to the label value(s) of reservation resource(s).
+	Values []string `json:"values,omitempty"`
 }
 
 // AcceleratorConfig represents a Hardware Accelerator request.
