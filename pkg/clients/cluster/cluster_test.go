@@ -23,7 +23,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	container "google.golang.org/api/container/v1beta1"
+	container "google.golang.org/api/container/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
@@ -258,7 +258,7 @@ func TestGenerateCluster(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						HorizontalPodAutoscaling: &v1beta1.HorizontalPodAutoscaling{
-							Disabled: gcp.BoolPtr(true),
+							Disabled: true,
 						},
 					}
 					p.DatabaseEncryption = &v1beta1.DatabaseEncryption{
@@ -342,7 +342,7 @@ func TestGenerateAddonsConfig(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						HorizontalPodAutoscaling: &v1beta1.HorizontalPodAutoscaling{
-							Disabled: gcp.BoolPtr(true),
+							Disabled: true,
 						},
 					}
 				}),
@@ -537,6 +537,92 @@ func TestGenerateBinaryAuthorization(t *testing.T) {
 	}
 }
 
+func TestGenerateAutopilot(t *testing.T) {
+	type args struct {
+		cluster *container.Cluster
+		params  *v1beta1.GKEClusterParameters
+	}
+
+	tests := map[string]struct {
+		args args
+		want *container.Cluster
+	}{
+		"Successful": {
+			args: args{
+				cluster: cluster(),
+				params: params(func(p *v1beta1.GKEClusterParameters) {
+					p.Autopilot = &v1beta1.Autopilot{
+						Enabled: true,
+					}
+				}),
+			},
+			want: cluster(func(c *container.Cluster) {
+				c.Autopilot = &container.Autopilot{
+					Enabled: true,
+				}
+			}),
+		},
+		"SuccessfulNil": {
+			args: args{
+				cluster: cluster(),
+				params:  params(),
+			},
+			want: cluster(),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			GenerateAutopilot(tc.args.params.Autopilot, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.Autopilot, tc.args.cluster.Autopilot); diff != "" {
+				t.Errorf("GenerateAutopilot(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGenerateConfidentialNodes(t *testing.T) {
+	type args struct {
+		cluster *container.Cluster
+		params  *v1beta1.GKEClusterParameters
+	}
+
+	tests := map[string]struct {
+		args args
+		want *container.Cluster
+	}{
+		"Successful": {
+			args: args{
+				cluster: cluster(),
+				params: params(func(p *v1beta1.GKEClusterParameters) {
+					p.ConfidentialNodes = &v1beta1.ConfidentialNodes{
+						Enabled: true,
+					}
+				}),
+			},
+			want: cluster(func(c *container.Cluster) {
+				c.ConfidentialNodes = &container.ConfidentialNodes{
+					Enabled: true,
+				}
+			}),
+		},
+		"SuccessfulNil": {
+			args: args{
+				cluster: cluster(),
+				params:  params(),
+			},
+			want: cluster(),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			GenerateConfidentialNodes(tc.args.params.ConfidentialNodes, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.ConfidentialNodes, tc.args.cluster.ConfidentialNodes); diff != "" {
+				t.Errorf("GenerateConfidentialNodes(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestGenerateDatabaseEncryption(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
@@ -656,7 +742,6 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
-						AllowRouteOverlap:    gcp.BoolPtr(true),
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
 						UseIPAliases:         gcp.BoolPtr(true),
 					}
@@ -664,7 +749,6 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.IpAllocationPolicy = &container.IPAllocationPolicy{
-					AllowRouteOverlap:    true,
 					ClusterIpv4CidrBlock: "0.0.0.0/0",
 					UseIpAliases:         true,
 				}
@@ -747,7 +831,7 @@ func TestGenerateMaintenancePolicy(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.MaintenancePolicy = &v1beta1.MaintenancePolicySpec{
 						Window: v1beta1.MaintenanceWindowSpec{
-							DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindowSpec{
+							DailyMaintenanceWindow: &v1beta1.DailyMaintenanceWindowSpec{
 								StartTime: "13:13",
 							},
 						},
@@ -935,7 +1019,7 @@ func TestGenerateNetworkConfig(t *testing.T) {
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.NetworkConfig = &v1beta1.NetworkConfigSpec{
-						EnableIntraNodeVisibility: true,
+						EnableIntraNodeVisibility: gcp.BoolPtr(true),
 					}
 				}),
 			},
@@ -1008,7 +1092,7 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 	}
 }
 
-func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
+func TestGenerateNotificationConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
 		params  *v1beta1.GKEClusterParameters
@@ -1022,14 +1106,20 @@ func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.PodSecurityPolicyConfig = &v1beta1.PodSecurityPolicyConfig{
-						Enabled: true,
+					p.NotificationConfig = &v1beta1.NotificationConfig{
+						Pubsub: v1beta1.PubSub{
+							Enabled: true,
+							Topic:   "cool-topic",
+						},
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
-				c.PodSecurityPolicyConfig = &container.PodSecurityPolicyConfig{
-					Enabled: true,
+				c.NotificationConfig = &container.NotificationConfig{
+					Pubsub: &container.PubSub{
+						Enabled: true,
+						Topic:   "cool-topic",
+					},
 				}
 			}),
 		},
@@ -1043,9 +1133,9 @@ func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			GeneratePodSecurityPolicyConfig(tc.args.params.PodSecurityPolicyConfig, tc.args.cluster)
-			if diff := cmp.Diff(tc.want.PodSecurityPolicyConfig, tc.args.cluster.PodSecurityPolicyConfig); diff != "" {
-				t.Errorf("GeneratePodSecurityPolicyConfig(...): -want, +got:\n%s", diff)
+			GenerateNotificationConfig(tc.args.params.NotificationConfig, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.NotificationConfig, tc.args.cluster.NotificationConfig); diff != "" {
+				t.Errorf("GenerateNotificationConfig(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -1066,19 +1156,17 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.PrivateClusterConfig = &v1beta1.PrivateClusterConfigSpec{
-						EnablePeeringRouteSharing: gcp.BoolPtr(true),
-						EnablePrivateEndpoint:     gcp.BoolPtr(true),
-						EnablePrivateNodes:        gcp.BoolPtr(true),
-						MasterIpv4CidrBlock:       gcp.StringPtr("0.0.0.0/0"),
+						EnablePrivateEndpoint: gcp.BoolPtr(true),
+						EnablePrivateNodes:    gcp.BoolPtr(true),
+						MasterIpv4CidrBlock:   gcp.StringPtr("0.0.0.0/0"),
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.PrivateClusterConfig = &container.PrivateClusterConfig{
-					EnablePeeringRouteSharing: true,
-					EnablePrivateEndpoint:     true,
-					EnablePrivateNodes:        true,
-					MasterIpv4CidrBlock:       "0.0.0.0/0",
+					EnablePrivateEndpoint: true,
+					EnablePrivateNodes:    true,
+					MasterIpv4CidrBlock:   "0.0.0.0/0",
 				}
 			}),
 		},
@@ -1087,17 +1175,15 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.PrivateClusterConfig = &v1beta1.PrivateClusterConfigSpec{
-						EnablePeeringRouteSharing: gcp.BoolPtr(true),
-						MasterIpv4CidrBlock:       gcp.StringPtr("0.0.0.0/0"),
+						MasterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.PrivateClusterConfig = &container.PrivateClusterConfig{
-					EnablePeeringRouteSharing: true,
-					EnablePrivateEndpoint:     false,
-					EnablePrivateNodes:        false,
-					MasterIpv4CidrBlock:       "0.0.0.0/0",
+					EnablePrivateEndpoint: false,
+					EnablePrivateNodes:    false,
+					MasterIpv4CidrBlock:   "0.0.0.0/0",
 				}
 			}),
 		},
@@ -1174,7 +1260,7 @@ func TestGenerateResourceUsageExportConfig(t *testing.T) {
 	}
 }
 
-func TestGenerateTierSettings(t *testing.T) {
+func TestGenerateReleaseChannel(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
 		params  *v1beta1.GKEClusterParameters
@@ -1188,14 +1274,14 @@ func TestGenerateTierSettings(t *testing.T) {
 			args: args{
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.TierSettings = &v1beta1.TierSettings{
-						Tier: "STANDARD",
+					p.ReleaseChannel = &v1beta1.ReleaseChannel{
+						Channel: "STABLE",
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
-				c.TierSettings = &container.TierSettings{
-					Tier: "STANDARD",
+				c.ReleaseChannel = &container.ReleaseChannel{
+					Channel: "STABLE",
 				}
 			}),
 		},
@@ -1209,9 +1295,9 @@ func TestGenerateTierSettings(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			GenerateTierSettings(tc.args.params.TierSettings, tc.args.cluster)
-			if diff := cmp.Diff(tc.want.TierSettings, tc.args.cluster.TierSettings); diff != "" {
-				t.Errorf("GenerateTierSettings(...): -want, +got:\n%s", diff)
+			GenerateReleaseChannel(tc.args.params.ReleaseChannel, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.ReleaseChannel, tc.args.cluster.ReleaseChannel); diff != "" {
+				t.Errorf("GenerateReleaseChannel(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -1275,13 +1361,13 @@ func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 				cluster: cluster(),
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.WorkloadIdentityConfig = &v1beta1.WorkloadIdentityConfig{
-						IdentityNamespace: "cool-namespace",
+						WorkloadPool: "cool-namespace",
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.WorkloadIdentityConfig = &container.WorkloadIdentityConfig{
-					IdentityNamespace: "cool-namespace",
+					WorkloadPool: "cool-namespace",
 				}
 			}),
 		},
@@ -1335,7 +1421,7 @@ func TestLateInitializeSpec(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
-							Disabled: gcp.BoolPtr(true),
+							Disabled: true,
 						},
 					}
 					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
@@ -1369,7 +1455,7 @@ func TestLateInitializeSpec(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
-							Disabled: gcp.BoolPtr(true),
+							Disabled: true,
 						},
 					}
 					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
@@ -1402,8 +1488,6 @@ func TestLateInitializeSpec(t *testing.T) {
 }
 
 func TestIsUpToDate(t *testing.T) {
-	falseVal := false
-
 	type args struct {
 		name    string
 		cluster *container.Cluster
@@ -1452,7 +1536,7 @@ func TestIsUpToDate(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						KubernetesDashboard: &v1beta1.KubernetesDashboard{
-							Disabled: gcp.BoolPtr(true),
+							Disabled: true,
 						},
 					}
 				}),
@@ -1478,7 +1562,7 @@ func TestIsUpToDate(t *testing.T) {
 				params: params(func(p *v1beta1.GKEClusterParameters) {
 					p.AddonsConfig = &v1beta1.AddonsConfig{
 						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
-							Disabled: &falseVal,
+							Disabled: false,
 						},
 					}
 				}),
