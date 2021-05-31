@@ -24,7 +24,7 @@ import (
 	container "google.golang.org/api/container/v1beta1"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
-	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
@@ -63,7 +63,7 @@ func params(m ...func(*v1alpha1.NodePoolParameters)) *v1alpha1.NodePoolParameter
 
 func observation(m ...func(*v1alpha1.NodePoolObservation)) *v1alpha1.NodePoolObservation {
 	o := &v1alpha1.NodePoolObservation{
-		Conditions: []*v1beta1.StatusCondition{
+		Conditions: []*v1beta2.StatusCondition{
 			{
 				Code:    "UNKNOWN",
 				Message: "Condition is unknown.",
@@ -493,7 +493,7 @@ func TestGenerateMaxPodsConstraint(t *testing.T) {
 			args: args{
 				nodePool: &container.NodePool{},
 				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.MaxPodsConstraint = &v1beta1.MaxPodsConstraint{
+					p.MaxPodsConstraint = &v1beta2.MaxPodsConstraint{
 						MaxPodsPerNode: max,
 					}
 				}),

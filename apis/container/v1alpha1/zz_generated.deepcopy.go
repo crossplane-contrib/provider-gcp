@@ -22,7 +22,7 @@ package v1alpha1
 
 import (
 	"github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -316,11 +316,11 @@ func (in *NodePoolObservation) DeepCopyInto(out *NodePoolObservation) {
 	*out = *in
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make([]*v1beta1.StatusCondition, len(*in))
+		*out = make([]*v1beta2.StatusCondition, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {
 				in, out := &(*in)[i], &(*out)[i]
-				*out = new(v1beta1.StatusCondition)
+				*out = new(v1beta2.StatusCondition)
 				**out = **in
 			}
 		}
@@ -387,7 +387,7 @@ func (in *NodePoolParameters) DeepCopyInto(out *NodePoolParameters) {
 	}
 	if in.MaxPodsConstraint != nil {
 		in, out := &in.MaxPodsConstraint, &out.MaxPodsConstraint
-		*out = new(v1beta1.MaxPodsConstraint)
+		*out = new(v1beta2.MaxPodsConstraint)
 		**out = **in
 	}
 	if in.Version != nil {

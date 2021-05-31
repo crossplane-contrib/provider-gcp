@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // nolint:gocritic,golint // Deprecation comment format false positives.
-package v1beta1
+package v1beta2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

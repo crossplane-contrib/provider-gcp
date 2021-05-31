@@ -40,7 +40,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	gke "github.com/crossplane/provider-gcp/pkg/clients/cluster"
 )
 
@@ -64,30 +64,30 @@ func gError(code int, message string) *googleapi.Error {
 	}
 }
 
-type clusterModifier func(*v1beta1.GKECluster)
+type clusterModifier func(*v1beta2.GKECluster)
 
 func withConditions(c ...xpv1.Condition) clusterModifier {
-	return func(i *v1beta1.GKECluster) { i.Status.SetConditions(c...) }
+	return func(i *v1beta2.GKECluster) { i.Status.SetConditions(c...) }
 }
 
 func withProviderStatus(s string) clusterModifier {
-	return func(i *v1beta1.GKECluster) { i.Status.AtProvider.Status = s }
+	return func(i *v1beta2.GKECluster) { i.Status.AtProvider.Status = s }
 }
 
 func withLocations(l []string) clusterModifier {
-	return func(i *v1beta1.GKECluster) { i.Spec.ForProvider.Locations = l }
+	return func(i *v1beta2.GKECluster) { i.Spec.ForProvider.Locations = l }
 }
 
 func withUsername(u string) clusterModifier {
-	return func(i *v1beta1.GKECluster) {
-		i.Spec.ForProvider.MasterAuth = &v1beta1.MasterAuth{
+	return func(i *v1beta2.GKECluster) {
+		i.Spec.ForProvider.MasterAuth = &v1beta2.MasterAuth{
 			Username: &u,
 		}
 	}
 }
 
-func cluster(im ...clusterModifier) *v1beta1.GKECluster {
-	i := &v1beta1.GKECluster{
+func cluster(im ...clusterModifier) *v1beta2.GKECluster {
+	i := &v1beta2.GKECluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Finalizers: []string{},
@@ -95,8 +95,8 @@ func cluster(im ...clusterModifier) *v1beta1.GKECluster {
 				meta.AnnotationKeyExternalName: name,
 			},
 		},
-		Spec: v1beta1.GKEClusterSpec{
-			ForProvider: v1beta1.GKEClusterParameters{},
+		Spec: v1beta2.GKEClusterSpec{
+			ForProvider: v1beta2.GKEClusterParameters{},
 		},
 	}
 
@@ -189,7 +189,7 @@ func TestObserve(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				c := &container.Cluster{}
 				gke.GenerateCluster(name, cluster().Spec.ForProvider, c)
-				c.Status = v1beta1.ClusterStateProvisioning
+				c.Status = v1beta2.ClusterStateProvisioning
 				c.MasterAuth = &container.MasterAuth{
 					Username: "admin",
 					Password: "admin",
@@ -211,7 +211,7 @@ func TestObserve(t *testing.T) {
 						},
 					}),
 				},
-				mg: cluster(withUsername("admin"), withProviderStatus(v1beta1.ClusterStateProvisioning), withConditions(xpv1.Creating())),
+				mg: cluster(withUsername("admin"), withProviderStatus(v1beta2.ClusterStateProvisioning), withConditions(xpv1.Creating())),
 			},
 		},
 		"Unavailable": {
@@ -223,7 +223,7 @@ func TestObserve(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				c := &container.Cluster{}
 				gke.GenerateCluster(name, cluster().Spec.ForProvider, c)
-				c.Status = v1beta1.ClusterStateError
+				c.Status = v1beta2.ClusterStateError
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			args: args{
@@ -235,7 +235,7 @@ func TestObserve(t *testing.T) {
 					ResourceUpToDate:  true,
 					ConnectionDetails: connectionDetails(&container.Cluster{}),
 				},
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateError), withConditions(xpv1.Unavailable())),
+				mg: cluster(withProviderStatus(v1beta2.ClusterStateError), withConditions(xpv1.Unavailable())),
 			},
 		},
 		"RunnableUnbound": {
@@ -247,7 +247,7 @@ func TestObserve(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				c := &container.Cluster{}
 				gke.GenerateCluster(name, cluster().Spec.ForProvider, c)
-				c.Status = v1beta1.ClusterStateRunning
+				c.Status = v1beta2.ClusterStateRunning
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			kube: &test.MockClient{
@@ -263,7 +263,7 @@ func TestObserve(t *testing.T) {
 					ConnectionDetails: connectionDetails(&container.Cluster{}),
 				},
 				mg: cluster(
-					withProviderStatus(v1beta1.ClusterStateRunning),
+					withProviderStatus(v1beta2.ClusterStateRunning),
 					withConditions(xpv1.Available())),
 			},
 		},
@@ -276,7 +276,7 @@ func TestObserve(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				c := &container.Cluster{}
 				gke.GenerateCluster(name, cluster().Spec.ForProvider, c)
-				c.Status = v1beta1.ClusterStateError
+				c.Status = v1beta2.ClusterStateError
 				_ = json.NewEncoder(w).Encode(c)
 			}),
 			kube: &test.MockClient{
@@ -284,7 +284,7 @@ func TestObserve(t *testing.T) {
 			},
 			args: args{
 				mg: cluster(
-					withProviderStatus(v1beta1.ClusterStateRunning),
+					withProviderStatus(v1beta2.ClusterStateRunning),
 					withConditions(xpv1.Available()),
 				),
 			},
@@ -295,7 +295,7 @@ func TestObserve(t *testing.T) {
 					ConnectionDetails: connectionDetails(&container.Cluster{}),
 				},
 				mg: cluster(
-					withProviderStatus(v1beta1.ClusterStateError),
+					withProviderStatus(v1beta2.ClusterStateError),
 					withConditions(xpv1.Unavailable())),
 			},
 		},
@@ -401,12 +401,12 @@ func TestCreate(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateProvisioning)),
+				mg: cluster(withProviderStatus(v1beta2.ClusterStateProvisioning)),
 			},
 			want: want{
 				mg: cluster(
 					withConditions(xpv1.Creating()),
-					withProviderStatus(v1beta1.ClusterStateProvisioning),
+					withProviderStatus(v1beta2.ClusterStateProvisioning),
 				),
 				cre: managed.ExternalCreation{},
 				err: nil,
@@ -520,12 +520,12 @@ func TestDelete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&container.Operation{})
 			}),
 			args: args{
-				mg: cluster(withProviderStatus(v1beta1.ClusterStateStopping)),
+				mg: cluster(withProviderStatus(v1beta2.ClusterStateStopping)),
 			},
 			want: want{
 				mg: cluster(
 					withConditions(xpv1.Deleting()),
-					withProviderStatus(v1beta1.ClusterStateStopping),
+					withProviderStatus(v1beta2.ClusterStateStopping),
 				),
 				err: nil,
 			},
@@ -661,13 +661,13 @@ func TestUpdate(t *testing.T) {
 			args: args{
 				mg: cluster(
 					withLocations([]string{"loc-1"}),
-					withProviderStatus(v1beta1.ClusterStateReconciling),
+					withProviderStatus(v1beta2.ClusterStateReconciling),
 				),
 			},
 			want: want{
 				mg: cluster(
 					withLocations([]string{"loc-1"}),
-					withProviderStatus(v1beta1.ClusterStateReconciling),
+					withProviderStatus(v1beta2.ClusterStateReconciling),
 				),
 				err: nil,
 			},
@@ -697,13 +697,13 @@ func TestUpdate(t *testing.T) {
 			args: args{
 				mg: cluster(
 					withLocations([]string{"loc-1"}),
-					withProviderStatus(v1beta1.ClusterStateProvisioning),
+					withProviderStatus(v1beta2.ClusterStateProvisioning),
 				),
 			},
 			want: want{
 				mg: cluster(
 					withLocations([]string{"loc-1"}),
-					withProviderStatus(v1beta1.ClusterStateProvisioning),
+					withProviderStatus(v1beta2.ClusterStateProvisioning),
 				),
 				err: nil,
 			},

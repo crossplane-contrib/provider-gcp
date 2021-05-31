@@ -22,7 +22,7 @@ import (
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 )
 
 // NodePool states.
@@ -40,7 +40,7 @@ const (
 // resource on GCP.
 type NodePoolObservation struct {
 	// Conditions: Which conditions caused the current node pool state.
-	Conditions []*v1beta1.StatusCondition `json:"conditions,omitempty"`
+	Conditions []*v1beta2.StatusCondition `json:"conditions,omitempty"`
 
 	// InstanceGroupUrls: The resource URLs of the [managed
 	// instance
@@ -167,7 +167,7 @@ type NodePoolParameters struct {
 	// can be run
 	// simultaneously on a node in the node pool.
 	// +immutable
-	MaxPodsConstraint *v1beta1.MaxPodsConstraint `json:"maxPodsConstraint,omitempty"`
+	MaxPodsConstraint *v1beta2.MaxPodsConstraint `json:"maxPodsConstraint,omitempty"`
 
 	// Version: The version of the Kubernetes of this node.
 	// +optional

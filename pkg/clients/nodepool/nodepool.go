@@ -28,7 +28,7 @@ import (
 	container "google.golang.org/api/container/v1beta1"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
-	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
@@ -155,7 +155,7 @@ func GenerateManagement(in *v1alpha1.NodeManagementSpec, pool *container.NodePoo
 }
 
 // GenerateMaxPodsConstraint generates *container.MaxPodsConstraint from *MaxPodsConstraint.
-func GenerateMaxPodsConstraint(in *v1beta1.MaxPodsConstraint, pool *container.NodePool) {
+func GenerateMaxPodsConstraint(in *v1beta2.MaxPodsConstraint, pool *container.NodePool) {
 	if in != nil {
 		if pool.MaxPodsConstraint == nil {
 			pool.MaxPodsConstraint = &container.MaxPodsConstraint{}
@@ -176,7 +176,7 @@ func GenerateObservation(in container.NodePool) v1alpha1.NodePoolObservation { /
 
 	for _, condition := range in.Conditions {
 		if condition != nil {
-			o.Conditions = append(o.Conditions, &v1beta1.StatusCondition{
+			o.Conditions = append(o.Conditions, &v1beta2.StatusCondition{
 				Code:    condition.Code,
 				Message: condition.Message,
 			})
@@ -304,7 +304,7 @@ func LateInitializeSpec(spec *v1alpha1.NodePoolParameters, in container.NodePool
 	}
 
 	if in.MaxPodsConstraint != nil && spec.MaxPodsConstraint == nil {
-		spec.MaxPodsConstraint = &v1beta1.MaxPodsConstraint{
+		spec.MaxPodsConstraint = &v1beta2.MaxPodsConstraint{
 			MaxPodsPerNode: in.MaxPodsConstraint.MaxPodsPerNode,
 		}
 	}

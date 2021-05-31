@@ -36,7 +36,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	gke "github.com/crossplane/provider-gcp/pkg/clients/cluster"
 )
@@ -56,16 +56,16 @@ const (
 // SetupGKECluster adds a controller that reconciles GKECluster
 // managed resources.
 func SetupGKECluster(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1beta1.GKEClusterGroupKind)
+	name := managed.ControllerName(v1beta2.GKEClusterGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(controller.Options{
 			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
 		}).
-		For(&v1beta1.GKECluster{}).
+		For(&v1beta2.GKECluster{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1beta1.GKEClusterGroupVersionKind),
+			resource.ManagedKind(v1beta2.GKEClusterGroupVersionKind),
 			managed.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l.WithValues("controller", name)),
@@ -95,7 +95,7 @@ type clusterExternal struct {
 }
 
 func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
-	cr, ok := mg.(*v1beta1.GKECluster)
+	cr, ok := mg.(*v1beta2.GKECluster)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotCluster)
 	}
@@ -115,11 +115,11 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 	}
 
 	switch cr.Status.AtProvider.Status {
-	case v1beta1.ClusterStateRunning, v1beta1.ClusterStateReconciling:
+	case v1beta2.ClusterStateRunning, v1beta2.ClusterStateReconciling:
 		cr.Status.SetConditions(xpv1.Available())
-	case v1beta1.ClusterStateProvisioning:
+	case v1beta2.ClusterStateProvisioning:
 		cr.Status.SetConditions(xpv1.Creating())
-	case v1beta1.ClusterStateUnspecified, v1beta1.ClusterStateDegraded, v1beta1.ClusterStateError:
+	case v1beta2.ClusterStateUnspecified, v1beta2.ClusterStateDegraded, v1beta2.ClusterStateError:
 		cr.Status.SetConditions(xpv1.Unavailable())
 	}
 
@@ -136,14 +136,14 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 }
 
 func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1beta1.GKECluster)
+	cr, ok := mg.(*v1beta2.GKECluster)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCluster)
 	}
 	cr.SetConditions(xpv1.Creating())
 
 	// Wait until creation is complete if already provisioning.
-	if cr.Status.AtProvider.Status == v1beta1.ClusterStateProvisioning {
+	if cr.Status.AtProvider.Status == v1beta2.ClusterStateProvisioning {
 		return managed.ExternalCreation{}, nil
 	}
 
@@ -166,12 +166,12 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 }
 
 func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1beta1.GKECluster)
+	cr, ok := mg.(*v1beta2.GKECluster)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotCluster)
 	}
 	// Do not issue another update until the cluster finishes the previous one.
-	if cr.Status.AtProvider.Status == v1beta1.ClusterStateReconciling || cr.Status.AtProvider.Status == v1beta1.ClusterStateProvisioning {
+	if cr.Status.AtProvider.Status == v1beta2.ClusterStateReconciling || cr.Status.AtProvider.Status == v1beta2.ClusterStateProvisioning {
 		return managed.ExternalUpdate{}, nil
 	}
 	// We have to get the cluster again here to determine how to update.
@@ -198,13 +198,13 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (mana
 }
 
 func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1beta1.GKECluster)
+	cr, ok := mg.(*v1beta2.GKECluster)
 	if !ok {
 		return errors.New(errNotCluster)
 	}
 	cr.SetConditions(xpv1.Deleting())
 	// Wait until delete is complete if already deleting.
-	if cr.Status.AtProvider.Status == v1beta1.ClusterStateStopping {
+	if cr.Status.AtProvider.Status == v1beta2.ClusterStateStopping {
 		return nil
 	}
 
