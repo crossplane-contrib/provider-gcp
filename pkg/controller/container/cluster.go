@@ -151,11 +151,14 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 	cluster := &container.Cluster{}
 	gke.GenerateCluster(meta.GetExternalName(cr), cr.Spec.ForProvider, cluster)
 
-	// Insert default node pool for bootstrapping cluster. This is required to
-	// create a GKE cluster. After successful creation we delete the bootstrap
-	// node pool immediately and provision any subsequent node pools using the
-	// NodePool resource type.
-	gke.AddNodePoolForCreate(cluster)
+	// When autopilot is enabled, node pools cannot be specified.
+	if cluster.Autopilot == nil || !cluster.Autopilot.Enabled {
+		// Insert default node pool for bootstrapping cluster. This is required
+		// to create a GKE cluster. After successful creation we delete the
+		// bootstrap node pool immediately and provision any subsequent node
+		// pools using the NodePool resource type.
+		gke.AddNodePoolForCreate(cluster)
+	}
 
 	create := &container.CreateClusterRequest{
 		Cluster: cluster,
