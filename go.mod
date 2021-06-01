@@ -3,21 +3,19 @@ module github.com/crossplane/provider-gcp
 go 1.13
 
 require (
-	cloud.google.com/go v0.82.0
-	cloud.google.com/go/pubsub v1.11.0
+	cloud.google.com/go v0.82.0 // indirect
 	cloud.google.com/go/storage v1.15.0
 	github.com/crossplane/crossplane-runtime v0.13.0
 	github.com/crossplane/crossplane-tools v0.0.0-20210320162312-1baca298c527
 	github.com/google/go-cmp v0.5.5
-	github.com/googleapis/gax-go v1.0.3
-	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/imdario/mergo v0.3.10
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/copystructure v1.0.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
+	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	google.golang.org/api v0.47.0
-	google.golang.org/genproto v0.0.0-20210524142926-3e3a6030be83
+	google.golang.org/genproto v0.0.0-20210524142926-3e3a6030be83 // indirect
 	google.golang.org/grpc v1.38.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
