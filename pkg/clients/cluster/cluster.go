@@ -717,21 +717,27 @@ func LateInitializeSpec(spec *v1beta2.GKEClusterParameters, in container.Cluster
 			spec.Autoscaling.AutoprovisioningNodePoolDefaults.MinCPUPlatform = gcp.LateInitializeString(spec.Autoscaling.AutoprovisioningNodePoolDefaults.MinCPUPlatform, in.Autoscaling.AutoprovisioningNodePoolDefaults.MinCpuPlatform)
 			spec.Autoscaling.AutoprovisioningNodePoolDefaults.OauthScopes = gcp.LateInitializeStringSlice(spec.Autoscaling.AutoprovisioningNodePoolDefaults.OauthScopes, in.Autoscaling.AutoprovisioningNodePoolDefaults.OauthScopes)
 			spec.Autoscaling.AutoprovisioningNodePoolDefaults.ServiceAccount = gcp.LateInitializeString(spec.Autoscaling.AutoprovisioningNodePoolDefaults.ServiceAccount, in.Autoscaling.AutoprovisioningNodePoolDefaults.ServiceAccount)
-			if spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management == nil {
-				spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management = &v1beta2.NodeManagement{}
+			if in.Autoscaling.AutoprovisioningNodePoolDefaults.Management != nil {
+				if spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management == nil {
+					spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management = &v1beta2.NodeManagement{}
+				}
+				spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoRepair = gcp.LateInitializeBool(spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoRepair, in.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoRepair)
+				spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoUpgrade = gcp.LateInitializeBool(spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoUpgrade, in.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoUpgrade)
 			}
-			spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoRepair = gcp.LateInitializeBool(spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoRepair, in.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoRepair)
-			spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoUpgrade = gcp.LateInitializeBool(spec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoUpgrade, in.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoUpgrade)
-			if spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig == nil {
-				spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig = &v1beta2.ShieldedInstanceConfig{}
+			if in.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig != nil {
+				if spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig == nil {
+					spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig = &v1beta2.ShieldedInstanceConfig{}
+				}
+				spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableIntegrityMonitoring = gcp.LateInitializeBool(spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableIntegrityMonitoring, in.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableIntegrityMonitoring)
+				spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableSecureBoot = gcp.LateInitializeBool(spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableSecureBoot, in.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableSecureBoot)
 			}
-			spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableIntegrityMonitoring = gcp.LateInitializeBool(spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableIntegrityMonitoring, in.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableIntegrityMonitoring)
-			spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableSecureBoot = gcp.LateInitializeBool(spec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableSecureBoot, in.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableSecureBoot)
-			if spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings == nil {
-				spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings = &v1beta2.UpgradeSettings{}
+			if in.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings != nil {
+				if spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings == nil {
+					spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings = &v1beta2.UpgradeSettings{}
+				}
+				spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxSurge = gcp.LateInitializeInt64(spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxSurge, in.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxSurge)
+				spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable = gcp.LateInitializeInt64(spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable, in.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable)
 			}
-			spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxSurge = gcp.LateInitializeInt64(spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxSurge, in.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxSurge)
-			spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable = gcp.LateInitializeInt64(spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable, in.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable)
 		}
 		spec.Autoscaling.EnableNodeAutoprovisioning = gcp.LateInitializeBool(spec.Autoscaling.EnableNodeAutoprovisioning, in.Autoscaling.EnableNodeAutoprovisioning)
 		if len(in.Autoscaling.ResourceLimits) != 0 && len(spec.Autoscaling.ResourceLimits) == 0 {
