@@ -448,12 +448,7 @@ func IsUpToDate(name string, in *v1beta1.NodePoolParameters, observed *container
 		return c.Key == runtimeKey
 	}), cmpopts.IgnoreMapEntries(func(key, _ string) bool {
 		return key == runtimeKey
-	}), cmp.Comparer(func(a, b string) bool {
-		// NOTE(hasheddan): this avoids issuing an update on fields like
-		// ImageType when value is cos_containerd and GCP returns
-		// COS_CONTAINERD.
-		return strings.ToLower(a) == strings.ToLower(b)
-	})) {
+	}), cmp.Comparer(strings.EqualFold)) {
 		return false, newGeneralUpdateFn(in), nil
 	}
 	return true, noOpUpdate, nil
