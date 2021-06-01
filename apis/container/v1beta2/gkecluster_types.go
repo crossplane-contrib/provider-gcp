@@ -252,10 +252,6 @@ type GKEClusterParameters struct {
 	// +immutable
 	NetworkSelector *xpv1.Selector `json:"networkSelector,omitempty"`
 
-	// NOTE(hasheddan): only intranode visibility can be updated in
-	// NetworkConfig
-	// https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/ClusterUpdate?authuser=1#IntraNodeVisibilityConfig
-
 	// NetworkConfig: Configuration for cluster networking.
 	// +optional
 	NetworkConfig *NetworkConfigSpec `json:"networkConfig,omitempty"`

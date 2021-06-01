@@ -1092,15 +1092,27 @@ func newMonitoringServiceUpdateFn(in *string) UpdateFn {
 	}
 }
 
-// newNetworkConfigUpdateFn returns a function that updates the NetworkConfig of a cluster.
-func newNetworkConfigUpdateFn(in *v1beta2.NetworkConfigSpec) UpdateFn {
+// newDatapathProviderUpdateFn returns a function that updates the
+// DatapathProvider of a cluster.
+func newDatapathProviderUpdateFn(in *string) UpdateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateNetworkConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredDatapathProvider: gcp.StringValue(in),
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newIntraNodeVisibilityConfigUpdateFn returns a function that updates the
+// IntraNodeVisibility of a cluster.
+func newIntraNodeVisibilityConfigUpdateFn(in *bool) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
 				DesiredIntraNodeVisibilityConfig: &container.IntraNodeVisibilityConfig{
-					Enabled: out.NetworkConfig.EnableIntraNodeVisibility,
+					Enabled: gcp.BoolValue(in),
 				},
 			},
 		}
@@ -1299,9 +1311,18 @@ func IsUpToDate(name string, in *v1beta2.GKEClusterParameters, observed *contain
 	if !cmp.Equal(desired.MonitoringService, observed.MonitoringService, cmpopts.EquateEmpty()) {
 		return false, newMonitoringServiceUpdateFn(in.MonitoringService), nil
 	}
-	if !cmp.Equal(desired.NetworkConfig, observed.NetworkConfig, cmpopts.EquateEmpty()) {
-		return false, newNetworkConfigUpdateFn(in.NetworkConfig), nil
+	if desired.NetworkConfig != nil {
+		if observed.NetworkConfig == nil {
+			observed.NetworkConfig = &container.NetworkConfig{}
+		}
+		if !cmp.Equal(desired.NetworkConfig.EnableIntraNodeVisibility, observed.NetworkConfig.EnableIntraNodeVisibility, cmpopts.EquateEmpty()) {
+			return false, newIntraNodeVisibilityConfigUpdateFn(in.NetworkConfig.EnableIntraNodeVisibility), nil
+		}
+		if !cmp.Equal(desired.NetworkConfig.DatapathProvider, observed.NetworkConfig.DatapathProvider, cmpopts.EquateEmpty()) {
+			return false, newDatapathProviderUpdateFn(in.NetworkConfig.DatapathProvider), nil
+		}
 	}
+
 	if !cmp.Equal(desired.NetworkPolicy, observed.NetworkPolicy, cmpopts.EquateEmpty()) {
 		return false, newNetworkPolicyUpdateFn(in.NetworkPolicy), nil
 	}
