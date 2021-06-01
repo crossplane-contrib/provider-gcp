@@ -84,7 +84,7 @@ spec:
                     type: string
                   memorySizeGb:
                     description: Redis memory size in GiB.
-                    format: int32
+                    format: int64
                     type: integer
                   redisConfigs:
                     additionalProperties:
@@ -169,10 +169,10 @@ spec:
                     type: string
                   port:
                     description: The port number of the exposed Redis endpoint.
-                    format: int32
+                    format: int64
                     type: integer
                   state:
-                    description: The current state of this instance.
+                    description: "State: Output only. The current state of this instance. \n Possible values:   \"STATE_UNSPECIFIED\" - Not set.   \"CREATING\" - Redis instance is being created.   \"READY\" - Redis instance has been created and is fully usable.   \"UPDATING\" - Redis instance configuration is being updated. Certain kinds of updates may cause the instance to become unusable while the update is in progress.   \"DELETING\" - Redis instance is being deleted.   \"REPAIRING\" - Redis instance is being repaired and may be unusable.   \"MAINTENANCE\" - Maintenance is being performed on this Redis instance.   \"IMPORTING\" - Redis instance is importing data (availability may be affected).   \"FAILING_OVER\" - Redis instance is failing over (availability may be affected)."
                     type: string
                   statusMessage:
                     description: Additional information about the current status of this instance, if available.

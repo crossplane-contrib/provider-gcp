@@ -39,7 +39,7 @@ type CloudMemorystoreInstanceParameters struct {
 	Tier string `json:"tier"`
 
 	// Redis memory size in GiB.
-	MemorySizeGB int32 `json:"memorySizeGb"`
+	MemorySizeGB int64 `json:"memorySizeGb"`
 
 	// An arbitrary and optional user-provided name for the instance.
 	// +optional
@@ -146,7 +146,7 @@ type CloudMemorystoreInstanceObservation struct {
 	Host string `json:"host,omitempty"`
 
 	// The port number of the exposed Redis endpoint.
-	Port int32 `json:"port,omitempty"`
+	Port int64 `json:"port,omitempty"`
 
 	// The current zone where the Redis endpoint is placed. For Basic
 	// Tier instances, this will always be the same as the [location_id]
@@ -158,7 +158,23 @@ type CloudMemorystoreInstanceObservation struct {
 	// The time the instance was created.
 	CreateTime *metav1.Time `json:"createTime,omitempty"`
 
-	// The current state of this instance.
+	// State: Output only. The current state of this instance.
+	//
+	// Possible values:
+	//   "STATE_UNSPECIFIED" - Not set.
+	//   "CREATING" - Redis instance is being created.
+	//   "READY" - Redis instance has been created and is fully usable.
+	//   "UPDATING" - Redis instance configuration is being updated. Certain
+	// kinds of updates may cause the instance to become unusable while the
+	// update is in progress.
+	//   "DELETING" - Redis instance is being deleted.
+	//   "REPAIRING" - Redis instance is being repaired and may be unusable.
+	//   "MAINTENANCE" - Maintenance is being performed on this Redis
+	// instance.
+	//   "IMPORTING" - Redis instance is importing data (availability may be
+	// affected).
+	//   "FAILING_OVER" - Redis instance is failing over (availability may
+	// be affected).
 	State string `json:"state,omitempty"`
 
 	// Additional information about the current status of this
