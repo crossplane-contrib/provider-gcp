@@ -1,0 +1,12 @@
+apiVersion: container.gcp.crossplane.io/v1beta2
+kind: GKECluster
+metadata:
+  name: auto-k8s
+spec:
+  forProvider:
+    location: us-central1
+    autopilot:
+      enabled: true
+  writeConnectionSecretToRef:
+    name: auto-kube
+    namespace: default
