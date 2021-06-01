@@ -25,7 +25,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
 	"github.com/pkg/errors"
-	container "google.golang.org/api/container/v1beta1"
+	container "google.golang.org/api/container/v1"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
@@ -138,7 +138,7 @@ func GenerateConfig(in *v1beta1.NodeConfig, pool *container.NodePool) { // nolin
 			if pool.Config.SandboxConfig == nil {
 				pool.Config.SandboxConfig = &container.SandboxConfig{}
 			}
-			pool.Config.SandboxConfig.SandboxType = in.SandboxConfig.SandboxType
+			pool.Config.SandboxConfig.Type = in.SandboxConfig.Type
 		}
 
 		if in.ShieldedInstanceConfig != nil {
@@ -166,7 +166,7 @@ func GenerateConfig(in *v1beta1.NodeConfig, pool *container.NodePool) { // nolin
 			if pool.Config.WorkloadMetadataConfig == nil {
 				pool.Config.WorkloadMetadataConfig = &container.WorkloadMetadataConfig{}
 			}
-			pool.Config.WorkloadMetadataConfig.NodeMetadata = in.WorkloadMetadataConfig.NodeMetadata
+			pool.Config.WorkloadMetadataConfig.Mode = in.WorkloadMetadataConfig.Mode
 		}
 	}
 }
@@ -247,7 +247,7 @@ func GenerateNodePoolUpdate(in *v1beta1.NodePoolParameters) *container.UpdateNod
 
 		if in.Config.WorkloadMetadataConfig != nil {
 			o.WorkloadMetadataConfig = &container.WorkloadMetadataConfig{
-				NodeMetadata: in.Config.WorkloadMetadataConfig.NodeMetadata,
+				Mode: in.Config.WorkloadMetadataConfig.Mode,
 			}
 		}
 	}
@@ -322,7 +322,7 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 
 		if in.Config.SandboxConfig != nil && spec.Config.SandboxConfig == nil {
 			spec.Config.SandboxConfig = &v1beta1.SandboxConfig{
-				SandboxType: in.Config.SandboxConfig.SandboxType,
+				Type: in.Config.SandboxConfig.Type,
 			}
 		}
 
@@ -351,7 +351,7 @@ func LateInitializeSpec(spec *v1beta1.NodePoolParameters, in container.NodePool)
 
 		if in.Config.WorkloadMetadataConfig != nil && spec.Config.WorkloadMetadataConfig == nil {
 			spec.Config.WorkloadMetadataConfig = &v1beta1.WorkloadMetadataConfig{
-				NodeMetadata: in.Config.WorkloadMetadataConfig.NodeMetadata,
+				Mode: in.Config.WorkloadMetadataConfig.Mode,
 			}
 		}
 	}

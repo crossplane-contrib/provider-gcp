@@ -526,8 +526,12 @@ type AcceleratorConfig struct {
 
 // SandboxConfig contains configurations of the sandbox to use for the node.
 type SandboxConfig struct {
-	// SandboxType: Type of the sandbox to use for the node (e.g. 'gvisor')
-	SandboxType string `json:"sandboxType"`
+	// Type: Type of the sandbox to use for the node.
+	//
+	// Possible values:
+	//   "UNSPECIFIED" - Default value. This should not be used.
+	//   "GVISOR" - Run sandbox using gvisor.
+	Type string `json:"type"`
 }
 
 // ShieldedInstanceConfig is a set of Shielded Instance options.
@@ -585,36 +589,18 @@ type NodeTaint struct {
 // WorkloadMetadataConfig defines the metadata configuration to expose to
 // workloads on the node pool.
 type WorkloadMetadataConfig struct {
-	// NodeMetadata: NodeMetadata is the configuration for how to expose
-	// metadata to the
-	// workloads running on the node.
+	// Mode: Mode is the configuration for how to expose metadata to
+	// workloads running on the node pool.
 	//
 	// Possible values:
-	//   "UNSPECIFIED" - Not set.
-	//   "SECURE" - Prevent workloads not in hostGKECluster from accessing
-	// certain VM metadata,
-	// specifically kube-env, which contains Kubelet credentials, and
-	// the
-	// instance identity token.
-	//
-	// Metadata concealment is a temporary security solution available while
-	// the
-	// bootstrapping process for cluster nodes is being redesigned
-	// with
-	// significant security improvements.  This feature is scheduled to
-	// be
-	// deprecated in the future and later removed.
-	//   "EXPOSE" - Expose all VM metadata to pods.
-	//   "GKE_METADATA_SERVER" - Run the GKE Metadata Server on this node.
-	// The GKE Metadata Server exposes
-	// a metadata API to workloads that is compatible with the V1
-	// Compute
-	// Metadata APIs exposed by the Compute Engine and App Engine
-	// Metadata
-	// Servers. This feature can only be enabled if Workload Identity is
-	// enabled
-	// at the cluster level.
-	NodeMetadata string `json:"nodeMetadata"`
+	//   "MODE_UNSPECIFIED" - Not set.
+	//   "GCE_METADATA" - Expose all Compute Engine metadata to pods.
+	//   "GKE_METADATA" - Run the GKE Metadata Server on this node. The GKE
+	// Metadata Server exposes a metadata API to workloads that is
+	// compatible with the V1 Compute Metadata APIs exposed by the Compute
+	// Engine and App Engine Metadata Servers. This feature can only be
+	// enabled if Workload Identity is enabled at the cluster level.
+	Mode string `json:"mode"`
 }
 
 // NodeManagementSpec defines the desired set of node management services turned on

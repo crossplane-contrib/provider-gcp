@@ -26,7 +26,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	container "google.golang.org/api/container/v1beta1"
+	container "google.golang.org/api/container/v1"
 	"google.golang.org/api/option"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	container "google.golang.org/api/container/v1beta1"
+	container "google.golang.org/api/container/v1"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
@@ -373,7 +373,7 @@ func TestGenerateConfig(t *testing.T) {
 						OauthScopes:    oauthScopes,
 						Preemptible:    gcp.BoolPtr(preemptible),
 						SandboxConfig: &v1beta1.SandboxConfig{
-							SandboxType: "gvisor",
+							Type: "gvisor",
 						},
 						ServiceAccount: gcp.StringPtr(serviceAccount),
 						ShieldedInstanceConfig: &v1beta1.ShieldedInstanceConfig{
@@ -400,7 +400,7 @@ func TestGenerateConfig(t *testing.T) {
 					OauthScopes:    oauthScopes,
 					Preemptible:    preemptible,
 					SandboxConfig: &container.SandboxConfig{
-						SandboxType: "gvisor",
+						Type: "gvisor",
 					},
 					ServiceAccount: serviceAccount,
 					ShieldedInstanceConfig: &container.ShieldedInstanceConfig{
