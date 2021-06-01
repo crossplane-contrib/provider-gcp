@@ -22,4 +22,4 @@ limitations under the License.
 package v1beta2
 
 // ContainerURIPrefix is the common prefix for container API links.
-const ContainerURIPrefix = "https://container.googleapis.com/v1beta1/"
+const ContainerURIPrefix = "https://container.googleapis.com/v1/"
