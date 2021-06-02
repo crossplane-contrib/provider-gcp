@@ -29,10 +29,10 @@ import (
 	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 )
 
-// GKEClusterURL extracts the partially qualified URL of a GKECluster.
-func GKEClusterURL() reference.ExtractValueFn {
+// ClusterURL extracts the partially qualified URL of a Cluster.
+func ClusterURL() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {
-		c, ok := mg.(*GKECluster)
+		c, ok := mg.(*Cluster)
 		if !ok {
 			return ""
 		}
@@ -40,8 +40,8 @@ func GKEClusterURL() reference.ExtractValueFn {
 	}
 }
 
-// ResolveReferences of this GKECluster
-func (mg *GKECluster) ResolveReferences(ctx context.Context, c client.Reader) error {
+// ResolveReferences of this Cluster
+func (mg *Cluster) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, mg)
 
 	// Resolve spec.forProvider.network

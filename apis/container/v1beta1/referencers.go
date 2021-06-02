@@ -36,8 +36,8 @@ func (mg *NodePool) ResolveReferences(ctx context.Context, c client.Reader) erro
 		CurrentValue: mg.Spec.ForProvider.Cluster,
 		Reference:    mg.Spec.ForProvider.ClusterRef,
 		Selector:     mg.Spec.ForProvider.ClusterSelector,
-		To:           reference.To{Managed: &v1beta2.GKECluster{}, List: &v1beta2.GKEClusterList{}},
-		Extract:      v1beta2.GKEClusterURL(),
+		To:           reference.To{Managed: &v1beta2.Cluster{}, List: &v1beta2.ClusterList{}},
+		Extract:      v1beta2.ClusterURL(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "spec.forProvider.cluster")

@@ -44,8 +44,8 @@ import (
 // Error strings.
 const (
 	errNewClient            = "cannot create new GKE container client"
-	errManagedUpdateFailed  = "cannot update GKECluster custom resource"
-	errNotCluster           = "managed resource is not a GKECluster"
+	errManagedUpdateFailed  = "cannot update Cluster custom resource"
+	errNotCluster           = "managed resource is not a Cluster"
 	errGetCluster           = "cannot get GKE cluster"
 	errCreateCluster        = "cannot create GKE cluster"
 	errUpdateCluster        = "cannot update GKE cluster"
@@ -53,19 +53,19 @@ const (
 	errCheckClusterUpToDate = "cannot determine if GKE cluster is up to date"
 )
 
-// SetupGKECluster adds a controller that reconciles GKECluster
+// SetupCluster adds a controller that reconciles Cluster
 // managed resources.
-func SetupGKECluster(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1beta2.GKEClusterGroupKind)
+func SetupCluster(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+	name := managed.ControllerName(v1beta2.ClusterGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(controller.Options{
 			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
 		}).
-		For(&v1beta2.GKECluster{}).
+		For(&v1beta2.Cluster{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1beta2.GKEClusterGroupVersionKind),
+			resource.ManagedKind(v1beta2.ClusterGroupVersionKind),
 			managed.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l.WithValues("controller", name)),
@@ -95,7 +95,7 @@ type clusterExternal struct {
 }
 
 func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
-	cr, ok := mg.(*v1beta2.GKECluster)
+	cr, ok := mg.(*v1beta2.Cluster)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotCluster)
 	}
@@ -136,7 +136,7 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 }
 
 func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1beta2.GKECluster)
+	cr, ok := mg.(*v1beta2.Cluster)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCluster)
 	}
@@ -169,7 +169,7 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 }
 
 func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1beta2.GKECluster)
+	cr, ok := mg.(*v1beta2.Cluster)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotCluster)
 	}
@@ -201,7 +201,7 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (mana
 }
 
 func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1beta2.GKECluster)
+	cr, ok := mg.(*v1beta2.Cluster)
 	if !ok {
 		return errors.New(errNotCluster)
 	}

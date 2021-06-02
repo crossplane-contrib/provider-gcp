@@ -62,8 +62,8 @@ func AddNodePoolForCreate(in *container.Cluster) {
 	in.NodePools = []*container.NodePool{pool}
 }
 
-// GenerateCluster generates *container.Cluster instance from GKEClusterParameters.
-func GenerateCluster(name string, in v1beta2.GKEClusterParameters, cluster *container.Cluster) { // nolint:gocyclo
+// GenerateCluster generates *container.Cluster instance from ClusterParameters.
+func GenerateCluster(name string, in v1beta2.ClusterParameters, cluster *container.Cluster) { // nolint:gocyclo
 	cluster.ClusterIpv4Cidr = gcp.StringValue(in.ClusterIpv4Cidr)
 	cluster.Description = gcp.StringValue(in.Description)
 	cluster.EnableKubernetesAlpha = gcp.BoolValue(in.EnableKubernetesAlpha)
@@ -509,9 +509,9 @@ func GenerateWorkloadIdentityConfig(in *v1beta2.WorkloadIdentityConfig, cluster 
 	}
 }
 
-// GenerateObservation produces GKEClusterObservation object from *container.Cluster object.
-func GenerateObservation(in container.Cluster) v1beta2.GKEClusterObservation { // nolint:gocyclo
-	o := v1beta2.GKEClusterObservation{
+// GenerateObservation produces ClusterObservation object from *container.Cluster object.
+func GenerateObservation(in container.Cluster) v1beta2.ClusterObservation { // nolint:gocyclo
+	o := v1beta2.ClusterObservation{
 		CreateTime:           in.CreateTime,
 		CurrentMasterVersion: in.CurrentMasterVersion,
 		CurrentNodeCount:     in.CurrentNodeCount,
@@ -644,7 +644,7 @@ func GenerateObservation(in container.Cluster) v1beta2.GKEClusterObservation { /
 }
 
 // LateInitializeSpec fills unassigned fields with the values in container.Cluster object.
-func LateInitializeSpec(spec *v1beta2.GKEClusterParameters, in container.Cluster) { // nolint:gocyclo
+func LateInitializeSpec(spec *v1beta2.ClusterParameters, in container.Cluster) { // nolint:gocyclo
 	if in.AddonsConfig != nil {
 		if spec.AddonsConfig == nil {
 			spec.AddonsConfig = &v1beta2.AddonsConfig{}
@@ -1263,7 +1263,7 @@ func checkForBootstrapNodePool(c *container.Cluster) bool {
 // NOTE(hasheddan): This function is significantly above our cyclomatic
 // complexity limit, but is necessary due to the fact that the GKE API only
 // allows for update of one field at a time.
-func IsUpToDate(name string, in *v1beta2.GKEClusterParameters, observed *container.Cluster) (bool, UpdateFn, error) { // nolint:gocyclo
+func IsUpToDate(name string, in *v1beta2.ClusterParameters, observed *container.Cluster) (bool, UpdateFn, error) { // nolint:gocyclo
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
 		return true, noOpUpdate, errors.Wrap(err, errCheckUpToDate)
@@ -1358,12 +1358,12 @@ func IsUpToDate(name string, in *v1beta2.GKEClusterParameters, observed *contain
 
 // GetFullyQualifiedParent builds the fully qualified name of the cluster
 // parent.
-func GetFullyQualifiedParent(project string, p v1beta2.GKEClusterParameters) string {
+func GetFullyQualifiedParent(project string, p v1beta2.ClusterParameters) string {
 	return fmt.Sprintf(ParentFormat, project, p.Location)
 }
 
 // GetFullyQualifiedName builds the fully qualified name of the cluster.
-func GetFullyQualifiedName(project string, p v1beta2.GKEClusterParameters, name string) string {
+func GetFullyQualifiedName(project string, p v1beta2.ClusterParameters, name string) string {
 	return fmt.Sprintf(ClusterNameFormat, project, p.Location, name)
 }
 

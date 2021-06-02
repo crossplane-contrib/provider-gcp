@@ -39,10 +39,10 @@ const (
 	DefaultNumberOfNodes = int64(1)
 )
 
-// GKEClusterParameters define the desired state of a Google Kubernetes Engine
+// ClusterParameters define the desired state of a Google Kubernetes Engine
 // cluster. Most of its fields are direct mirror of GCP Cluster object.
 // See https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters#Cluster
-type GKEClusterParameters struct {
+type ClusterParameters struct {
 	// NOTE(hasheddan): Location is labelled as Output Only by GCP but is required
 	// to create a cluster. It is not included in the actual cluster object
 	// itself, but is instead passed to the create call. If a region is given
@@ -319,8 +319,8 @@ type GKEClusterParameters struct {
 	WorkloadIdentityConfig *WorkloadIdentityConfig `json:"workloadIdentityConfig,omitempty"`
 }
 
-// GKEClusterObservation is used to show the observed state of the GKE cluster resource on GCP.
-type GKEClusterObservation struct {
+// ClusterObservation is used to show the observed state of the GKE cluster resource on GCP.
+type ClusterObservation struct {
 	// Conditions: Which conditions caused the current cluster state.
 	Conditions []*StatusCondition `json:"conditions,omitempty"`
 
@@ -1410,7 +1410,7 @@ type WorkloadIdentityConfig struct {
 }
 
 // NOTE(hasheddan): the following structs are meant to be utilized to model Node
-// Pools in the status of GKECluster objects. They are not to be used to define
+// Pools in the status of Cluster objects. They are not to be used to define
 // configurable fields for NodePool objects.
 
 // NodePoolClusterStatus is a subset of information about NodePools associated
@@ -1792,21 +1792,21 @@ type AutoUpgradeOptionsClusterStatus struct {
 	Description string `json:"description,omitempty"`
 }
 
-// A GKEClusterSpec defines the desired state of a GKECluster.
-type GKEClusterSpec struct {
+// A ClusterSpec defines the desired state of a Cluster.
+type ClusterSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ForProvider       GKEClusterParameters `json:"forProvider"`
+	ForProvider       ClusterParameters `json:"forProvider"`
 }
 
-// A GKEClusterStatus represents the observed state of a GKECluster.
-type GKEClusterStatus struct {
+// A ClusterStatus represents the observed state of a Cluster.
+type ClusterStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
-	AtProvider          GKEClusterObservation `json:"atProvider,omitempty"`
+	AtProvider          ClusterObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// A GKECluster is a managed resource that represents a Google Kubernetes Engine
+// A Cluster is a managed resource that represents a Google Kubernetes Engine
 // cluster.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
@@ -1816,19 +1816,19 @@ type GKEClusterStatus struct {
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
-type GKECluster struct {
+type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GKEClusterSpec   `json:"spec"`
-	Status GKEClusterStatus `json:"status,omitempty"`
+	Spec   ClusterSpec   `json:"spec"`
+	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// GKEClusterList contains a list of GKECluster items
-type GKEClusterList struct {
+// ClusterList contains a list of Cluster items
+type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []GKECluster `json:"items"`
+	Items           []Cluster `json:"items"`
 }

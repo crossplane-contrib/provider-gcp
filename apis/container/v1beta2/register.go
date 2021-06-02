@@ -37,14 +37,14 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// GKECluster type metadata.
+// Cluster type metadata.
 var (
-	GKEClusterKind             = reflect.TypeOf(GKECluster{}).Name()
-	GKEClusterGroupKind        = schema.GroupKind{Group: Group, Kind: GKEClusterKind}.String()
-	GKEClusterKindAPIVersion   = GKEClusterKind + "." + SchemeGroupVersion.String()
-	GKEClusterGroupVersionKind = SchemeGroupVersion.WithKind(GKEClusterKind)
+	ClusterKind             = reflect.TypeOf(Cluster{}).Name()
+	ClusterGroupKind        = schema.GroupKind{Group: Group, Kind: ClusterKind}.String()
+	ClusterKindAPIVersion   = ClusterKind + "." + SchemeGroupVersion.String()
+	ClusterGroupVersionKind = SchemeGroupVersion.WithKind(ClusterKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&GKECluster{}, &GKEClusterList{})
+	SchemeBuilder.Register(&Cluster{}, &ClusterList{})
 }

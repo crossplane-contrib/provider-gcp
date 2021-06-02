@@ -64,30 +64,30 @@ func gError(code int, message string) *googleapi.Error {
 	}
 }
 
-type clusterModifier func(*v1beta2.GKECluster)
+type clusterModifier func(*v1beta2.Cluster)
 
 func withConditions(c ...xpv1.Condition) clusterModifier {
-	return func(i *v1beta2.GKECluster) { i.Status.SetConditions(c...) }
+	return func(i *v1beta2.Cluster) { i.Status.SetConditions(c...) }
 }
 
 func withProviderStatus(s string) clusterModifier {
-	return func(i *v1beta2.GKECluster) { i.Status.AtProvider.Status = s }
+	return func(i *v1beta2.Cluster) { i.Status.AtProvider.Status = s }
 }
 
 func withLocations(l []string) clusterModifier {
-	return func(i *v1beta2.GKECluster) { i.Spec.ForProvider.Locations = l }
+	return func(i *v1beta2.Cluster) { i.Spec.ForProvider.Locations = l }
 }
 
 func withUsername(u string) clusterModifier {
-	return func(i *v1beta2.GKECluster) {
+	return func(i *v1beta2.Cluster) {
 		i.Spec.ForProvider.MasterAuth = &v1beta2.MasterAuth{
 			Username: &u,
 		}
 	}
 }
 
-func cluster(im ...clusterModifier) *v1beta2.GKECluster {
-	i := &v1beta2.GKECluster{
+func cluster(im ...clusterModifier) *v1beta2.Cluster {
+	i := &v1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Finalizers: []string{},
@@ -95,8 +95,8 @@ func cluster(im ...clusterModifier) *v1beta2.GKECluster {
 				meta.AnnotationKeyExternalName: name,
 			},
 		},
-		Spec: v1beta2.GKEClusterSpec{
-			ForProvider: v1beta2.GKEClusterParameters{},
+		Spec: v1beta2.ClusterSpec{
+			ForProvider: v1beta2.ClusterParameters{},
 		},
 	}
 

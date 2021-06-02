@@ -1,5 +1,5 @@
 apiVersion: container.gcp.crossplane.io/v1beta2
-kind: GKECluster
+kind: Cluster
 metadata:
   name: auto-k8s
 spec:
