@@ -18,12 +18,10 @@ package pubsub
 
 import (
 	"context"
-	"fmt"
 
-	pubsub "cloud.google.com/go/pubsub/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
+	pubsub "google.golang.org/api/pubsub/v1"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -79,7 +77,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, err
 	}
-	s, err := pubsub.NewPublisherClient(ctx, opts)
+	s, err := pubsub.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
@@ -89,7 +87,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 type external struct {
 	projectID string
 	client    client.Client
-	ps        topic.PublisherClient
+	ps        *pubsub.Service
 }
 
 // Observe makes observation about the external resource.
@@ -98,9 +96,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotTopic)
 	}
-	t, err := e.ps.GetTopic(ctx, &pubsubpb.GetTopicRequest{Topic: fmt.Sprintf("projects/%s/topics/%s", e.projectID, meta.GetExternalName(cr))})
+	t, err := e.ps.Projects.Topics.Get(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFoundGRPC, err), errGetTopic)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetTopic)
 	}
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	topic.LateInitialize(&cr.Spec.ForProvider, *t)
@@ -127,7 +125,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotTopic)
 	}
 	cr.SetConditions(xpv1.Creating())
-	_, err := e.ps.CreateTopic(ctx, topic.GenerateTopic(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider))
+	_, err := e.ps.Projects.Topics.Create(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr)), topic.GenerateTopic(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider)).Context(ctx).Do()
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateTopic)
 }
 
@@ -138,12 +136,11 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotTopic)
 	}
 
-	t, err := e.ps.GetTopic(ctx, &pubsubpb.GetTopicRequest{Topic: fmt.Sprintf("projects/%s/topics/%s", e.projectID, meta.GetExternalName(cr))})
+	t, err := e.ps.Projects.Topics.Get(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr))).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetTopic)
 	}
-
-	_, err = e.ps.UpdateTopic(ctx, topic.GenerateUpdateRequest(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider, *t))
+	_, err = e.ps.Projects.Topics.Patch(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr)), topic.GenerateUpdateRequest(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider, *t)).Context(ctx).Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateTopic)
 }
 
@@ -153,6 +150,6 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotTopic)
 	}
-	err := e.ps.DeleteTopic(ctx, &pubsubpb.DeleteTopicRequest{Topic: fmt.Sprintf("projects/%s/topics/%s", e.projectID, meta.GetExternalName(cr))})
-	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFoundGRPC, err), errDeleteTopic)
+	_, err := e.ps.Projects.Topics.Delete(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr))).Context(ctx).Do()
+	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteTopic)
 }

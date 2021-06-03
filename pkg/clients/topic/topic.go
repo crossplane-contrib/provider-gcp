@@ -17,36 +17,36 @@ limitations under the License.
 package topic
 
 import (
-	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/googleapis/gax-go/v2"
-	"google.golang.org/genproto/googleapis/pubsub/v1"
-	"google.golang.org/genproto/protobuf/field_mask"
+	pubsub "google.golang.org/api/pubsub/v1"
 
 	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
-// PublisherClient is interface that lists the required functions for the reconciler
-// to work.
-type PublisherClient interface {
-	CreateTopic(ctx context.Context, req *pubsub.Topic, opts ...gax.CallOption) (*pubsub.Topic, error)
-	UpdateTopic(ctx context.Context, req *pubsub.UpdateTopicRequest, opts ...gax.CallOption) (*pubsub.Topic, error)
-	GetTopic(ctx context.Context, req *pubsub.GetTopicRequest, opts ...gax.CallOption) (*pubsub.Topic, error)
-	DeleteTopic(ctx context.Context, req *pubsub.DeleteTopicRequest, opts ...gax.CallOption) error
+const (
+	topicNameFormat = "projects/%s/topics/%s"
+)
+
+// GetFullyQualifiedName builds the fully qualified name of the topic.
+func GetFullyQualifiedName(project string, name string) string {
+	return fmt.Sprintf(topicNameFormat, project, name)
 }
 
 // GenerateTopic produces a Topic that is configured via given TopicParameters.
 func GenerateTopic(projectID, name string, s v1alpha1.TopicParameters) *pubsub.Topic {
 	t := &pubsub.Topic{
-		Name:       fmt.Sprintf("projects/%s/topics/%s", projectID, name),
+		Name:       name,
 		Labels:     s.Labels,
 		KmsKeyName: gcp.StringValue(s.KmsKeyName),
 	}
 	if s.MessageStoragePolicy != nil {
-		t.MessageStoragePolicy = &pubsub.MessageStoragePolicy{AllowedPersistenceRegions: s.MessageStoragePolicy.AllowedPersistenceRegions}
+		t.MessageStoragePolicy = &pubsub.MessageStoragePolicy{
+			AllowedPersistenceRegions: s.MessageStoragePolicy.AllowedPersistenceRegions,
+		}
 	}
 	return t
 }
@@ -80,9 +80,12 @@ func IsUpToDate(s v1alpha1.TopicParameters, t pubsub.Topic) bool {
 func GenerateUpdateRequest(projectID, name string, s v1alpha1.TopicParameters, t pubsub.Topic) *pubsub.UpdateTopicRequest {
 	observed := &v1alpha1.TopicParameters{}
 	LateInitialize(observed, t)
-	ut := &pubsub.UpdateTopicRequest{Topic: &pubsub.Topic{Name: fmt.Sprintf("projects/%s/topics/%s", projectID, name)}, UpdateMask: &field_mask.FieldMask{}}
+	ut := &pubsub.UpdateTopicRequest{
+		Topic: &pubsub.Topic{Name: name},
+	}
+	mask := []string{}
 	if !cmp.Equal(s.MessageStoragePolicy, observed.MessageStoragePolicy) {
-		ut.UpdateMask.Paths = append(ut.UpdateMask.Paths, "messageStoragePolicy")
+		mask = append(mask, "messageStoragePolicy")
 		if s.MessageStoragePolicy != nil {
 			ut.Topic.MessageStoragePolicy = &pubsub.MessageStoragePolicy{
 				AllowedPersistenceRegions: s.MessageStoragePolicy.AllowedPersistenceRegions,
@@ -90,8 +93,9 @@ func GenerateUpdateRequest(projectID, name string, s v1alpha1.TopicParameters, t
 		}
 	}
 	if !cmp.Equal(s.Labels, observed.Labels) {
-		ut.UpdateMask.Paths = append(ut.UpdateMask.Paths, "labels")
+		mask = append(mask, "labels")
 		ut.Topic.Labels = s.Labels
 	}
+	ut.UpdateMask = strings.Join(mask, ",")
 	return ut
 }

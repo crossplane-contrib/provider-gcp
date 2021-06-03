@@ -17,12 +17,10 @@ limitations under the License.
 package topic
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/genproto/googleapis/pubsub/v1"
-	"google.golang.org/genproto/protobuf/field_mask"
+	pubsub "google.golang.org/api/pubsub/v1"
 
 	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
@@ -47,7 +45,7 @@ func params() *v1alpha1.TopicParameters {
 
 func topic() *pubsub.Topic {
 	return &pubsub.Topic{
-		Name: fmt.Sprintf("projects/%s/topics/%s", projectID, name),
+		Name: name,
 		Labels: map[string]string{
 			"foo": "bar",
 		},
@@ -176,11 +174,8 @@ func TestGenerateUpdateRequest(t *testing.T) {
 				param:     *params(),
 			},
 			result: &pubsub.UpdateTopicRequest{
-				Topic: withoutKMS,
-				UpdateMask: &field_mask.FieldMask{Paths: []string{
-					"messageStoragePolicy",
-					"labels",
-				}},
+				Topic:      withoutKMS,
+				UpdateMask: "messageStoragePolicy,labels",
 			},
 		},
 	}

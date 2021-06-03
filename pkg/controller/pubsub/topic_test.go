@@ -18,18 +18,16 @@ package pubsub
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
-	"google.golang.org/grpc/status"
-
-	"github.com/crossplane/provider-gcp/pkg/clients/topic"
-
-	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
+	pubsub "google.golang.org/api/pubsub/v1"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/googleapis/gax-go"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -48,26 +46,6 @@ var (
 	errBoom = errors.New("foo")
 )
 
-type MockPublisherClient struct {
-	MockCreateTopic func(ctx context.Context, req *pubsubpb.Topic, opts ...gax.CallOption) (*pubsubpb.Topic, error)
-	MockUpdateTopic func(ctx context.Context, req *pubsubpb.UpdateTopicRequest, opts ...gax.CallOption) (*pubsubpb.Topic, error)
-	MockGetTopic    func(ctx context.Context, req *pubsubpb.GetTopicRequest, opts ...gax.CallOption) (*pubsubpb.Topic, error)
-	MockDeleteTopic func(ctx context.Context, req *pubsubpb.DeleteTopicRequest, opts ...gax.CallOption) error
-}
-
-func (m *MockPublisherClient) CreateTopic(ctx context.Context, req *pubsubpb.Topic, opts ...gax.CallOption) (*pubsubpb.Topic, error) {
-	return m.MockCreateTopic(ctx, req, opts...)
-}
-func (m *MockPublisherClient) UpdateTopic(ctx context.Context, req *pubsubpb.UpdateTopicRequest, opts ...gax.CallOption) (*pubsubpb.Topic, error) {
-	return m.MockUpdateTopic(ctx, req, opts...)
-}
-func (m *MockPublisherClient) GetTopic(ctx context.Context, req *pubsubpb.GetTopicRequest, opts ...gax.CallOption) (*pubsubpb.Topic, error) {
-	return m.MockGetTopic(ctx, req, opts...)
-}
-func (m *MockPublisherClient) DeleteTopic(ctx context.Context, req *pubsubpb.DeleteTopicRequest, opts ...gax.CallOption) error {
-	return m.MockDeleteTopic(ctx, req, opts...)
-}
-
 type TopicOption func(*v1alpha1.Topic)
 
 func newTopic(opts ...TopicOption) *v1alpha1.Topic {
@@ -79,11 +57,19 @@ func newTopic(opts ...TopicOption) *v1alpha1.Topic {
 	return t
 }
 
+func gError(code int, message string) *googleapi.Error {
+	return &googleapi.Error{
+		Code:    code,
+		Body:    "",
+		Message: message,
+	}
+}
+
 func TestObserve(t *testing.T) {
 	type args struct {
-		kube client.Client
-		ps   topic.PublisherClient
-		mg   resource.Managed
+		handler http.Handler
+		kube    client.Client
+		mg      resource.Managed
 	}
 
 	type want struct {
@@ -99,36 +85,45 @@ func TestObserve(t *testing.T) {
 		"GetFailed": {
 			reason: "Should return error if GetTopic fails",
 			args: args{
-				ps: &MockPublisherClient{
-					MockGetTopic: func(_ context.Context, _ *pubsubpb.GetTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return nil, errBoom
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusBadRequest)
+				}),
 				mg: newTopic(),
 			},
 			want: want{
-				err: errors.Wrap(errBoom, errGetTopic),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetTopic),
 			},
 		},
 		"NotFound": {
 			reason: "Should not return error if Topic is not found",
 			args: args{
-				ps: &MockPublisherClient{
-					MockGetTopic: func(_ context.Context, _ *pubsubpb.GetTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return nil, status.Error(codes.NotFound, "olala")
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusNotFound)
+				}),
 				mg: newTopic(),
 			},
 		},
 		"SpecUpdateFailed": {
 			reason: "Should fail if spec Update failed",
 			args: args{
-				ps: &MockPublisherClient{
-					MockGetTopic: func(_ context.Context, _ *pubsubpb.GetTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return &pubsubpb.Topic{KmsKeyName: "olala"}, nil
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+						KmsKeyName: "cool-key",
+					})
+				}),
 				kube: &test.MockClient{
 					MockUpdate: test.NewMockUpdateFn(errBoom),
 				},
@@ -141,11 +136,14 @@ func TestObserve(t *testing.T) {
 		"Success": {
 			reason: "Should succeed",
 			args: args{
-				ps: &MockPublisherClient{
-					MockGetTopic: func(_ context.Context, _ *pubsubpb.GetTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return &pubsubpb.Topic{}, nil
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&pubsub.Topic{})
+				}),
 				mg: newTopic(),
 			},
 			want: want{
@@ -163,7 +161,14 @@ func TestObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e := &external{client: tc.args.kube, ps: tc.args.ps, projectID: projectID}
+			server := httptest.NewServer(tc.args.handler)
+			defer server.Close()
+			s, _ := pubsub.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := external{
+				client:    tc.args.kube,
+				projectID: projectID,
+				ps:        s,
+			}
 			got, err := e.Observe(context.Background(), tc.args.mg)
 			if diff := cmp.Diff(tc.want.eo, got); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
@@ -177,9 +182,9 @@ func TestObserve(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	type args struct {
-		kube client.Client
-		ps   topic.PublisherClient
-		mg   resource.Managed
+		handler http.Handler
+		kube    client.Client
+		mg      resource.Managed
 	}
 
 	type want struct {
@@ -192,28 +197,32 @@ func TestCreate(t *testing.T) {
 		args   args
 		want   want
 	}{
-		"GetFailed": {
+		"CreateFailed": {
 			reason: "Should return error if GetTopic fails",
 			args: args{
-				ps: &MockPublisherClient{
-					MockCreateTopic: func(_ context.Context, _ *pubsubpb.Topic, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return nil, errBoom
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusBadRequest)
+				}),
 				mg: newTopic(),
 			},
 			want: want{
-				err: errors.Wrap(errBoom, errCreateTopic),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateTopic),
 			},
 		},
 		"Success": {
 			reason: "Should not fail if all calls succeed",
 			args: args{
-				ps: &MockPublisherClient{
-					MockCreateTopic: func(_ context.Context, _ *pubsubpb.Topic, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return &pubsubpb.Topic{}, nil
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+						KmsKeyName: "cool-key",
+					})
+				}),
 				mg: newTopic(),
 			},
 		},
@@ -221,7 +230,14 @@ func TestCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e := &external{client: tc.args.kube, ps: tc.args.ps, projectID: projectID}
+			server := httptest.NewServer(tc.args.handler)
+			defer server.Close()
+			s, _ := pubsub.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := external{
+				client:    tc.args.kube,
+				projectID: projectID,
+				ps:        s,
+			}
 			got, err := e.Create(context.Background(), tc.args.mg)
 			if diff := cmp.Diff(tc.want.eo, got); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
@@ -235,9 +251,9 @@ func TestCreate(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	type args struct {
-		kube client.Client
-		ps   topic.PublisherClient
-		mg   resource.Managed
+		handler http.Handler
+		kube    client.Client
+		mg      resource.Managed
 	}
 
 	type want struct {
@@ -253,45 +269,49 @@ func TestUpdate(t *testing.T) {
 		"GetFailed": {
 			reason: "Should return error if GetTopic fails",
 			args: args{
-				ps: &MockPublisherClient{
-					MockGetTopic: func(_ context.Context, _ *pubsubpb.GetTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return nil, errBoom
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusBadRequest)
+				}),
 				mg: newTopic(),
 			},
 			want: want{
-				err: errors.Wrap(errBoom, errGetTopic),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetTopic),
 			},
 		},
 		"UpdateFailed": {
 			reason: "Should return error if UpdateTopic fails",
 			args: args{
-				ps: &MockPublisherClient{
-					MockGetTopic: func(_ context.Context, _ *pubsubpb.GetTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return &pubsubpb.Topic{}, nil
-					},
-					MockUpdateTopic: func(_ context.Context, _ *pubsubpb.UpdateTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return nil, errBoom
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if r.Method == http.MethodPatch {
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+						KmsKeyName: "cool-key",
+					})
+				}),
 				mg: newTopic(),
 			},
 			want: want{
-				err: errors.Wrap(errBoom, errUpdateTopic),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateTopic),
 			},
 		},
 		"Success": {
 			reason: "Should not fail if all calls succeed",
 			args: args{
-				ps: &MockPublisherClient{
-					MockGetTopic: func(_ context.Context, _ *pubsubpb.GetTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return &pubsubpb.Topic{}, nil
-					},
-					MockUpdateTopic: func(_ context.Context, _ *pubsubpb.UpdateTopicRequest, _ ...gax.CallOption) (*pubsubpb.Topic, error) {
-						return nil, nil
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+						KmsKeyName: "cool-key",
+					})
+				}),
 				mg: newTopic(),
 			},
 		},
@@ -299,7 +319,14 @@ func TestUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e := &external{client: tc.args.kube, ps: tc.args.ps, projectID: projectID}
+			server := httptest.NewServer(tc.args.handler)
+			defer server.Close()
+			s, _ := pubsub.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := external{
+				client:    tc.args.kube,
+				projectID: projectID,
+				ps:        s,
+			}
 			got, err := e.Update(context.Background(), tc.args.mg)
 			if diff := cmp.Diff(tc.want.eo, got); diff != "" {
 				t.Errorf("Update(...): -want, +got:\n%s", diff)
@@ -313,9 +340,10 @@ func TestUpdate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	type args struct {
-		kube client.Client
-		ps   topic.PublisherClient
-		mg   resource.Managed
+		ctx     context.Context
+		handler http.Handler
+		kube    client.Client
+		mg      resource.Managed
 	}
 
 	type want struct {
@@ -330,36 +358,45 @@ func TestDelete(t *testing.T) {
 		"DeleteFailed": {
 			reason: "Should return error if DeleteTopic fails",
 			args: args{
-				ps: &MockPublisherClient{
-					MockDeleteTopic: func(_ context.Context, _ *pubsubpb.DeleteTopicRequest, _ ...gax.CallOption) error {
-						return errBoom
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusBadRequest)
+				}),
 				mg: newTopic(),
 			},
 			want: want{
-				err: errors.Wrap(errBoom, errDeleteTopic),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteTopic),
 			},
 		},
 		"NotFound": {
 			reason: "Should not return error if resource is already gone",
 			args: args{
-				ps: &MockPublisherClient{
-					MockDeleteTopic: func(_ context.Context, _ *pubsubpb.DeleteTopicRequest, _ ...gax.CallOption) error {
-						return status.Error(codes.NotFound, "olala")
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusNotFound)
+				}),
 				mg: newTopic(),
 			},
 		},
 		"Success": {
 			reason: "Should not fail if all calls succeed",
 			args: args{
-				ps: &MockPublisherClient{
-					MockDeleteTopic: func(_ context.Context, _ *pubsubpb.DeleteTopicRequest, _ ...gax.CallOption) error {
-						return nil
-					},
-				},
+				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_ = r.Body.Close()
+					if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+						t.Errorf("r: -want, +got:\n%s", diff)
+					}
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+						Name: "cool-name",
+					})
+				}),
 				mg: newTopic(),
 			},
 		},
@@ -367,8 +404,15 @@ func TestDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e := &external{client: tc.args.kube, ps: tc.args.ps, projectID: projectID}
-			err := e.Delete(context.Background(), tc.args.mg)
+			server := httptest.NewServer(tc.args.handler)
+			defer server.Close()
+			s, _ := pubsub.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := external{
+				client:    tc.args.kube,
+				projectID: projectID,
+				ps:        s,
+			}
+			err := e.Delete(tc.args.ctx, tc.args.mg)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Delete(...): -want error, +got error:\n%s", diff)
 			}

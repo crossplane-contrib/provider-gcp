@@ -20,9 +20,9 @@ import (
 	"context"
 	"strconv"
 
-	redisv1 "cloud.google.com/go/redis/apiv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	redis "google.golang.org/api/redis/v1"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +31,7 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -79,7 +80,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, err
 	}
-	s, err := redisv1.NewCloudRedisClient(ctx, opts)
+	s, err := redis.NewService(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
@@ -88,7 +89,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 
 type external struct {
 	kube      client.Client
-	cms       cloudmemorystore.Client
+	cms       *redis.Service
 	projectID string
 }
 
@@ -98,10 +99,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotInstance)
 	}
 
-	id := cloudmemorystore.NewInstanceID(e.projectID, cr)
-	existing, err := e.cms.GetInstance(ctx, cloudmemorystore.NewGetInstanceRequest(id))
-	if cloudmemorystore.IsNotFound(err) {
-		return managed.ExternalObservation{ResourceExists: false}, nil
+	existing, err := e.cms.Projects.Locations.Instances.Get(cloudmemorystore.GetFullyQualifiedName(e.projectID, cr.Spec.ForProvider, meta.GetExternalName(cr))).Context(ctx).Do()
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetInstance)
 	}
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetInstance)
@@ -128,7 +128,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.Status.SetConditions(xpv1.Unavailable())
 	}
 
-	u, err := cloudmemorystore.IsUpToDate(id, &cr.Spec.ForProvider, existing)
+	u, err := cloudmemorystore.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, existing)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
 	}
@@ -149,10 +149,13 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotInstance)
 	}
 
-	id := cloudmemorystore.NewInstanceID(e.projectID, i)
 	i.Status.SetConditions(xpv1.Creating())
 
-	_, err := e.cms.CreateInstance(ctx, cloudmemorystore.NewCreateInstanceRequest(id, i))
+	// Generate Redis instance from resource spec.
+	instance := &redis.Instance{}
+	cloudmemorystore.GenerateRedisInstance(cloudmemorystore.GetFullyQualifiedName(e.projectID, i.Spec.ForProvider, meta.GetExternalName(i)), i.Spec.ForProvider, instance)
+
+	_, err := e.cms.Projects.Locations.Instances.Create(cloudmemorystore.GetFullyQualifiedParent(e.projectID, i.Spec.ForProvider), instance).InstanceId(meta.GetExternalName(i)).Context(ctx).Do()
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateInstance)
 }
 
@@ -161,8 +164,11 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotInstance)
 	}
-	id := cloudmemorystore.NewInstanceID(e.projectID, i)
-	_, err := e.cms.UpdateInstance(ctx, cloudmemorystore.NewUpdateInstanceRequest(id, i))
+	// Generate Redis instance from resource spec.
+	instance := &redis.Instance{}
+	fqn := cloudmemorystore.GetFullyQualifiedName(e.projectID, i.Spec.ForProvider, meta.GetExternalName(i))
+	cloudmemorystore.GenerateRedisInstance(fqn, i.Spec.ForProvider, instance)
+	_, err := e.cms.Projects.Locations.Instances.Patch(fqn, instance).Context(ctx).Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
 }
 
@@ -173,7 +179,6 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 	i.SetConditions(xpv1.Deleting())
 
-	id := cloudmemorystore.NewInstanceID(e.projectID, i)
-	_, err := e.cms.DeleteInstance(ctx, cloudmemorystore.NewDeleteInstanceRequest(id))
-	return errors.Wrap(resource.Ignore(cloudmemorystore.IsNotFound, err), errDeleteInstance)
+	_, err := e.cms.Projects.Locations.Instances.Delete(cloudmemorystore.GetFullyQualifiedName(e.projectID, i.Spec.ForProvider, meta.GetExternalName(i))).Context(ctx).Do()
+	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteInstance)
 }

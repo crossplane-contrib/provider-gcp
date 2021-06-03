@@ -18,17 +18,19 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"testing"
 
-	redisv1 "cloud.google.com/go/redis/apiv1"
 	"github.com/google/go-cmp/cmp"
-	gax "github.com/googleapis/gax-go"
 	"github.com/pkg/errors"
-	redisv1pb "google.golang.org/genproto/googleapis/cloud/redis/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
+	redis "google.golang.org/api/redis/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -38,7 +40,6 @@ import (
 
 	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
 	"github.com/crossplane/provider-gcp/pkg/clients/cloudmemorystore"
-	"github.com/crossplane/provider-gcp/pkg/clients/cloudmemorystore/fake"
 )
 
 const (
@@ -57,9 +58,16 @@ const (
 var (
 	authorizedNetwork = "default"
 	connectMode       = "DIRECT_PEERING"
-	errorBoom         = errors.New("boom")
 	redisConfigs      = map[string]string{"cool": "socool"}
 )
+
+func gError(code int, message string) *googleapi.Error {
+	return &googleapi.Error{
+		Code:    code,
+		Body:    "",
+		Message: message,
+	}
+}
 
 type strange struct {
 	resource.Managed
@@ -84,11 +92,7 @@ func withHost(e string) instanceModifier {
 }
 
 func withPort(p int) instanceModifier {
-	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.AtProvider.Port = int32(p) }
-}
-
-func withTier(tier string) instanceModifier {
-	return func(i *v1beta1.CloudMemorystoreInstance) { i.Spec.ForProvider.Tier = tier }
+	return func(i *v1beta1.CloudMemorystoreInstance) { i.Status.AtProvider.Port = int64(p) }
 }
 
 func instance(im ...instanceModifier) *v1beta1.CloudMemorystoreInstance {
@@ -138,23 +142,27 @@ func TestObserve(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		client managed.ExternalClient
-		args   args
-		want   want
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
 	}{
 		"ObservedInstanceAvailable": {
-			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{
-						State: redisv1pb.Instance_READY,
-						Host:  host,
-						Port:  port,
-						Name:  qualifiedName,
-					}, nil
-				}},
-				kube: &test.MockClient{
-					MockUpdate: test.NewMockUpdateFn(nil),
-				},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&redis.Instance{
+					State: cloudmemorystore.StateReady,
+					Host:  host,
+					Port:  port,
+					Name:  qualifiedName,
+				})
+			}),
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -166,8 +174,7 @@ func TestObserve(t *testing.T) {
 					withState(cloudmemorystore.StateReady),
 					withHost(host),
 					withPort(port),
-					withFullName(qualifiedName),
-					withTier(redisv1pb.Instance_TIER_UNSPECIFIED.String())),
+					withFullName(qualifiedName)),
 				observation: managed.ExternalObservation{
 					ResourceExists: true,
 					ConnectionDetails: managed.ConnectionDetails{
@@ -178,16 +185,19 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"ObservedInstanceCreating": {
-			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{
-						State: redisv1pb.Instance_CREATING,
-						Name:  qualifiedName,
-					}, nil
-				}},
-				kube: &test.MockClient{
-					MockUpdate: test.NewMockUpdateFn(nil),
-				},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&redis.Instance{
+					State: cloudmemorystore.StateCreating,
+					Name:  qualifiedName,
+				})
+			}),
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -197,8 +207,7 @@ func TestObserve(t *testing.T) {
 				mg: instance(
 					withConditions(xpv1.Creating()),
 					withState(cloudmemorystore.StateCreating),
-					withFullName(qualifiedName),
-					withTier(redisv1pb.Instance_TIER_UNSPECIFIED.String())),
+					withFullName(qualifiedName)),
 				observation: managed.ExternalObservation{
 					ResourceExists:    true,
 					ConnectionDetails: managed.ConnectionDetails{},
@@ -206,16 +215,19 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"ObservedInstanceDeleting": {
-			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return &redisv1pb.Instance{
-						State: redisv1pb.Instance_DELETING,
-						Name:  qualifiedName,
-					}, nil
-				}},
-				kube: &test.MockClient{
-					MockUpdate: test.NewMockUpdateFn(nil),
-				},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&redis.Instance{
+					State: cloudmemorystore.StateDeleting,
+					Name:  qualifiedName,
+				})
+			}),
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -225,8 +237,7 @@ func TestObserve(t *testing.T) {
 				mg: instance(
 					withConditions(xpv1.Deleting()),
 					withState(cloudmemorystore.StateDeleting),
-					withFullName(qualifiedName),
-					withTier(redisv1pb.Instance_TIER_UNSPECIFIED.String())),
+					withFullName(qualifiedName)),
 				observation: managed.ExternalObservation{
 					ResourceExists:    true,
 					ConnectionDetails: managed.ConnectionDetails{},
@@ -234,11 +245,13 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"ObservedInstanceDoesNotExist": {
-			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return nil, status.Error(codes.NotFound, "wat")
-				}},
-			},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusNotFound)
+			}),
 			args: args{
 				ctx: context.Background(),
 				mg:  instance(),
@@ -249,7 +262,6 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"NotCloudMemorystoreInstance": {
-			client: &external{},
 			args: args{
 				ctx: context.Background(),
 				mg:  &strange{},
@@ -260,32 +272,48 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"FailedToGetInstance": {
-			client: &external{cms: &fake.MockClient{
-				MockGetInstance: func(_ context.Context, _ *redisv1pb.GetInstanceRequest, _ ...gax.CallOption) (*redisv1pb.Instance, error) {
-					return nil, errorBoom
-				}},
-			},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+			}),
 			args: args{
 				ctx: context.Background(),
 				mg:  instance(),
 			},
 			want: want{
 				mg:  instance(),
-				err: errors.Wrap(errorBoom, errGetInstance),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetInstance),
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, err := tc.client.Observe(tc.args.ctx, tc.args.mg)
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := redis.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := external{
+				kube:      tc.kube,
+				projectID: "cool-project",
+				cms:       s,
+			}
+			got, err := e.Observe(tc.args.ctx, tc.args.mg)
 
 			if diff := cmp.Diff(tc.want.observation, got, test.EquateErrors()); diff != "" {
 				t.Errorf("tc.client.Observe(): -want, +got:\n%s", diff)
 			}
-
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.client.Observe(): -want error, +got error:\n%s", diff)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Observe(...): want error != got error:\n%s", diff)
+				}
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
@@ -307,16 +335,22 @@ func TestCreate(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		client managed.ExternalClient
-		args   args
-		want   want
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
 	}{
 		"CreatedInstance": {
-			client: &external{cms: &fake.MockClient{
-				MockCreateInstance: func(_ context.Context, _ *redisv1pb.CreateInstanceRequest, _ ...gax.CallOption) (*redisv1.CreateInstanceOperation, error) {
-					return nil, nil
-				}},
-			},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&redis.Instance{
+					Name: qualifiedName,
+				})
+			}),
 			args: args{
 				ctx: context.Background(),
 				mg:  instance(),
@@ -326,7 +360,6 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"NotCloudMemorystoreInstance": {
-			client: &external{},
 			args: args{
 				ctx: context.Background(),
 				mg:  &strange{},
@@ -337,33 +370,49 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"FailedToCreateInstance": {
-			client: &external{cms: &fake.MockClient{
-				MockCreateInstance: func(_ context.Context, _ *redisv1pb.CreateInstanceRequest, _ ...gax.CallOption) (*redisv1.CreateInstanceOperation, error) {
-					return nil, errorBoom
-				},
-			}},
-
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+			}),
 			args: args{
 				ctx: context.Background(),
 				mg:  instance(),
 			},
 			want: want{
 				mg:  instance(withConditions(xpv1.Creating())),
-				err: errors.Wrap(errorBoom, errCreateInstance),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateInstance),
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, err := tc.client.Create(tc.args.ctx, tc.args.mg)
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := redis.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := external{
+				kube:      tc.kube,
+				projectID: "cool-project",
+				cms:       s,
+			}
+			got, err := e.Create(tc.args.ctx, tc.args.mg)
 
 			if diff := cmp.Diff(tc.want.creation, got, test.EquateErrors()); diff != "" {
 				t.Errorf("tc.client.Create(): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.client.Create(): -want error, +got error:\n%s", diff)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Create(...): want error string != got error string:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Create(...): want error != got error:\n%s", diff)
+				}
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
@@ -385,16 +434,22 @@ func TestUpdate(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		client managed.ExternalClient
-		args   args
-		want   want
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
 	}{
 		"UpdatedInstance": {
-			client: &external{cms: &fake.MockClient{
-				MockUpdateInstance: func(_ context.Context, _ *redisv1pb.UpdateInstanceRequest, _ ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error) {
-					return nil, nil
-				},
-			}},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&redis.Instance{
+					Name: qualifiedName,
+				})
+			}),
 			args: args{
 				ctx: context.Background(),
 				mg:  instance(),
@@ -404,7 +459,6 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		"NotCloudMemorystoreInstance": {
-			client: &external{},
 			args: args{
 				ctx: context.Background(),
 				mg:  &strange{},
@@ -415,33 +469,49 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		"FailedToUpdateInstance": {
-			client: &external{cms: &fake.MockClient{
-				MockUpdateInstance: func(_ context.Context, _ *redisv1pb.UpdateInstanceRequest, _ ...gax.CallOption) (*redisv1.UpdateInstanceOperation, error) {
-					return nil, errorBoom
-				},
-			}},
-
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+			}),
 			args: args{
 				ctx: context.Background(),
 				mg:  instance(),
 			},
 			want: want{
 				mg:  instance(),
-				err: errors.Wrap(errorBoom, errUpdateInstance),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errUpdateInstance),
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, err := tc.client.Update(tc.args.ctx, tc.args.mg)
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := redis.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := external{
+				kube:      tc.kube,
+				projectID: "cool-project",
+				cms:       s,
+			}
+			got, err := e.Update(tc.args.ctx, tc.args.mg)
 
 			if diff := cmp.Diff(tc.want.update, got, test.EquateErrors()); diff != "" {
 				t.Errorf("tc.client.Update(): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.client.Update(): -want error, +got error:\n%s", diff)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Update(...): want error string != got error string:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Update(...): want error != got error:\n%s", diff)
+				}
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
@@ -461,16 +531,22 @@ func TestDelete(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		client managed.ExternalClient
-		args   args
-		want   want
+		handler http.Handler
+		kube    client.Client
+		args    args
+		want    want
 	}{
 		"DeletedInstance": {
-			client: &external{cms: &fake.MockClient{
-				MockDeleteInstance: func(_ context.Context, _ *redisv1pb.DeleteInstanceRequest, _ ...gax.CallOption) (*redisv1.DeleteInstanceOperation, error) {
-					return nil, nil
-				}},
-			},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(&redis.Instance{
+					Name: qualifiedName,
+				})
+			}),
 			args: args{
 				ctx: context.Background(),
 				mg:  instance(),
@@ -480,7 +556,6 @@ func TestDelete(t *testing.T) {
 			},
 		},
 		"NotCloudMemorystoreInstance": {
-			client: &external{},
 			args: args{
 				ctx: context.Background(),
 				mg:  &strange{},
@@ -491,33 +566,45 @@ func TestDelete(t *testing.T) {
 			},
 		},
 		"FailedToDeleteInstance": {
-			client: &external{cms: &fake.MockClient{
-				MockDeleteInstance: func(_ context.Context, _ *redisv1pb.DeleteInstanceRequest, _ ...gax.CallOption) (*redisv1.DeleteInstanceOperation, error) {
-					return nil, errorBoom
-				},
-			}},
-
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusBadRequest)
+			}),
 			args: args{
 				ctx: context.Background(),
 				mg:  instance(),
 			},
 			want: want{
 				mg:  instance(withConditions(xpv1.Deleting())),
-				err: errors.Wrap(errorBoom, errDeleteInstance),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteInstance),
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			err := tc.client.Delete(tc.args.ctx, tc.args.mg)
-
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("tc.client.Delete(): -want error, +got error:\n%s", diff)
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+			s, _ := redis.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			e := external{
+				kube:      tc.kube,
+				projectID: "cool-project",
+				cms:       s,
 			}
+			err := e.Delete(tc.args.ctx, tc.args.mg)
 
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
-				t.Errorf("resource.Managed: -want, +got:\n%s", diff)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Delete(...): want error string != got error string:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Delete(...): want error != got error:\n%s", diff)
+				}
 			}
 		})
 	}

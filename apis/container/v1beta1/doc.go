@@ -20,6 +20,3 @@ limitations under the License.
 // +groupName=container.gcp.crossplane.io
 // +versionName=v1beta1
 package v1beta1
-
-// ContainerURIPrefix is the common prefix for container API links.
-const ContainerURIPrefix = "https://container.googleapis.com/v1beta1/"

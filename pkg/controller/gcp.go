@@ -43,7 +43,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		compute.SetupGlobalAddress,
 		compute.SetupNetwork,
 		compute.SetupSubnetwork,
-		container.SetupGKECluster,
+		container.SetupCluster,
 		container.SetupNodePool,
 		database.SetupCloudSQLInstance,
 		iam.SetupServiceAccount,

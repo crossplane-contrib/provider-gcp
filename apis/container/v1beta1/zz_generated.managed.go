@@ -20,58 +20,58 @@ package v1beta1
 
 import xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-// GetCondition of this GKECluster.
-func (mg *GKECluster) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
+// GetCondition of this NodePool.
+func (mg *NodePool) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
-// GetDeletionPolicy of this GKECluster.
-func (mg *GKECluster) GetDeletionPolicy() xpv1.DeletionPolicy {
+// GetDeletionPolicy of this NodePool.
+func (mg *NodePool) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
-// GetProviderConfigReference of this GKECluster.
-func (mg *GKECluster) GetProviderConfigReference() *xpv1.Reference {
+// GetProviderConfigReference of this NodePool.
+func (mg *NodePool) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
 /*
-GetProviderReference of this GKECluster.
+GetProviderReference of this NodePool.
 Deprecated: Use GetProviderConfigReference.
 */
-func (mg *GKECluster) GetProviderReference() *xpv1.Reference {
+func (mg *NodePool) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
 }
 
-// GetWriteConnectionSecretToReference of this GKECluster.
-func (mg *GKECluster) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
+// GetWriteConnectionSecretToReference of this NodePool.
+func (mg *NodePool) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
-// SetConditions of this GKECluster.
-func (mg *GKECluster) SetConditions(c ...xpv1.Condition) {
+// SetConditions of this NodePool.
+func (mg *NodePool) SetConditions(c ...xpv1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
-// SetDeletionPolicy of this GKECluster.
-func (mg *GKECluster) SetDeletionPolicy(r xpv1.DeletionPolicy) {
+// SetDeletionPolicy of this NodePool.
+func (mg *NodePool) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
-// SetProviderConfigReference of this GKECluster.
-func (mg *GKECluster) SetProviderConfigReference(r *xpv1.Reference) {
+// SetProviderConfigReference of this NodePool.
+func (mg *NodePool) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
 /*
-SetProviderReference of this GKECluster.
+SetProviderReference of this NodePool.
 Deprecated: Use SetProviderConfigReference.
 */
-func (mg *GKECluster) SetProviderReference(r *xpv1.Reference) {
+func (mg *NodePool) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
-// SetWriteConnectionSecretToReference of this GKECluster.
-func (mg *GKECluster) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
+// SetWriteConnectionSecretToReference of this NodePool.
+func (mg *NodePool) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }

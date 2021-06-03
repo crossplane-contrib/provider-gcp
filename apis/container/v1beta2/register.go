@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1beta2
 
 import (
 	"reflect"
@@ -26,7 +26,7 @@ import (
 // Package type metadata.
 const (
 	Group   = "container.gcp.crossplane.io"
-	Version = "v1alpha1"
+	Version = "v1beta2"
 )
 
 var (
@@ -37,14 +37,14 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// NodePool type metadata.
+// Cluster type metadata.
 var (
-	NodePoolKind             = reflect.TypeOf(NodePool{}).Name()
-	NodePoolGroupKind        = schema.GroupKind{Group: Group, Kind: NodePoolKind}.String()
-	NodePoolKindAPIVersion   = NodePoolKind + "." + SchemeGroupVersion.String()
-	NodePoolGroupVersionKind = SchemeGroupVersion.WithKind(NodePoolKind)
+	ClusterKind             = reflect.TypeOf(Cluster{}).Name()
+	ClusterGroupKind        = schema.GroupKind{Group: Group, Kind: ClusterKind}.String()
+	ClusterKindAPIVersion   = ClusterKind + "." + SchemeGroupVersion.String()
+	ClusterGroupVersionKind = SchemeGroupVersion.WithKind(ClusterKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&NodePool{}, &NodePoolList{})
+	SchemeBuilder.Register(&Cluster{}, &ClusterList{})
 }

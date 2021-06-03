@@ -23,12 +23,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	container "google.golang.org/api/container/v1beta1"
+	container "google.golang.org/api/container/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
@@ -65,8 +65,8 @@ func cluster(m ...func(*container.Cluster)) *container.Cluster {
 	return c
 }
 
-func params(m ...func(*v1beta1.GKEClusterParameters)) *v1beta1.GKEClusterParameters {
-	p := &v1beta1.GKEClusterParameters{
+func params(m ...func(*v1beta2.ClusterParameters)) *v1beta2.ClusterParameters {
+	p := &v1beta2.ClusterParameters{
 		ClusterIpv4Cidr:       gcp.StringPtr("0.0.0.0/0"),
 		Description:           gcp.StringPtr("my cool description"),
 		EnableKubernetesAlpha: gcp.BoolPtr(true),
@@ -88,10 +88,10 @@ func params(m ...func(*v1beta1.GKEClusterParameters)) *v1beta1.GKEClusterParamet
 	return p
 }
 
-func observation(m ...func(*v1beta1.GKEClusterObservation)) *v1beta1.GKEClusterObservation {
-	o := &v1beta1.GKEClusterObservation{
+func observation(m ...func(*v1beta2.ClusterObservation)) *v1beta2.ClusterObservation {
+	o := &v1beta2.ClusterObservation{
 		CreateTime: "13:13",
-		Conditions: []*v1beta1.StatusCondition{
+		Conditions: []*v1beta2.StatusCondition{
 			{
 				Code:    "UNKNOWN",
 				Message: "Condition is unknown.",
@@ -111,20 +111,20 @@ func observation(m ...func(*v1beta1.GKEClusterObservation)) *v1beta1.GKEClusterO
 		TpuIpv4CidrBlock:     "0.0.0.0/0",
 		Zone:                 "us-central1-a",
 
-		MaintenancePolicy: &v1beta1.MaintenancePolicyStatus{
-			Window: v1beta1.MaintenanceWindowStatus{
-				DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindowStatus{
+		MaintenancePolicy: &v1beta2.MaintenancePolicyStatus{
+			Window: v1beta2.MaintenanceWindowStatus{
+				DailyMaintenanceWindow: v1beta2.DailyMaintenanceWindowStatus{
 					Duration: "1h",
 				},
 			},
 		},
 
-		NetworkConfig: &v1beta1.NetworkConfigStatus{
+		NetworkConfig: &v1beta2.NetworkConfigStatus{
 			Network:    "my-cool-network",
 			Subnetwork: "my-cool-subnetwork",
 		},
 
-		PrivateClusterConfig: &v1beta1.PrivateClusterConfigStatus{
+		PrivateClusterConfig: &v1beta2.PrivateClusterConfigStatus{
 			PrivateEndpoint: "12.12.12.12",
 			PublicEndpoint:  "12.12.12.12",
 		},
@@ -184,7 +184,7 @@ func TestGenerateObservation(t *testing.T) {
 
 	tests := map[string]struct {
 		args args
-		want *v1beta1.GKEClusterObservation
+		want *v1beta2.ClusterObservation
 	}{
 		"Successful": {
 			args: args{
@@ -212,22 +212,22 @@ func TestGenerateObservation(t *testing.T) {
 					c.NodePools = []*container.NodePool{np}
 				}),
 			},
-			want: observation(func(p *v1beta1.GKEClusterObservation) {
-				sc := &v1beta1.StatusCondition{
+			want: observation(func(p *v1beta2.ClusterObservation) {
+				sc := &v1beta2.StatusCondition{
 					Code:    "cool-code",
 					Message: "cool-message",
 				}
-				ac := &v1beta1.AcceleratorConfigClusterStatus{
+				ac := &v1beta2.AcceleratorConfigClusterStatus{
 					AcceleratorCount: 5,
 				}
-				np := &v1beta1.NodePoolClusterStatus{
-					Conditions: []*v1beta1.StatusCondition{sc},
-					Config: &v1beta1.NodeConfigClusterStatus{
-						Accelerators: []*v1beta1.AcceleratorConfigClusterStatus{ac},
+				np := &v1beta2.NodePoolClusterStatus{
+					Conditions: []*v1beta2.StatusCondition{sc},
+					Config: &v1beta2.NodeConfigClusterStatus{
+						Accelerators: []*v1beta2.AcceleratorConfigClusterStatus{ac},
 					},
 					Name: "cool-node-pool",
 				}
-				p.NodePools = []*v1beta1.NodePoolClusterStatus{np}
+				p.NodePools = []*v1beta2.NodePoolClusterStatus{np}
 			}),
 		},
 	}
@@ -244,7 +244,7 @@ func TestGenerateObservation(t *testing.T) {
 func TestGenerateCluster(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 		name    string
 	}
 
@@ -255,13 +255,13 @@ func TestGenerateCluster(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.AddonsConfig = &v1beta1.AddonsConfig{
-						HorizontalPodAutoscaling: &v1beta1.HorizontalPodAutoscaling{
-							Disabled: gcp.BoolPtr(true),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.AddonsConfig = &v1beta2.AddonsConfig{
+						HorizontalPodAutoscaling: &v1beta2.HorizontalPodAutoscaling{
+							Disabled: true,
 						},
 					}
-					p.DatabaseEncryption = &v1beta1.DatabaseEncryption{
+					p.DatabaseEncryption = &v1beta2.DatabaseEncryption{
 						KeyName: gcp.StringPtr("cool-key"),
 						State:   gcp.StringPtr("UNKNOWN"),
 					}
@@ -329,7 +329,7 @@ func TestAddNodePoolForCreate(t *testing.T) {
 func TestGenerateAddonsConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -339,10 +339,10 @@ func TestGenerateAddonsConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: &container.Cluster{},
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.AddonsConfig = &v1beta1.AddonsConfig{
-						HorizontalPodAutoscaling: &v1beta1.HorizontalPodAutoscaling{
-							Disabled: gcp.BoolPtr(true),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.AddonsConfig = &v1beta2.AddonsConfig{
+						HorizontalPodAutoscaling: &v1beta2.HorizontalPodAutoscaling{
+							Disabled: true,
 						},
 					}
 				}),
@@ -377,7 +377,7 @@ func TestGenerateAddonsConfig(t *testing.T) {
 func TestGenerateAuthenticatorGroupsConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -387,8 +387,8 @@ func TestGenerateAuthenticatorGroupsConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.AuthenticatorGroupsConfig = &v1beta1.AuthenticatorGroupsConfig{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.AuthenticatorGroupsConfig = &v1beta2.AuthenticatorGroupsConfig{
 						Enabled:       gcp.BoolPtr(true),
 						SecurityGroup: gcp.StringPtr("my-group"),
 					}
@@ -422,7 +422,7 @@ func TestGenerateAuthenticatorGroupsConfig(t *testing.T) {
 func TestGenerateAutoscaling(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -432,8 +432,8 @@ func TestGenerateAutoscaling(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.Autoscaling = &v1beta1.ClusterAutoscaling{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.Autoscaling = &v1beta2.ClusterAutoscaling{
 						AutoprovisioningLocations:  []string{"here", "there"},
 						EnableNodeAutoprovisioning: gcp.BoolPtr(true),
 					}
@@ -449,11 +449,11 @@ func TestGenerateAutoscaling(t *testing.T) {
 		"SuccessfulWithResourceLimits": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.Autoscaling = &v1beta1.ClusterAutoscaling{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.Autoscaling = &v1beta2.ClusterAutoscaling{
 						AutoprovisioningLocations:  []string{"here", "there"},
 						EnableNodeAutoprovisioning: gcp.BoolPtr(true),
-						ResourceLimits: []*v1beta1.ResourceLimit{
+						ResourceLimits: []*v1beta2.ResourceLimit{
 							{
 								Maximum:      gcp.Int64Ptr(20),
 								ResourceType: gcp.StringPtr("cpu"),
@@ -497,7 +497,7 @@ func TestGenerateAutoscaling(t *testing.T) {
 func TestGenerateBinaryAuthorization(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -507,8 +507,8 @@ func TestGenerateBinaryAuthorization(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.BinaryAuthorization = &v1beta1.BinaryAuthorization{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.BinaryAuthorization = &v1beta2.BinaryAuthorization{
 						Enabled: true,
 					}
 				}),
@@ -537,10 +537,10 @@ func TestGenerateBinaryAuthorization(t *testing.T) {
 	}
 }
 
-func TestGenerateDatabaseEncryption(t *testing.T) {
+func TestGenerateAutopilot(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -550,8 +550,94 @@ func TestGenerateDatabaseEncryption(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.DatabaseEncryption = &v1beta1.DatabaseEncryption{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.Autopilot = &v1beta2.Autopilot{
+						Enabled: true,
+					}
+				}),
+			},
+			want: cluster(func(c *container.Cluster) {
+				c.Autopilot = &container.Autopilot{
+					Enabled: true,
+				}
+			}),
+		},
+		"SuccessfulNil": {
+			args: args{
+				cluster: cluster(),
+				params:  params(),
+			},
+			want: cluster(),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			GenerateAutopilot(tc.args.params.Autopilot, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.Autopilot, tc.args.cluster.Autopilot); diff != "" {
+				t.Errorf("GenerateAutopilot(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGenerateConfidentialNodes(t *testing.T) {
+	type args struct {
+		cluster *container.Cluster
+		params  *v1beta2.ClusterParameters
+	}
+
+	tests := map[string]struct {
+		args args
+		want *container.Cluster
+	}{
+		"Successful": {
+			args: args{
+				cluster: cluster(),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.ConfidentialNodes = &v1beta2.ConfidentialNodes{
+						Enabled: true,
+					}
+				}),
+			},
+			want: cluster(func(c *container.Cluster) {
+				c.ConfidentialNodes = &container.ConfidentialNodes{
+					Enabled: true,
+				}
+			}),
+		},
+		"SuccessfulNil": {
+			args: args{
+				cluster: cluster(),
+				params:  params(),
+			},
+			want: cluster(),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			GenerateConfidentialNodes(tc.args.params.ConfidentialNodes, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.ConfidentialNodes, tc.args.cluster.ConfidentialNodes); diff != "" {
+				t.Errorf("GenerateConfidentialNodes(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGenerateDatabaseEncryption(t *testing.T) {
+	type args struct {
+		cluster *container.Cluster
+		params  *v1beta2.ClusterParameters
+	}
+
+	tests := map[string]struct {
+		args args
+		want *container.Cluster
+	}{
+		"Successful": {
+			args: args{
+				cluster: cluster(),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.DatabaseEncryption = &v1beta2.DatabaseEncryption{
 						KeyName: gcp.StringPtr("cool-key"),
 						State:   gcp.StringPtr("UNKNOWN"),
 					}
@@ -567,8 +653,8 @@ func TestGenerateDatabaseEncryption(t *testing.T) {
 		"SuccessfulPartial": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.DatabaseEncryption = &v1beta1.DatabaseEncryption{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.DatabaseEncryption = &v1beta2.DatabaseEncryption{
 						KeyName: gcp.StringPtr("cool-key"),
 					}
 				}),
@@ -601,7 +687,7 @@ func TestGenerateDatabaseEncryption(t *testing.T) {
 func TestGenerateDefaultMaxPodsConstraint(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -611,8 +697,8 @@ func TestGenerateDefaultMaxPodsConstraint(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.DefaultMaxPodsConstraint = &v1beta1.MaxPodsConstraint{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.DefaultMaxPodsConstraint = &v1beta2.MaxPodsConstraint{
 						MaxPodsPerNode: 5,
 					}
 				}),
@@ -644,7 +730,7 @@ func TestGenerateDefaultMaxPodsConstraint(t *testing.T) {
 func TestGenerateIpAllocationPolicy(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -654,9 +740,8 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
-						AllowRouteOverlap:    gcp.BoolPtr(true),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.IPAllocationPolicy = &v1beta2.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
 						UseIPAliases:         gcp.BoolPtr(true),
 					}
@@ -664,7 +749,6 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.IpAllocationPolicy = &container.IPAllocationPolicy{
-					AllowRouteOverlap:    true,
 					ClusterIpv4CidrBlock: "0.0.0.0/0",
 					UseIpAliases:         true,
 				}
@@ -691,7 +775,7 @@ func TestGenerateIpAllocationPolicy(t *testing.T) {
 func TestGenerateLegacyAbac(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -701,8 +785,8 @@ func TestGenerateLegacyAbac(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.LegacyAbac = &v1beta1.LegacyAbac{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.LegacyAbac = &v1beta2.LegacyAbac{
 						Enabled: true,
 					}
 				}),
@@ -734,7 +818,7 @@ func TestGenerateLegacyAbac(t *testing.T) {
 func TestGenerateMaintenancePolicy(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -744,10 +828,10 @@ func TestGenerateMaintenancePolicy(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.MaintenancePolicy = &v1beta1.MaintenancePolicySpec{
-						Window: v1beta1.MaintenanceWindowSpec{
-							DailyMaintenanceWindow: v1beta1.DailyMaintenanceWindowSpec{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.MaintenancePolicy = &v1beta2.MaintenancePolicySpec{
+						Window: v1beta2.MaintenanceWindowSpec{
+							DailyMaintenanceWindow: &v1beta2.DailyMaintenanceWindowSpec{
 								StartTime: "13:13",
 							},
 						},
@@ -787,7 +871,7 @@ func TestGenerateMasterAuth(t *testing.T) {
 
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -797,9 +881,9 @@ func TestGenerateMasterAuth(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.MasterAuth = &v1beta1.MasterAuth{
-						ClientCertificateConfig: &v1beta1.ClientCertificateConfig{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.MasterAuth = &v1beta2.MasterAuth{
+						ClientCertificateConfig: &v1beta2.ClientCertificateConfig{
 							IssueClientCertificate: true,
 						},
 					}
@@ -816,9 +900,9 @@ func TestGenerateMasterAuth(t *testing.T) {
 		"SuccessfulFalseWithUsername": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.MasterAuth = &v1beta1.MasterAuth{
-						ClientCertificateConfig: &v1beta1.ClientCertificateConfig{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.MasterAuth = &v1beta2.MasterAuth{
+						ClientCertificateConfig: &v1beta2.ClientCertificateConfig{
 							IssueClientCertificate: false,
 						},
 						Username: &adminUser,
@@ -837,8 +921,8 @@ func TestGenerateMasterAuth(t *testing.T) {
 		"SuccessfulOnlyUsername": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.MasterAuth = &v1beta1.MasterAuth{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.MasterAuth = &v1beta2.MasterAuth{
 						Username: &adminUser,
 					}
 				}),
@@ -870,7 +954,7 @@ func TestGenerateMasterAuth(t *testing.T) {
 func TestGenerateMasterAuthorizedNetworksConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -880,10 +964,10 @@ func TestGenerateMasterAuthorizedNetworksConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.MasterAuthorizedNetworksConfig = &v1beta1.MasterAuthorizedNetworksConfig{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.MasterAuthorizedNetworksConfig = &v1beta2.MasterAuthorizedNetworksConfig{
 						Enabled: gcp.BoolPtr(true),
-						CidrBlocks: []*v1beta1.CidrBlock{
+						CidrBlocks: []*v1beta2.CidrBlock{
 							{
 								CidrBlock: "0.0.0.0/0",
 							},
@@ -923,7 +1007,7 @@ func TestGenerateMasterAuthorizedNetworksConfig(t *testing.T) {
 func TestGenerateNetworkConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -933,9 +1017,9 @@ func TestGenerateNetworkConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.NetworkConfig = &v1beta1.NetworkConfigSpec{
-						EnableIntraNodeVisibility: true,
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.NetworkConfig = &v1beta2.NetworkConfigSpec{
+						EnableIntraNodeVisibility: gcp.BoolPtr(true),
 					}
 				}),
 			},
@@ -966,7 +1050,7 @@ func TestGenerateNetworkConfig(t *testing.T) {
 func TestGenerateNetworkPolicy(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -976,8 +1060,8 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.NetworkPolicy = &v1beta1.NetworkPolicy{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.NetworkPolicy = &v1beta2.NetworkPolicy{
 						Enabled:  gcp.BoolPtr(true),
 						Provider: gcp.StringPtr("CALICO"),
 					}
@@ -1008,10 +1092,10 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 	}
 }
 
-func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
+func TestGenerateNotificationConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -1021,15 +1105,21 @@ func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.PodSecurityPolicyConfig = &v1beta1.PodSecurityPolicyConfig{
-						Enabled: true,
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.NotificationConfig = &v1beta2.NotificationConfig{
+						Pubsub: v1beta2.PubSub{
+							Enabled: true,
+							Topic:   "cool-topic",
+						},
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
-				c.PodSecurityPolicyConfig = &container.PodSecurityPolicyConfig{
-					Enabled: true,
+				c.NotificationConfig = &container.NotificationConfig{
+					Pubsub: &container.PubSub{
+						Enabled: true,
+						Topic:   "cool-topic",
+					},
 				}
 			}),
 		},
@@ -1043,9 +1133,9 @@ func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			GeneratePodSecurityPolicyConfig(tc.args.params.PodSecurityPolicyConfig, tc.args.cluster)
-			if diff := cmp.Diff(tc.want.PodSecurityPolicyConfig, tc.args.cluster.PodSecurityPolicyConfig); diff != "" {
-				t.Errorf("GeneratePodSecurityPolicyConfig(...): -want, +got:\n%s", diff)
+			GenerateNotificationConfig(tc.args.params.NotificationConfig, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.NotificationConfig, tc.args.cluster.NotificationConfig); diff != "" {
+				t.Errorf("GenerateNotificationConfig(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -1054,7 +1144,7 @@ func TestGeneratePodSecurityPolicyConfig(t *testing.T) {
 func TestGeneratePrivateClusterConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -1064,40 +1154,36 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.PrivateClusterConfig = &v1beta1.PrivateClusterConfigSpec{
-						EnablePeeringRouteSharing: gcp.BoolPtr(true),
-						EnablePrivateEndpoint:     gcp.BoolPtr(true),
-						EnablePrivateNodes:        gcp.BoolPtr(true),
-						MasterIpv4CidrBlock:       gcp.StringPtr("0.0.0.0/0"),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.PrivateClusterConfig = &v1beta2.PrivateClusterConfigSpec{
+						EnablePrivateEndpoint: gcp.BoolPtr(true),
+						EnablePrivateNodes:    gcp.BoolPtr(true),
+						MasterIpv4CidrBlock:   gcp.StringPtr("0.0.0.0/0"),
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.PrivateClusterConfig = &container.PrivateClusterConfig{
-					EnablePeeringRouteSharing: true,
-					EnablePrivateEndpoint:     true,
-					EnablePrivateNodes:        true,
-					MasterIpv4CidrBlock:       "0.0.0.0/0",
+					EnablePrivateEndpoint: true,
+					EnablePrivateNodes:    true,
+					MasterIpv4CidrBlock:   "0.0.0.0/0",
 				}
 			}),
 		},
 		"SuccessfulPartial": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.PrivateClusterConfig = &v1beta1.PrivateClusterConfigSpec{
-						EnablePeeringRouteSharing: gcp.BoolPtr(true),
-						MasterIpv4CidrBlock:       gcp.StringPtr("0.0.0.0/0"),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.PrivateClusterConfig = &v1beta2.PrivateClusterConfigSpec{
+						MasterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.PrivateClusterConfig = &container.PrivateClusterConfig{
-					EnablePeeringRouteSharing: true,
-					EnablePrivateEndpoint:     false,
-					EnablePrivateNodes:        false,
-					MasterIpv4CidrBlock:       "0.0.0.0/0",
+					EnablePrivateEndpoint: false,
+					EnablePrivateNodes:    false,
+					MasterIpv4CidrBlock:   "0.0.0.0/0",
 				}
 			}),
 		},
@@ -1122,7 +1208,7 @@ func TestGeneratePrivateClusterConfig(t *testing.T) {
 func TestGenerateResourceUsageExportConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -1132,13 +1218,13 @@ func TestGenerateResourceUsageExportConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.ResourceUsageExportConfig = &v1beta1.ResourceUsageExportConfig{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.ResourceUsageExportConfig = &v1beta2.ResourceUsageExportConfig{
 						EnableNetworkEgressMetering: gcp.BoolPtr(true),
-						BigqueryDestination: &v1beta1.BigQueryDestination{
+						BigqueryDestination: &v1beta2.BigQueryDestination{
 							DatasetID: "cool-id",
 						},
-						ConsumptionMeteringConfig: &v1beta1.ConsumptionMeteringConfig{
+						ConsumptionMeteringConfig: &v1beta2.ConsumptionMeteringConfig{
 							Enabled: true,
 						},
 					}
@@ -1174,10 +1260,10 @@ func TestGenerateResourceUsageExportConfig(t *testing.T) {
 	}
 }
 
-func TestGenerateTierSettings(t *testing.T) {
+func TestGenerateReleaseChannel(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -1187,15 +1273,15 @@ func TestGenerateTierSettings(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.TierSettings = &v1beta1.TierSettings{
-						Tier: "STANDARD",
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.ReleaseChannel = &v1beta2.ReleaseChannel{
+						Channel: "STABLE",
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
-				c.TierSettings = &container.TierSettings{
-					Tier: "STANDARD",
+				c.ReleaseChannel = &container.ReleaseChannel{
+					Channel: "STABLE",
 				}
 			}),
 		},
@@ -1209,9 +1295,9 @@ func TestGenerateTierSettings(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			GenerateTierSettings(tc.args.params.TierSettings, tc.args.cluster)
-			if diff := cmp.Diff(tc.want.TierSettings, tc.args.cluster.TierSettings); diff != "" {
-				t.Errorf("GenerateTierSettings(...): -want, +got:\n%s", diff)
+			GenerateReleaseChannel(tc.args.params.ReleaseChannel, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.ReleaseChannel, tc.args.cluster.ReleaseChannel); diff != "" {
+				t.Errorf("GenerateReleaseChannel(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -1220,7 +1306,7 @@ func TestGenerateTierSettings(t *testing.T) {
 func TestGenerateVerticalPodAutoscaling(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -1230,8 +1316,8 @@ func TestGenerateVerticalPodAutoscaling(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.VerticalPodAutoscaling = &v1beta1.VerticalPodAutoscaling{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.VerticalPodAutoscaling = &v1beta2.VerticalPodAutoscaling{
 						Enabled: true,
 					}
 				}),
@@ -1263,7 +1349,7 @@ func TestGenerateVerticalPodAutoscaling(t *testing.T) {
 func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 
 	tests := map[string]struct {
@@ -1273,15 +1359,15 @@ func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				cluster: cluster(),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.WorkloadIdentityConfig = &v1beta1.WorkloadIdentityConfig{
-						IdentityNamespace: "cool-namespace",
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.WorkloadIdentityConfig = &v1beta2.WorkloadIdentityConfig{
+						WorkloadPool: "cool-namespace",
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.WorkloadIdentityConfig = &container.WorkloadIdentityConfig{
-					IdentityNamespace: "cool-namespace",
+					WorkloadPool: "cool-namespace",
 				}
 			}),
 		},
@@ -1308,10 +1394,10 @@ func TestLateInitializeSpec(t *testing.T) {
 
 	type args struct {
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 	type want struct {
-		params *v1beta1.GKEClusterParameters
+		params *v1beta2.ClusterParameters
 	}
 	tests := map[string]struct {
 		args args
@@ -1332,13 +1418,13 @@ func TestLateInitializeSpec(t *testing.T) {
 				params: params(),
 			},
 			want: want{
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.AddonsConfig = &v1beta1.AddonsConfig{
-						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
-							Disabled: gcp.BoolPtr(true),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.AddonsConfig = &v1beta2.AddonsConfig{
+						HTTPLoadBalancing: &v1beta2.HTTPLoadBalancing{
+							Disabled: true,
 						},
 					}
-					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
+					p.IPAllocationPolicy = &v1beta2.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
 					}
 				}),
@@ -1359,23 +1445,23 @@ func TestLateInitializeSpec(t *testing.T) {
 						Username: "someUser",
 					}
 				}),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.MasterAuth = &v1beta1.MasterAuth{
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.MasterAuth = &v1beta2.MasterAuth{
 						Username: &adminUser,
 					}
 				}),
 			},
 			want: want{
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.AddonsConfig = &v1beta1.AddonsConfig{
-						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
-							Disabled: gcp.BoolPtr(true),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.AddonsConfig = &v1beta2.AddonsConfig{
+						HTTPLoadBalancing: &v1beta2.HTTPLoadBalancing{
+							Disabled: true,
 						},
 					}
-					p.IPAllocationPolicy = &v1beta1.IPAllocationPolicy{
+					p.IPAllocationPolicy = &v1beta2.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
 					}
-					p.MasterAuth = &v1beta1.MasterAuth{
+					p.MasterAuth = &v1beta2.MasterAuth{
 						Username: &adminUser,
 					}
 				}),
@@ -1402,12 +1488,10 @@ func TestLateInitializeSpec(t *testing.T) {
 }
 
 func TestIsUpToDate(t *testing.T) {
-	falseVal := false
-
 	type args struct {
 		name    string
 		cluster *container.Cluster
-		params  *v1beta1.GKEClusterParameters
+		params  *v1beta2.ClusterParameters
 	}
 	type want struct {
 		upToDate bool
@@ -1449,10 +1533,10 @@ func TestIsUpToDate(t *testing.T) {
 						},
 					}
 				}),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.AddonsConfig = &v1beta1.AddonsConfig{
-						KubernetesDashboard: &v1beta1.KubernetesDashboard{
-							Disabled: gcp.BoolPtr(true),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.AddonsConfig = &v1beta2.AddonsConfig{
+						KubernetesDashboard: &v1beta2.KubernetesDashboard{
+							Disabled: true,
 						},
 					}
 				}),
@@ -1475,10 +1559,10 @@ func TestIsUpToDate(t *testing.T) {
 						ClusterIpv4CidrBlock: "0.0.0.0/0",
 					}
 				}),
-				params: params(func(p *v1beta1.GKEClusterParameters) {
-					p.AddonsConfig = &v1beta1.AddonsConfig{
-						HTTPLoadBalancing: &v1beta1.HTTPLoadBalancing{
-							Disabled: &falseVal,
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.AddonsConfig = &v1beta2.AddonsConfig{
+						HTTPLoadBalancing: &v1beta2.HTTPLoadBalancing{
+							Disabled: false,
 						},
 					}
 				}),
@@ -1547,7 +1631,7 @@ func TestIsUpToDate(t *testing.T) {
 func TestGetFullyQualifiedParent(t *testing.T) {
 	type args struct {
 		project string
-		params  v1beta1.GKEClusterParameters
+		params  v1beta2.ClusterParameters
 	}
 	tests := map[string]struct {
 		args args
@@ -1574,7 +1658,7 @@ func TestGetFullyQualifiedParent(t *testing.T) {
 func TestGetFullyQualifiedName(t *testing.T) {
 	type args struct {
 		project string
-		params  v1beta1.GKEClusterParameters
+		params  v1beta2.ClusterParameters
 		name    string
 	}
 	tests := map[string]struct {

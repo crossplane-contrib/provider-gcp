@@ -21,10 +21,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	container "google.golang.org/api/container/v1beta1"
+	container "google.golang.org/api/container/v1"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
@@ -48,8 +48,8 @@ func nodePool(m ...func(*container.NodePool)) *container.NodePool {
 	return n
 }
 
-func params(m ...func(*v1alpha1.NodePoolParameters)) *v1alpha1.NodePoolParameters {
-	p := &v1alpha1.NodePoolParameters{
+func params(m ...func(*v1beta1.NodePoolParameters)) *v1beta1.NodePoolParameters {
+	p := &v1beta1.NodePoolParameters{
 		Cluster:          cluster,
 		InitialNodeCount: gcp.Int64Ptr(3),
 		Locations:        []string{"us-central1-a"},
@@ -61,9 +61,9 @@ func params(m ...func(*v1alpha1.NodePoolParameters)) *v1alpha1.NodePoolParameter
 	return p
 }
 
-func observation(m ...func(*v1alpha1.NodePoolObservation)) *v1alpha1.NodePoolObservation {
-	o := &v1alpha1.NodePoolObservation{
-		Conditions: []*v1beta1.StatusCondition{
+func observation(m ...func(*v1beta1.NodePoolObservation)) *v1beta1.NodePoolObservation {
+	o := &v1beta1.NodePoolObservation{
+		Conditions: []*v1beta2.StatusCondition{
 			{
 				Code:    "UNKNOWN",
 				Message: "Condition is unknown.",
@@ -74,8 +74,8 @@ func observation(m ...func(*v1alpha1.NodePoolObservation)) *v1alpha1.NodePoolObs
 			"cool-group-2",
 		},
 		PodIpv4CidrSize: 24,
-		Management: &v1alpha1.NodeManagementStatus{
-			UpgradeOptions: &v1alpha1.AutoUpgradeOptions{
+		Management: &v1beta1.NodeManagementStatus{
+			UpgradeOptions: &v1beta1.AutoUpgradeOptions{
 				AutoUpgradeStartTime: "13:13",
 				Description:          "Time to upgrade.",
 			},
@@ -121,7 +121,7 @@ func TestGenerateObservation(t *testing.T) {
 
 	tests := map[string]struct {
 		args args
-		want *v1alpha1.NodePoolObservation
+		want *v1beta1.NodePoolObservation
 	}{
 		"Successful": {
 			args: args{
@@ -135,7 +135,7 @@ func TestGenerateObservation(t *testing.T) {
 					n.PodIpv4CidrSize = 16
 				}),
 			},
-			want: observation(func(p *v1alpha1.NodePoolObservation) {
+			want: observation(func(p *v1beta1.NodePoolObservation) {
 				p.PodIpv4CidrSize = 16
 			}),
 		},
@@ -153,7 +153,7 @@ func TestGenerateObservation(t *testing.T) {
 func TestGenerateNodePool(t *testing.T) {
 	type args struct {
 		nodePool *container.NodePool
-		params   *v1alpha1.NodePoolParameters
+		params   *v1beta1.NodePoolParameters
 		name     string
 	}
 
@@ -164,8 +164,8 @@ func TestGenerateNodePool(t *testing.T) {
 		"Successful": {
 			args: args{
 				nodePool: nodePool(),
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Autoscaling = &v1alpha1.NodePoolAutoscaling{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Autoscaling = &v1beta1.NodePoolAutoscaling{
 						Enabled:      gcp.BoolPtr(true),
 						MaxNodeCount: gcp.Int64Ptr(3),
 						MinNodeCount: gcp.Int64Ptr(3),
@@ -192,8 +192,8 @@ func TestGenerateNodePool(t *testing.T) {
 		"AutoUpgradeEnabled_InitializesVersion": {
 			args: args{
 				nodePool: nodePool(),
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Management = &v1alpha1.NodeManagementSpec{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Management = &v1beta1.NodeManagementSpec{
 						AutoUpgrade: gcp.BoolPtr(true),
 					}
 					p.Version = gcp.StringPtr("0.0.1")
@@ -212,8 +212,8 @@ func TestGenerateNodePool(t *testing.T) {
 				nodePool: nodePool(func(pool *container.NodePool) {
 					pool.Version = "0.0.2"
 				}),
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Management = &v1alpha1.NodeManagementSpec{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Management = &v1beta1.NodeManagementSpec{
 						AutoUpgrade: gcp.BoolPtr(true),
 					}
 					p.Version = gcp.StringPtr("0.0.1")
@@ -232,8 +232,8 @@ func TestGenerateNodePool(t *testing.T) {
 				nodePool: nodePool(func(pool *container.NodePool) {
 					pool.Version = "0.0.2"
 				}),
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Management = &v1alpha1.NodeManagementSpec{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Management = &v1beta1.NodeManagementSpec{
 						AutoUpgrade: gcp.BoolPtr(false),
 					}
 					p.Version = gcp.StringPtr("0.0.1")
@@ -264,7 +264,7 @@ func TestGenerateAutoscaling(t *testing.T) {
 
 	type args struct {
 		nodePool *container.NodePool
-		params   *v1alpha1.NodePoolParameters
+		params   *v1beta1.NodePoolParameters
 	}
 
 	tests := map[string]struct {
@@ -274,8 +274,8 @@ func TestGenerateAutoscaling(t *testing.T) {
 		"Successful": {
 			args: args{
 				nodePool: &container.NodePool{},
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Autoscaling = &v1alpha1.NodePoolAutoscaling{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Autoscaling = &v1beta1.NodePoolAutoscaling{
 						Autoprovisioned: &enable,
 						Enabled:         &enable,
 						MaxNodeCount:    &count,
@@ -328,11 +328,11 @@ func TestGenerateConfig(t *testing.T) {
 	preemptible := true
 	serviceAccount := "my-cool-account"
 	tags := []string{"tag"}
-	accConf := &v1alpha1.AcceleratorConfig{
+	accConf := &v1beta1.AcceleratorConfig{
 		AcceleratorCount: 3,
 		AcceleratorType:  "nvidia-tesla-t4",
 	}
-	taint := &v1alpha1.NodeTaint{
+	taint := &v1beta1.NodeTaint{
 		Effect: "NO_SCHEDULE",
 		Key:    "cool-key",
 		Value:  "cool-val",
@@ -349,7 +349,7 @@ func TestGenerateConfig(t *testing.T) {
 
 	type args struct {
 		nodePool *container.NodePool
-		params   *v1alpha1.NodePoolParameters
+		params   *v1beta1.NodePoolParameters
 	}
 
 	tests := map[string]struct {
@@ -359,9 +359,9 @@ func TestGenerateConfig(t *testing.T) {
 		"Successful": {
 			args: args{
 				nodePool: &container.NodePool{},
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Config = &v1alpha1.NodeConfig{
-						Accelerators:   []*v1alpha1.AcceleratorConfig{accConf},
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Config = &v1beta1.NodeConfig{
+						Accelerators:   []*v1beta1.AcceleratorConfig{accConf},
 						DiskSizeGb:     gcp.Int64Ptr(diskSizeGb),
 						DiskType:       gcp.StringPtr(diskType),
 						ImageType:      gcp.StringPtr(imageType),
@@ -372,15 +372,15 @@ func TestGenerateConfig(t *testing.T) {
 						MinCPUPlatform: gcp.StringPtr(minCPUPlatform),
 						OauthScopes:    oauthScopes,
 						Preemptible:    gcp.BoolPtr(preemptible),
-						SandboxConfig: &v1alpha1.SandboxConfig{
-							SandboxType: "gvisor",
+						SandboxConfig: &v1beta1.SandboxConfig{
+							Type: "gvisor",
 						},
 						ServiceAccount: gcp.StringPtr(serviceAccount),
-						ShieldedInstanceConfig: &v1alpha1.ShieldedInstanceConfig{
+						ShieldedInstanceConfig: &v1beta1.ShieldedInstanceConfig{
 							EnableIntegrityMonitoring: &enable,
 							EnableSecureBoot:          &enable,
 						},
-						Taints: []*v1alpha1.NodeTaint{taint},
+						Taints: []*v1beta1.NodeTaint{taint},
 						Tags:   tags,
 					}
 
@@ -400,7 +400,7 @@ func TestGenerateConfig(t *testing.T) {
 					OauthScopes:    oauthScopes,
 					Preemptible:    preemptible,
 					SandboxConfig: &container.SandboxConfig{
-						SandboxType: "gvisor",
+						Type: "gvisor",
 					},
 					ServiceAccount: serviceAccount,
 					ShieldedInstanceConfig: &container.ShieldedInstanceConfig{
@@ -435,7 +435,7 @@ func TestGenerateManagement(t *testing.T) {
 
 	type args struct {
 		nodePool *container.NodePool
-		params   *v1alpha1.NodePoolParameters
+		params   *v1beta1.NodePoolParameters
 	}
 
 	tests := map[string]struct {
@@ -445,8 +445,8 @@ func TestGenerateManagement(t *testing.T) {
 		"Successful": {
 			args: args{
 				nodePool: &container.NodePool{},
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Management = &v1alpha1.NodeManagementSpec{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Management = &v1beta1.NodeManagementSpec{
 						AutoRepair:  &enable,
 						AutoUpgrade: &enable,
 					}
@@ -482,7 +482,7 @@ func TestGenerateMaxPodsConstraint(t *testing.T) {
 
 	type args struct {
 		nodePool *container.NodePool
-		params   *v1alpha1.NodePoolParameters
+		params   *v1beta1.NodePoolParameters
 	}
 
 	tests := map[string]struct {
@@ -492,8 +492,8 @@ func TestGenerateMaxPodsConstraint(t *testing.T) {
 		"Successful": {
 			args: args{
 				nodePool: &container.NodePool{},
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.MaxPodsConstraint = &v1beta1.MaxPodsConstraint{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.MaxPodsConstraint = &v1beta2.MaxPodsConstraint{
 						MaxPodsPerNode: max,
 					}
 				}),
@@ -525,10 +525,10 @@ func TestGenerateMaxPodsConstraint(t *testing.T) {
 func TestLateInitializeSpec(t *testing.T) {
 	type args struct {
 		nodePool *container.NodePool
-		params   *v1alpha1.NodePoolParameters
+		params   *v1beta1.NodePoolParameters
 	}
 	type want struct {
-		params *v1alpha1.NodePoolParameters
+		params *v1beta1.NodePoolParameters
 	}
 	tests := map[string]struct {
 		args args
@@ -547,8 +547,8 @@ func TestLateInitializeSpec(t *testing.T) {
 				params: params(),
 			},
 			want: want{
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Autoscaling = &v1alpha1.NodePoolAutoscaling{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Autoscaling = &v1beta1.NodePoolAutoscaling{
 						Autoprovisioned: gcp.BoolPtr(true),
 						Enabled:         gcp.BoolPtr(true),
 						MaxNodeCount:    gcp.Int64Ptr(3),
@@ -583,7 +583,7 @@ func TestIsUpToDate(t *testing.T) {
 	type args struct {
 		name     string
 		nodePool *container.NodePool
-		params   *v1alpha1.NodePoolParameters
+		params   *v1beta1.NodePoolParameters
 	}
 	type want struct {
 		upToDate bool
@@ -636,10 +636,10 @@ func TestIsUpToDate(t *testing.T) {
 						},
 					}
 				}),
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Config = &v1alpha1.NodeConfig{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Config = &v1beta1.NodeConfig{
 						Labels: map[string]string{"cool-key": "cool-value"},
-						Taints: []*v1alpha1.NodeTaint{
+						Taints: []*v1beta1.NodeTaint{
 							{
 								Key:   "cool-key",
 								Value: "cool-value",
@@ -664,8 +664,8 @@ func TestIsUpToDate(t *testing.T) {
 						MinNodeCount:    3,
 					}
 				}),
-				params: params(func(p *v1alpha1.NodePoolParameters) {
-					p.Autoscaling = &v1alpha1.NodePoolAutoscaling{
+				params: params(func(p *v1beta1.NodePoolParameters) {
+					p.Autoscaling = &v1beta1.NodePoolAutoscaling{
 						Autoprovisioned: &falseVal,
 					}
 				}),
@@ -691,7 +691,7 @@ func TestIsUpToDate(t *testing.T) {
 
 func TestGetFullyQualifiedName(t *testing.T) {
 	type args struct {
-		params v1alpha1.NodePoolParameters
+		params v1beta1.NodePoolParameters
 		name   string
 	}
 	tests := map[string]struct {
@@ -707,7 +707,7 @@ func TestGetFullyQualifiedName(t *testing.T) {
 		},
 		"SuccessfulZonal": {
 			args: args{
-				params: *params(func(p *v1alpha1.NodePoolParameters) {
+				params: *params(func(p *v1beta1.NodePoolParameters) {
 					p.Cluster = zonalCluster
 				}),
 				name: name,

@@ -1,50 +1,28 @@
-apiVersion: container.gcp.crossplane.io/v1beta1
-kind: GKECluster
+apiVersion: container.gcp.crossplane.io/v1beta2
+kind: Cluster
 metadata:
   name: example-cluster
 spec:
   forProvider:
+    initialClusterVersion: "1.18"
+    location: us-west2
+    masterAuth:
+      # setting this master auth user name enables basic auth so that a client (e.g.,
+      # provider-helm), can connect with the generated kubeconfig from the connection secret
+      username: admin
+    networkConfig:
+      enableIntraNodeVisibility: true
+    loggingService: logging.googleapis.com/kubernetes
+    monitoringService: monitoring.googleapis.com/kubernetes
     addonsConfig:
-      cloudRunConfig:
-        disabled: true
-      dnsCacheConfig:
-        enabled: false
       gcePersistentDiskCsiDriverConfig:
         enabled: true
-      horizontalPodAutoscaling:
-        disabled: true
-      httpLoadBalancing:
-        disabled: true
-      istioConfig:
-        disabled: true
-        auth: "AUTH_NONE"
-      kalmConfig:
-        enabled: true
-      kubernetesDashboard:
-        disabled: true
-      networkPolicyConfig:
-        disabled: false
-    location: northamerica-northeast1-a
-    binaryAuthorization: 
-      enabled: false
-    ipAllocationPolicy:
-      useIpAliases: true
-      createSubnetwork: true
-    legacyAbac:
-      enabled: false
-    loggingService: "logging.googleapis.com/kubernetes"
-    masterAuth:
-      clientCertificateConfig:
-        issueClientCertificate: false
-    monitoringService: "monitoring.googleapis.com/kubernetes"
-    network: "gke-test" 
-    networkPolicy:
-      enabled: true
-      provider: CALICO
-    podSecurityPolicyConfig:
-      enabled: true
+    network: "default"
+  writeConnectionSecretToRef:
+    namespace: default
+    name: gke-conn
 ---
-apiVersion: container.gcp.crossplane.io/v1alpha1
+apiVersion: container.gcp.crossplane.io/v1beta1
 kind: NodePool
 metadata:
   name: crossplane-np
@@ -60,13 +38,12 @@ spec:
     config:
       machineType: n1-standard-1
       sandboxConfig:
-        sandboxType: gvisor
+        type: gvisor
       diskSizeGb: 120
       diskType: pd-ssd
       imageType: cos_containerd
       labels:
         test-label: crossplane-created
-      machineType: n1-standard-2
       oauthScopes:
       - "https://www.googleapis.com/auth/devstorage.read_only"
       - "https://www.googleapis.com/auth/logging.write"
@@ -76,4 +53,4 @@ spec:
       - "https://www.googleapis.com/auth/trace.append"      
     initialNodeCount: 3
     locations:
-      - "northamerica-northeast1-a"
+      - "us-west2-a"
