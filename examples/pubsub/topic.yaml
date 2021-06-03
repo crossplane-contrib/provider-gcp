@@ -1,15 +1,14 @@
----
 apiVersion: pubsub.gcp.crossplane.io/v1alpha1
 kind: Topic
 metadata:
-  name: my-little-topic
+  name: my-topic
 spec:
   forProvider:
     labels:
-      muvaftest: a-little-label-here
-  reclaimPolicy: Delete
+      crossplane: provider-aws
   writeConnectionSecretToRef:
     name: little-topics-big-secret
     namespace: crossplane-system
   providerConfigRef:
     name: gcp-provider
+  deletionPolicy: Delete
