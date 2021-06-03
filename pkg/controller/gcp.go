@@ -30,6 +30,8 @@ import (
 	"github.com/crossplane/provider-gcp/pkg/controller/iam"
 	"github.com/crossplane/provider-gcp/pkg/controller/kms"
 	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
+	"github.com/crossplane/provider-gcp/pkg/controller/secretsmanager/secret"
+	"github.com/crossplane/provider-gcp/pkg/controller/secretsmanager/secretversion"
 	"github.com/crossplane/provider-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplane/provider-gcp/pkg/controller/storage"
 )
@@ -53,6 +55,8 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		kms.SetupCryptoKey,
 		kms.SetupCryptoKeyPolicy,
 		pubsub.SetupTopic,
+		secret.SetupSecret,
+		secretversion.SetupSecretVersion,
 		servicenetworking.SetupConnection,
 		storage.SetupBucket,
 		storage.SetupBucketPolicy,

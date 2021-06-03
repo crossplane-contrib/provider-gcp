@@ -1,0 +1,15 @@
+---
+apiVersion: secretsmanager.gcp.crossplane.io/v1alpha1
+kind: SecretVersion
+metadata:
+  name: "1"
+spec:
+  forProvider:
+    payload:
+      data: thisisatinysecret
+    secretRef: real
+    desiredSecretVersionState: ENABLED
+
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: gcp-provider
