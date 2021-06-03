@@ -1,0 +1,15 @@
+apiVersion: cache.gcp.crossplane.io/v1beta1
+kind: CloudMemorystoreInstance
+metadata:
+  name: example-cloudmemorystore-instance
+spec:
+  forProvider:
+    tier: STANDARD_HA
+    region: us-west2
+    memorySizeGb: 1
+  providerRef:
+    name: gcp-provider
+  writeConnectionSecretToRef:
+    name: example-cloudmemorystore-connection-details
+    namespace: crossplane-system
+  deletionPolicy: Delete
