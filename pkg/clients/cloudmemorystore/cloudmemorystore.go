@@ -62,7 +62,7 @@ func GetFullyQualifiedName(project string, p v1beta1.CloudMemorystoreInstancePar
 }
 
 // GenerateRedisInstance is used to convert Crossplane CloudMemorystoreInstanceParameters
-// to GCP's Redis Instance object.
+// to GCP's Redis Instance object. Name must be a fully qualified name for the instance.
 func GenerateRedisInstance(name string, s v1beta1.CloudMemorystoreInstanceParameters, r *redis.Instance) {
 	r.Name = name
 	r.Tier = s.Tier

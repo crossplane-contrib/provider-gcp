@@ -153,9 +153,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	// Generate Redis instance from resource spec.
 	instance := &redis.Instance{}
-	cloudmemorystore.GenerateRedisInstance(meta.GetExternalName(i), i.Spec.ForProvider, instance)
+	cloudmemorystore.GenerateRedisInstance(cloudmemorystore.GetFullyQualifiedName(e.projectID, i.Spec.ForProvider, meta.GetExternalName(i)), i.Spec.ForProvider, instance)
 
-	_, err := e.cms.Projects.Locations.Instances.Create(cloudmemorystore.GetFullyQualifiedParent(e.projectID, i.Spec.ForProvider), instance).Context(ctx).Do()
+	_, err := e.cms.Projects.Locations.Instances.Create(cloudmemorystore.GetFullyQualifiedParent(e.projectID, i.Spec.ForProvider), instance).InstanceId(meta.GetExternalName(i)).Context(ctx).Do()
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateInstance)
 }
 
@@ -166,8 +166,9 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 	// Generate Redis instance from resource spec.
 	instance := &redis.Instance{}
-	cloudmemorystore.GenerateRedisInstance(meta.GetExternalName(i), i.Spec.ForProvider, instance)
-	_, err := e.cms.Projects.Locations.Instances.Patch(cloudmemorystore.GetFullyQualifiedName(e.projectID, i.Spec.ForProvider, meta.GetExternalName(i)), instance).Context(ctx).Do()
+	fqn := cloudmemorystore.GetFullyQualifiedName(e.projectID, i.Spec.ForProvider, meta.GetExternalName(i))
+	cloudmemorystore.GenerateRedisInstance(fqn, i.Spec.ForProvider, instance)
+	_, err := e.cms.Projects.Locations.Instances.Patch(fqn, instance).Context(ctx).Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
 }
 
