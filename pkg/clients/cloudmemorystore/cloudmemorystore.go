@@ -53,12 +53,12 @@ const errCheckUpToDate = "unable to determine if external resource is up to date
 // GetFullyQualifiedParent builds the fully qualified name of the instance
 // parent.
 func GetFullyQualifiedParent(project string, p v1beta1.CloudMemorystoreInstanceParameters) string {
-	return fmt.Sprintf(parentFormat, project, gcp.StringValue(p.LocationID))
+	return fmt.Sprintf(parentFormat, project, p.Region)
 }
 
 // GetFullyQualifiedName builds the fully qualified name of the instance.
 func GetFullyQualifiedName(project string, p v1beta1.CloudMemorystoreInstanceParameters, name string) string {
-	return fmt.Sprintf(instanceNameFormat, project, gcp.StringValue(p.LocationID), name)
+	return fmt.Sprintf(instanceNameFormat, project, p.Region, name)
 }
 
 // GenerateRedisInstance is used to convert Crossplane CloudMemorystoreInstanceParameters
