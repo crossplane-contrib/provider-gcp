@@ -1,0 +1,295 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: healthchecks.compute.gcp.crossplane.io
+spec:
+  group: compute.gcp.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
+    kind: HealthCheck
+    listKind: HealthCheckList
+    plural: healthchecks
+    singular: healthcheck
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A HealthCheck is a managed resource that represents a Google Compute Engine VPC HealthCheck.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A HealthCheckSpec defines the desired state of a HealthCheck.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: 'HealthCheckParameters define the desired state of a Google Compute Engine VPC HealthCheck. Most fields map directly to a HealthCheck: https://cloud.google.com/compute/docs/reference/rest/v1/networks'
+                properties:
+                  checkIntervalSec:
+                    description: 'CheckIntervalSec: How often (in seconds) to send a health check. The default value is 5 seconds.'
+                    format: int64
+                    type: integer
+                  description:
+                    description: 'Description: An optional description of this resource. Provide this property when you create the resource.'
+                    type: string
+                  healthyThreshold:
+                    description: 'HealthyThreshold: A so-far unhealthy instance will be marked healthy after this many consecutive successes. The default value is 2.'
+                    format: int64
+                    type: integer
+                  http2HealthCheck:
+                    properties:
+                      host:
+                        description: 'Host: The value of the host header in the HTTP/2 health check request. If left empty (default value), the IP on behalf of which this health check is performed will be used.'
+                        type: string
+                      port:
+                        description: 'Port: The TCP port number for the health check request. The default value is 443. Valid values are 1 through 65535.'
+                        format: int64
+                        type: integer
+                      portName:
+                        description: 'PortName: Port name as defined in InstanceGroup#NamedPort#name. If both port and port_name are defined, port takes precedence.'
+                        type: string
+                      portSpecification:
+                        description: "PortSpecification: Specifies how port is selected for health checking, can be one of following values: USE_FIXED_PORT: The port number in port is used for health checking. USE_NAMED_PORT: The portName is used for health checking. USE_SERVING_PORT: For NetworkEndpointGroup, the port specified for each network endpoint is used for health checking. For other backends, the port or named port specified in the Backend Service is used for health checking. \n If not specified, HTTP2 health check follows behavior specified in port and portName fields. \n Possible values:   \"USE_FIXED_PORT\"   \"USE_NAMED_PORT\"   \"USE_SERVING_PORT\""
+                        type: string
+                      proxyHeader:
+                        description: "ProxyHeader: Specifies the type of proxy header to append before sending data to the backend, either NONE or PROXY_V1. The default is NONE. \n Possible values:   \"NONE\"   \"PROXY_V1\""
+                        type: string
+                      requestPath:
+                        description: 'RequestPath: The request path of the HTTP/2 health check request. The default value is /.'
+                        type: string
+                      response:
+                        description: 'Response: The string to match anywhere in the first 1024 bytes of the response body. If left empty (the default value), the status code determines health. The response data can only be ASCII.'
+                        type: string
+                    type: object
+                  httpHealthCheck:
+                    properties:
+                      host:
+                        description: 'Host: The value of the host header in the HTTP health check request. If left empty (default value), the IP on behalf of which this health check is performed will be used.'
+                        type: string
+                      port:
+                        description: 'Port: The TCP port number for the health check request. The default value is 80. Valid values are 1 through 65535.'
+                        format: int64
+                        type: integer
+                      portName:
+                        description: 'PortName: Port name as defined in InstanceGroup#NamedPort#name. If both port and port_name are defined, port takes precedence.'
+                        type: string
+                      portSpecification:
+                        description: "PortSpecification: Specifies how port is selected for health checking, can be one of following values: USE_FIXED_PORT: The port number in port is used for health checking. USE_NAMED_PORT: The portName is used for health checking. USE_SERVING_PORT: For NetworkEndpointGroup, the port specified for each network endpoint is used for health checking. For other backends, the port or named port specified in the Backend Service is used for health checking. \n If not specified, HTTP health check follows behavior specified in port and portName fields. \n Possible values:   \"USE_FIXED_PORT\"   \"USE_NAMED_PORT\"   \"USE_SERVING_PORT\""
+                        type: string
+                      proxyHeader:
+                        description: "ProxyHeader: Specifies the type of proxy header to append before sending data to the backend, either NONE or PROXY_V1. The default is NONE. \n Possible values:   \"NONE\"   \"PROXY_V1\""
+                        type: string
+                      requestPath:
+                        description: 'RequestPath: The request path of the HTTP health check request. The default value is /.'
+                        type: string
+                      response:
+                        description: 'Response: The string to match anywhere in the first 1024 bytes of the response body. If left empty (the default value), the status code determines health. The response data can only be ASCII.'
+                        type: string
+                    type: object
+                  httpsHealthCheck:
+                    properties:
+                      host:
+                        description: 'Host: The value of the host header in the HTTPS health check request. If left empty (default value), the IP on behalf of which this health check is performed will be used.'
+                        type: string
+                      port:
+                        description: 'Port: The TCP port number for the health check request. The default value is 443. Valid values are 1 through 65535.'
+                        format: int64
+                        type: integer
+                      portName:
+                        description: 'PortName: Port name as defined in InstanceGroup#NamedPort#name. If both port and port_name are defined, port takes precedence.'
+                        type: string
+                      portSpecification:
+                        description: "PortSpecification: Specifies how port is selected for health checking, can be one of following values: USE_FIXED_PORT: The port number in port is used for health checking. USE_NAMED_PORT: The portName is used for health checking. USE_SERVING_PORT: For NetworkEndpointGroup, the port specified for each network endpoint is used for health checking. For other backends, the port or named port specified in the Backend Service is used for health checking. \n If not specified, HTTPS health check follows behavior specified in port and portName fields. \n Possible values:   \"USE_FIXED_PORT\"   \"USE_NAMED_PORT\"   \"USE_SERVING_PORT\""
+                        type: string
+                      proxyHeader:
+                        description: "ProxyHeader: Specifies the type of proxy header to append before sending data to the backend, either NONE or PROXY_V1. The default is NONE. \n Possible values:   \"NONE\"   \"PROXY_V1\""
+                        type: string
+                      requestPath:
+                        description: 'RequestPath: The request path of the HTTPS health check request. The default value is /.'
+                        type: string
+                      response:
+                        description: 'Response: The string to match anywhere in the first 1024 bytes of the response body. If left empty (the default value), the status code determines health. The response data can only be ASCII.'
+                        type: string
+                    type: object
+                  kind:
+                    description: 'Kind: Type of the resource.'
+                    type: string
+                  sslHealthCheck:
+                    properties:
+                      port:
+                        description: 'Port: The TCP port number for the health check request. The default value is 443. Valid values are 1 through 65535.'
+                        format: int64
+                        type: integer
+                      portName:
+                        description: 'PortName: Port name as defined in InstanceGroup#NamedPort#name. If both port and port_name are defined, port takes precedence.'
+                        type: string
+                      portSpecification:
+                        description: "PortSpecification: Specifies how port is selected for health checking, can be one of following values: USE_FIXED_PORT: The port number in port is used for health checking. USE_NAMED_PORT: The portName is used for health checking. USE_SERVING_PORT: For NetworkEndpointGroup, the port specified for each network endpoint is used for health checking. For other backends, the port or named port specified in the Backend Service is used for health checking. \n If not specified, SSL health check follows behavior specified in port and portName fields. \n Possible values:   \"USE_FIXED_PORT\"   \"USE_NAMED_PORT\"   \"USE_SERVING_PORT\""
+                        type: string
+                      proxyHeader:
+                        description: "ProxyHeader: Specifies the type of proxy header to append before sending data to the backend, either NONE or PROXY_V1. The default is NONE. \n Possible values:   \"NONE\"   \"PROXY_V1\""
+                        type: string
+                      request:
+                        description: 'Request: The application data to send once the SSL connection has been established (default value is empty). If both request and response are empty, the connection establishment alone will indicate health. The request data can only be ASCII.'
+                        type: string
+                      response:
+                        description: 'Response: The bytes to match against the beginning of the response data. If left empty (the default value), any response will indicate health. The response data can only be ASCII.'
+                        type: string
+                    type: object
+                  tcpHealthCheck:
+                    properties:
+                      port:
+                        description: 'Port: The TCP port number for the health check request. The default value is 80. Valid values are 1 through 65535.'
+                        format: int64
+                        type: integer
+                      portName:
+                        description: 'PortName: Port name as defined in InstanceGroup#NamedPort#name. If both port and port_name are defined, port takes precedence.'
+                        type: string
+                      portSpecification:
+                        description: "PortSpecification: Specifies how port is selected for health checking, can be one of following values: USE_FIXED_PORT: The port number in port is used for health checking. USE_NAMED_PORT: The portName is used for health checking. USE_SERVING_PORT: For NetworkEndpointGroup, the port specified for each network endpoint is used for health checking. For other backends, the port or named port specified in the Backend Service is used for health checking. \n If not specified, TCP health check follows behavior specified in port and portName fields. \n Possible values:   \"USE_FIXED_PORT\"   \"USE_NAMED_PORT\"   \"USE_SERVING_PORT\""
+                        type: string
+                      proxyHeader:
+                        description: "ProxyHeader: Specifies the type of proxy header to append before sending data to the backend, either NONE or PROXY_V1. The default is NONE. \n Possible values:   \"NONE\"   \"PROXY_V1\""
+                        type: string
+                      request:
+                        description: 'Request: The application data to send once the TCP connection has been established (default value is empty). If both request and response are empty, the connection establishment alone will indicate health. The request data can only be ASCII.'
+                        type: string
+                      response:
+                        description: 'Response: The bytes to match against the beginning of the response data. If left empty (the default value), any response will indicate health. The response data can only be ASCII.'
+                        type: string
+                    type: object
+                  timeoutSec:
+                    description: 'TimeoutSec: How long (in seconds) to wait before claiming failure. The default value is 5 seconds. It is invalid for timeoutSec to have greater value than checkIntervalSec.'
+                    format: int64
+                    type: integer
+                  type:
+                    description: "Type: Specifies the type of the healthCheck, either TCP, SSL, HTTP, HTTPS or HTTP2. If not specified, the default is TCP. Exactly one of the protocol-specific health check field must be specified, which must match type field. \n Possible values:   \"HTTP\"   \"HTTP2\"   \"HTTPS\"   \"INVALID\"   \"SSL\"   \"TCP\""
+                    type: string
+                  unhealthyThreshold:
+                    description: 'UnhealthyThreshold: A so-far healthy instance will be marked unhealthy after this many consecutive failures. The default value is 2.'
+                    format: int64
+                    type: integer
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A HealthCheckStatus represents the observed state of a HealthCheck.
+            properties:
+              atProvider:
+                description: A HealthCheckObservation represents the observed state of a Google Compute Engine VPC HealthCheck.
+                properties:
+                  creationTimestamp:
+                    description: 'CreationTimestamp: [Output Only] Creation timestamp in 3339 text format.'
+                    type: string
+                  id:
+                    description: 'ID: [Output Only] The unique identifier for the resource. This identifier is defined by the server.'
+                    format: int64
+                    type: integer
+                  region:
+                    description: 'Region: [Output Only] Region where the health check resides. Not applicable to global health checks.'
+                    type: string
+                  selfLink:
+                    description: 'SelfLink: [Output Only] Server-defined URL for the resource.'
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True, False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
