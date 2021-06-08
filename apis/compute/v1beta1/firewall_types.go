@@ -22,9 +22,9 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
-// FirewallParameters define the desired state of a Google Compute Engine VPC
-// Network. Most fields map directly to a Network:
-// https://cloud.google.com/compute/docs/reference/rest/v1/networks
+// FirewallParameters define the desired state of a Google Compute Engine
+// Firewall rule. Most fields map directly to a Firewall:
+// https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/
 type FirewallParameters struct {
 	// Description: An optional description of this resource. Provide this
 	// field when you create the resource.
@@ -205,12 +205,6 @@ type FirewallDenied struct {
 	// Example inputs include: ["22"], ["80","443"], and ["12345-12349"].
 	Ports []string `json:"ports,omitempty"`
 }
-
-// Firewall directions.
-const (
-	FirewallDirectionIngress = "INGRESS"
-	FirewallDirectionEgress  = "EGRESS"
-)
 
 // A FirewallLogConfig represents the available logging options for firewall.
 type FirewallLogConfig struct {
