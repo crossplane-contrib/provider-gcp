@@ -115,7 +115,7 @@ func (c *firewallExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 
 	cr.Status.SetConditions(xpv1.Available())
 
-	u, _, err := firewall.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
+	u, err := firewall.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckFirewallUpToDate)
 	}
@@ -153,16 +153,12 @@ func (c *firewallExternal) Update(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalUpdate{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFirewall)
 	}
 
-	upToDate, switchToCustom, err := firewall.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
+	upToDate, err := firewall.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errCheckFirewallUpToDate)
 	}
 	if upToDate {
 		return managed.ExternalUpdate{}, nil
-	}
-	if switchToCustom {
-		_, err := c.Networks.SwitchToCustomMode(c.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
-		return managed.ExternalUpdate{}, errors.Wrap(err, errFirewallUpdateFailed)
 	}
 
 	fw := &compute.Firewall{}

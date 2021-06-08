@@ -125,15 +125,15 @@ func LateInitializeSpec(spec *v1beta1.FirewallParameters, in compute.Firewall) {
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(name string, in *v1beta1.FirewallParameters, observed *compute.Firewall) (upTodate bool, switchToCustom bool, err error) {
+func IsUpToDate(name string, in *v1beta1.FirewallParameters, observed *compute.Firewall) (upTodate bool, err error) {
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
-		return true, false, errors.Wrap(err, errCheckUpToDate)
+		return true, errors.Wrap(err, errCheckUpToDate)
 	}
 	desired, ok := generated.(*compute.Firewall)
 	if !ok {
-		return true, false, errors.New(errCheckUpToDate)
+		return true, errors.New(errCheckUpToDate)
 	}
 	GenerateFirewall(name, *in, desired)
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(compute.Firewall{}, "ForceSendFields")), false, nil
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(compute.Firewall{}, "ForceSendFields")), nil
 }
