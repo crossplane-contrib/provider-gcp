@@ -66,6 +66,7 @@ func SetupFirewall(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter)
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.FirewallGroupVersionKind),
 			managed.WithExternalConnecter(&firewallConnector{kube: mgr.GetClient()}),
+			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
