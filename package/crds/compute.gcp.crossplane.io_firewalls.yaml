@@ -48,7 +48,7 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: 'FirewallParameters define the desired state of a Google Compute Engine VPC Network. Most fields map directly to a Network: https://cloud.google.com/compute/docs/reference/rest/v1/networks'
+                description: 'FirewallParameters define the desired state of a Google Compute Engine Firewall rule. Most fields map directly to a Firewall: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/'
                 properties:
                   allowed:
                     description: 'Allowed: The list of ALLOW rules specified by this firewall. Each rule specifies a protocol and port-range tuple that describes a permitted connection.'
