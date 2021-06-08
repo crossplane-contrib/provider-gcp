@@ -1,0 +1,16 @@
+---
+apiVersion: compute.gcp.crossplane.io/v1beta1
+kind: Firewall
+metadata:
+  name: example
+spec:
+  forProvider:
+    allowed:
+      - IPProtocol: tcp
+        ports: ["80", "443"]
+      - IPProtocol: icmp
+    sourceRanges: ["10.0.0.0/24"]
+    networkRef:
+      name: example
+  providerConfigRef:
+    name: example
