@@ -62,6 +62,9 @@ spec:
                   alternativeLocationId:
                     description: Only applicable to STANDARD_HA tier which protects the instance against zonal failures by provisioning it across two zones. If provided, it must be a different zone from the one provided in [location_id].
                     type: string
+                  authEnabled:
+                    description: 'AuthEnabled: Optional. Indicates whether OSS Redis AUTH is enabled for the instance. If set to "true" AUTH is enabled on the instance. Default value is "false" meaning AUTH is disabled.'
+                    type: boolean
                   authorizedNetwork:
                     description: The full name of the Google Compute Engine [network](/compute/docs/networks-and-firewalls#networks) to which the instance is connected. If left unspecified, the `default` network will be used.
                     type: string

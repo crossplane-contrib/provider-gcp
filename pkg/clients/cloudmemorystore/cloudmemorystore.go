@@ -76,6 +76,7 @@ func GenerateRedisInstance(name string, s v1beta1.CloudMemorystoreInstanceParame
 	r.ReservedIpRange = gcp.StringValue(s.ReservedIPRange)
 	r.AuthorizedNetwork = gcp.StringValue(s.AuthorizedNetwork)
 	r.ConnectMode = gcp.StringValue(s.ConnectMode)
+	r.AuthEnabled = gcp.BoolValue(s.AuthEnabled)
 }
 
 // GenerateObservation is used to produce an observation object from GCP's Redis
@@ -99,6 +100,12 @@ func GenerateObservation(r redis.Instance) v1beta1.CloudMemorystoreInstanceObser
 	return o
 }
 
+// GenerateAuthStringObservation is used to produce an observation object from GCP's Redis
+// Instance AuthString data.
+func GenerateAuthStringObservation(r redis.InstanceAuthString) string {
+	return r.AuthString
+}
+
 // LateInitializeSpec fills empty spec fields with the data retrieved from GCP.
 func LateInitializeSpec(spec *v1beta1.CloudMemorystoreInstanceParameters, r redis.Instance) {
 	if spec.Tier == "" {
@@ -116,6 +123,7 @@ func LateInitializeSpec(spec *v1beta1.CloudMemorystoreInstanceParameters, r redi
 	spec.RedisConfigs = gcp.LateInitializeStringMap(spec.RedisConfigs, r.RedisConfigs)
 	spec.AuthorizedNetwork = gcp.LateInitializeString(spec.AuthorizedNetwork, r.AuthorizedNetwork)
 	spec.ConnectMode = gcp.LateInitializeString(spec.ConnectMode, r.ConnectMode)
+	spec.AuthEnabled = gcp.LateInitializeBool(spec.AuthEnabled, r.AuthEnabled)
 }
 
 // IsUpToDate returns true if the supplied Kubernetes resource differs from the
