@@ -47,21 +47,21 @@ func GenerateFirewall(name string, in v1beta1.FirewallParameters, firewall *comp
 	firewall.Disabled = gcp.BoolValue(in.Disabled)
 	if in.Allowed != nil {
 		firewall.Allowed = make([]*compute.FirewallAllowed, len(in.Allowed))
-		for _, rule := range in.Allowed {
-			firewall.Allowed = append(firewall.Allowed, &compute.FirewallAllowed{
+		for idx, rule := range in.Allowed {
+			firewall.Allowed[idx] = &compute.FirewallAllowed{
 				IPProtocol: rule.IPProtocol,
 				Ports:      rule.Ports,
-			})
+			}
 		}
 	}
 
 	if in.Denied != nil {
 		firewall.Denied = make([]*compute.FirewallDenied, len(in.Denied))
-		for _, rule := range in.Denied {
-			firewall.Denied = append(firewall.Denied, &compute.FirewallDenied{
+		for idx, rule := range in.Denied {
+			firewall.Denied[idx] = &compute.FirewallDenied{
 				IPProtocol: rule.IPProtocol,
 				Ports:      rule.Ports,
-			})
+			}
 		}
 	}
 
