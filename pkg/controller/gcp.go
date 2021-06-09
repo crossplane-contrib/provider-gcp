@@ -47,7 +47,6 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll ti
 		compute.SetupSubnetwork,
 		compute.SetupFirewall,
 		container.SetupCluster,
-		container.SetupGKECluster,
 		container.SetupNodePool,
 		database.SetupCloudSQLInstance,
 		dns.SetupResourceRecordSet,
