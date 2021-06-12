@@ -42,7 +42,8 @@ spec:
             description: BucketPolicySpec defines the desired state of a BucketPolicy.
             properties:
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource.
                 enum:
                 - Orphan
                 - Delete
@@ -168,6 +169,8 @@ spec:
                 - policy
                 type: object
               providerConfigRef:
+                default:
+                  name: default
                 description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
                 properties:
                   name:

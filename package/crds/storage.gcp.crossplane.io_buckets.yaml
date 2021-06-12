@@ -170,7 +170,8 @@ spec:
                   type: object
                 type: array
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource.
                 enum:
                 - Orphan
                 - Delete
@@ -251,6 +252,8 @@ spec:
                 description: If not empty, applies a predefined set of default object access controls. It should be set only when creating a bucket. It is always empty for BucketAttrs returned from the service. See https://cloud.google.com/storage/docs/json_api/v1/buckets/insert for valid values.
                 type: string
               providerConfigRef:
+                default:
+                  name: default
                 description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
                 properties:
                   name:
