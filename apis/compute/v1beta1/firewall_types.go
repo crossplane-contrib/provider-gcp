@@ -216,7 +216,7 @@ type FirewallLogConfig struct {
 }
 
 // A FirewallObservation represents the observed state of a Google Compute Engine
-// VPC Network.
+// Firewall rule.
 type FirewallObservation struct {
 	// CreationTimestamp: Creation timestamp in RFC3339 text
 	// format.
