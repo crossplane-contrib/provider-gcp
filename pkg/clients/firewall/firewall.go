@@ -104,21 +104,21 @@ func LateInitializeSpec(spec *v1beta1.FirewallParameters, in compute.Firewall) {
 
 	if len(in.Allowed) != 0 && len(spec.Allowed) == 0 {
 		spec.Allowed = make([]*v1beta1.FirewallAllowed, len(in.Allowed))
-		for _, rule := range in.Allowed {
-			spec.Allowed = append(spec.Allowed, &v1beta1.FirewallAllowed{
+		for idx, rule := range in.Allowed {
+			spec.Allowed[idx] = &v1beta1.FirewallAllowed{
 				IPProtocol: rule.IPProtocol,
 				Ports:      rule.Ports,
-			})
+			}
 		}
 	}
 
 	if len(in.Denied) != 0 && len(spec.Denied) == 0 {
 		spec.Denied = make([]*v1beta1.FirewallDenied, len(in.Allowed))
-		for _, rule := range in.Denied {
-			spec.Denied = append(spec.Denied, &v1beta1.FirewallDenied{
+		for idx, rule := range in.Denied {
+			spec.Denied[idx] = &v1beta1.FirewallDenied{
 				IPProtocol: rule.IPProtocol,
 				Ports:      rule.Ports,
-			})
+			}
 		}
 	}
 }
