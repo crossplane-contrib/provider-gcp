@@ -143,6 +143,7 @@ func LateInitializeSpec(spec *v1beta1.RouterParameters, in compute.Router) { // 
 	spec.EncryptedInterconnectRouter = gcp.LateInitializeBool(spec.EncryptedInterconnectRouter, in.EncryptedInterconnectRouter)
 
 	if in.Bgp != nil {
+		spec.Bgp = &v1beta1.RouterBgp{}
 		spec.Bgp.AdvertiseMode = gcp.LateInitializeString(spec.Bgp.AdvertiseMode, in.Bgp.AdvertiseMode)
 		spec.Bgp.AdvertisedGroups = gcp.LateInitializeStringSlice(spec.Bgp.AdvertisedGroups, in.Bgp.AdvertisedGroups)
 		spec.Bgp.Asn = gcp.LateInitializeInt64(spec.Bgp.Asn, in.Bgp.Asn)
