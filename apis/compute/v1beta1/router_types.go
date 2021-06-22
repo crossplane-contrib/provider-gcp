@@ -240,14 +240,13 @@ type RouterNat struct {
 	// Possible values:
 	//   "AUTO_ONLY"
 	//   "MANUAL_ONLY"
-	// +optional
-	NatIpAllocateOption *string `json:"natIpAllocateOption,omitempty"` // nolint
+	NatIpAllocateOption string `json:"natIpAllocateOption,omitempty"` // nolint
 
 	// NatIps: A list of URLs of the IP resources used for this Nat service.
 	// These IP addresses must be valid static external IP addresses
 	// assigned to the project.
 	// +optional
-	NatIps []string `json:"natIps,omitempty"`
+	NatIps []string `json:"natIps"`
 
 	// SourceSubnetworkIpRangesToNat: Specify the Nat option, which can take
 	// one of the following values:
@@ -267,8 +266,7 @@ type RouterNat struct {
 	//   "ALL_SUBNETWORKS_ALL_IP_RANGES"
 	//   "ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES"
 	//   "LIST_OF_SUBNETWORKS"
-	// +optional
-	SourceSubnetworkIpRangesToNat *string `json:"sourceSubnetworkIpRangesToNat,omitempty"` // nolint
+	SourceSubnetworkIpRangesToNat string `json:"sourceSubnetworkIpRangesToNat"` // nolint
 
 	// Subnetworks: A list of Subnetwork resources whose traffic should be
 	// translated by NAT Gateway. It is used only when LIST_OF_SUBNETWORKS

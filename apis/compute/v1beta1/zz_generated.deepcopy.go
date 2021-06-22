@@ -636,20 +636,10 @@ func (in *RouterNat) DeepCopyInto(out *RouterNat) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.NatIpAllocateOption != nil {
-		in, out := &in.NatIpAllocateOption, &out.NatIpAllocateOption
-		*out = new(string)
-		**out = **in
-	}
 	if in.NatIps != nil {
 		in, out := &in.NatIps, &out.NatIps
 		*out = make([]string, len(*in))
 		copy(*out, *in)
-	}
-	if in.SourceSubnetworkIpRangesToNat != nil {
-		in, out := &in.SourceSubnetworkIpRangesToNat, &out.SourceSubnetworkIpRangesToNat
-		*out = new(string)
-		**out = **in
 	}
 	if in.Subnetworks != nil {
 		in, out := &in.Subnetworks, &out.Subnetworks

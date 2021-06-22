@@ -238,6 +238,8 @@ spec:
                           description: 'UdpIdleTimeoutSec: Timeout (in seconds) for UDP connections. Defaults to 30s if not set.'
                           format: int64
                           type: integer
+                      required:
+                      - sourceSubnetworkIpRangesToNat
                       type: object
                     type: array
                   network:
