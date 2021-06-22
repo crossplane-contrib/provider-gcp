@@ -124,7 +124,7 @@ type RouterAdvertisedIpRange struct { // nolint
 
 	// Range: The IP range to advertise. The value must be a CIDR-formatted
 	// string.
-	Range string `json:"range,omitempty"`
+	Range string `json:"range"`
 }
 
 // A RouterBgpPeer represents the BgpPeer configuration for the router.
@@ -176,21 +176,6 @@ type RouterBgpPeer struct {
 	// Only IPv4 is supported.
 	// +optional
 	IpAddress *string `json:"ipAddress,omitempty"` // nolint
-
-	// ManagementType: [Output Only] The resource that configures and
-	// manages this BGP peer.
-	// - MANAGED_BY_USER is the default value and can be managed by you or
-	// other users
-	// - MANAGED_BY_ATTACHMENT is a BGP peer that is configured and managed
-	// by Cloud Interconnect, specifically by an InterconnectAttachment of
-	// type PARTNER. Google automatically creates, updates, and deletes this
-	// type of BGP peer when the PARTNER InterconnectAttachment is created,
-	// updated, or deleted.
-	//
-	// Possible values:
-	//   "MANAGED_BY_ATTACHMENT"
-	//   "MANAGED_BY_USER"
-	// ManagementType string `json:"managementType,omitempty"`
 
 	// Name: Name of this BGP peer. The name must be 1-63 characters long,
 	// and comply with RFC1035. Specifically, the name must be 1-63
@@ -379,21 +364,6 @@ type RouterInterface struct {
 	// virtual machine instance.
 	// +optional
 	LinkedVpnTunnel *string `json:"linkedVpnTunnel,omitempty"`
-
-	// ManagementType: [Output Only] The resource that configures and
-	// manages this interface.
-	// - MANAGED_BY_USER is the default value and can be managed directly by
-	// users.
-	// - MANAGED_BY_ATTACHMENT is an interface that is configured and
-	// managed by Cloud Interconnect, specifically, by an
-	// InterconnectAttachment of type PARTNER. Google automatically creates,
-	// updates, and deletes this type of interface when the PARTNER
-	// InterconnectAttachment is created, updated, or deleted.
-	//
-	// Possible values:
-	//   "MANAGED_BY_ATTACHMENT"
-	//   "MANAGED_BY_USER"
-	// ManagementType string `json:"managementType,omitempty"`
 
 	// Name: Name of this interface entry. The name must be 1-63 characters
 	// long, and comply with RFC1035. Specifically, the name must be 1-63

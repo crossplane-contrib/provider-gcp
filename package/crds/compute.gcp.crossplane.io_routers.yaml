@@ -73,6 +73,8 @@ spec:
                             range:
                               description: 'Range: The IP range to advertise. The value must be a CIDR-formatted string.'
                               type: string
+                          required:
+                          - range
                           type: object
                         type: array
                       asn:
@@ -104,6 +106,8 @@ spec:
                               range:
                                 description: 'Range: The IP range to advertise. The value must be a CIDR-formatted string.'
                                 type: string
+                            required:
+                            - range
                             type: object
                           type: array
                         advertisedRoutePriority:
