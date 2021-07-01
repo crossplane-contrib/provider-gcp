@@ -35,7 +35,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/firewall"
 )
@@ -55,16 +55,16 @@ const (
 // SetupFirewall adds a controller that reconciles Firewall managed
 // resources.
 func SetupFirewall(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1beta1.FirewallGroupKind)
+	name := managed.ControllerName(v1alpha1.FirewallGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(controller.Options{
 			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
 		}).
-		For(&v1beta1.Firewall{}).
+		For(&v1alpha1.Firewall{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1beta1.FirewallGroupVersionKind),
+			resource.ManagedKind(v1alpha1.FirewallGroupVersionKind),
 			managed.WithExternalConnecter(&firewallConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l.WithValues("controller", name)),
@@ -94,7 +94,7 @@ type firewallExternal struct {
 }
 
 func (c *firewallExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1beta1.Firewall)
+	cr, ok := mg.(*v1alpha1.Firewall)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotFirewall)
 	}
@@ -127,7 +127,7 @@ func (c *firewallExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 }
 
 func (c *firewallExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1beta1.Firewall)
+	cr, ok := mg.(*v1alpha1.Firewall)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotFirewall)
 	}
@@ -143,7 +143,7 @@ func (c *firewallExternal) Create(ctx context.Context, mg resource.Managed) (man
 }
 
 func (c *firewallExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1beta1.Firewall)
+	cr, ok := mg.(*v1alpha1.Firewall)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotFirewall)
 	}
@@ -171,7 +171,7 @@ func (c *firewallExternal) Update(ctx context.Context, mg resource.Managed) (man
 }
 
 func (c *firewallExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1beta1.Firewall)
+	cr, ok := mg.(*v1alpha1.Firewall)
 	if !ok {
 		return errors.New(errNotFirewall)
 	}

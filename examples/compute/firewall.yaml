@@ -1,5 +1,5 @@
 ---
-apiVersion: compute.gcp.crossplane.io/v1beta1
+apiVersion: compute.gcp.crossplane.io/v1alpha1
 kind: Firewall
 metadata:
   name: example

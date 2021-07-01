@@ -25,7 +25,7 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
-    name: v1beta1
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: A Firewall is a managed resource that represents a Google Compute Engine Firewall
@@ -199,7 +199,7 @@ spec:
             description: A FirewallStatus represents the observed state of a Firewall.
             properties:
               atProvider:
-                description: A FirewallObservation represents the observed state of a Google Compute Engine VPC Network.
+                description: A FirewallObservation represents the observed state of a Google Compute Engine Firewall rule.
                 properties:
                   creationTimestamp:
                     description: 'CreationTimestamp: Creation timestamp in RFC3339 text format.'

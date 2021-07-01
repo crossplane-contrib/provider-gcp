@@ -37,6 +37,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 	"github.com/crossplane/provider-gcp/pkg/clients/firewall"
 )
@@ -48,18 +49,18 @@ const (
 	testFirewallName = "test-firewall"
 )
 
-type firewallModifier func(*v1beta1.Firewall)
+type firewallModifier func(*v1alpha1.Firewall)
 
 func firewallWithConditions(c ...xpv1.Condition) firewallModifier {
-	return func(i *v1beta1.Firewall) { i.Status.SetConditions(c...) }
+	return func(i *v1alpha1.Firewall) { i.Status.SetConditions(c...) }
 }
 
 func firewallWithDescription(d string) firewallModifier {
-	return func(i *v1beta1.Firewall) { i.Spec.ForProvider.Description = &d }
+	return func(i *v1alpha1.Firewall) { i.Spec.ForProvider.Description = &d }
 }
 
-func firewallObj(im ...firewallModifier) *v1beta1.Firewall {
-	i := &v1beta1.Firewall{
+func firewallObj(im ...firewallModifier) *v1alpha1.Firewall {
+	i := &v1alpha1.Firewall{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       testFirewallName,
 			Finalizers: []string{},
@@ -67,8 +68,8 @@ func firewallObj(im ...firewallModifier) *v1beta1.Firewall {
 				meta.AnnotationKeyExternalName: testFirewallName,
 			},
 		},
-		Spec: v1beta1.FirewallSpec{
-			ForProvider: v1beta1.FirewallParameters{},
+		Spec: v1alpha1.FirewallSpec{
+			ForProvider: v1alpha1.FirewallParameters{},
 		},
 	}
 

@@ -23,7 +23,7 @@ import (
 	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
@@ -32,7 +32,7 @@ const errCheckUpToDate = "unable to determine if external resource is up to date
 // GenerateFirewall takes a *FirewallParameters and returns *compute.Firewall.
 // It assigns only the fields that are writable, i.e. not labelled as [Output Only]
 // in Google's reference.
-func GenerateFirewall(name string, in v1beta1.FirewallParameters, firewall *compute.Firewall) {
+func GenerateFirewall(name string, in v1alpha1.FirewallParameters, firewall *compute.Firewall) {
 	firewall.Name = name
 	firewall.Description = gcp.StringValue(in.Description)
 	firewall.Network = gcp.StringValue(in.Network)
@@ -73,8 +73,8 @@ func GenerateFirewall(name string, in v1beta1.FirewallParameters, firewall *comp
 }
 
 // GenerateFirewallObservation takes a compute.Firewall and returns *FirewallObservation.
-func GenerateFirewallObservation(in compute.Firewall) v1beta1.FirewallObservation {
-	fw := v1beta1.FirewallObservation{
+func GenerateFirewallObservation(in compute.Firewall) v1alpha1.FirewallObservation {
+	fw := v1alpha1.FirewallObservation{
 		CreationTimestamp: in.CreationTimestamp,
 		ID:                in.Id,
 		SelfLink:          in.SelfLink,
@@ -83,7 +83,7 @@ func GenerateFirewallObservation(in compute.Firewall) v1beta1.FirewallObservatio
 }
 
 // LateInitializeSpec fills unassigned fields with the values in compute.Firewall object.
-func LateInitializeSpec(spec *v1beta1.FirewallParameters, in compute.Firewall) {
+func LateInitializeSpec(spec *v1alpha1.FirewallParameters, in compute.Firewall) {
 	spec.Disabled = gcp.LateInitializeBool(spec.Disabled, in.Disabled)
 	spec.Network = gcp.LateInitializeString(spec.Network, in.Network)
 	spec.Priority = gcp.LateInitializeInt64(spec.Priority, in.Priority)
@@ -97,15 +97,15 @@ func LateInitializeSpec(spec *v1beta1.FirewallParameters, in compute.Firewall) {
 	spec.TargetTags = gcp.LateInitializeStringSlice(spec.TargetTags, in.TargetTags)
 
 	if in.LogConfig != nil && spec.LogConfig == nil {
-		spec.LogConfig = &v1beta1.FirewallLogConfig{
+		spec.LogConfig = &v1alpha1.FirewallLogConfig{
 			Enable: in.LogConfig.Enable,
 		}
 	}
 
 	if len(in.Allowed) != 0 && len(spec.Allowed) == 0 {
-		spec.Allowed = make([]*v1beta1.FirewallAllowed, len(in.Allowed))
+		spec.Allowed = make([]*v1alpha1.FirewallAllowed, len(in.Allowed))
 		for idx, rule := range in.Allowed {
-			spec.Allowed[idx] = &v1beta1.FirewallAllowed{
+			spec.Allowed[idx] = &v1alpha1.FirewallAllowed{
 				IPProtocol: rule.IPProtocol,
 				Ports:      rule.Ports,
 			}
@@ -113,9 +113,9 @@ func LateInitializeSpec(spec *v1beta1.FirewallParameters, in compute.Firewall) {
 	}
 
 	if len(in.Denied) != 0 && len(spec.Denied) == 0 {
-		spec.Denied = make([]*v1beta1.FirewallDenied, len(in.Allowed))
+		spec.Denied = make([]*v1alpha1.FirewallDenied, len(in.Allowed))
 		for idx, rule := range in.Denied {
-			spec.Denied[idx] = &v1beta1.FirewallDenied{
+			spec.Denied[idx] = &v1alpha1.FirewallDenied{
 				IPProtocol: rule.IPProtocol,
 				Ports:      rule.Ports,
 			}
@@ -125,7 +125,7 @@ func LateInitializeSpec(spec *v1beta1.FirewallParameters, in compute.Firewall) {
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(name string, in *v1beta1.FirewallParameters, observed *compute.Firewall) (upTodate bool, err error) {
+func IsUpToDate(name string, in *v1alpha1.FirewallParameters, observed *compute.Firewall) (upTodate bool, err error) {
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
 		return true, errors.Wrap(err, errCheckUpToDate)

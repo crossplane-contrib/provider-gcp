@@ -90,24 +90,3 @@ func (mg *Subnetwork) ResolveReferences(ctx context.Context, c client.Reader) er
 
 	return nil
 }
-
-// ResolveReferences of this Firewall
-func (mg *Firewall) ResolveReferences(ctx context.Context, c client.Reader) error {
-	r := reference.NewAPIResolver(c, mg)
-
-	// Resolve spec.forProvider.network
-	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
-		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Network),
-		Reference:    mg.Spec.ForProvider.NetworkRef,
-		Selector:     mg.Spec.ForProvider.NetworkSelector,
-		To:           reference.To{Managed: &Network{}, List: &NetworkList{}},
-		Extract:      NetworkURL(),
-	})
-	if err != nil {
-		return errors.Wrap(err, "spec.forProvider.network")
-	}
-	mg.Spec.ForProvider.Network = reference.ToPtrValue(rsp.ResolvedValue)
-	mg.Spec.ForProvider.NetworkRef = rsp.ResolvedReference
-
-	return nil
-}

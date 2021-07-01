@@ -61,17 +61,8 @@ var (
 	GlobalAddressGroupVersionKind = SchemeGroupVersion.WithKind(GlobalAddressKind)
 )
 
-// Firewall type metadata.
-var (
-	FirewallKind             = reflect.TypeOf(Firewall{}).Name()
-	FirewallGroupKind        = schema.GroupKind{Group: Group, Kind: FirewallKind}.String()
-	FirewallKindAPIVersion   = FirewallKind + "." + SchemeGroupVersion.String()
-	FirewallGroupVersionKind = SchemeGroupVersion.WithKind(FirewallKind)
-)
-
 func init() {
 	SchemeBuilder.Register(&Network{}, &NetworkList{})
 	SchemeBuilder.Register(&Subnetwork{}, &SubnetworkList{})
 	SchemeBuilder.Register(&GlobalAddress{}, &GlobalAddressList{})
-	SchemeBuilder.Register(&Firewall{}, &FirewallList{})
 }

@@ -22,7 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/compute/v1"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 )
 
 const (
@@ -40,15 +40,15 @@ var (
 	testDescription       = "some desc"
 )
 
-func params(m ...func(*v1beta1.FirewallParameters)) *v1beta1.FirewallParameters {
-	o := &v1beta1.FirewallParameters{
+func params(m ...func(*v1alpha1.FirewallParameters)) *v1alpha1.FirewallParameters {
+	o := &v1alpha1.FirewallParameters{
 		Description:  &testDescription,
 		Network:      &testNetwork,
 		Priority:     &testPriority,
 		SourceRanges: []string{"10.0.0.0/24"},
 		Direction:    &testDirection,
 		Disabled:     &trueVal,
-		Allowed: []*v1beta1.FirewallAllowed{
+		Allowed: []*v1alpha1.FirewallAllowed{
 			{
 				IPProtocol: "tcp",
 				Ports:      []string{"80", "443"},
@@ -93,8 +93,8 @@ func addOutputFields(n *compute.Firewall) {
 	n.SelfLink = testSelfLink
 }
 
-func observation(m ...func(*v1beta1.FirewallObservation)) *v1beta1.FirewallObservation {
-	o := &v1beta1.FirewallObservation{
+func observation(m ...func(*v1alpha1.FirewallObservation)) *v1alpha1.FirewallObservation {
+	o := &v1alpha1.FirewallObservation{
 		CreationTimestamp: testCreationTimestamp,
 		ID:                2029819203,
 		SelfLink:          testSelfLink,
@@ -110,7 +110,7 @@ func observation(m ...func(*v1beta1.FirewallObservation)) *v1beta1.FirewallObser
 func TestGenerateFirewall(t *testing.T) {
 	type args struct {
 		name string
-		in   v1beta1.FirewallParameters
+		in   v1alpha1.FirewallParameters
 	}
 	cases := map[string]struct {
 		args args
@@ -119,7 +119,7 @@ func TestGenerateFirewall(t *testing.T) {
 		"DisabledNil": {
 			args: args{
 				name: testName,
-				in: *params(func(p *v1beta1.FirewallParameters) {
+				in: *params(func(p *v1alpha1.FirewallParameters) {
 					p.Disabled = nil
 				}),
 			},
@@ -130,7 +130,7 @@ func TestGenerateFirewall(t *testing.T) {
 		"DisabledFalse": {
 			args: args{
 				name: testName,
-				in: *params(func(p *v1beta1.FirewallParameters) {
+				in: *params(func(p *v1alpha1.FirewallParameters) {
 					p.Disabled = &falseVal
 				}),
 			},
@@ -141,7 +141,7 @@ func TestGenerateFirewall(t *testing.T) {
 		"DisabledTrue": {
 			args: args{
 				name: testName,
-				in: *params(func(p *v1beta1.FirewallParameters) {
+				in: *params(func(p *v1alpha1.FirewallParameters) {
 					p.Disabled = &trueVal
 				}),
 			},
@@ -165,7 +165,7 @@ func TestGenerateFirewall(t *testing.T) {
 func TestGenerateFirewallObservation(t *testing.T) {
 	cases := map[string]struct {
 		in  compute.Firewall
-		out v1beta1.FirewallObservation
+		out v1alpha1.FirewallObservation
 	}{
 		"AllFilled": {
 			in:  *firewall(addOutputFields),
@@ -185,12 +185,12 @@ func TestGenerateFirewallObservation(t *testing.T) {
 
 func TestLateInitializeSpec(t *testing.T) {
 	type args struct {
-		spec *v1beta1.FirewallParameters
+		spec *v1alpha1.FirewallParameters
 		in   compute.Firewall
 	}
 	cases := map[string]struct {
 		args args
-		want *v1beta1.FirewallParameters
+		want *v1alpha1.FirewallParameters
 	}{
 		"AllFilledNoDiff": {
 			args: args{
@@ -210,12 +210,12 @@ func TestLateInitializeSpec(t *testing.T) {
 		},
 		"PartialFilled": {
 			args: args{
-				spec: params(func(p *v1beta1.FirewallParameters) {
+				spec: params(func(p *v1alpha1.FirewallParameters) {
 					p.Direction = nil
 				}),
 				in: *firewall(),
 			},
-			want: params(func(p *v1beta1.FirewallParameters) {
+			want: params(func(p *v1alpha1.FirewallParameters) {
 				p.Direction = &testDirection
 			}),
 		},
@@ -233,7 +233,7 @@ func TestLateInitializeSpec(t *testing.T) {
 
 func TestIsUpToDate(t *testing.T) {
 	type args struct {
-		in      *v1beta1.FirewallParameters
+		in      *v1alpha1.FirewallParameters
 		current *compute.Firewall
 	}
 	type want struct {
@@ -260,7 +260,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"NotUpToDate": {
 			args: args{
-				in: params(func(p *v1beta1.FirewallParameters) {
+				in: params(func(p *v1alpha1.FirewallParameters) {
 					p.Description = nil
 				}),
 				current: firewall(),
