@@ -18,6 +18,7 @@ package compute
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -55,7 +56,7 @@ const (
 
 // SetupNetwork adds a controller that reconciles Network managed
 // resources.
-func SetupNetwork(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupNetwork(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1beta1.NetworkGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -69,6 +70,7 @@ func SetupNetwork(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) 
 			managed.WithExternalConnecter(&networkConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithConnectionPublishers(),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

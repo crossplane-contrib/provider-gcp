@@ -18,6 +18,7 @@ package iam
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	iamv1 "google.golang.org/api/iam/v1"
@@ -47,7 +48,7 @@ const (
 )
 
 // SetupServiceAccountPolicy adds a controller that reconciles ServiceAccountPolicys.
-func SetupServiceAccountPolicy(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupServiceAccountPolicy(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1alpha1.ServiceAccountPolicyGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -60,6 +61,7 @@ func SetupServiceAccountPolicy(mgr ctrl.Manager, l logging.Logger, rl workqueue.
 			resource.ManagedKind(v1alpha1.ServiceAccountPolicyGroupVersionKind),
 			managed.WithExternalConnecter(&serviceAccountPolicyConnecter{client: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

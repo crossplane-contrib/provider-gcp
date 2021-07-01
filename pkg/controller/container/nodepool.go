@@ -18,6 +18,7 @@ package container
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -53,7 +54,7 @@ const (
 
 // SetupNodePool adds a controller that reconciles NodePool managed
 // resources.
-func SetupNodePool(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupNodePool(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1beta1.NodePoolGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -66,6 +67,7 @@ func SetupNodePool(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter)
 			resource.ManagedKind(v1beta1.NodePoolGroupVersionKind),
 			managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

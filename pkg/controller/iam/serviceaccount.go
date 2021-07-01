@@ -19,6 +19,7 @@ package iam
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	iamv1 "google.golang.org/api/iam/v1"
@@ -51,7 +52,7 @@ const (
 )
 
 // SetupServiceAccount adds a controller that reconciles ServiceAccounts.
-func SetupServiceAccount(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupServiceAccount(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1alpha1.ServiceAccountGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -63,6 +64,7 @@ func SetupServiceAccount(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLi
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.ServiceAccountGroupVersionKind),
 			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

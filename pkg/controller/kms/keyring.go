@@ -19,6 +19,7 @@ package kms
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	kmsv1 "google.golang.org/api/cloudkms/v1"
@@ -50,7 +51,7 @@ const (
 )
 
 // SetupKeyRing adds a controller that reconciles KeyRings.
-func SetupKeyRing(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupKeyRing(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1alpha1.KeyRingGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -62,6 +63,7 @@ func SetupKeyRing(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) 
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.KeyRingGroupVersionKind),
 			managed.WithExternalConnecter(&keyRingConnecter{client: mgr.GetClient()}),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

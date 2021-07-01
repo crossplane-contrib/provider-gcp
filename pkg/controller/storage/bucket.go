@@ -18,6 +18,7 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"
@@ -52,7 +53,7 @@ const (
 )
 
 // SetupBucket adds a controller that reconciles Buckets.
-func SetupBucket(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupBucket(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1alpha3.BucketGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -64,6 +65,7 @@ func SetupBucket(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) e
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
 			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

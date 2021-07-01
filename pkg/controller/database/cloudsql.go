@@ -19,6 +19,7 @@ package database
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -58,7 +59,7 @@ const (
 
 // SetupCloudSQLInstance adds a controller that reconciles
 // CloudSQLInstance managed resources.
-func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1beta1.CloudSQLInstanceGroupKind)
 
 	r := managed.NewReconciler(mgr,
@@ -66,6 +67,7 @@ func SetupCloudSQLInstance(mgr ctrl.Manager, l logging.Logger, rl workqueue.Rate
 		managed.WithExternalConnecter(&cloudsqlConnector{kube: mgr.GetClient()}),
 		managed.WithInitializers(managed.NewDefaultProviderConfig(mgr.GetClient()), managed.NewNameAsExternalName(mgr.GetClient()), &cloudsqlTagger{kube: mgr.GetClient()}),
 		managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
+		managed.WithPollInterval(poll),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 

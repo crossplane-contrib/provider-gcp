@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"time"
 
 	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
@@ -74,7 +75,7 @@ const (
 
 // SetupConnection adds a controller that reconciles Connection
 // managed resources.
-func SetupConnection(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupConnection(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1beta1.ConnectionGroupKind)
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -87,6 +88,7 @@ func SetupConnection(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimite
 			managed.WithExternalConnecter(&connector{client: mgr.GetClient()}),
 			managed.WithConnectionPublishers(),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

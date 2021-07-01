@@ -18,6 +18,7 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"google.golang.org/api/storage/v1"
@@ -44,7 +45,7 @@ const (
 )
 
 // SetupBucketPolicyMember adds a controller that reconciles BucketPolicyMembers.
-func SetupBucketPolicyMember(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupBucketPolicyMember(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1alpha1.BucketPolicyMemberGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -57,6 +58,7 @@ func SetupBucketPolicyMember(mgr ctrl.Manager, l logging.Logger, rl workqueue.Ra
 			resource.ManagedKind(v1alpha1.BucketPolicyMemberGroupVersionKind),
 			managed.WithExternalConnecter(&bucketPolicyMemberConnecter{client: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
