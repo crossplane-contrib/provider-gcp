@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"time"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
@@ -59,7 +60,7 @@ const (
 )
 
 // SetupServiceAccountKey adds a controller that reconciles ServiceAccountKeys.
-func SetupServiceAccountKey(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupServiceAccountKey(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1alpha1.ServiceAccountKeyGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -72,6 +73,7 @@ func SetupServiceAccountKey(mgr ctrl.Manager, l logging.Logger, rl workqueue.Rat
 			resource.ManagedKind(v1alpha1.ServiceAccountKeyGroupVersionKind),
 			managed.WithInitializers(),
 			managed.WithExternalConnecter(&serviceAccountKeyServiceConnector{client: mgr.GetClient()}),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

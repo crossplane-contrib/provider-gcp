@@ -18,6 +18,7 @@ package container
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -55,7 +56,7 @@ const (
 
 // SetupCluster adds a controller that reconciles Cluster
 // managed resources.
-func SetupCluster(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupCluster(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1beta2.ClusterGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -68,6 +69,7 @@ func SetupCluster(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) 
 			resource.ManagedKind(v1beta2.ClusterGroupVersionKind),
 			managed.WithExternalConnecter(&clusterConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

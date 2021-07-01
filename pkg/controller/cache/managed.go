@@ -20,6 +20,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -57,7 +58,7 @@ const (
 
 // SetupCloudMemorystoreInstance adds a controller that reconciles
 // CloudMemorystoreInstances.
-func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1beta1.CloudMemorystoreInstanceGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -69,6 +70,7 @@ func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger, rl workqu
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
 			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

@@ -18,6 +18,7 @@ package pubsub
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -51,7 +52,7 @@ const (
 )
 
 // SetupTopic adds a controller that reconciles Topics.
-func SetupTopic(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupTopic(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1alpha1.TopicGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -63,6 +64,7 @@ func SetupTopic(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) er
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1alpha1.TopicGroupVersionKind),
 			managed.WithExternalConnecter(&connector{client: mgr.GetClient()}),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

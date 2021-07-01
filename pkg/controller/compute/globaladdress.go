@@ -18,6 +18,7 @@ package compute
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -51,7 +52,7 @@ const (
 
 // SetupGlobalAddress adds a controller that reconciles
 // GlobalAddress managed resources.
-func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1beta1.GlobalAddressGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -65,6 +66,7 @@ func SetupGlobalAddress(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLim
 			managed.WithExternalConnecter(&gaConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithConnectionPublishers(),
+			managed.WithPollInterval(poll),
 			managed.WithLogger(l.WithValues("controller", name)),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }

@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"time"
+
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -36,9 +38,8 @@ import (
 
 // Setup creates all GCP controllers with the supplied logger and adds them to
 // the supplied manager.
-func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter) error{
-		config.Setup,
+func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
+	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter, time.Duration) error{
 		cache.SetupCloudMemorystoreInstance,
 		compute.SetupGlobalAddress,
 		compute.SetupNetwork,
@@ -58,9 +59,9 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		storage.SetupBucketPolicy,
 		storage.SetupBucketPolicyMember,
 	} {
-		if err := setup(mgr, l, rl); err != nil {
+		if err := setup(mgr, l, rl, poll); err != nil {
 			return err
 		}
 	}
-	return nil
+	return config.Setup(mgr, l, rl)
 }
