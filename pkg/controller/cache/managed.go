@@ -19,6 +19,7 @@ package cache
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -51,6 +52,7 @@ const (
 	errUpdateInstance = "cannot update CloudMemorystore instance"
 	errDeleteInstance = "cannot delete CloudMemorystore instance"
 	errCheckUpToDate  = "cannot determine if CloudMemorystore instance is up to date"
+	errAuthString     = "cannot retrieve AuthString for instance"
 )
 
 // SetupCloudMemorystoreInstance adds a controller that reconciles
@@ -120,6 +122,15 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.Status.SetConditions(xpv1.Available())
 		conn[xpv1.ResourceCredentialsSecretEndpointKey] = []byte(cr.Status.AtProvider.Host)
 		conn[xpv1.ResourceCredentialsSecretPortKey] = []byte(strconv.Itoa(int(cr.Status.AtProvider.Port)))
+		if cr.Spec.ForProvider.AuthEnabled != nil {
+			if *cr.Spec.ForProvider.AuthEnabled {
+				existingAuthString, err := e.cms.Projects.Locations.Instances.GetAuthString(existing.Name).Context(ctx).Do()
+				if err != nil {
+					return managed.ExternalObservation{}, errors.Wrap(err, errAuthString)
+				}
+				conn[xpv1.ResourceCredentialsSecretPasswordKey] = []byte(cloudmemorystore.GenerateAuthStringObservation(*existingAuthString))
+			}
+		}
 	case cloudmemorystore.StateCreating:
 		cr.Status.SetConditions(xpv1.Creating())
 	case cloudmemorystore.StateDeleting:
@@ -168,7 +179,8 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	instance := &redis.Instance{}
 	fqn := cloudmemorystore.GetFullyQualifiedName(e.projectID, i.Spec.ForProvider, meta.GetExternalName(i))
 	cloudmemorystore.GenerateRedisInstance(fqn, i.Spec.ForProvider, instance)
-	_, err := e.cms.Projects.Locations.Instances.Patch(fqn, instance).Context(ctx).Do()
+	updateMask := strings.Join([]string{"display_name", "labels", "memory_size_gb", "redis_configs"}, ",")
+	_, err := e.cms.Projects.Locations.Instances.Patch(fqn, instance).UpdateMask(updateMask).Context(ctx).Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
 }
 

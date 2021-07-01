@@ -125,6 +125,12 @@ type CloudMemorystoreInstanceParameters struct {
 	// +optional
 	// +immutable
 	ConnectMode *string `json:"connectMode,omitempty"`
+
+	// AuthEnabled: Optional. Indicates whether OSS Redis AUTH is enabled
+	// for the instance. If set to "true" AUTH is enabled on the instance.
+	// Default value is "false" meaning AUTH is disabled.
+	// +optional
+	AuthEnabled *bool `json:"authEnabled,omitempty"`
 }
 
 // CloudMemorystoreInstanceObservation is used to show the observed state of the
