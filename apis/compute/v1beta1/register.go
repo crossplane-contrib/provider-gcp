@@ -61,8 +61,17 @@ var (
 	GlobalAddressGroupVersionKind = SchemeGroupVersion.WithKind(GlobalAddressKind)
 )
 
+// GlobalAddress type metadata.
+var (
+	NetworkEndpointGroupKind             = reflect.TypeOf(NetworkEndpointGroup{}).Name()
+	NetworkEndpointGroupGroupKind        = schema.GroupKind{Group: Group, Kind: NetworkEndpointGroupKind}.String()
+	NetworkEndpointGroupKindAPIVersion   = NetworkEndpointGroupKind + "." + SchemeGroupVersion.String()
+	NetworkEndpointGroupGroupVersionKind = SchemeGroupVersion.WithKind(NetworkEndpointGroupKind)
+)
+
 func init() {
 	SchemeBuilder.Register(&Network{}, &NetworkList{})
 	SchemeBuilder.Register(&Subnetwork{}, &SubnetworkList{})
 	SchemeBuilder.Register(&GlobalAddress{}, &GlobalAddressList{})
+	SchemeBuilder.Register(&NetworkEndpointGroup{}, &NetworkEndpointGroupList{})
 }
