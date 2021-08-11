@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains managed resources for GCP dns services such as
-// CloudSQL.
+// DnsRecords.
 // +kubebuilder:object:generate=true
 // +groupName=dns.gcp.crossplane.io
 // +versionName=v1alpha1
