@@ -1,0 +1,196 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: resourcerecordsets.dns.gcp.crossplane.io
+spec:
+  group: dns.gcp.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
+    kind: ResourceRecordSet
+    listKind: ResourceRecordSetList
+    plural: resourcerecordsets
+    shortNames:
+    - rrs
+    singular: resourcerecordset
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .status.atProvider.name
+      name: DNS NAME
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ResourceRecordSet is a managed resource that represents a Resource Record Set in Cloud DNS
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ResourceRecordSetSpec defines the desired state of a ResourceRecordSet.
+            properties:
+              deletionPolicy:
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: ResourceRecordSetParameters define the desired state of a ResourceRecordSet
+                properties:
+                  kind:
+                    description: Identifies what kind of resource this is.
+                    enum:
+                    - dns#resourceRecordSet
+                    type: string
+                  managedZone:
+                    description: Managed zone name that this ResourceRecordSet will be created in.
+                    type: string
+                  rrdatas:
+                    description: List of ResourceRecord datas as defined in RFC 1035 (section 5) and RFC 1034 (section 3.6.1)
+                    items:
+                      type: string
+                    type: array
+                  signatureRrdatas:
+                    description: List fo Signature ResourceRecord datas, as defined in RFC 4034 (section 3.2).
+                    items:
+                      type: string
+                    type: array
+                  ttl:
+                    description: Number of seconds that this ResourceRecordSet can be cached by resolvers.
+                    format: int64
+                    type: integer
+                  type:
+                    description: The identifier of a supported record type.
+                    enum:
+                    - A
+                    - AAAA
+                    - CAA
+                    - CNAME
+                    - DNSKEY
+                    - DS
+                    - IPSECKEY
+                    - MX
+                    - NAPTR
+                    - NS
+                    - PTR
+                    - SPF
+                    - SRV
+                    - SSHFP
+                    - TLSA
+                    - TXT
+                    type: string
+                required:
+                - kind
+                - managedZone
+                - rrdatas
+                - ttl
+                - type
+                type: object
+              providerConfigRef:
+                default:
+                  name: default
+                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: ResourceRecordSetStatus represents the observed state of a ResourceRecordSet.
+            properties:
+              atProvider:
+                description: ResourceRecordSetObservation is used to show the observed state of the ResourceRecordSet
+                properties:
+                  name:
+                    type: string
+                  type:
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True, False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
