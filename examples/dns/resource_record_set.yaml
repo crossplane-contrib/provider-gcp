@@ -1,0 +1,16 @@
+apiVersion: dns.gcp.crossplane.io/v1alpha1
+kind: ResourceRecordSet
+metadata:
+  name: example
+  annotations:
+    crossplane.io/external-name: "example.crossplane.io."
+spec:
+  forProvider:
+    kind: dns#resourceRecordSet
+    type: CNAME
+    ttl: 300
+    rrdatas:
+      - "server.example.com."
+    managedZone: crossplane-example-zone
+  providerConfigRef:
+    name: example
