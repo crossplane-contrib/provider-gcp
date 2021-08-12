@@ -74,17 +74,7 @@ crds.clean:
 	@find $(CRD_DIR) -name *.yaml.sed -delete || $(FAIL)
 	@$(OK) cleaned generated CRDs
 
-generate: crds.clean
-
-# Ensure a PR is ready for review.
-reviewable: generate lint
-	@go mod tidy
-
-# Ensure branch is clean.
-check-diff: reviewable
-	@$(INFO) checking that branch is clean
-	@test -z "$$(git status --porcelain)" || $(FAIL)
-	@$(OK) branch is clean
+generate.done: crds.clean
 
 # integration tests
 e2e.run: test-integration
@@ -106,7 +96,7 @@ submodules:
 run: go.build
 	@$(INFO) Running Crossplane locally out-of-cluster . . .
 	@# To see other arguments that can be provided, run the command with --help instead
-	$(GO_OUT_DIR)/$(PROJECT_NAME) --debug
+	$(GO_OUT_DIR)/provider --debug
 
 dev: $(KIND) $(KUBECTL)
 	@$(INFO) Creating kind cluster
