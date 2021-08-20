@@ -225,10 +225,11 @@ func TestCopyToLifecyleAction(t *testing.T) {
 
 var (
 	now = time.Now()
+	cb  = metav1.NewTime(now.Add(24 * time.Hour))
 
 	testLifecycleCondition = LifecycleCondition{
 		AgeInDays:             10,
-		CreatedBefore:         metav1.NewTime(now.Add(24 * time.Hour)),
+		CreatedBefore:         &cb,
 		Liveness:              storage.Liveness(1),
 		MatchesStorageClasses: []string{"STANDARD"},
 		NumNewerVersions:      5,
