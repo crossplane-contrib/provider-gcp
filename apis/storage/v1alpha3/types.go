@@ -175,6 +175,7 @@ type LifecycleCondition struct {
 	//
 	// This condition is satisfied when an object is created before midnight of
 	// the specified date in UTC.
+	// +optional
 	CreatedBefore *metav1.Time `json:"createdBefore,omitempty"`
 
 	// Liveness specifies the object's liveness. Relevant only for versioned objects
