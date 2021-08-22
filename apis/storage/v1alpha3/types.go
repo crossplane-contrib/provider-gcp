@@ -175,7 +175,8 @@ type LifecycleCondition struct {
 	//
 	// This condition is satisfied when an object is created before midnight of
 	// the specified date in UTC.
-	CreatedBefore metav1.Time `json:"createdBefore,omitempty"`
+	// +optional
+	CreatedBefore *metav1.Time `json:"createdBefore,omitempty"`
 
 	// Liveness specifies the object's liveness. Relevant only for versioned objects
 	Liveness storage.Liveness `json:"liveness,omitempty"`
@@ -199,7 +200,7 @@ type LifecycleCondition struct {
 func NewLifecycleCondition(lc storage.LifecycleCondition) LifecycleCondition {
 	return LifecycleCondition{
 		AgeInDays:             lc.AgeInDays,
-		CreatedBefore:         metav1.Time{Time: lc.CreatedBefore},
+		CreatedBefore:         &metav1.Time{Time: lc.CreatedBefore},
 		Liveness:              lc.Liveness,
 		MatchesStorageClasses: lc.MatchesStorageClasses,
 		NumNewerVersions:      lc.NumNewerVersions,
@@ -208,13 +209,18 @@ func NewLifecycleCondition(lc storage.LifecycleCondition) LifecycleCondition {
 
 // CopyToLifecycleCondition create a copy in storage format
 func CopyToLifecycleCondition(lc LifecycleCondition) storage.LifecycleCondition {
-	return storage.LifecycleCondition{
+	slc := storage.LifecycleCondition{
 		AgeInDays:             lc.AgeInDays,
-		CreatedBefore:         lc.CreatedBefore.Time,
 		Liveness:              lc.Liveness,
 		MatchesStorageClasses: lc.MatchesStorageClasses,
 		NumNewerVersions:      lc.NumNewerVersions,
 	}
+
+	if !lc.CreatedBefore.IsZero() {
+		slc.CreatedBefore = lc.CreatedBefore.Time
+	}
+
+	return slc
 }
 
 // LifecycleRule is a lifecycle configuration rule.
