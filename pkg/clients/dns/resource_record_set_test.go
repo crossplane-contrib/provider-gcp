@@ -17,16 +17,22 @@ limitations under the License.
 package dns
 
 import (
+	"context"
 	"testing"
 
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/dns/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/provider-gcp/apis/dns/v1alpha1"
 )
 
 const (
-	name = "test-rrs"
+	name            = "test.rrs"
+	initializedName = "test.rrs."
 )
 
 var (
@@ -36,11 +42,10 @@ var (
 func params(m ...func(*v1alpha1.ResourceRecordSetParameters)) *v1alpha1.ResourceRecordSetParameters {
 	p := &v1alpha1.ResourceRecordSetParameters{
 		ManagedZone:      "crossplane-zone",
-		Kind:             "dns#resourceRecordSet",
 		Type:             "A",
 		TTL:              int64(300),
 		RRDatas:          []string{"1.2.3.4"},
-		SignatureRRDatas: &fakeSignature,
+		SignatureRRDatas: fakeSignature,
 	}
 	for _, f := range m {
 		f(p)
@@ -63,10 +68,27 @@ func resourceRecordSet(m ...func(*dns.ResourceRecordSet)) *dns.ResourceRecordSet
 	return rrs
 }
 
-func observation(m ...func(*v1alpha1.ResourceRecordSetObservation)) *v1alpha1.ResourceRecordSetObservation {
-	return &v1alpha1.ResourceRecordSetObservation{
-		Name: name,
-		Type: "A",
+type rrsOption func(*v1alpha1.ResourceRecordSet)
+
+func newRrs(opts ...rrsOption) *v1alpha1.ResourceRecordSet {
+	rrs := &v1alpha1.ResourceRecordSet{}
+
+	for _, f := range opts {
+		f(rrs)
+	}
+
+	return rrs
+}
+
+func withName(s string) rrsOption {
+	return func(r *v1alpha1.ResourceRecordSet) {
+		r.ObjectMeta.Name = s
+	}
+}
+
+func withExternalName(s string) rrsOption {
+	return func(r *v1alpha1.ResourceRecordSet) {
+		r.ObjectMeta.Annotations = map[string]string{"crossplane.io/external-name": s}
 	}
 }
 
@@ -139,7 +161,7 @@ func TestLateInitializeSpec(t *testing.T) {
 			},
 			want: want{
 				params: params(func(p *v1alpha1.ResourceRecordSetParameters) {
-					p.SignatureRRDatas = &fakeSignature
+					p.SignatureRRDatas = fakeSignature
 				}),
 			},
 		},
@@ -158,36 +180,6 @@ func TestLateInitializeSpec(t *testing.T) {
 			LateInitializeSpec(tc.args.spec, *tc.args.external)
 			if diff := cmp.Diff(tc.want.params, tc.args.spec); diff != "" {
 				t.Errorf("LateInitializeSpec(...): -want, +got:\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestGenerateObservation(t *testing.T) {
-	type args struct {
-		external dns.ResourceRecordSet
-	}
-	type want struct {
-		obs v1alpha1.ResourceRecordSetObservation
-	}
-	cases := map[string]struct {
-		args args
-		want want
-	}{
-		"FullConversion": {
-			args: args{
-				external: *resourceRecordSet(),
-			},
-			want: want{
-				obs: *observation(),
-			},
-		},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			o := GenerateObservation(tc.args.external)
-			if diff := cmp.Diff(tc.want.obs, o); diff != "" {
-				t.Errorf("GenerateObservation(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -228,9 +220,61 @@ func TestIsUpToDate(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, _ := IsUpToDate("test-rrs", tc.args.params, tc.args.rrs)
+			got, _ := IsUpToDate("test.rrs", tc.args.params, tc.args.rrs)
 			if diff := cmp.Diff(tc.want.upToDate, got); diff != "" {
 				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestInitialize(t *testing.T) {
+	type args struct {
+		mg     resource.Managed
+		client client.Client
+	}
+	type want struct {
+		err error
+		mg  resource.Managed
+	}
+	cases := map[string]struct {
+		args args
+		want want
+	}{
+		"AppendDot": {
+			args: args{
+				mg: newRrs(withName(name)),
+				client: &test.MockClient{
+					MockUpdate: test.NewMockUpdateFn(nil),
+				},
+			},
+			want: want{
+				err: nil,
+				mg:  newRrs(withName(name), withExternalName(initializedName)),
+			},
+		},
+		"NotAppendDot": {
+			args: args{
+				mg: newRrs(withName(name), withExternalName(initializedName)),
+				client: &test.MockClient{
+					MockUpdate: test.NewMockUpdateFn(nil),
+				},
+			},
+			want: want{
+				err: nil,
+				mg:  newRrs(withExternalName(initializedName)),
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			custom := NewCustomNameAsExternalName(tc.args.client)
+			err := custom.Initialize(context.Background(), tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Initialize(...): -want error, +got error:\n%s", diff)
+			}
+			if diff := cmp.Diff(meta.GetExternalName(tc.want.mg), meta.GetExternalName(tc.args.mg)); diff != "" {
+				t.Errorf("Initialize(...): -want, +got:\n%s", diff)
 			}
 		})
 	}

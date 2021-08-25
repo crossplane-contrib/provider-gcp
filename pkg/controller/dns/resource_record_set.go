@@ -64,8 +64,7 @@ func SetupResourceRecordSet(mgr ctrl.Manager, l logging.Logger, rl workqueue.Rat
 			},
 		),
 		managed.WithInitializers(
-			managed.NewDefaultProviderConfig(mgr.GetClient()),
-			managed.NewNameAsExternalName(mgr.GetClient()),
+			rrsClient.NewCustomNameAsExternalName(mgr.GetClient()),
 		),
 		managed.WithReferenceResolver(
 			managed.NewAPISimpleReferenceResolver(mgr.GetClient()),
@@ -118,7 +117,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotResourceRecordSet)
 	}
 
-	rrs, err := e.Get(ctx, cr)
+	rrs, err := e.dns.Get(
+		e.projectID,
+		cr.Spec.ForProvider.ManagedZone,
+		meta.GetExternalName(cr),
+		cr.Spec.ForProvider.Type,
+	).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(
 			resource.Ignore(gcp.IsErrorNotFound, err),
@@ -135,15 +139,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		}
 		lateInit = true
 	}
-
-	cr.Status.AtProvider = rrsClient.GenerateObservation(*rrs)
 	cr.SetConditions(xpv1.Available())
 
 	upToDate, err := rrsClient.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, rrs)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
 	}
-
 	return managed.ExternalObservation{
 		ResourceExists:          true,
 		ResourceUpToDate:        upToDate,
@@ -164,7 +165,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		args,
 	)
 
-	rrs, err := e.dns.Create(
+	_, err := e.dns.Create(
 		e.projectID,
 		cr.Spec.ForProvider.ManagedZone,
 		args,
@@ -172,10 +173,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCannotCreate)
 	}
-
-	cr.Status.AtProvider = rrsClient.GenerateObservation(*rrs)
 	cr.SetConditions(xpv1.Creating())
-
 	return managed.ExternalCreation{}, nil
 }
 
@@ -188,19 +186,16 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	args := &dns.ResourceRecordSet{}
 	rrsClient.GenerateResourceRecordSet(meta.GetExternalName(cr), cr.Spec.ForProvider, args)
 
-	rrs, err := e.dns.Patch(
+	_, err := e.dns.Patch(
 		e.projectID,
 		cr.Spec.ForProvider.ManagedZone,
-		cr.Status.AtProvider.Name,
-		cr.Status.AtProvider.Type,
+		meta.GetExternalName(cr),
+		cr.Spec.ForProvider.Type,
 		args,
 	).Context(ctx).Do()
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
-
-	cr.Status.AtProvider = rrsClient.GenerateObservation(*rrs)
-
 	return managed.ExternalUpdate{}, nil
 }
 
@@ -219,34 +214,5 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if gcp.IsErrorNotFound(err) {
 		return nil
 	}
-
-	cr.SetConditions(xpv1.Deleting())
-
 	return errors.Wrap(err, errCannotDelete)
-}
-
-func (e *external) Get(ctx context.Context, cr *v1alpha1.ResourceRecordSet) (*dns.ResourceRecordSet, error) {
-	rrs, err := e.dns.Get(
-		e.projectID,
-		cr.Spec.ForProvider.ManagedZone,
-		meta.GetExternalName(cr),
-		cr.Spec.ForProvider.Type,
-	).Context(ctx).Do()
-	if err == nil {
-		return rrs, nil
-	} else if !gcp.IsErrorNotFound(err) {
-		return nil, err
-	}
-	if cr.Status.AtProvider.Name != "" {
-		rrs, err = e.dns.Get(
-			e.projectID,
-			cr.Spec.ForProvider.ManagedZone,
-			cr.Status.AtProvider.Name,
-			cr.Status.AtProvider.Type,
-		).Context(ctx).Do()
-		if err == nil {
-			return rrs, nil
-		}
-	}
-	return nil, err
 }

@@ -17,41 +17,42 @@ limitations under the License.
 package dns
 
 import (
+	"context"
+	"strings"
+
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
 	"github.com/pkg/errors"
 	dns "google.golang.org/api/dns/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/provider-gcp/apis/dns/v1alpha1"
 )
 
-const errCheckUpToDate = "unable to determine if external resource is up to date"
+const (
+	errCheckUpToDate = "unable to determine if external resource is up to date"
+	errUpdateManaged = "cannot update managed resource external name"
+)
 
 // LateInitializeSpec fills unassigned fields with the values in dns.ResourceRecordSet object.
-func LateInitializeSpec(spec *v1alpha1.ResourceRecordSetParameters, external dns.ResourceRecordSet) { // nolint:gocyclo
+func LateInitializeSpec(spec *v1alpha1.ResourceRecordSetParameters, external dns.ResourceRecordSet) {
 	if spec.SignatureRRDatas == nil && len(external.SignatureRrdatas) > 0 {
-		spec.SignatureRRDatas = &external.SignatureRrdatas
-	}
-}
-
-// GenerateObservation produces ResourceRecordSetObservation object from dns.ResourceRecordSet object.
-func GenerateObservation(external dns.ResourceRecordSet) v1alpha1.ResourceRecordSetObservation {
-	return v1alpha1.ResourceRecordSetObservation{
-		Name: external.Name,
-		Type: external.Type,
+		spec.SignatureRRDatas = external.SignatureRrdatas
 	}
 }
 
 // GenerateResourceRecordSet generates *dns.ResourceRecordSet instance from ResourceRecordSetParameters.
 func GenerateResourceRecordSet(name string, spec v1alpha1.ResourceRecordSetParameters, rrs *dns.ResourceRecordSet) {
+	rrs.Kind = "dns#resourceRecordSet" // This is the only valid value for this field
 	rrs.Name = name
-	rrs.Kind = spec.Kind
 	rrs.Rrdatas = spec.RRDatas
 	rrs.Ttl = spec.TTL
 	rrs.Type = spec.Type
 	if spec.SignatureRRDatas != nil {
-		rrs.SignatureRrdatas = *spec.SignatureRRDatas
+		rrs.SignatureRrdatas = spec.SignatureRRDatas
 	}
 }
 
@@ -68,4 +69,24 @@ func IsUpToDate(name string, spec *v1alpha1.ResourceRecordSetParameters, observe
 	}
 	GenerateResourceRecordSet(name, *spec, desired)
 	return cmp.Equal(desired, observed, cmpopts.EquateEmpty()), nil
+}
+
+// CustomNameAsExternalName writes the name of the managed resource to
+// the external name annotation field in order to be used as name of
+// the external resource in provider.
+// This external name will have a . appended at the end of the name
+type CustomNameAsExternalName struct{ client client.Client }
+
+// NewCustomNameAsExternalName returns a new CustomNameAsExternalName.
+func NewCustomNameAsExternalName(c client.Client) *CustomNameAsExternalName {
+	return &CustomNameAsExternalName{client: c}
+}
+
+// Initialize the given managed resource.
+func (a *CustomNameAsExternalName) Initialize(ctx context.Context, mg resource.Managed) error {
+	if strings.HasSuffix(meta.GetExternalName(mg), ".") {
+		return nil
+	}
+	meta.SetExternalName(mg, mg.GetName()+".")
+	return errors.Wrap(a.client.Update(ctx, mg), errUpdateManaged)
 }

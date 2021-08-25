@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -29,7 +28,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 	dns "google.golang.org/api/dns/v1"
 	"google.golang.org/api/googleapi"
@@ -63,13 +61,7 @@ func newRrs(opts ...rrsOption) *v1alpha1.ResourceRecordSet {
 
 func withSignature(s string) rrsOption {
 	return func(r *v1alpha1.ResourceRecordSet) {
-		r.Spec.ForProvider.SignatureRRDatas = &[]string{s}
-	}
-}
-
-func withStatusName(s string) rrsOption {
-	return func(r *v1alpha1.ResourceRecordSet) {
-		r.Status.AtProvider.Name = s
+		r.Spec.ForProvider.SignatureRRDatas = []string{s}
 	}
 }
 
@@ -213,7 +205,7 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{Kind: "dns#resourceRecordSet"})
 			}),
 		},
 		"ResourceNotUpToDate": {
@@ -514,119 +506,6 @@ func TestDelete(t *testing.T) {
 			err := e.Delete(context.Background(), tc.args.mg)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Delete(...): -want error, +got error:\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestGet(t *testing.T) {
-	type args struct {
-		cr *v1alpha1.ResourceRecordSet
-	}
-	type want struct {
-		rrs *dns.ResourceRecordSet
-		err error
-	}
-
-	cases := map[string]struct {
-		reason  string
-		handler http.Handler
-		args    args
-		want    want
-	}{
-		"SuccessfulWithSpec": {
-			reason: "Should return a ResourceRecordSet when the GET is successful with the values from spec",
-			args: args{
-				cr: newRrs(),
-			},
-			want: want{
-				rrs: &dns.ResourceRecordSet{},
-				err: nil,
-			},
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
-			}),
-		},
-		"SuccessfulWithStatus": {
-			reason: "Should return a ResourceRecordSet when the GET is successful in the second attempt",
-			args: args{
-				cr: newRrs(withStatusName("test")),
-			},
-			want: want{
-				rrs: &dns.ResourceRecordSet{},
-				err: nil,
-			},
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				if strings.Contains(r.RequestURI, "test") {
-					w.WriteHeader(http.StatusOK)
-				} else {
-					w.WriteHeader(http.StatusNotFound)
-				}
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
-			}),
-		},
-		"InternalError": {
-			reason: "Should return an error if the first attempt error is different than 404",
-			args: args{
-				cr: newRrs(),
-			},
-			want: want{
-				rrs: nil,
-				err: gError(http.StatusInternalServerError, ""),
-			},
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
-			}),
-		},
-		"NotFound": {
-			reason: "Should return the not found error after two GET attempts",
-			args: args{
-				cr: newRrs(),
-			},
-			want: want{
-				rrs: nil,
-				err: gError(http.StatusNotFound, ""),
-			},
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
-			}),
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			server := httptest.NewServer(tc.handler)
-			defer server.Close()
-			s, _ := dns.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := external{
-				projectID: projectID,
-				dns:       s.ResourceRecordSets,
-			}
-			got, err := e.Get(context.Background(), tc.args.cr)
-			if diff := cmp.Diff(tc.want.rrs, got, cmpopts.IgnoreFields(dns.ResourceRecordSet{}, "ServerResponse")); diff != "" {
-				t.Errorf("Update(...): -want, +got:\n%s", diff)
-			}
-			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
-				t.Errorf("Update(...): -want error, +got error:\n%s", diff)
 			}
 		})
 	}
