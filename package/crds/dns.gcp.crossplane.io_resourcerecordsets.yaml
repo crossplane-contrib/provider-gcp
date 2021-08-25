@@ -56,11 +56,6 @@ spec:
               forProvider:
                 description: ResourceRecordSetParameters define the desired state of a ResourceRecordSet
                 properties:
-                  kind:
-                    description: Identifies what kind of resource this is.
-                    enum:
-                    - dns#resourceRecordSet
-                    type: string
                   managedZone:
                     description: Managed zone name that this ResourceRecordSet will be created in.
                     type: string
@@ -70,7 +65,7 @@ spec:
                       type: string
                     type: array
                   signatureRrdatas:
-                    description: List fo Signature ResourceRecord datas, as defined in RFC 4034 (section 3.2).
+                    description: List of Signature ResourceRecord datas, as defined in RFC 4034 (section 3.2).
                     items:
                       type: string
                     type: array
@@ -99,7 +94,6 @@ spec:
                     - TXT
                     type: string
                 required:
-                - kind
                 - managedZone
                 - rrdatas
                 - ttl
@@ -146,11 +140,6 @@ spec:
             properties:
               atProvider:
                 description: ResourceRecordSetObservation is used to show the observed state of the ResourceRecordSet
-                properties:
-                  name:
-                    type: string
-                  type:
-                    type: string
                 type: object
               conditions:
                 description: Conditions of the resource.

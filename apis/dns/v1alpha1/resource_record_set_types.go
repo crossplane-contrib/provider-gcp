@@ -27,13 +27,9 @@ type ResourceRecordSetParameters struct {
 	// Managed zone name that this ResourceRecordSet will be created in.
 	ManagedZone string `json:"managedZone"`
 
-	// Identifies what kind of resource this is.
-	//
-	// +kubebuilder:validation:Enum=dns#resourceRecordSet
-	Kind string `json:"kind"`
-
 	// The identifier of a supported record type.
 	//
+	// +immutable
 	// +kubebuilder:validation:Enum=A;AAAA;CAA;CNAME;DNSKEY;DS;IPSECKEY;MX;NAPTR;NS;PTR;SPF;SRV;SSHFP;TLSA;TXT
 	Type string `json:"type"`
 
@@ -45,16 +41,15 @@ type ResourceRecordSetParameters struct {
 	// RFC 1035 (section 5) and RFC 1034 (section 3.6.1)
 	RRDatas []string `json:"rrdatas"`
 
-	// List fo Signature ResourceRecord datas, as
+	// List of Signature ResourceRecord datas, as
 	// defined in RFC 4034 (section 3.2).
-	SignatureRRDatas *[]string `json:"signatureRrdatas,omitempty"`
+	//
+	// +optional
+	SignatureRRDatas []string `json:"signatureRrdatas,omitempty"`
 }
 
 // ResourceRecordSetObservation is used to show the observed state of the ResourceRecordSet
-type ResourceRecordSetObservation struct {
-	Name string `json:"name,omitempty"`
-	Type string `json:"type,omitempty"`
-}
+type ResourceRecordSetObservation struct{}
 
 // ResourceRecordSetSpec defines the desired state of a ResourceRecordSet.
 type ResourceRecordSetSpec struct {

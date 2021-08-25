@@ -108,12 +108,8 @@ func (in *ResourceRecordSetParameters) DeepCopyInto(out *ResourceRecordSetParame
 	}
 	if in.SignatureRRDatas != nil {
 		in, out := &in.SignatureRRDatas, &out.SignatureRRDatas
-		*out = new([]string)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]string, len(*in))
-			copy(*out, *in)
-		}
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 }
 
