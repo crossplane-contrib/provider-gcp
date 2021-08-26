@@ -18,7 +18,6 @@ package dns
 
 import (
 	"context"
-	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -39,7 +38,7 @@ const (
 
 // LateInitializeSpec fills unassigned fields with the values in dns.ResourceRecordSet object.
 func LateInitializeSpec(spec *v1alpha1.ResourceRecordSetParameters, external dns.ResourceRecordSet) {
-	if spec.SignatureRRDatas == nil && len(external.SignatureRrdatas) > 0 {
+	if len(spec.SignatureRRDatas) == 0 && len(external.SignatureRrdatas) > 0 {
 		spec.SignatureRRDatas = external.SignatureRrdatas
 	}
 }
@@ -84,7 +83,7 @@ func NewCustomNameAsExternalName(c client.Client) *CustomNameAsExternalName {
 
 // Initialize the given managed resource.
 func (a *CustomNameAsExternalName) Initialize(ctx context.Context, mg resource.Managed) error {
-	if strings.HasSuffix(meta.GetExternalName(mg), ".") {
+	if meta.GetExternalName(mg) != "" {
 		return nil
 	}
 	meta.SetExternalName(mg, mg.GetName()+".")
