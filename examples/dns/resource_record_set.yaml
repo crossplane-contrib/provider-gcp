@@ -1,0 +1,13 @@
+apiVersion: dns.gcp.crossplane.io/v1alpha1
+kind: ResourceRecordSet
+metadata:
+  name: example.crossplane.io
+spec:
+  forProvider:
+    type: CNAME
+    ttl: 300
+    rrdatas:
+      - "server.example.com."
+    managedZone: crossplane-example-zone
+  providerConfigRef:
+    name: example
