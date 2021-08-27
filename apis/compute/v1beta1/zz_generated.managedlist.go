@@ -29,6 +29,15 @@ func (l *GlobalAddressList) GetItems() []resource.Managed {
 	return items
 }
 
+// GetItems of this NetworkEndpointGroupList.
+func (l *NetworkEndpointGroupList) GetItems() []resource.Managed {
+	items := make([]resource.Managed, len(l.Items))
+	for i := range l.Items {
+		items[i] = &l.Items[i]
+	}
+	return items
+}
+
 // GetItems of this NetworkList.
 func (l *NetworkList) GetItems() []resource.Managed {
 	items := make([]resource.Managed, len(l.Items))

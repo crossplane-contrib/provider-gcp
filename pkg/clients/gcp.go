@@ -212,6 +212,15 @@ func LateInitializeStringMap(s map[string]string, from map[string]string) map[st
 	return from
 }
 
+// LateInitializeStruct implements late initialization for
+// string map type. The passed strunct is treated as whole, thre is no recursinve late initialization logic for each field of the struct.
+func LateInitializeStruct(s interface{}, from interface{}) interface{} {
+	if s != nil || from == nil {
+		return s
+	}
+	return from
+}
+
 // EquateComputeURLs considers compute APIs to be equal whether they are fully
 // qualified, partially qualified, or unqualified. The compute API will accept
 // unqualified or partially qualified URLs for certain fields, but return fully

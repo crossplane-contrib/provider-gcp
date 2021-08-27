@@ -1,0 +1,304 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: networkendpointgroups.compute.gcp.crossplane.io
+spec:
+  group: compute.gcp.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
+    kind: NetworkEndpointGroup
+    listKind: NetworkEndpointGroupList
+    plural: networkendpointgroups
+    singular: networkendpointgroup
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: A NetworkEndpointGroup is a managed resource that represents a Google Compute Engine Network Endpoint Group (https://cloud.google.com/compute/docs/reference/rest/v1/networkEndpointGroups).
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A NetworkEndpointGroupSpec defines the desired state of a NetworkEndpointGroup.
+            properties:
+              deletionPolicy:
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: 'NetworkEndpointGroupParameters define the desired state of a Google Compute Engine Global Address. Most fields map directly to an Address: https://cloud.google.com/compute/docs/reference/rest/v1/networkEndpointGroups'
+                properties:
+                  appEngine:
+                    description: 'AppEngine : Only valid when networkEndpointType is "SERVERLESS". Only one of cloudRun, appEngine or cloudFunction may be set.'
+                    properties:
+                      service:
+                        description: 'Service : Optional serving service. The service name is case-sensitive and must be 1-63 characters long. Example value: "default", "my-service".'
+                        type: string
+                      urlMask:
+                        description: 'URLMask : A template to parse service and version fields from a request URL. URL mask allows for routing to multiple App Engine services without having to create multiple Network Endpoint Groups and backend services. For example, the request URLs "foo1-dot-appname.appspot.com/v1" and "foo1-dot-appname.appspot.com/v2" can be backed by the same Serverless NEG with URL mask "-dot-appname.appspot.com/". The URL mask will parse them to { service = "foo1", version = "v1" } and { service = "foo1", version = "v2" } respectively.'
+                        type: string
+                      version:
+                        description: 'Version : Optional serving version. The version name is case-sensitive and must be 1-100 characters long. Example value: "v1", "v2".'
+                        type: string
+                    type: object
+                  cloudFunction:
+                    description: 'CloudFunction : Only valid when networkEndpointType is "SERVERLESS". Only one of cloudRun, appEngine or cloudFunction may be set.'
+                    properties:
+                      function:
+                        description: 'Function : A user-defined name of the Cloud Function. The function name is case-sensitive and must be 1-63 characters long. Example value: "func1".'
+                        type: string
+                      urlMask:
+                        description: 'URLMask : A template to parse function field from a request URL. URL mask allows for routing to multiple Cloud Functions without having to create multiple Network Endpoint Groups and backend services. For example, request URLs "mydomain.com/function1" and "mydomain.com/function2" can be backed by the same Serverless NEG with URL mask "/". The URL mask will parse them to { function = "function1" } and { function = "function2" } respectively.'
+                        type: string
+                    required:
+                    - function
+                    type: object
+                  cloudRun:
+                    description: 'CloudRun : Only valid when networkEndpointType is "SERVERLESS". Only one of cloudRun, appEngine or cloudFunction may be set.'
+                    properties:
+                      service:
+                        description: 'Service : Cloud Run service is the main resource of Cloud Run. The service must be 1-63 characters long, and comply with RFC1035. Example value: "run-service".'
+                        type: string
+                      tag:
+                        description: 'Tag : Optional Cloud Run tag represents the "named-revision" to provide additional fine-grained traffic routing information. The tag must be 1-63 characters long, and comply with RFC1035. Example value: "revision-0010".'
+                        type: string
+                      urlMask:
+                        description: 'URLMask : A template to parse service and tag fields from a request URL. URL mask allows for routing to multiple Run services without having to create multiple network endpoint groups and backend services. For example, request URLs "foo1.domain.com/bar1" and "foo1.domain.com/bar2" can be backed by the same Serverless Network Endpoint Group (NEG) with URL mask ".domain.com/". The URL mask will parse them to { service="bar1", tag="foo1" } and { service="bar2", tag="foo2" } respectively.'
+                        type: string
+                    required:
+                    - service
+                    type: object
+                  defaultPort:
+                    description: 'DefaultPort: The default port used if the port number is not specified in the network endpoint.'
+                    format: int64
+                    type: integer
+                  description:
+                    description: 'Description: An optional description of this resource.'
+                    type: string
+                  network:
+                    description: 'Network: The URL of the network to which all network endpoints in the NEG belong. Uses "default" project network if unspecified.'
+                    type: string
+                  networkEndpointType:
+                    description: "NetworkEndpointType: Type of network endpoints in this network endpoint group. Can be one of GCE_VM_IP_PORT, NON_GCP_PRIVATE_IP_PORT, INTERNET_FQDN_PORT, INTERNET_IP_PORT, or SERVERLESS. \n Possible values:   \"GCE_VM_IP_PORT\"   \"NON_GCP_PRIVATE_IP_PORT\"   \"INTERNET_FQDN_PORT\"   \"INTERNET_IP_PORT\"   \"SERVERLESS\""
+                    enum:
+                    - GCE_VM_IP_PORT
+                    - NON_GCP_PRIVATE_IP_PORT
+                    - INTERNET_FQDN_PORT
+                    - INTERNET_IP_PORT
+                    - SERVERLESS
+                    type: string
+                  networkEndpoints:
+                    description: 'NetworkEndpoints : list of network endpoints for this network endpoint group. List elements are immutable, but they can be added/removed.'
+                    items:
+                      description: 'NetworkEndpoint : represents a single network endpoint'
+                      properties:
+                        fqdn:
+                          description: 'FQDN : Optional fully qualified domain name of network endpoint. This can only be specified when NetworkEndpointGroup.network_endpoint_type is NON_GCP_FQDN_PORT.'
+                          type: string
+                        instance:
+                          description: 'Instance : The name for a specific VM instance that the IP address belongs to. This is required for network endpoints of type GCE_VM_IP_PORT. The instance must be in the same zone of network endpoint group. The name must be 1-63 characters long, and comply with RFC1035. Authorization requires the following IAM permission on the specified resource instance: compute.instances.use'
+                          type: string
+                        ipAddress:
+                          description: 'IPAddress : Optional IPv4 address of network endpoint. The IP address must belong to a VM in Compute Engine (either the primary IP or as part of an aliased IP range). If the IP address is not specified, then the primary IP address for the VM instance in the network that the network endpoint group belongs to will be used.'
+                          type: string
+                        port:
+                          description: 'Port : Optional port number of network endpoint. If not specified, the defaultPort for the network endpoint group will be used.'
+                          format: int64
+                          type: integer
+                      type: object
+                    type: array
+                  region:
+                    description: 'Region : The URL of the region where the network endpoint group is located.'
+                    type: string
+                  subnetwork:
+                    description: 'Subnetwork: Optional URL of the subnetwork to which all network endpoints in the NEG belong..'
+                    type: string
+                  zone:
+                    description: 'Zone : The URL of the zone where the network endpoint group is located.'
+                    type: string
+                required:
+                - defaultPort
+                - networkEndpointType
+                type: object
+              providerConfigRef:
+                default:
+                  name: default
+                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A NetworkEndpointGroupStatus represents the observed state of a NetworkEndpointGroup.
+            properties:
+              atProvider:
+                description: A NetworkEndpointGroupObservation reflects the observed state of a GlobalAddress on GCP.
+                properties:
+                  creationTimestamp:
+                    description: CreationTimestamp in RFC3339 text format.
+                    type: string
+                  id:
+                    description: ID for the resource. This identifier is defined by the server.
+                    format: int64
+                    type: integer
+                  networkEndpointObservations:
+                    items:
+                      description: 'NetworkEndpointObservation : an observation of a network endpoint'
+                      properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        fqdn:
+                          description: 'FQDN : Optional fully qualified domain name of network endpoint. This can only be specified when NetworkEndpointGroup.network_endpoint_type is NON_GCP_FQDN_PORT.'
+                          type: string
+                        instance:
+                          description: 'Instance : The name for a specific VM instance that the IP address belongs to. This is required for network endpoints of type GCE_VM_IP_PORT. The instance must be in the same zone of network endpoint group. The name must be 1-63 characters long, and comply with RFC1035. Authorization requires the following IAM permission on the specified resource instance: compute.instances.use'
+                          type: string
+                        ipAddress:
+                          description: 'IPAddress : Optional IPv4 address of network endpoint. The IP address must belong to a VM in Compute Engine (either the primary IP or as part of an aliased IP range). If the IP address is not specified, then the primary IP address for the VM instance in the network that the network endpoint group belongs to will be used.'
+                          type: string
+                        networkEndpointHealths:
+                          items:
+                            description: 'NetworkEndpointHealth : health status of a network endpoint'
+                            properties:
+                              backendService:
+                                description: 'BackendService : URL of the backend service associated with the health state of the network endpoint.'
+                                properties:
+                                  backendService:
+                                    description: 'BackendService : URL of the backend service associated with the health state of the network endpoint.'
+                                    type: string
+                                type: object
+                              forwardingRule:
+                                description: 'ForwardingRule : URL of the forwarding rule associated with the health state of the network endpoint.'
+                                properties:
+                                  forwardingRule:
+                                    description: 'ForwardingRule : URL of the forwarding rule associated with the health state of the network endpoint.'
+                                    type: string
+                                type: object
+                              healthCheck:
+                                description: 'HealthCheck : URL of the health check associated with the health state of the network endpoint.'
+                                properties:
+                                  healthCheck:
+                                    description: 'HealthCheck : URL of the health check associated with the health state of the network endpoint.'
+                                    type: string
+                                type: object
+                              healthCheckService:
+                                description: 'HealthCheckService : URL of the health check service associated with the health state of the network endpoint.'
+                                properties:
+                                  healthCheckService:
+                                    description: 'HealthCheckService : URL of the health check service associated with the health state of the network endpoint.'
+                                    type: string
+                                type: object
+                              healthState:
+                                description: 'HealthState : Health state of the network endpoint determined based on the health checks configured.'
+                                type: string
+                            type: object
+                          type: array
+                        port:
+                          description: 'Port : Optional port number of network endpoint. If not specified, the defaultPort for the network endpoint group will be used.'
+                          format: int64
+                          type: integer
+                      type: object
+                    type: array
+                  selfLink:
+                    description: 'SelfLink: Server-defined URL for the resource.'
+                    type: string
+                  size:
+                    description: 'Size: Number of network endpoints in the network endpoint group.'
+                    format: int64
+                    type: integer
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True, False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
