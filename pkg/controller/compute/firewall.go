@@ -103,12 +103,11 @@ func (c *firewallExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFirewall)
 	}
 
+	lateIntialized := false
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	firewall.LateInitializeSpec(&cr.Spec.ForProvider, *observed)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
-		if err := c.kube.Update(ctx, cr); err != nil {
-			return managed.ExternalObservation{}, errors.Wrap(err, errManagedFirewallUpdate)
-		}
+		lateIntialized = true
 	}
 
 	cr.Status.AtProvider = firewall.GenerateFirewallObservation(*observed)
@@ -121,8 +120,9 @@ func (c *firewallExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	}
 
 	return managed.ExternalObservation{
-		ResourceExists:   true,
-		ResourceUpToDate: u,
+		ResourceExists:          true,
+		ResourceLateInitialized: lateIntialized,
+		ResourceUpToDate:        u,
 	}, nil
 }
 
@@ -131,8 +131,6 @@ func (c *firewallExternal) Create(ctx context.Context, mg resource.Managed) (man
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotFirewall)
 	}
-
-	cr.Status.SetConditions(xpv1.Creating())
 
 	fw := &compute.Firewall{}
 	firewall.GenerateFirewall(meta.GetExternalName(cr), cr.Spec.ForProvider, fw)

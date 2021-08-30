@@ -135,5 +135,5 @@ func IsUpToDate(name string, in *v1alpha1.FirewallParameters, observed *compute.
 		return true, errors.New(errCheckUpToDate)
 	}
 	GenerateFirewall(name, *in, desired)
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(compute.Firewall{}, "ForceSendFields")), nil
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), gcp.EquateComputeURLs(), cmpopts.IgnoreFields(compute.Firewall{}, "ForceSendFields")), nil
 }
