@@ -18,6 +18,7 @@ package compute
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -42,9 +43,8 @@ import (
 
 const (
 	// Error strings.
-	errNotFirewall           = "managed resource is not a Firewall resource"
-	errGetFirewall           = "cannot get GCP Firewall"
-	errManagedFirewallUpdate = "unable to update Firewall managed resource"
+	errNotFirewall = "managed resource is not a Firewall resource"
+	errGetFirewall = "cannot get GCP Firewall"
 
 	errFirewallUpdateFailed  = "update of Firewall resource has failed"
 	errFirewallCreateFailed  = "creation of Firewall resource has failed"
@@ -54,7 +54,7 @@ const (
 
 // SetupFirewall adds a controller that reconciles Firewall managed
 // resources.
-func SetupFirewall(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func SetupFirewall(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
 	name := managed.ControllerName(v1alpha1.FirewallGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -68,6 +68,7 @@ func SetupFirewall(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter)
 			managed.WithExternalConnecter(&firewallConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l.WithValues("controller", name)),
+			managed.WithPollInterval(poll),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 

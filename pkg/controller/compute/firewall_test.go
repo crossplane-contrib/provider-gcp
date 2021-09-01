@@ -140,30 +140,6 @@ func TestFirewallObserve(t *testing.T) {
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetFirewall),
 			},
 		},
-		"NotUpToDateSpecUpdateFailed": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusOK)
-				c := firewallObj()
-				gn := &compute.Firewall{}
-				firewall.GenerateFirewall(testFirewallName, c.Spec.ForProvider, gn)
-				gn.Description = "a very interesting description"
-				_ = json.NewEncoder(w).Encode(gn)
-			}),
-			kube: &test.MockClient{
-				MockUpdate: test.NewMockUpdateFn(errBoom),
-			},
-			args: args{
-				mg: firewallObj(),
-			},
-			want: want{
-				mg:  firewallObj(firewallWithDescription("a very interesting description")),
-				err: errors.Wrap(errBoom, errManagedFirewallUpdate),
-			},
-		},
 		"RunnableUnbound": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
@@ -264,7 +240,7 @@ func TestFirewallCreate(t *testing.T) {
 				mg: firewallObj(),
 			},
 			want: want{
-				mg:  firewallObj(firewallWithConditions(xpv1.Creating())),
+				mg:  firewallObj(),
 				cre: managed.ExternalCreation{},
 				err: nil,
 			},
@@ -282,7 +258,7 @@ func TestFirewallCreate(t *testing.T) {
 				mg: firewallObj(),
 			},
 			want: want{
-				mg:  firewallObj(firewallWithConditions(xpv1.Creating())),
+				mg:  firewallObj(),
 				err: errors.Wrap(gError(http.StatusConflict, ""), errFirewallCreateFailed),
 			},
 		},
@@ -299,7 +275,7 @@ func TestFirewallCreate(t *testing.T) {
 				mg: firewallObj(),
 			},
 			want: want{
-				mg:  firewallObj(firewallWithConditions(xpv1.Creating())),
+				mg:  firewallObj(),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errFirewallCreateFailed),
 			},
 		},
