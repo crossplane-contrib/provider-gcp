@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	cachev1beta1 "github.com/crossplane/provider-gcp/apis/cache/v1beta1"
+	computev1alpha1 "github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 	containerv1beta1 "github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	containerv1beta2 "github.com/crossplane/provider-gcp/apis/container/v1beta2"
@@ -42,6 +43,7 @@ func init() {
 		gcpv1alpha3.SchemeBuilder.AddToScheme,
 		gcpv1beta1.SchemeBuilder.AddToScheme,
 		cachev1beta1.SchemeBuilder.AddToScheme,
+		computev1alpha1.SchemeBuilder.AddToScheme,
 		computev1beta1.SchemeBuilder.AddToScheme,
 		containerv1beta2.SchemeBuilder.AddToScheme,
 		containerv1beta1.SchemeBuilder.AddToScheme,
