@@ -85,7 +85,7 @@ func GenerateConfig(in *v1beta1.NodeConfig, pool *container.NodePool) { // nolin
 		pool.Config.BootDiskKmsKey = gcp.StringValue(in.BootDiskKmsKey)
 		pool.Config.DiskSizeGb = gcp.Int64Value(in.DiskSizeGb)
 		pool.Config.DiskType = gcp.StringValue(in.DiskType)
-		pool.Config.ImageType = gcp.StringValue(in.ImageType)
+		pool.Config.ImageType = strings.ToUpper(gcp.StringValue(in.ImageType))
 		pool.Config.Labels = in.Labels
 		pool.Config.LocalSsdCount = gcp.Int64Value(in.LocalSsdCount)
 		pool.Config.MachineType = gcp.StringValue(in.MachineType)
