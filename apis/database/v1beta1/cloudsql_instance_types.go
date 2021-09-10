@@ -76,7 +76,7 @@ type CloudSQLInstanceParameters struct {
 	// DatabaseVersion: The database engine type and version. The
 	// databaseVersion field can not be changed after instance creation.
 	// MySQL Second Generation instances: MYSQL_5_7 (default) or MYSQL_5_6.
-	// PostgreSQL instances: POSTGRES_9_6 (default) or POSTGRES_11 Beta.
+	// PostgreSQL instances: POSTGRES_9_6, POSTGRES_10, POSTGRES_11, POSTGRES_12, POSTGRES_13 (default)
 	// MySQL First Generation instances: MYSQL_5_6 (default) or MYSQL_5_5
 	// +immutable
 	// +optional
