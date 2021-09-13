@@ -565,6 +565,7 @@ type NodePoolStatus struct {
 
 // A NodePool is a managed resource that represents a Google Kubernetes Engine
 // node pool.
+// +kubebuilder:deprecatedversion:warning="container.gcp.crossplane.io/v1alpha1 NodePool is deprecated; please use v1beta1 version instead"
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
