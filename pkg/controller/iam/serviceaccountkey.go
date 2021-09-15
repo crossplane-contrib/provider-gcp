@@ -42,17 +42,25 @@ import (
 	"github.com/crossplane/provider-gcp/pkg/clients/serviceaccountkey"
 )
 
+// Error messages
 const (
-	// error messages
 	errNotServiceAccountKey    = "managed resource is not a GCP ServiceAccountKey"
 	errGetServiceAccountKey    = "cannot get GCP ServiceAccountKey object via IAM API"
 	errCreateServiceAccountKey = "cannot create GCP ServiceAccountKey object via IAM API"
 	errDeleteServiceAccountKey = "cannot delete GCP ServiceAccountKey object via IAM API"
 	errNoExternalName          = "empty external name"
-	// format string for the relative resource names of ServiceAccountKeys built upon rrns of ServiceAccounts
-	fmtKeyRelativeResourceName = "%s/keys/%s"
-	// format string for invalid service account reference errors
+	errDecodePrivateKey        = "cannot decode private key"
+	errDecodePublicKey         = "cannot decode public key"
+
 	fmtErrInvalidServiceAccountRef = "invalid service account reference: %v"
+)
+
+const (
+	// Format string for the relative resource names of ServiceAccountKeys
+	// built upon relative resource names of ServiceAccounts. For example
+	// projects/<project-name>/serviceAccounts/<service-account-email>/keys/<key-name>
+	fmtKeyRelativeResourceName = "%s/keys/%s"
+
 	// connection detail keys
 	keyPrivateKeyType = "privateKeyType"
 	keyPrivateKeyData = "privateKey"
@@ -241,7 +249,6 @@ func referencedServiceAccountPath(saKey *v1alpha1.ServiceAccountKey) (string, er
 }
 
 // resourcePath yields the Google Cloud API relative resource name for the ServiceAccountKey resource
-//   returns <the relative resource name>, <whether the external name annotation is non-empty>, <error encountered during resolution>
 func resourcePath(saKey *v1alpha1.ServiceAccountKey) (string, error) {
 	if saPath, err := referencedServiceAccountPath(saKey); err != nil {
 		return "", err
@@ -252,13 +259,16 @@ func resourcePath(saKey *v1alpha1.ServiceAccountKey) (string, error) {
 	}
 }
 
-func getConnectionDetails(publicKeyType *string, fromProvider *iamv1.ServiceAccountKey) (result managed.ConnectionDetails, err error) {
-	result = make(map[string][]byte, 4)
+func getConnectionDetails(publicKeyType *string, fromProvider *iamv1.ServiceAccountKey) (managed.ConnectionDetails, error) {
+	result := make(map[string][]byte, 4)
 
 	if fromProvider.PublicKeyData != "" {
-		if result[keyPublicKeyData], err = base64.StdEncoding.DecodeString(fromProvider.PublicKeyData); err != nil {
-			return
+		d, err := base64.StdEncoding.DecodeString(fromProvider.PublicKeyData)
+		if err != nil {
+			return nil, errors.Wrap(err, errDecodePublicKey)
 		}
+		result[keyPublicKeyData] = d
+
 		// only provided optionally in keys.get responses
 		if publicKeyType != nil {
 			result[keyPublicKeyType] = []byte(*publicKeyType)
@@ -267,12 +277,15 @@ func getConnectionDetails(publicKeyType *string, fromProvider *iamv1.ServiceAcco
 
 	// only provided in keys.create responses
 	if fromProvider.PrivateKeyData != "" {
-		if result[keyPrivateKeyData], err = base64.StdEncoding.DecodeString(fromProvider.PrivateKeyData); err != nil {
-			return
+		d, err := base64.StdEncoding.DecodeString(fromProvider.PrivateKeyData)
+		if err != nil {
+			return nil, errors.Wrap(err, errDecodePrivateKey)
 		}
+		result[keyPrivateKeyData] = d
+
 		// only provided in keys.create responses
 		result[keyPrivateKeyType] = []byte(fromProvider.PrivateKeyType)
 	}
 
-	return
+	return result, nil
 }
