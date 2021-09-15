@@ -28,9 +28,9 @@ import (
 	pubsub "google.golang.org/api/pubsub/v1"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"

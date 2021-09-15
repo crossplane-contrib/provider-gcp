@@ -19,14 +19,15 @@ package dns
 import (
 	"context"
 
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
-	"github.com/pkg/errors"
 	dns "google.golang.org/api/dns/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/dns/v1alpha1"
 )

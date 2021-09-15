@@ -22,9 +22,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/mitchellh/copystructure"
-	"github.com/pkg/errors"
 	redis "google.golang.org/api/redis/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 
 	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
