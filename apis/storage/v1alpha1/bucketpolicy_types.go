@@ -40,6 +40,12 @@ type BucketPolicyParameters struct {
 	// +optional
 	BucketSelector *xpv1.Selector `json:"bucketSelector,omitempty"`
 
+	// TODO(negz): I don't think we should be reusing iamv1alpha1.Policy
+	// below. It appears to have fields (e.g. AuditConfigs) that we never
+	// use. This will be misleading to users when they show up in the
+	// OpenAPI documentation for this resource.
+	// https://github.com/crossplane/provider-gcp/issues/367
+
 	// Policy: An Identity and Access Management (IAM) policy, which
 	// specifies access controls for Google Cloud resources.
 	Policy iamv1alpha1.Policy `json:"policy"`
@@ -97,7 +103,8 @@ type BucketPolicyStatus struct {
 
 // +kubebuilder:object:root=true
 
-// BucketPolicy is a managed resource that represents a Google KMS Crypto Key.
+// BucketPolicy is a managed resource that represents a Google Cloud Storage
+// Bucket IAM Policy.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
