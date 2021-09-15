@@ -22,7 +22,7 @@ import (
 
 	"google.golang.org/api/googleapi"
 
-	"github.com/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 )
 
 func TestIsErrorNotFound(t *testing.T) {

@@ -19,8 +19,7 @@ package cloudsql
 import (
 	"strings"
 
-	"github.com/pkg/errors"
-
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"

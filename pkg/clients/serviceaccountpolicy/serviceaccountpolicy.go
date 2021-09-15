@@ -20,8 +20,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
-	"github.com/pkg/errors"
 	"google.golang.org/api/iam/v1"
+
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 
 	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
