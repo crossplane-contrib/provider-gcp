@@ -1,16 +1,16 @@
 # Upgrading to v0.18.x
 
 Starting with `v0.18.0` version, [provider-gcp] will use `v1` version of GCP
-APIs for container group instead of `v1beta1`. Please note that, this is not
+APIs instead of `v1beta1` for all resource. Please note that, this is not
 about Kubernetes API Versions for managed resource types, rather about the 
 version of Google Cloud APIs that our controllers use. Users relying on beta 
-features, suggested to use [provider-gcp-beta] instead, which could be installed
+features suggested to use [provider-gcp-beta] instead, which could be installed
 side-by-side with [provider-gcp]. For more details on this, please see
 [RFC issue for provider-gcp-beta] and description of [the PR switching v1].
 
 This resulted in breaking API changes in `v0.18.x` for `GKECluster` and
 `NodePool` types which require the manual migration steps in this document.
-Please note, even you don't have these resources, you should still need to
+Please note, even if you don't have these resources, you should still need to
 follow the guide for a successful provider package upgrade, where unrelated
 steps would be a no-op. 
 
