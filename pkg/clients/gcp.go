@@ -106,7 +106,8 @@ func IsErrorNotFound(err error) bool {
 	return ok && googleapiErr.Code == http.StatusNotFound
 }
 
-// IsErrorAlreadyExists gets a value indicating whether the given error represents a "conflict" response from the Google API
+// IsErrorAlreadyExists gets a value indicating whether the given error
+// represents a "conflict" response from the Google API
 func IsErrorAlreadyExists(err error) bool {
 	if err == nil {
 		return false
@@ -115,13 +116,24 @@ func IsErrorAlreadyExists(err error) bool {
 	return ok && googleapiErr.Code == http.StatusConflict
 }
 
-// IsErrorBadRequest gets a value indicating whether the given error represents a "bad request" response from the Google API
+// IsErrorBadRequest gets a value indicating whether the given error represents
+// a "bad request" response from the Google API
 func IsErrorBadRequest(err error) bool {
 	if err == nil {
 		return false
 	}
 	googleapiErr, ok := err.(*googleapi.Error)
 	return ok && googleapiErr.Code == http.StatusBadRequest
+}
+
+// IsErrorForbidden gets a value indicating whether the given error represents a
+// "forbidden" response from the Google API
+func IsErrorForbidden(err error) bool {
+	if err == nil {
+		return false
+	}
+	googleapiErr, ok := err.(*googleapi.Error)
+	return ok && googleapiErr.Code == http.StatusForbidden
 }
 
 // StringValue converts the supplied string pointer to a string, returning the

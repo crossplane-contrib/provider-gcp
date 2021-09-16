@@ -26,7 +26,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	iamv1 "google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +35,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/pkg/test"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 )
@@ -87,121 +88,152 @@ var (
 )
 
 func TestServiceAccountKeyObserve(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+
+	type want struct {
+		o   managed.ExternalObservation
+		mg  resource.Managed
+		err error
+	}
+
 	testCases := map[string]struct {
-		args *saKeyTestArgs
-		want *saKeyTestWant
+		reason  string
+		handler http.Handler
+		args    args
+		want    want
 	}{
-		// assert error if not reconciling on a valid v1alpha1.ServiceAccountKey object
 		"NotServiceAccountKey": {
-			args: &saKeyTestArgs{
+			reason: "assert error if not reconciling on a valid v1alpha1.ServiceAccountKey object",
+			args: args{
 				ctx: context.Background(),
 				mg:  &strange{},
 			},
-			want: &saKeyTestWant{
-				mg:       nil,
-				expected: []interface{}{nil, errors.New(errNotServiceAccountKey)},
+			want: want{
+				mg:  &strange{},
+				err: errors.New(errNotServiceAccountKey),
 			},
 		},
-		// assert error if a valid service account reference is not provided
-		"InvalidServiceAccountReference": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg:  newServiceAccountKey(),
-			},
-			want: &saKeyTestWant{
-				mg:       nil,
-				expected: []interface{}{managed.ExternalObservation{}, nil},
-			},
-		},
-		// SA rrn (resource path) is set but external annotation on managed resource does not exist
 		"ExternalNameNotSet": {
-			args: &saKeyTestArgs{
+			reason: "SA rrn (resource path) is set but external annotation on managed resource does not exist",
+			args: args{
 				ctx: context.Background(),
 				mg:  newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
 			},
-			want: &saKeyTestWant{
-				mg: nil,
-				expected: []interface{}{managed.ExternalObservation{
-					// if the service account key had already been provisioned, external name annotation should have been set
-					ResourceExists: false,
-				}, nil},
+			want: want{
+				// if the service account key had already been provisioned, external name annotation should have been set
+				o:  managed.ExternalObservation{ResourceExists: false},
+				mg: newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
 			},
 		},
-		// both SA rrn & external name annotations are set but Google Cloud API returns HTTP 404 (not found) for the specified key
 		"GoogleCloudAPIReadErrorNotFound": {
-			args: &saKeyTestArgs{
+			reason: "both SA rrn & external name annotations are set but Google Cloud API returns HTTP 404 (not found) for the specified key",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+			}),
+			args: args{
 				ctx: context.Background(),
 				mg: newServiceAccountKey(
 					setServiceAccount(rrnTestServiceAccount),
 					setAnnotations(map[string]string{
 						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
 					})),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusNotFound)
-				}),
 			},
-			want: &saKeyTestWant{
-				mg: nil,
-				expected: []interface{}{managed.ExternalObservation{
-					// external name annotation is set but iam.ServiceAccountKey is not yet provisioned on Google side
-					ResourceExists: false,
-				}, nil},
+			want: want{
+				// external name annotation is set but iam.ServiceAccountKey is not yet provisioned on Google side
+				o: managed.ExternalObservation{ResourceExists: false},
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					})),
 			},
 		},
-		// both SA rrn & external name annotations are set but Google Cloud API returns HTTP 500 while fetching the specified key
+		"GoogleCloudAPIReadErrorForbidden": {
+			reason: "both SA rrn & external name annotations are set but Google Cloud API returns HTTP 403 (forbidden) for the specified key",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusForbidden)
+			}),
+			args: args{
+				ctx: context.Background(),
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					})),
+			},
+			want: want{
+				// external name annotation is set but the underlying service account has been deleted.
+				o: managed.ExternalObservation{ResourceExists: false},
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					})),
+			},
+		},
 		"GoogleCloudAPIReadError500": {
-			args: &saKeyTestArgs{
+			reason: "both SA rrn & external name annotations are set but Google Cloud API returns HTTP 500 while fetching the specified key",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			}),
+			args: args{
 				ctx: context.Background(),
 				mg: newServiceAccountKey(
 					setServiceAccount(rrnTestServiceAccount),
 					setAnnotations(map[string]string{
 						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
 					})),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusInternalServerError)
-				}),
 			},
-			want: &saKeyTestWant{
-				mg: nil,
-				expected: []interface{}{
-					nil,
-					errors.Wrap(gError(http.StatusInternalServerError, ""), errGetServiceAccountKey)},
+			want: want{
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					})),
+				err: errors.Wrap(gError(http.StatusInternalServerError, ""), errGetServiceAccountKey),
 			},
 		},
-		// both SA rrn & external name annotations are set and Google Cloud API successfully returns the specified key
-		// but we cannot parse the keyID successfully
 		"GoogleCloudAPIReadSuccessKeyIDParseError": {
-			args: &saKeyTestArgs{
+			reason: "both SA rrn & external name annotations are set and Google Cloud API successfully returns the specified key but we cannot parse the keyID successfully",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if err := json.NewEncoder(w).Encode(iamv1.ServiceAccountKey{Name: rrnInvalidServiceAccountKey}); err != nil {
+					t.Logf(
+						"Google Cloud API response failed. Failed to serialize iam.ServiceAccountKey: %s", err)
+
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}),
+			args: args{
 				ctx: context.Background(),
 				mg: newServiceAccountKey(
 					setServiceAccount(rrnTestServiceAccount),
 					setAnnotations(map[string]string{
 						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
 					})),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if err := json.NewEncoder(w).Encode(iamv1.ServiceAccountKey{
-						Name: rrnInvalidServiceAccountKey,
-					}); err != nil {
-						t.Logf(
-							"Google Cloud API response failed. Failed to serialize iam.ServiceAccountKey: %s", err)
-
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				}),
 			},
-			want: &saKeyTestWant{
-				mg: nil,
-				expected: []interface{}{
-					nil,
-					errors.Wrap(fmt.Errorf(getURLParseErrorString(t, rrnInvalidServiceAccountKey)),
-						errGetServiceAccountKey),
-				},
+			want: want{
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					})),
+				err: errors.Wrap(fmt.Errorf(getURLParseErrorString(t, rrnInvalidServiceAccountKey)), errGetServiceAccountKey),
 			},
 		},
-		// both SA rrn & external name annotations are set and Google Cloud API successfully returns the specified key
-		// and we can parse the keyID
 		"GoogleCloudAPIReadSuccessWithPublicKey": {
-			args: &saKeyTestArgs{
+			reason: "both SA rrn & external name annotations are set and Google Cloud API successfully returns the specified key and we can parse the keyID",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if err := json.NewEncoder(w).Encode(getIAMSaKeyGetObjectWithEncodedKeyData(iamSaKeyGetObject)); err != nil {
+					t.Logf(
+						"Google Cloud API response failed. Failed to serialize iam.ServiceAccountKey: %s", err)
+
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}),
+			args: args{
 				ctx: context.Background(),
 				mg: newServiceAccountKey(
 					setServiceAccount(rrnTestServiceAccount),
@@ -209,25 +241,15 @@ func TestServiceAccountKeyObserve(t *testing.T) {
 						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
 					}),
 					setPublicKeyType(valIAMPublicKeyType)),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if err := json.NewEncoder(w).Encode(getIAMSaKeyGetObjectWithEncodedKeyData(iamSaKeyGetObject)); err != nil {
-						t.Logf(
-							"Google Cloud API response failed. Failed to serialize iam.ServiceAccountKey: %s", err)
-
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				}),
 			},
-			want: &saKeyTestWant{
-				expected: []interface{}{managed.ExternalObservation{
+			want: want{
+				o: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 					ConnectionDetails: map[string][]byte{
 						keyPublicKeyType: []byte(valIAMPublicKeyType),
 						keyPublicKeyData: []byte(valIAMPublicKeyData),
 					},
-				},
-					nil,
 				},
 				mg: newServiceAccountKey(
 					setServiceAccount(rrnTestServiceAccount),
@@ -242,112 +264,112 @@ func TestServiceAccountKeyObserve(t *testing.T) {
 		},
 	}
 
-	for n, tc := range testCases {
-		args := tc.args
-		want := tc.want
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
 
-		runCase(t, n, func(c *serviceAccountKeyExternalClient, args *saKeyTestArgs) []interface{} {
-			o, err := c.Observe(args.ctx, args.mg)
+			s, err := iamv1.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			if err != nil {
+				t.Fatalf("iam.NewService failed while running test case %q: %s", name, err)
+			}
 
-			return []interface{}{o, err}
-		}, func(t *testing.T, expected, observed []interface{}) {
-			compareValueErrorResult(t, expected, observed, "Observe")
-		}, args, want)
+			c := &serviceAccountKeyExternalClient{serviceAccountKeyClient: iamv1.NewProjectsServiceAccountsKeysService(s)}
+			got, err := c.Observe(tc.args.ctx, tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("%s\nc.Observe(...): -want error, +got:\n%s", tc.reason, diff)
+			}
+			if diff := cmp.Diff(tc.want.o, got); diff != "" {
+				t.Errorf("%s\nc.Observe(...): -want observation, +got:\n%s", tc.reason, diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
+				t.Errorf("%s\nc.Observe(...): -want managed resource, +got:\n%s", tc.reason, diff)
+			}
+		})
 	}
 }
 
 func TestServiceAccountKeyCreate(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+
+	type want struct {
+		c   managed.ExternalCreation
+		mg  resource.Managed
+		err error
+	}
+
 	testCases := map[string]struct {
-		args *saKeyTestArgs
-		want *saKeyTestWant
+		reason  string
+		handler http.Handler
+		args    args
+		want    want
 	}{
-		// assert error if not reconciling on a valid v1alpha1.ServiceAccountKey object
 		"NotServiceAccountKey": {
-			args: &saKeyTestArgs{
+			reason: "assert error if not reconciling on a valid v1alpha1.ServiceAccountKey object",
+			args: args{
 				ctx: context.Background(),
 				mg:  &strange{},
 			},
-			want: &saKeyTestWant{
-				mg:       nil,
-				expected: []interface{}{nil, errors.New(errNotServiceAccountKey)},
+			want: want{
+				mg:  &strange{},
+				err: errors.New(errNotServiceAccountKey),
 			},
 		},
-		// assert error if a valid service account reference is not provided
-		"InvalidServiceAccountReference": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg:  newServiceAccountKey(),
-			},
-			want: &saKeyTestWant{
-				mg: nil,
-				expected: []interface{}{nil, errors.Wrap(fmt.Errorf(fmtErrInvalidServiceAccountRef,
-					v1alpha1.ServiceAccountReferer{}), errCreateServiceAccountKey)},
-			},
-		},
-		// SA rrn is set but Google Cloud API returns HTTP 500 while fetching the specified key
 		"GoogleCloudAPIReadError500": {
-			args: &saKeyTestArgs{
+			reason: "SA rrn is set but Google Cloud API returns HTTP 500 while fetching the specified key",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			}),
+			args: args{
 				ctx: context.Background(),
 				mg:  newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusInternalServerError)
-				}),
 			},
-			want: &saKeyTestWant{
-				mg: nil,
-				expected: []interface{}{
-					nil,
-					errors.Wrap(gError(http.StatusInternalServerError, ""), errCreateServiceAccountKey)},
+			want: want{
+				mg:  newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
+				err: errors.Wrap(gError(http.StatusInternalServerError, ""), errCreateServiceAccountKey),
 			},
 		},
-		// SA rrn is set and Google Cloud API successfully returns the specified key
-		// but we cannot parse the keyID successfully
 		"GoogleCloudAPIReadSuccessKeyIDParseError": {
-			args: &saKeyTestArgs{
+			reason: "SA rrn is set and Google Cloud API successfully returns the specified key but we cannot parse the keyID successfully",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if err := json.NewEncoder(w).Encode(iamv1.ServiceAccountKey{Name: rrnInvalidServiceAccountKey}); err != nil {
+					t.Logf("Google Cloud API response failed. Failed to serialize iam.ServiceAccountKey: %s", err)
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}),
+			args: args{
 				ctx: context.Background(),
 				mg:  newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if err := json.NewEncoder(w).Encode(iamv1.ServiceAccountKey{
-						Name: rrnInvalidServiceAccountKey,
-					}); err != nil {
-						t.Logf(
-							"Google Cloud API response failed. Failed to serialize iam.ServiceAccountKey: %s", err)
-
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				}),
 			},
-			want: &saKeyTestWant{
-				mg: nil,
-				expected: []interface{}{
-					nil,
-					errors.Wrap(fmt.Errorf(getURLParseErrorString(t, rrnInvalidServiceAccountKey)),
-						errCreateServiceAccountKey),
-				},
+			want: want{
+				mg:  newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
+				err: errors.Wrap(fmt.Errorf(getURLParseErrorString(t, rrnInvalidServiceAccountKey)), errCreateServiceAccountKey),
 			},
 		},
-		// SA rrn is set and Google Cloud API successfully returns the specified key
-		// and we can parse the keyID
 		"GoogleCloudAPIReadSuccessWithPublicKey": {
-			args: &saKeyTestArgs{
+			reason: "SA rrn is set and Google Cloud API successfully returns the specified key and we can parse the keyID",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if err := json.NewEncoder(w).Encode(
+					getIAMSaKeyGetObjectWithEncodedKeyData(iamSaKeyCreateObject)); err != nil {
+					t.Logf(
+						"Google Cloud API response failed. Failed to serialize iam.ServiceAccountKey: %s", err)
+
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}),
+			args: args{
 				ctx: context.Background(),
 				mg: newServiceAccountKey(
 					setServiceAccount(rrnTestServiceAccount),
 					setPublicKeyType(valIAMPublicKeyType),
 					setPrivateKeyType(valIAMPrivateKeyType),
 				),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if err := json.NewEncoder(w).Encode(
-						getIAMSaKeyGetObjectWithEncodedKeyData(iamSaKeyCreateObject)); err != nil {
-						t.Logf(
-							"Google Cloud API response failed. Failed to serialize iam.ServiceAccountKey: %s", err)
-
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				}),
 			},
-			want: &saKeyTestWant{
-				expected: []interface{}{managed.ExternalCreation{
+			want: want{
+				c: managed.ExternalCreation{
 					ExternalNameAssigned: true,
 					ConnectionDetails: map[string][]byte{
 						keyPublicKeyType: []byte(valIAMPublicKeyType),
@@ -358,8 +380,6 @@ func TestServiceAccountKeyCreate(t *testing.T) {
 						keyPrivateKeyData: []byte(valIAMPrivateKeyData),
 					},
 				},
-					nil,
-				},
 				mg: newServiceAccountKey(
 					setServiceAccount(rrnTestServiceAccount),
 					setAnnotations(map[string]string{
@@ -367,266 +387,216 @@ func TestServiceAccountKeyCreate(t *testing.T) {
 					}),
 					setPublicKeyType(valIAMPublicKeyType),
 					setPrivateKeyType(valIAMPrivateKeyType),
-					setConditions(v1.Creating()),
 				),
 			},
-		},
-	}
-
-	for n, tc := range testCases {
-		args := tc.args
-		want := tc.want
-
-		runCase(t, n, func(c *serviceAccountKeyExternalClient, args *saKeyTestArgs) []interface{} {
-			o, err := c.Create(args.ctx, args.mg)
-
-			return []interface{}{o, err}
-		}, func(t *testing.T, expected, observed []interface{}) {
-			compareValueErrorResult(t, expected, observed, "Create")
-		}, args, want)
-	}
-}
-
-func TestServiceAccountKeyUpdate(t *testing.T) {
-	testCases := map[string]struct {
-		args *saKeyTestArgs
-		want *saKeyTestWant
-	}{
-		// assert update is a no-op
-		"NoOpUpdate": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg:  nil,
-			},
-			want: &saKeyTestWant{
-				mg:       nil,
-				expected: []interface{}{managed.ExternalUpdate{}, nil},
-			},
-		},
-	}
-
-	for n, tc := range testCases {
-		args := tc.args
-		want := tc.want
-
-		runCase(t, n, func(c *serviceAccountKeyExternalClient, args *saKeyTestArgs) []interface{} {
-			o, err := c.Update(args.ctx, args.mg)
-
-			return []interface{}{o, err}
-		}, func(t *testing.T, expected, observed []interface{}) {
-			compareValueErrorResult(t, expected, observed, "Update")
-		}, args, want)
-	}
-}
-
-func TestServiceAccountKeyDelete(t *testing.T) {
-	testCases := map[string]struct {
-		args *saKeyTestArgs
-		want *saKeyTestWant
-	}{
-		// assert error if not reconciling on a valid v1alpha1.ServiceAccountKey object
-		"NotServiceAccountKey": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg:  &strange{},
-			},
-			want: &saKeyTestWant{
-				mg:       nil,
-				expected: []interface{}{errors.New(errNotServiceAccountKey)},
-			},
-		},
-		// assert error if a valid service account reference is not provided
-		"InvalidServiceAccountReference": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg:  newServiceAccountKey(),
-			},
-			want: &saKeyTestWant{
-				mg: nil,
-				expected: []interface{}{errors.Wrap(fmt.Errorf(fmtErrInvalidServiceAccountRef,
-					v1alpha1.ServiceAccountReferer{}), errDeleteServiceAccountKey)},
-			},
-		},
-		// no action is expected if external name annotation is missing
-		"MissingExternalNameAnnotation": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg:  newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
-			},
-			want: &saKeyTestWant{
-				mg:       newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
-				expected: []interface{}{errors.Wrap(errors.New(errNoExternalName), errDeleteServiceAccountKey)},
-			},
-		},
-		// report no errors if Google Cloud API returns HTTP 404 for the resource being deleted (already deleted)
-		"GoogleCloudAPINotFound": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg: newServiceAccountKey(
-					setServiceAccount(rrnTestServiceAccount),
-					setAnnotations(map[string]string{
-						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
-					}),
-				),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusNotFound)
-				}),
-			},
-			want: &saKeyTestWant{
-				expected: []interface{}{nil},
-			},
-		},
-		"GoogleCloudAPIDeleteError500": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg: newServiceAccountKey(
-					setServiceAccount(rrnTestServiceAccount),
-					setAnnotations(map[string]string{
-						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
-					}),
-				),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusInternalServerError)
-				}),
-			},
-			want: &saKeyTestWant{
-				expected: []interface{}{
-					errors.Wrap(gError(http.StatusInternalServerError, ""), errDeleteServiceAccountKey)},
-			},
-		},
-		"GoogleCloudAPIDeleteSuccess": {
-			args: &saKeyTestArgs{
-				ctx: context.Background(),
-				mg: newServiceAccountKey(
-					setServiceAccount(rrnTestServiceAccount),
-					setAnnotations(map[string]string{
-						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
-					}),
-				),
-				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if err := json.NewEncoder(w).Encode(iamv1.Empty{}); err != nil {
-						t.Logf(
-							"Google Cloud API response failed. Failed to serialize iam.Empty: %s", err)
-
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				}),
-			},
-			want: &saKeyTestWant{
-				expected: []interface{}{nil},
-				mg: newServiceAccountKey(
-					setServiceAccount(rrnTestServiceAccount),
-					setAnnotations(map[string]string{
-						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
-					}),
-				),
-			},
-		},
-	}
-
-	for n, tc := range testCases {
-		args := tc.args
-		want := tc.want
-
-		runCase(t, n, func(c *serviceAccountKeyExternalClient, args *saKeyTestArgs) []interface{} {
-			return []interface{}{c.Delete(args.ctx, args.mg)}
-		}, func(t *testing.T, expected, observed []interface{}) {
-			compareErrorResult(t, expected, observed, 0, "Delete")
-		}, args, want)
-	}
-}
-
-func TestNewSaKeyRelativeResourceNamer(t *testing.T) {
-	testCases := map[string]struct {
-		saKey                *v1alpha1.ServiceAccountKey
-		expectedSAPath       string
-		expectedSAKeyPath    string
-		expectedSAKeyPathErr error
-		expectedSAPathErr    error
-	}{
-		"NoServiceAccountReference": {
-			saKey:                newServiceAccountKey(),
-			expectedSAPathErr:    fmt.Errorf(fmtErrInvalidServiceAccountRef, v1alpha1.ServiceAccountReferer{}),
-			expectedSAKeyPathErr: fmt.Errorf(fmtErrInvalidServiceAccountRef, v1alpha1.ServiceAccountReferer{}),
-		},
-		"ValidServiceAccountReference": {
-			saKey:                newServiceAccountKey(setServiceAccount(rrnTestServiceAccount)),
-			expectedSAPath:       rrnTestServiceAccount,
-			expectedSAKeyPathErr: errors.New(errNoExternalName),
-		},
-		"ValidServiceAccountReferenceWithExtName": {
-			saKey: newServiceAccountKey(
-				setServiceAccount(rrnTestServiceAccount),
-				setAnnotations(map[string]string{
-					meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
-				}),
-			),
-			expectedSAPath:    rrnTestServiceAccount,
-			expectedSAKeyPath: rrnTestServiceAccountKey,
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			n, err := referencedServiceAccountPath(tc.saKey)
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
 
-			if compareErrors(t, err, tc.expectedSAPathErr, "referencedServiceAccountPath.expectedSAPathErr") {
-				return
+			s, err := iamv1.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			if err != nil {
+				t.Fatalf("iam.NewService failed while running test case %q: %s", name, err)
 			}
 
-			compareValues(t, n, tc.expectedSAPath, "referencedServiceAccountPath.expectedSAPath")
-			// check resourcePath
-			saKeyRRN, err := resourcePath(tc.saKey)
-
-			if compareErrors(t, err, tc.expectedSAKeyPathErr, "resourcePath.expectedSAKeyPathErr") {
-				return
+			c := &serviceAccountKeyExternalClient{serviceAccountKeyClient: iamv1.NewProjectsServiceAccountsKeysService(s)}
+			got, err := c.Create(tc.args.ctx, tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("%s\nc.Create(...): -want error, +got:\n%s", tc.reason, diff)
 			}
-
-			compareValues(t, saKeyRRN, tc.expectedSAKeyPath, "resourcePath.saKeyRRN")
+			if diff := cmp.Diff(tc.want.c, got); diff != "" {
+				t.Errorf("%s\nc.Create(...): -want creation, +got:\n%s", tc.reason, diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
+				t.Errorf("%s\nc.Create(...): -want managed resource, +got:\n%s", tc.reason, diff)
+			}
 		})
 	}
 }
 
-type saKeyTestArgs struct {
-	ctx     context.Context
-	mg      resource.Managed
-	handler http.Handler
+func TestServiceAccountKeyUpdate(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
+
+	type want struct {
+		u   managed.ExternalUpdate
+		mg  resource.Managed
+		err error
+	}
+
+	testCases := map[string]struct {
+		reason  string
+		handler http.Handler
+		args    args
+		want    want
+	}{
+		"NoOpUpdate": {
+			reason: "assert update is a no-op",
+			args: args{
+				ctx: context.Background(),
+				mg:  nil,
+			},
+			want: want{
+				err: nil,
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
+
+			s, err := iamv1.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			if err != nil {
+				t.Fatalf("iam.NewService failed while running test case %q: %s", name, err)
+			}
+
+			c := &serviceAccountKeyExternalClient{serviceAccountKeyClient: iamv1.NewProjectsServiceAccountsKeysService(s)}
+			got, err := c.Update(tc.args.ctx, tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("%s\nc.Update(...): -want error, +got:\n%s", tc.reason, diff)
+			}
+			if diff := cmp.Diff(tc.want.u, got); diff != "" {
+				t.Errorf("%s\nc.Update(...): -want update, +got:\n%s", tc.reason, diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
+				t.Errorf("%s\nc.Update(...): -want managed resource, +got:\n%s", tc.reason, diff)
+			}
+		})
+	}
 }
 
-type compareTestResultFunc func(t *testing.T, expected, observed []interface{})
+func TestServiceAccountKeyDelete(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		mg  resource.Managed
+	}
 
-type saKeyTestWant struct {
-	mg       resource.Managed
-	expected []interface{}
-}
+	type want struct {
+		mg  resource.Managed
+		err error
+	}
 
-type testMethod func(c *serviceAccountKeyExternalClient, args *saKeyTestArgs) []interface{}
+	testCases := map[string]struct {
+		reason  string
+		handler http.Handler
+		args    args
+		want    want
+	}{
+		"NotServiceAccountKey": {
+			reason: "assert error if not reconciling on a valid v1alpha1.ServiceAccountKey object",
+			args: args{
+				ctx: context.Background(),
+				mg:  &strange{},
+			},
+			want: want{
+				mg:  &strange{},
+				err: errors.New(errNotServiceAccountKey),
+			},
+		},
+		"GoogleCloudAPINotFound": {
+			reason: "report no errors if Google Cloud API returns HTTP 404 for the resource being deleted (already deleted)",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+			}),
+			args: args{
+				ctx: context.Background(),
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					}),
+				),
+			},
+			want: want{
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					}),
+				),
+				err: nil,
+			},
+		},
+		"GoogleCloudAPIDeleteError500": {
+			reason: "Unexpected errors returned by the GCP API should be wrapped and returned.",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			}),
+			args: args{
+				ctx: context.Background(),
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					}),
+				),
+			},
+			want: want{
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					}),
+				),
+				err: errors.Wrap(gError(http.StatusInternalServerError, ""), errDeleteServiceAccountKey),
+			},
+		},
+		"GoogleCloudAPIDeleteSuccess": {
+			reason: "Successful deletion should not return an error.",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if err := json.NewEncoder(w).Encode(iamv1.Empty{}); err != nil {
+					t.Logf("Google Cloud API response failed. Failed to serialize iam.Empty: %s", err)
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}),
+			args: args{
+				ctx: context.Background(),
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					}),
+				),
+			},
+			want: want{
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					}),
+				),
+				err: nil,
+			},
+		},
+	}
 
-func runCase(t *testing.T, name string, test testMethod, compareResult compareTestResultFunc,
-	args *saKeyTestArgs, want *saKeyTestWant) bool {
-	return t.Run(name, func(t *testing.T) {
-		server := httptest.NewServer(args.handler)
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(tc.handler)
+			defer server.Close()
 
-		defer server.Close()
+			s, err := iamv1.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
+			if err != nil {
+				t.Fatalf("iam.NewService failed while running test case %q: %s", name, err)
+			}
 
-		s, err := iamv1.NewService(context.Background(), option.WithEndpoint(server.URL),
-			option.WithoutAuthentication())
-
-		if err != nil {
-			t.Fatalf("iam.NewService failed while running test case %q: %s", name, err)
-		}
-
-		extClient := &serviceAccountKeyExternalClient{
-			serviceAccountKeyClient: iamv1.NewProjectsServiceAccountsKeysService(s),
-		}
-
-		// assert expected return values of the tested method
-		compareResult(t, want.expected, test(extClient, args))
-		// assert expected reconciled managed resource if expected managed resource is specified
-		if want.mg != nil {
-			compareValues(t, args.mg, want.mg, name)
-		}
-	})
+			c := &serviceAccountKeyExternalClient{serviceAccountKeyClient: iamv1.NewProjectsServiceAccountsKeysService(s)}
+			err = c.Delete(tc.args.ctx, tc.args.mg)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("%s\nc.Delete(...): -want error, +got:\n%s", tc.reason, diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg, test.EquateConditions()); diff != "" {
+				t.Errorf("%s\nc.Delete(...): -want managed resource, +got:\n%s", tc.reason, diff)
+			}
+		})
+	}
 }
 
 type serviceAccountKeyModifier func(key *v1alpha1.ServiceAccountKey)
@@ -697,58 +667,6 @@ func setConditions(conditions ...v1.Condition) serviceAccountKeyModifier {
 	}
 }
 
-// returns true if the test function returned an error so that value comparison should not be done
-func compareErrors(t *testing.T, err, errExpected error, context string) bool {
-	if err == nil && errExpected == nil {
-		return false
-	}
-
-	if err != nil && errExpected == nil {
-		t.Fatalf("Unexpected %s error: %s", context, err)
-	}
-
-	if err == nil && errExpected != nil {
-		t.Fatalf("Expected %s error but got nil: %s", context, errExpected)
-	}
-
-	if //goland:noinspection GoNilness
-	diff := cmp.Diff(errExpected.Error(), err.Error()); diff != "" {
-		t.Fatalf("Expected %s error string differs from actual error, -expected +got: %s", context, diff)
-	}
-
-	return true
-}
-
-func compareValues(t *testing.T, o, oExpected interface{}, context string) {
-	if diff := cmp.Diff(oExpected, o, cmp.Comparer(compareStatusConditionsIgnoreTimestamp)); diff != "" {
-		t.Fatalf("Expected %s return values differ: -expected, +got:\n%s", context, diff)
-	}
-}
-
-// {expected,observed}[1] are errors
-func compareErrorResult(t *testing.T, expected, observed []interface{}, index int, context string) bool {
-	var err, errExpected error
-
-	if observed[index] != nil {
-		err = observed[index].(error)
-	}
-
-	if expected[index] != nil {
-		errExpected = expected[index].(error)
-	}
-
-	return compareErrors(t, err, errExpected, context)
-}
-
-// {expected,observed}[0] are values, {expected,observed}[1] are errors
-func compareValueErrorResult(t *testing.T, expected, observed []interface{}, context string) {
-	if compareErrorResult(t, expected, observed, 1, context) {
-		return // if the tested method errored, do not try to compare expected & actual value
-	}
-
-	compareValues(t, observed[0], expected[0], "Observe")
-}
-
 func getURLParseErrorString(t *testing.T, invalidURL string) string {
 	_, err := url.Parse(invalidURL)
 
@@ -773,17 +691,4 @@ func getIAMSaKeyGetObjectWithEncodedKeyData(srcSaKey iamv1.ServiceAccountKey) *i
 	}
 
 	return result
-}
-
-// compare v1.Conditions relaxing on equality of last transition times
-func compareStatusConditionsIgnoreTimestamp(c1, c2 v1.Condition) bool {
-	if (c1.LastTransitionTime.IsZero() && !c2.LastTransitionTime.IsZero()) ||
-		(!c1.LastTransitionTime.IsZero() && c2.LastTransitionTime.IsZero()) {
-		return false
-	}
-
-	// as long as both are zero or non-zero, ignore last transition times because they will probably different
-	c1.LastTransitionTime.Time = c2.LastTransitionTime.Time.In(c2.LastTransitionTime.Time.Location())
-
-	return cmp.Equal(c1, c2)
 }
