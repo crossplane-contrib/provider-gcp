@@ -90,7 +90,7 @@ func (sar *ServiceAccountReferer) resolveReferences(ctx context.Context, resolve
 	})
 
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("could not resolve ServiceAccount reference: %v", *sar))
+		return err
 	}
 
 	sar.ServiceAccount = reference.ToPtrValue(rsp.ResolvedValue)
@@ -101,16 +101,15 @@ func (sar *ServiceAccountReferer) resolveReferences(ctx context.Context, resolve
 
 // ResolveReferences of this ServiceAccountKey
 func (in *ServiceAccountKey) ResolveReferences(ctx context.Context, c client.Reader) error {
-	return errors.Wrap(in.Spec.ForProvider.ServiceAccountReferer.resolveReferences(ctx, reference.NewAPIResolver(c, in)),
-		"spec.forProvider.serviceAccount")
+	return errors.Wrap(in.Spec.ForProvider.resolveReferences(ctx, reference.NewAPIResolver(c, in)), "spec.forProvider.serviceAccount")
 }
 
 // ResolveReferences of this ServiceAccountPolicy
 func (in *ServiceAccountPolicy) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, in)
 
-	if err := in.Spec.ForProvider.ServiceAccountReferer.resolveReferences(ctx, r); err != nil {
-		return err
+	if err := in.Spec.ForProvider.resolveReferences(ctx, r); err != nil {
+		return errors.Wrap(err, "spec.forProvider.serviceAccount")
 	}
 
 	// Resolve spec.ForProvider.Policy.Bindings[*].Members
