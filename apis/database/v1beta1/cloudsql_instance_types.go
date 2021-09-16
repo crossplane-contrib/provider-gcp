@@ -349,11 +349,12 @@ type IPConfiguration struct {
 
 	// PrivateNetwork: The resource link for the VPC network from which the
 	// Cloud SQL instance is accessible for private IP. For example,
-	// /projects/myProject/global/networks/default. This setting can be updated,
+	// projects/myProject/global/networks/default. This setting can be updated,
 	// but it cannot be removed after it is set. The Network must have an active
 	// Service Networking connection peering before resolution will proceed.
 	// https://cloud.google.com/vpc/docs/configure-private-services-access
 	// +optional
+	// +kubebuilder:validation:Pattern=^projects\/.+
 	PrivateNetwork *string `json:"privateNetwork,omitempty"`
 
 	// PrivateNetworkRef sets the PrivateNetwork field by resolving the resource

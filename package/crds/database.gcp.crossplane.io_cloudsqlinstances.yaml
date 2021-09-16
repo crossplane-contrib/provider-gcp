@@ -287,11 +287,12 @@ spec:
                           privateNetwork:
                             description: 'PrivateNetwork: The resource link for the
                               VPC network from which the Cloud SQL instance is accessible
-                              for private IP. For example, /projects/myProject/global/networks/default.
+                              for private IP. For example, projects/myProject/global/networks/default.
                               This setting can be updated, but it cannot be removed
                               after it is set. The Network must have an active Service
                               Networking connection peering before resolution will
                               proceed. https://cloud.google.com/vpc/docs/configure-private-services-access'
+                            pattern: ^projects\/.+
                             type: string
                           privateNetworkRef:
                             description: PrivateNetworkRef sets the PrivateNetwork
