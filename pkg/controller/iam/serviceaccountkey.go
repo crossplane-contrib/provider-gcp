@@ -50,8 +50,6 @@ const (
 	errDeleteServiceAccountKey = "cannot delete GCP ServiceAccountKey object via IAM API"
 	errDecodePrivateKey        = "cannot decode private key"
 	errDecodePublicKey         = "cannot decode public key"
-
-	fmtErrInvalidServiceAccountRef = "invalid service account reference: %v"
 )
 
 const (
@@ -131,7 +129,13 @@ func (s *serviceAccountKeyExternalClient) Observe(ctx context.Context, mg resour
 
 	fromProvider, err := getCall.Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetServiceAccountKey)
+		// This API appears to return an HTTP 403 forbidden for some
+		// period of time immediately after a service account has been
+		// deleted. It should be safe to ignore this error and assume
+		// that the key doesn't exist. Presumably if the error was real
+		// (i.e. the key does exist but we don't have permission to read
+		// it) we'd get the same error at Create time.
+		return managed.ExternalObservation{}, errors.Wrap(resource.IgnoreAny(err, gcp.IsErrorNotFound, gcp.IsErrorForbidden), errGetServiceAccountKey)
 	}
 
 	if err := serviceaccountkey.PopulateSaKey(cr, fromProvider); err != nil {

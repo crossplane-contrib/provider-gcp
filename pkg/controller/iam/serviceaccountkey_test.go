@@ -151,6 +151,29 @@ func TestServiceAccountKeyObserve(t *testing.T) {
 					})),
 			},
 		},
+		"GoogleCloudAPIReadErrorForbidden": {
+			reason: "both SA rrn & external name annotations are set but Google Cloud API returns HTTP 403 (forbidden) for the specified key",
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusForbidden)
+			}),
+			args: args{
+				ctx: context.Background(),
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					})),
+			},
+			want: want{
+				// external name annotation is set but the underlying service account has been deleted.
+				o: managed.ExternalObservation{ResourceExists: false},
+				mg: newServiceAccountKey(
+					setServiceAccount(rrnTestServiceAccount),
+					setAnnotations(map[string]string{
+						meta.AnnotationKeyExternalName: nameExternalServiceAccountKey,
+					})),
+			},
+		},
 		"GoogleCloudAPIReadError500": {
 			reason: "both SA rrn & external name annotations are set but Google Cloud API returns HTTP 500 while fetching the specified key",
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
