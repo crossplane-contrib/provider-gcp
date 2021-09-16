@@ -48,7 +48,6 @@ const (
 	errGetServiceAccountKey    = "cannot get GCP ServiceAccountKey object via IAM API"
 	errCreateServiceAccountKey = "cannot create GCP ServiceAccountKey object via IAM API"
 	errDeleteServiceAccountKey = "cannot delete GCP ServiceAccountKey object via IAM API"
-	errNoExternalName          = "empty external name"
 	errDecodePrivateKey        = "cannot decode private key"
 	errDecodePublicKey         = "cannot decode public key"
 
@@ -58,7 +57,7 @@ const (
 const (
 	// Format string for the relative resource names of ServiceAccountKeys
 	// built upon relative resource names of ServiceAccounts. For example
-	// projects/<project-name>/serviceAccounts/<service-account-email>/keys/<key-name>
+	// projects/<project-name>/serviceAccounts/<service-account-email>/keys/<key-id>
 	fmtKeyRelativeResourceName = "%s/keys/%s"
 
 	// connection detail keys
@@ -115,37 +114,24 @@ type serviceAccountKeyExternalClient struct {
 	serviceAccountKeyClient serviceaccountkey.Client
 }
 
-func (s *serviceAccountKeyExternalClient) Observe(ctx context.Context,
-	mg resource.Managed) (managed.ExternalObservation, error) {
+func (s *serviceAccountKeyExternalClient) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.ServiceAccountKey)
-
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotServiceAccountKey)
 	}
 
 	if meta.GetExternalName(cr) == "" {
-		return managed.ExternalObservation{
-			ResourceExists: false,
-		}, nil
+		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
-	rrn, err := resourcePath(cr)
-
-	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(err, errGetServiceAccountKey)
-	}
-
-	getCall := s.serviceAccountKeyClient.Get(rrn)
-
+	getCall := s.serviceAccountKeyClient.Get(resourcePath(cr))
 	if cr.Spec.ForProvider.PublicKeyType != nil && *cr.Spec.ForProvider.PublicKeyType != "" {
 		getCall = getCall.PublicKeyType(*cr.Spec.ForProvider.PublicKeyType)
 	}
 
 	fromProvider, err := getCall.Context(ctx).Do()
-
 	if err != nil {
-		return managed.ExternalObservation{},
-			errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetServiceAccountKey)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetServiceAccountKey)
 	}
 
 	if err := serviceaccountkey.PopulateSaKey(cr, fromProvider); err != nil {
@@ -155,7 +141,6 @@ func (s *serviceAccountKeyExternalClient) Observe(ctx context.Context,
 	cr.Status.SetConditions(xpv1.Available())
 
 	connDetails, err := getConnectionDetails(cr.Spec.ForProvider.PublicKeyType, fromProvider)
-
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetServiceAccountKey)
 	}
@@ -169,25 +154,15 @@ func (s *serviceAccountKeyExternalClient) Observe(ctx context.Context,
 }
 
 // Create https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts.keys/create
-func (s *serviceAccountKeyExternalClient) Create(ctx context.Context,
-	mg resource.Managed) (managed.ExternalCreation, error) {
+func (s *serviceAccountKeyExternalClient) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.ServiceAccountKey)
-
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotServiceAccountKey)
 	}
 
-	cr.SetConditions(xpv1.Creating())
-	// The first parameter to the Create method is the resource name of the GCP service account
-	// which the service account key belongs to. Retry resolution because reference could have been altered
-	// between invocations of Observe and Create
-	saPath, err := referencedServiceAccountPath(cr)
-
-	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateServiceAccountKey)
-	}
-
-	req := s.serviceAccountKeyClient.Create(saPath, &iamv1.CreateServiceAccountKeyRequest{
+	// Technically ServiceAccount can be nil, but reference resolution
+	// should always make sure a value is set before we get to this point.
+	req := s.serviceAccountKeyClient.Create(gcp.StringValue(cr.Spec.ForProvider.ServiceAccount), &iamv1.CreateServiceAccountKeyRequest{
 		KeyAlgorithm:   gcp.StringValue(cr.Spec.ForProvider.KeyAlgorithm),
 		PrivateKeyType: gcp.StringValue(cr.Spec.ForProvider.PrivateKeyType),
 	})
@@ -207,14 +182,10 @@ func (s *serviceAccountKeyExternalClient) Create(ctx context.Context,
 
 	meta.SetExternalName(cr, keyID) // set external name to key id parsing it from Google Cloud API relative resource name
 
-	return managed.ExternalCreation{
-		ExternalNameAssigned: true,
-		ConnectionDetails:    connDetails,
-	}, nil
+	return managed.ExternalCreation{ExternalNameAssigned: true, ConnectionDetails: connDetails}, nil
 }
 
-func (s *serviceAccountKeyExternalClient) Update(_ context.Context,
-	_ resource.Managed) (managed.ExternalUpdate, error) {
+func (s *serviceAccountKeyExternalClient) Update(_ context.Context, _ resource.Managed) (managed.ExternalUpdate, error) {
 	// ServiceAccountKeys are immutable, i.e.,GCP IAM Rest API does not provide an update method:
 	// https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts.keys
 	return managed.ExternalUpdate{}, nil
@@ -222,41 +193,21 @@ func (s *serviceAccountKeyExternalClient) Update(_ context.Context,
 
 func (s *serviceAccountKeyExternalClient) Delete(ctx context.Context, mg resource.Managed) error {
 	cr, ok := mg.(*v1alpha1.ServiceAccountKey)
-
 	if !ok {
 		return errors.New(errNotServiceAccountKey)
 	}
 
-	rrn, err := resourcePath(cr)
-
-	if err != nil {
-		return errors.Wrap(err, errDeleteServiceAccountKey)
-	}
-
-	_, err = s.serviceAccountKeyClient.Delete(rrn).Context(ctx).Do()
-
+	_, err := s.serviceAccountKeyClient.Delete(resourcePath(cr)).Context(ctx).Do()
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteServiceAccountKey)
 }
 
-// referencedServiceAccountPath returns the external name of the service account which saKey belongs to
-func referencedServiceAccountPath(saKey *v1alpha1.ServiceAccountKey) (string, error) {
-	// we assume Google Cloud API relative resource name (aka resource path) of the ServiceAccount is stored in spec.ForProvider.ServiceAccount
-	if gcp.StringValue(saKey.Spec.ForProvider.ServiceAccount) == "" {
-		return "", fmt.Errorf(fmtErrInvalidServiceAccountRef, saKey.Spec.ForProvider.ServiceAccountReferer)
-	}
-
-	return *saKey.Spec.ForProvider.ServiceAccount, nil
-}
-
 // resourcePath yields the Google Cloud API relative resource name for the ServiceAccountKey resource
-func resourcePath(saKey *v1alpha1.ServiceAccountKey) (string, error) {
-	if saPath, err := referencedServiceAccountPath(saKey); err != nil {
-		return "", err
-	} else if extName := meta.GetExternalName(saKey); extName == "" {
-		return "", errors.New(errNoExternalName)
-	} else {
-		return fmt.Sprintf(fmtKeyRelativeResourceName, saPath, extName), nil
-	}
+func resourcePath(saKey *v1alpha1.ServiceAccountKey) string {
+	// Technically ServiceAccount can be nil, but reference resolution
+	// should always make sure a value is set before we get to this point.
+	// Similarly, we always make sure the external name is set before this
+	// function is called.
+	return fmt.Sprintf(fmtKeyRelativeResourceName, gcp.StringValue(saKey.Spec.ForProvider.ServiceAccount), meta.GetExternalName(saKey))
 }
 
 func getConnectionDetails(publicKeyType *string, fromProvider *iamv1.ServiceAccountKey) (managed.ConnectionDetails, error) {
