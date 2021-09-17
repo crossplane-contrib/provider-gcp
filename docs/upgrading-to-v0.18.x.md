@@ -232,13 +232,14 @@ resources, please follow the steps below:
    with changes.
 
 3. Update `resourceRefs` in the spec of your composite resources to point
-   the imported resources, for example:
+   the imported resources and temporarily break reference to composition,
+   for example:
 
    ```
    spec:
      compositionRef:
-       name: gke.gcp.platformref.crossplane.io
-     compositionUpdatePolicy: Automatic
+       name: gke.gcp.platformref.crossplane.io-onhold # <--- break composition reference (e.g. append "-onhold") to make sure that resources are not composed 
+     compositionUpdatePolicy: Automatic               #      before our compositions updated (in case compositions installed with a configuration package)
      id: platform-ref-gcp-cluster
      parameters:
        networkRef:
@@ -260,12 +261,18 @@ resources, please follow the steps below:
      ...
    ```
 
-4. Start the Crossplane controllers by scaling Crossplane deployment back
+5. Start the Crossplane controllers by scaling Crossplane deployment back
    to 1 replicas.
 
    ```
    kubectl -n crossplane-system scale deployment crossplane --replicas=1
    ```
+
+6. Verify that compositions updated as expected, in case compositions installed
+   with a configuration package
+
+7. Set correct `compositionRef.name`, e.g. remove "-onhold" suffix that we added
+   in step 3.
 
 [provider-gcp]: https://github.com/crossplane/provider-gcp
 [provider-gcp-beta]: https://github.com/crossplane/provider-gcp-beta
