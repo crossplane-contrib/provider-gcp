@@ -187,6 +187,10 @@ type Settings struct {
 	// StorageAutoResize: Configuration to increase storage size
 	// automatically. The default value is true. Not used for First
 	// Generation instances.
+	// Please note, if storage auto resize enabled, it won't be possible to
+	// decrease the size of the database using the DataDiskSizeGb field as it is
+	// not an allowed operation on GCP side. But you would still be able to
+	// increase it.
 	// +optional
 	StorageAutoResize *bool `json:"storageAutoResize,omitempty"`
 
@@ -243,6 +247,10 @@ type Settings struct {
 
 	// DataDiskSizeGb: The size of data disk, in GB. The data disk size
 	// minimum is 10GB. Not used for First Generation instances.
+	// Please note, if storage auto resize enabled, it won't be possible to
+	// decrease the size of the database using this field as it is
+	// not an allowed operation on GCP side. But you would still be able to
+	// increase it.
 	// +optional
 	DataDiskSizeGb *int64 `json:"dataDiskSizeGb,omitempty"`
 
