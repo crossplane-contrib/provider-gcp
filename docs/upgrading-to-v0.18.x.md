@@ -120,6 +120,8 @@ metadata:
   name: <to-be-filled>
   annotations:
     crossplane.io/external-name: <to-be-filled>
+  labels:
+    <to-be-filled>
 spec:
   # Consider setting deletionPolicy as "Orphan" to make sure you don't delete
   # the cloud resource until you successfully validate the import
@@ -139,6 +141,8 @@ metadata:
   name: <to-be-filled>
   annotations:
     crossplane.io/external-name: <to-be-filled>
+  labels:
+    <to-be-filled>
 spec:
   # Consider setting deletionPolicy as "Orphan" to make sure you don't delete
   # the cloud resource until you successfully validate the import
@@ -165,6 +169,8 @@ metadata:
   name: <to-be-filled>
   annotations:
     crossplane.io/external-name: <to-be-filled>
+  labels:
+    <to-be-filled>
 spec:
   # Consider setting deletionPolicy as "Orphan" to make sure you don't delete
   # the cloud resource until you successfully validate the import
@@ -184,6 +190,8 @@ metadata:
   name: <to-be-filled>
   annotations:
     crossplane.io/external-name: <to-be-filled>
+  labels:
+    <to-be-filled>
 spec:
   # Consider setting deletionPolicy as "Orphan" to make sure you don't delete
   # the cloud resource until you successfully validate the import
