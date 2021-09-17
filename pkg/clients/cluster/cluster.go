@@ -651,10 +651,8 @@ func LateInitializeSpec(spec *v1beta2.ClusterParameters, in container.Cluster) {
 			spec.AddonsConfig = &v1beta2.AddonsConfig{}
 		}
 		if in.AddonsConfig.CloudRunConfig != nil {
-			if in.AddonsConfig.CloudRunConfig == nil {
-				spec.AddonsConfig.CloudRunConfig = &v1beta2.CloudRunConfig{
-					Disabled: in.AddonsConfig.CloudRunConfig.Disabled,
-				}
+			spec.AddonsConfig.CloudRunConfig = &v1beta2.CloudRunConfig{
+				Disabled: in.AddonsConfig.CloudRunConfig.Disabled,
 			}
 			spec.AddonsConfig.CloudRunConfig.LoadBalancerType = gcp.LateInitializeString(spec.AddonsConfig.CloudRunConfig.LoadBalancerType, in.AddonsConfig.CloudRunConfig.LoadBalancerType)
 		}
