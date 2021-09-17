@@ -306,6 +306,36 @@ func TestLateInitializeSpec(t *testing.T) {
 				p.GceZone = gcp.StringPtr("us-different-2")
 			})},
 		},
+		"AutoResizeUsesObserved": {
+			args: args{
+				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
+					p.Settings.StorageAutoResize = gcp.BoolPtr(true)
+					p.Settings.DataDiskSizeGb = gcp.Int64Ptr(20)
+				}),
+				db: db(func(db *sqladmin.DatabaseInstance) {
+					db.Settings.DataDiskSizeGb = 30
+				}),
+			},
+			want: want{params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
+				p.Settings.StorageAutoResize = gcp.BoolPtr(true)
+				p.Settings.DataDiskSizeGb = gcp.Int64Ptr(30)
+			})},
+		},
+		"AutoResizeAllowsIncrease": {
+			args: args{
+				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
+					p.Settings.StorageAutoResize = gcp.BoolPtr(true)
+					p.Settings.DataDiskSizeGb = gcp.Int64Ptr(30)
+				}),
+				db: db(func(db *sqladmin.DatabaseInstance) {
+					db.Settings.DataDiskSizeGb = 20
+				}),
+			},
+			want: want{params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
+				p.Settings.StorageAutoResize = gcp.BoolPtr(true)
+				p.Settings.DataDiskSizeGb = gcp.Int64Ptr(30)
+			})},
+		},
 		"AllFilledAlready": {
 			args: args{
 				params: params(),
