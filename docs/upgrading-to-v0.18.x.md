@@ -89,6 +89,11 @@ successful upgrade by still following all migration steps skipping the 6th one
    kubectl get provider.pkg.crossplane.io
    ```
 
+10. Import existing `NodePools` and `Clusters` by following [the importing existing resources section below](#importing-existing-nodepools-and-clusters).
+
+11. If you have Compositions with `NodePools` and/or `Clusters`, update your
+    compositions by following [the updating compositions section below](#updating-compositions).
+
 ### Importing existing NodePools and Clusters
 
 At this point, you would need to [import] your existing `NodePool` and
@@ -204,38 +209,55 @@ depending on whether you have chosen `beta` or `stable`. Until you switch
 using the new types, your composite resources would fail since the old types no
 longer exist.
 
-Once you switch to the new types in your composition, your composite resources
-might end up trying to compose new managed resources. To prevent that, you would
-need to update `resourceRefs` in the spec of your composite resource to point
-the imported resources:
+To prevent the updates in the compositions to trigger creation of new composed
+resources, please follow the steps below:
 
-For example:
+1. Stop the Crossplane controllers by scaling down Crossplane deployment to 0
+   replicas.
 
-```
-spec:
-  compositionRef:
-    name: gke.gcp.platformref.crossplane.io
-  compositionUpdatePolicy: Automatic
-  id: platform-ref-gcp-cluster
-  parameters:
-    networkRef:
-      id: platform-ref-gcp-network
-    nodes:
-      count: 3
-      size: small
-  resourceRefs:
-  - apiVersion: container.gcp.crossplane.io/v1beta2
-    kind: Cluster
-    name: platform-ref-gcp-cluster-mwx8t-5j9hv # <--- make sure this is the name of the imported cluster
-  - apiVersion: container.gcp.crossplane.io/v1beta1
-    kind: NodePool
-    name: platform-ref-gcp-cluster-mwx8t-klb7w # <--- make sure this is the name of the imported nodepool
-  - apiVersion: helm.crossplane.io/v1beta1
-    kind: ProviderConfig
-    name: platform-ref-gcp-cluster
-  writeConnectionSecretToRef:
-  ...
-```
+   ```
+   kubectl -n crossplane-system scale deployment crossplane --replicas=0
+   ```
+
+2. Update your compositions to use new types and configurations. If you have
+   installed via a configuration package, update package to the new version
+   with changes.
+
+3. Update `resourceRefs` in the spec of your composite resources to point
+   the imported resources, for example:
+
+   ```
+   spec:
+     compositionRef:
+       name: gke.gcp.platformref.crossplane.io
+     compositionUpdatePolicy: Automatic
+     id: platform-ref-gcp-cluster
+     parameters:
+       networkRef:
+         id: platform-ref-gcp-network
+       nodes:
+         count: 3
+         size: small
+     resourceRefs:
+     - apiVersion: container.gcp.crossplane.io/v1beta2 # <--- make sure the apiVersion matches with which you've used during import (e.g. beta vs stable)
+       kind: Cluster # <--- make sure type is correct
+       name: platform-ref-gcp-cluster-mwx8t-5j9hv # <--- make sure this is the name of the imported cluster
+     - apiVersion: container.gcp.crossplane.io/v1beta1 # <--- make sure the apiVersion matches with which you've used during import
+       kind: NodePool # <--- make sure type is correct
+       name: platform-ref-gcp-cluster-mwx8t-klb7w # <--- make sure this is the name of the imported nodepool
+     - apiVersion: helm.crossplane.io/v1beta1
+       kind: ProviderConfig
+       name: platform-ref-gcp-cluster
+     writeConnectionSecretToRef:
+     ...
+   ```
+
+4. Start the Crossplane controllers by scaling Crossplane deployment back
+   to 1 replicas.
+
+   ```
+   kubectl -n crossplane-system scale deployment crossplane --replicas=1
+   ```
 
 [provider-gcp]: https://github.com/crossplane/provider-gcp
 [provider-gcp-beta]: https://github.com/crossplane/provider-gcp-beta
