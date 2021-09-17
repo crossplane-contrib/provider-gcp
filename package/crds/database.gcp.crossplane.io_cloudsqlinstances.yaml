@@ -212,7 +212,10 @@ spec:
                       dataDiskSizeGb:
                         description: 'DataDiskSizeGb: The size of data disk, in GB.
                           The data disk size minimum is 10GB. Not used for First Generation
-                          instances.'
+                          instances. Please note, if storage auto resize enabled,
+                          it won''t be possible to decrease the size of the database
+                          using this field as it is not an allowed operation on GCP
+                          side. But you would still be able to increase it.'
                         format: int64
                         type: integer
                       dataDiskType:
@@ -374,7 +377,11 @@ spec:
                       storageAutoResize:
                         description: 'StorageAutoResize: Configuration to increase
                           storage size automatically. The default value is true. Not
-                          used for First Generation instances.'
+                          used for First Generation instances. Please note, if storage
+                          auto resize enabled, it won''t be possible to decrease the
+                          size of the database using the DataDiskSizeGb field as it
+                          is not an allowed operation on GCP side. But you would still
+                          be able to increase it.'
                         type: boolean
                       storageAutoResizeLimit:
                         description: 'StorageAutoResizeLimit: The maximum size to
