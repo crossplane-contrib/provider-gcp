@@ -208,6 +208,13 @@ func LateInitializeSpec(spec *v1beta1.CloudSQLInstanceParameters, in sqladmin.Da
 		if spec.Settings.StorageAutoResize == nil {
 			spec.Settings.StorageAutoResize = in.Settings.StorageAutoResize
 		}
+		// If storage auto resize enabled, GCP does not allow setting a smaller
+		// size but allows increasing it. Here, we set desired size as observed
+		// if it is bigger than the current value which would allows us to get
+		// in sync with the actual value but still allow us to increase it.
+		if gcp.BoolValue(spec.Settings.StorageAutoResize) && gcp.Int64Value(spec.Settings.DataDiskSizeGb) < in.Settings.DataDiskSizeGb {
+			spec.Settings.DataDiskSizeGb = gcp.Int64Ptr(in.Settings.DataDiskSizeGb)
+		}
 		if len(spec.Settings.DatabaseFlags) == 0 && len(in.Settings.DatabaseFlags) != 0 {
 			spec.Settings.DatabaseFlags = make([]*v1beta1.DatabaseFlags, len(in.Settings.DatabaseFlags))
 			for i, val := range in.Settings.DatabaseFlags {
