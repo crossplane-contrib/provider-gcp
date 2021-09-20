@@ -20,8 +20,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
-	"github.com/pkg/errors"
 	"google.golang.org/api/storage/v1"
+
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 
 	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
@@ -37,23 +38,23 @@ type Client interface {
 }
 
 // GenerateBucketPolicyInstance generates *storage.Policy instance from BucketPolicyParameters.
-func GenerateBucketPolicyInstance(in v1alpha1.BucketPolicyParameters, ck *storage.Policy) {
-	ck.Bindings = make([]*storage.PolicyBindings, len(in.Policy.Bindings))
+func GenerateBucketPolicyInstance(in v1alpha1.BucketPolicyParameters, sp *storage.Policy) {
+	sp.Bindings = make([]*storage.PolicyBindings, len(in.Policy.Bindings))
 	for i, v := range in.Policy.Bindings {
-		ck.Bindings[i] = &storage.PolicyBindings{}
+		sp.Bindings[i] = &storage.PolicyBindings{}
 		if v.Condition != nil {
-			ck.Bindings[i].Condition = &storage.Expr{
+			sp.Bindings[i].Condition = &storage.Expr{
 				Description: gcp.StringValue(v.Condition.Description),
 				Expression:  v.Condition.Expression,
 				Location:    gcp.StringValue(v.Condition.Location),
 				Title:       gcp.StringValue(v.Condition.Title),
 			}
 		}
-		ck.Bindings[i].Members = make([]string, len(v.Members))
-		copy(ck.Bindings[i].Members, v.Members)
-		ck.Bindings[i].Role = v.Role
+		sp.Bindings[i].Members = make([]string, len(v.Members))
+		copy(sp.Bindings[i].Members, v.Members)
+		sp.Bindings[i].Role = v.Role
 	}
-	ck.Version = iamv1alpha1.PolicyVersion
+	sp.Version = iamv1alpha1.PolicyVersion
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
@@ -86,9 +87,9 @@ func IsEmpty(in *storage.Policy) bool {
 
 // BindRoleToMember updates *storage.Policy instance with BucketPolicyMemberParameters.
 // returns true if policy changed
-func BindRoleToMember(in v1alpha1.BucketPolicyMemberParameters, ck *storage.Policy) bool {
-	ck.Version = iamv1alpha1.PolicyVersion
-	for _, b := range ck.Bindings {
+func BindRoleToMember(in v1alpha1.BucketPolicyMemberParameters, sp *storage.Policy) bool {
+	sp.Version = iamv1alpha1.PolicyVersion
+	for _, b := range sp.Bindings {
 		if b.Role == in.Role {
 			for _, m := range b.Members {
 				if m == gcp.StringValue(in.Member) {
@@ -102,7 +103,7 @@ func BindRoleToMember(in v1alpha1.BucketPolicyMemberParameters, ck *storage.Poli
 		}
 	}
 	// role does not exist, add binding with role and member
-	ck.Bindings = append(ck.Bindings, &storage.PolicyBindings{
+	sp.Bindings = append(sp.Bindings, &storage.PolicyBindings{
 		Role:    in.Role,
 		Members: []string{gcp.StringValue(in.Member)},
 	})
@@ -111,8 +112,8 @@ func BindRoleToMember(in v1alpha1.BucketPolicyMemberParameters, ck *storage.Poli
 
 // UnbindRoleFromMember generates *storage.Policy instance from BucketPolicyMemberParameters.
 // returns true if bound (i.e. policy changed)
-func UnbindRoleFromMember(in v1alpha1.BucketPolicyMemberParameters, ck *storage.Policy) bool {
-	for _, b := range ck.Bindings {
+func UnbindRoleFromMember(in v1alpha1.BucketPolicyMemberParameters, sp *storage.Policy) bool {
+	for _, b := range sp.Bindings {
 		if b.Role == in.Role {
 			ix := -1
 			for i, m := range b.Members {

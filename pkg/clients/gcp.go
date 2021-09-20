@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
@@ -32,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	cmpv1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
@@ -106,7 +106,8 @@ func IsErrorNotFound(err error) bool {
 	return ok && googleapiErr.Code == http.StatusNotFound
 }
 
-// IsErrorAlreadyExists gets a value indicating whether the given error represents a "conflict" response from the Google API
+// IsErrorAlreadyExists gets a value indicating whether the given error
+// represents a "conflict" response from the Google API
 func IsErrorAlreadyExists(err error) bool {
 	if err == nil {
 		return false
@@ -115,13 +116,24 @@ func IsErrorAlreadyExists(err error) bool {
 	return ok && googleapiErr.Code == http.StatusConflict
 }
 
-// IsErrorBadRequest gets a value indicating whether the given error represents a "bad request" response from the Google API
+// IsErrorBadRequest gets a value indicating whether the given error represents
+// a "bad request" response from the Google API
 func IsErrorBadRequest(err error) bool {
 	if err == nil {
 		return false
 	}
 	googleapiErr, ok := err.(*googleapi.Error)
 	return ok && googleapiErr.Code == http.StatusBadRequest
+}
+
+// IsErrorForbidden gets a value indicating whether the given error represents a
+// "forbidden" response from the Google API
+func IsErrorForbidden(err error) bool {
+	if err == nil {
+		return false
+	}
+	googleapiErr, ok := err.(*googleapi.Error)
+	return ok && googleapiErr.Code == http.StatusForbidden
 }
 
 // StringValue converts the supplied string pointer to a string, returning the

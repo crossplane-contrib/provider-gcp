@@ -22,8 +22,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
-	"github.com/pkg/errors"
 	"google.golang.org/api/cloudkms/v1"
+
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 
 	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"

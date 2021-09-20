@@ -140,7 +140,8 @@ type BucketPolicyMemberStatus struct {
 
 // +kubebuilder:object:root=true
 
-// BucketPolicyMember is a managed resource that represents a Google KMS Crypto Key.
+// BucketPolicyMember is a managed resource that represents membership of a
+// Google Cloud Storage Bucket IAM Policy.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"

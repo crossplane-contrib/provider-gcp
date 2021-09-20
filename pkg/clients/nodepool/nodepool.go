@@ -24,8 +24,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/copystructure"
-	"github.com/pkg/errors"
 	container "google.golang.org/api/container/v1"
+
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
 	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
@@ -85,7 +86,7 @@ func GenerateConfig(in *v1beta1.NodeConfig, pool *container.NodePool) { // nolin
 		pool.Config.BootDiskKmsKey = gcp.StringValue(in.BootDiskKmsKey)
 		pool.Config.DiskSizeGb = gcp.Int64Value(in.DiskSizeGb)
 		pool.Config.DiskType = gcp.StringValue(in.DiskType)
-		pool.Config.ImageType = gcp.StringValue(in.ImageType)
+		pool.Config.ImageType = strings.ToUpper(gcp.StringValue(in.ImageType))
 		pool.Config.Labels = in.Labels
 		pool.Config.LocalSsdCount = gcp.Int64Value(in.LocalSsdCount)
 		pool.Config.MachineType = gcp.StringValue(in.MachineType)
