@@ -66,6 +66,9 @@ spec:
                         description: "AdvertiseMode: User-specified flag to indicate
                           which mode to use for advertisement. The options are DEFAULT
                           or CUSTOM. \n Possible values:   \"CUSTOM\"   \"DEFAULT\""
+                        enum:
+                        - CUSTOM
+                        - DEFAULT
                         type: string
                       advertisedGroups:
                         description: "AdvertisedGroups: User-specified list of prefix
@@ -75,6 +78,8 @@ spec:
                           in addition to any specified prefixes. Leave this field
                           blank to advertise no custom groups. \n Possible values:
                           \  \"ALL_SUBNETS\""
+                        enum:
+                        - ALL_SUBNETS
                         items:
                           type: string
                         type: array
@@ -123,6 +128,9 @@ spec:
                           description: "AdvertiseMode: User-specified flag to indicate
                             which mode to use for advertisement. \n Possible values:
                             \  \"CUSTOM\"   \"DEFAULT\""
+                          enum:
+                          - CUSTOM
+                          - DEFAULT
                           type: string
                         advertisedGroups:
                           description: "AdvertisedGroups: User-specified list of prefix
@@ -135,6 +143,8 @@ spec:
                             \"bgp\" message). These groups are advertised in addition
                             to any specified prefixes. Leave this field blank to advertise
                             no custom groups. \n Possible values:   \"ALL_SUBNETS\""
+                          enum:
+                          - ALL_SUBNETS
                           items:
                             type: string
                           type: array
@@ -289,6 +299,10 @@ spec:
                                 Export logs only for successful connections. - ALL:
                                 Export logs for all connections, successful and unsuccessful.
                                 \n Possible values:   \"ALL\"   \"ERRORS_ONLY\"   \"TRANSLATIONS_ONLY\""
+                              enum:
+                              - ALL
+                              - ERRORS_ONLY
+                              - TRANSLATIONS_ONLY
                               type: string
                           type: object
                         minPortsPerVm:
@@ -312,6 +326,9 @@ spec:
                             by Google Cloud Platform; customers can't specify any
                             Nat IPs. When choosing AUTO_ONLY, then nat_ip should be
                             empty. \n Possible values:   \"AUTO_ONLY\"   \"MANUAL_ONLY\""
+                          enum:
+                          - AUTO_ONLY
+                          - MANUAL_ONLY
                           type: string
                         natIps:
                           description: 'NatIps: A list of URLs of the IP resources
@@ -334,6 +351,10 @@ spec:
                             not be any other Router.Nat section in any Router for
                             this network in this region. \n Possible values:   \"ALL_SUBNETWORKS_ALL_IP_RANGES\"
                             \  \"ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES\"   \"LIST_OF_SUBNETWORKS\""
+                          enum:
+                          - ALL_SUBNETWORKS_ALL_IP_RANGES
+                          - ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES
+                          - LIST_OF_SUBNETWORKS
                           type: string
                         subnetworks:
                           description: 'Subnetworks: A list of Subnetwork resources
@@ -364,6 +385,10 @@ spec:
                                   \"LIST_OF_SECONDARY_IP_RANGES\"] Default: [ALL_IP_RANGES]
                                   \n Possible values:   \"ALL_IP_RANGES\"   \"LIST_OF_SECONDARY_IP_RANGES\"
                                   \  \"PRIMARY_IP_RANGE\""
+                                enum:
+                                - ALL_IP_RANGES
+                                - LIST_OF_SECONDARY_IP_RANGES
+                                - PRIMARY_IP_RANGE
                                 items:
                                   type: string
                                 type: array

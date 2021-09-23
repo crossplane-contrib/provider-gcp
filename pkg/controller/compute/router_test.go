@@ -261,7 +261,7 @@ func TestRouterCreate(t *testing.T) {
 				mg: routerObj(),
 			},
 			want: want{
-				mg:  routerObj(routerWithConditions(xpv1.Creating())),
+				mg:  routerObj(),
 				cre: managed.ExternalCreation{},
 				err: nil,
 			},
@@ -279,7 +279,7 @@ func TestRouterCreate(t *testing.T) {
 				mg: routerObj(),
 			},
 			want: want{
-				mg:  routerObj(routerWithConditions(xpv1.Creating())),
+				mg:  routerObj(),
 				err: errors.Wrap(gError(http.StatusConflict, ""), errRouterCreateFailed),
 			},
 		},
@@ -296,7 +296,7 @@ func TestRouterCreate(t *testing.T) {
 				mg: routerObj(),
 			},
 			want: want{
-				mg:  routerObj(routerWithConditions(xpv1.Creating())),
+				mg:  routerObj(),
 				err: errors.Wrap(gError(http.StatusBadRequest, ""), errRouterCreateFailed),
 			},
 		},
