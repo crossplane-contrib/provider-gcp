@@ -131,8 +131,6 @@ func (c *routerExternal) Create(ctx context.Context, mg resource.Managed) (manag
 		return managed.ExternalCreation{}, errors.New(errNotRouter)
 	}
 
-	cr.Status.SetConditions(xpv1.Creating())
-
 	rt := &compute.Router{}
 	router.GenerateRouter(meta.GetExternalName(cr), cr.Spec.ForProvider, rt)
 	_, err := c.Routers.Insert(c.projectID, cr.Spec.ForProvider.Region, rt).
@@ -149,7 +147,7 @@ func (c *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 
 	observed, err := c.Routers.Get(c.projectID, cr.Spec.ForProvider.Region, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetRouter)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errGetRouter)
 	}
 
 	upToDate, err := router.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, observed)
