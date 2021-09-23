@@ -20,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
@@ -29,7 +29,7 @@ const errCheckUpToDate = "unable to determine if external resource is up to date
 // GenerateRouter takes a *RouterParameters and returns *compute.Router.
 // It assigns only the fields that are writable, i.e. not labelled as [Output Only]
 // in Google's reference.
-func GenerateRouter(name string, in v1beta1.RouterParameters, router *compute.Router) { // nolint:gocyclo
+func GenerateRouter(name string, in v1alpha1.RouterParameters, router *compute.Router) { // nolint:gocyclo
 	router.Name = name
 	router.Description = gcp.StringValue(in.Description)
 	router.Network = gcp.StringValue(in.Network)
@@ -127,8 +127,8 @@ func GenerateRouter(name string, in v1beta1.RouterParameters, router *compute.Ro
 }
 
 // GenerateRouterObservation takes a compute.Router and returns *RouterObservation.
-func GenerateRouterObservation(in compute.Router) v1beta1.RouterObservation {
-	rt := v1beta1.RouterObservation{
+func GenerateRouterObservation(in compute.Router) v1alpha1.RouterObservation {
+	rt := v1alpha1.RouterObservation{
 		CreationTimestamp: in.CreationTimestamp,
 		ID:                in.Id,
 		SelfLink:          in.SelfLink,
@@ -137,20 +137,20 @@ func GenerateRouterObservation(in compute.Router) v1beta1.RouterObservation {
 }
 
 // LateInitializeSpec fills unassigned fields with the values in compute.Router object.
-func LateInitializeSpec(spec *v1beta1.RouterParameters, in compute.Router) { // nolint:gocyclo
+func LateInitializeSpec(spec *v1alpha1.RouterParameters, in compute.Router) { // nolint:gocyclo
 	spec.Network = gcp.LateInitializeString(spec.Network, in.Network)
 	spec.Description = gcp.LateInitializeString(spec.Description, in.Description)
 	spec.EncryptedInterconnectRouter = gcp.LateInitializeBool(spec.EncryptedInterconnectRouter, in.EncryptedInterconnectRouter)
 
 	if in.Bgp != nil {
-		spec.Bgp = &v1beta1.RouterBgp{}
+		spec.Bgp = &v1alpha1.RouterBgp{}
 		spec.Bgp.AdvertiseMode = gcp.LateInitializeString(spec.Bgp.AdvertiseMode, in.Bgp.AdvertiseMode)
 		spec.Bgp.AdvertisedGroups = gcp.LateInitializeStringSlice(spec.Bgp.AdvertisedGroups, in.Bgp.AdvertisedGroups)
 		spec.Bgp.Asn = gcp.LateInitializeInt64(spec.Bgp.Asn, in.Bgp.Asn)
 		if len(in.Bgp.AdvertisedIpRanges) != 0 && len(spec.Bgp.AdvertisedIpRanges) == 0 {
-			spec.Bgp.AdvertisedIpRanges = make([]*v1beta1.RouterAdvertisedIpRange, len(in.Bgp.AdvertisedIpRanges))
+			spec.Bgp.AdvertisedIpRanges = make([]*v1alpha1.RouterAdvertisedIpRange, len(in.Bgp.AdvertisedIpRanges))
 			for idx, ipRange := range in.Bgp.AdvertisedIpRanges {
-				spec.Bgp.AdvertisedIpRanges[idx] = &v1beta1.RouterAdvertisedIpRange{
+				spec.Bgp.AdvertisedIpRanges[idx] = &v1alpha1.RouterAdvertisedIpRange{
 					Description: &ipRange.Description,
 					Range:       ipRange.Range,
 				}
@@ -159,9 +159,9 @@ func LateInitializeSpec(spec *v1beta1.RouterParameters, in compute.Router) { // 
 	}
 
 	if len(in.BgpPeers) != 0 && len(spec.BgpPeers) == 0 {
-		spec.BgpPeers = make([]*v1beta1.RouterBgpPeer, len(in.BgpPeers))
+		spec.BgpPeers = make([]*v1alpha1.RouterBgpPeer, len(in.BgpPeers))
 		for idx, peer := range in.BgpPeers {
-			spec.BgpPeers[idx] = &v1beta1.RouterBgpPeer{
+			spec.BgpPeers[idx] = &v1alpha1.RouterBgpPeer{
 				AdvertiseMode:           &peer.AdvertiseMode,
 				AdvertisedGroups:        peer.AdvertisedGroups,
 				AdvertisedRoutePriority: &peer.AdvertisedRoutePriority,
@@ -172,9 +172,9 @@ func LateInitializeSpec(spec *v1beta1.RouterParameters, in compute.Router) { // 
 				PeerIpAddress:           &peer.PeerIpAddress,
 			}
 			if len(peer.AdvertisedIpRanges) != 0 {
-				spec.BgpPeers[idx].AdvertisedIpRanges = make([]*v1beta1.RouterAdvertisedIpRange, len(peer.AdvertisedIpRanges))
+				spec.BgpPeers[idx].AdvertisedIpRanges = make([]*v1alpha1.RouterAdvertisedIpRange, len(peer.AdvertisedIpRanges))
 				for ipIdx, ipRange := range peer.AdvertisedIpRanges {
-					spec.BgpPeers[idx].AdvertisedIpRanges[ipIdx] = &v1beta1.RouterAdvertisedIpRange{
+					spec.BgpPeers[idx].AdvertisedIpRanges[ipIdx] = &v1alpha1.RouterAdvertisedIpRange{
 						Description: &ipRange.Description,
 						Range:       ipRange.Range,
 					}
@@ -184,9 +184,9 @@ func LateInitializeSpec(spec *v1beta1.RouterParameters, in compute.Router) { // 
 	}
 
 	if len(in.Nats) != 0 && len(spec.Nats) == 0 {
-		spec.Nats = make([]*v1beta1.RouterNat, len(in.Nats))
+		spec.Nats = make([]*v1alpha1.RouterNat, len(in.Nats))
 		for idx, nat := range in.Nats {
-			spec.Nats[idx] = &v1beta1.RouterNat{
+			spec.Nats[idx] = &v1alpha1.RouterNat{
 				DrainNatIps:                      nat.DrainNatIps,
 				EnableEndpointIndependentMapping: &nat.EnableEndpointIndependentMapping,
 				IcmpIdleTimeoutSec:               &nat.IcmpIdleTimeoutSec,
@@ -200,16 +200,16 @@ func LateInitializeSpec(spec *v1beta1.RouterParameters, in compute.Router) { // 
 				UdpIdleTimeoutSec:                &nat.UdpIdleTimeoutSec,
 			}
 			if nat.LogConfig != nil {
-				spec.Nats[idx].LogConfig = &v1beta1.RouterNatLogConfig{
+				spec.Nats[idx].LogConfig = &v1alpha1.RouterNatLogConfig{
 					Enable: &nat.LogConfig.Enable,
 					Filter: &nat.LogConfig.Filter,
 				}
 			}
 
 			if nat.Subnetworks != nil {
-				spec.Nats[idx].Subnetworks = make([]*v1beta1.RouterNatSubnetworkToNat, len(nat.Subnetworks))
+				spec.Nats[idx].Subnetworks = make([]*v1alpha1.RouterNatSubnetworkToNat, len(nat.Subnetworks))
 				for subnetIdx, subnet := range nat.Subnetworks {
-					spec.Nats[idx].Subnetworks[subnetIdx] = &v1beta1.RouterNatSubnetworkToNat{
+					spec.Nats[idx].Subnetworks[subnetIdx] = &v1alpha1.RouterNatSubnetworkToNat{
 						Name:                  &subnet.Name,
 						SecondaryIpRangeNames: subnet.SecondaryIpRangeNames,
 						SourceIpRangesToNat:   subnet.SourceIpRangesToNat,
@@ -220,9 +220,9 @@ func LateInitializeSpec(spec *v1beta1.RouterParameters, in compute.Router) { // 
 	}
 
 	if len(in.Interfaces) != 0 && len(spec.Interfaces) == 0 {
-		spec.Interfaces = make([]*v1beta1.RouterInterface, len(in.Interfaces))
+		spec.Interfaces = make([]*v1alpha1.RouterInterface, len(in.Interfaces))
 		for idx, routerInterface := range in.Interfaces {
-			spec.Interfaces[idx] = &v1beta1.RouterInterface{
+			spec.Interfaces[idx] = &v1alpha1.RouterInterface{
 				IpRange:                      &routerInterface.IpRange,
 				LinkedInterconnectAttachment: &routerInterface.LinkedInterconnectAttachment,
 				LinkedVpnTunnel:              &routerInterface.LinkedVpnTunnel,
@@ -234,7 +234,7 @@ func LateInitializeSpec(spec *v1beta1.RouterParameters, in compute.Router) { // 
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IsUpToDate(name string, in *v1beta1.RouterParameters, observed *compute.Router) (upTodate bool, err error) {
+func IsUpToDate(name string, in *v1alpha1.RouterParameters, observed *compute.Router) (upTodate bool, err error) {
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
 		return true, errors.Wrap(err, errCheckUpToDate)

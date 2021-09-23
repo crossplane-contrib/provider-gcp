@@ -15,6 +15,7 @@ package compute
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -32,7 +33,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/router"
 )
@@ -51,20 +52,21 @@ const (
 
 // SetupRouter adds a controller that reconciles Router managed
 // resources.
-func SetupRouter(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1beta1.RouterGroupKind)
+func SetupRouter(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
+	name := managed.ControllerName(v1alpha1.RouterGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(controller.Options{
 			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
 		}).
-		For(&v1beta1.Router{}).
+		For(&v1alpha1.Router{}).
 		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1beta1.RouterGroupVersionKind),
+			resource.ManagedKind(v1alpha1.RouterGroupVersionKind),
 			managed.WithExternalConnecter(&routerConnector{kube: mgr.GetClient()}),
 			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 			managed.WithLogger(l.WithValues("controller", name)),
+			managed.WithPollInterval(poll),
 			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
@@ -91,7 +93,7 @@ type routerExternal struct {
 }
 
 func (c *routerExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1beta1.Router)
+	cr, ok := mg.(*v1alpha1.Router)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotRouter)
 	}
@@ -124,7 +126,7 @@ func (c *routerExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 }
 
 func (c *routerExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1beta1.Router)
+	cr, ok := mg.(*v1alpha1.Router)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotRouter)
 	}
@@ -140,7 +142,7 @@ func (c *routerExternal) Create(ctx context.Context, mg resource.Managed) (manag
 }
 
 func (c *routerExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1beta1.Router)
+	cr, ok := mg.(*v1alpha1.Router)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotRouter)
 	}
@@ -168,7 +170,7 @@ func (c *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 }
 
 func (c *routerExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1beta1.Router)
+	cr, ok := mg.(*v1alpha1.Router)
 	if !ok {
 		return errors.New(errNotRouter)
 	}

@@ -19,7 +19,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/compute/v1"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 )
 
 const (
@@ -37,16 +37,16 @@ var (
 	testAdvertiseMode       = "DEFAULT"
 )
 
-func params(m ...func(*v1beta1.RouterParameters)) *v1beta1.RouterParameters {
-	o := &v1beta1.RouterParameters{
+func params(m ...func(*v1alpha1.RouterParameters)) *v1alpha1.RouterParameters {
+	o := &v1alpha1.RouterParameters{
 		Description: &testDescription,
 		Network:     &testNetwork,
 		Region:      testRegion,
-		Bgp: &v1beta1.RouterBgp{
+		Bgp: &v1alpha1.RouterBgp{
 			AdvertiseMode: &testAdvertiseMode,
 			Asn:           &testAsn,
 		},
-		BgpPeers: []*v1beta1.RouterBgpPeer{
+		BgpPeers: []*v1alpha1.RouterBgpPeer{
 			{
 				AdvertiseMode:           &testAdvertiseMode,
 				AdvertisedRoutePriority: &testRoutePriority,
@@ -95,8 +95,8 @@ func addOutputFields(n *compute.Router) {
 	n.SelfLink = testSelfLink
 }
 
-func observation(m ...func(*v1beta1.RouterObservation)) *v1beta1.RouterObservation {
-	o := &v1beta1.RouterObservation{
+func observation(m ...func(*v1alpha1.RouterObservation)) *v1alpha1.RouterObservation {
+	o := &v1alpha1.RouterObservation{
 		CreationTimestamp: testCreationTimestamp,
 		ID:                2029819203,
 		SelfLink:          testSelfLink,
@@ -112,7 +112,7 @@ func observation(m ...func(*v1beta1.RouterObservation)) *v1beta1.RouterObservati
 func TestGenerateRouter(t *testing.T) {
 	type args struct {
 		name string
-		in   v1beta1.RouterParameters
+		in   v1alpha1.RouterParameters
 	}
 	cases := map[string]struct {
 		args args
@@ -121,7 +121,7 @@ func TestGenerateRouter(t *testing.T) {
 		"BgpAsnNil": {
 			args: args{
 				name: testName,
-				in: *params(func(p *v1beta1.RouterParameters) {
+				in: *params(func(p *v1alpha1.RouterParameters) {
 					p.Bgp.Asn = nil
 				}),
 			},
@@ -132,7 +132,7 @@ func TestGenerateRouter(t *testing.T) {
 		"SpecifyBgpAsn": {
 			args: args{
 				name: testName,
-				in: *params(func(p *v1beta1.RouterParameters) {
+				in: *params(func(p *v1alpha1.RouterParameters) {
 					p.Bgp.Asn = &testAsn
 				}),
 			},
@@ -156,7 +156,7 @@ func TestGenerateRouter(t *testing.T) {
 func TestGenerateRouterObservation(t *testing.T) {
 	cases := map[string]struct {
 		in  compute.Router
-		out v1beta1.RouterObservation
+		out v1alpha1.RouterObservation
 	}{
 		"AllFilled": {
 			in:  *router(addOutputFields),
@@ -176,12 +176,12 @@ func TestGenerateRouterObservation(t *testing.T) {
 
 func TestLateInitializeSpec(t *testing.T) {
 	type args struct {
-		spec *v1beta1.RouterParameters
+		spec *v1alpha1.RouterParameters
 		in   compute.Router
 	}
 	cases := map[string]struct {
 		args args
-		want *v1beta1.RouterParameters
+		want *v1alpha1.RouterParameters
 	}{
 		"AllFilledNoDiff": {
 			args: args{
@@ -201,13 +201,13 @@ func TestLateInitializeSpec(t *testing.T) {
 		},
 		"PartialFilled": {
 			args: args{
-				spec: params(func(p *v1beta1.RouterParameters) {
+				spec: params(func(p *v1alpha1.RouterParameters) {
 					p.Bgp = nil
 				}),
 				in: *router(),
 			},
-			want: params(func(p *v1beta1.RouterParameters) {
-				p.Bgp = &v1beta1.RouterBgp{
+			want: params(func(p *v1alpha1.RouterParameters) {
+				p.Bgp = &v1alpha1.RouterBgp{
 					AdvertiseMode: &testAdvertiseMode,
 					Asn:           &testAsn,
 				}
@@ -227,7 +227,7 @@ func TestLateInitializeSpec(t *testing.T) {
 
 func TestIsUpToDate(t *testing.T) {
 	type args struct {
-		in      *v1beta1.RouterParameters
+		in      *v1alpha1.RouterParameters
 		current *compute.Router
 	}
 	type want struct {
@@ -254,7 +254,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"NotUpToDate": {
 			args: args{
-				in: params(func(p *v1beta1.RouterParameters) {
+				in: params(func(p *v1alpha1.RouterParameters) {
 					p.Description = nil
 				}),
 				current: router(),

@@ -34,6 +34,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
+	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
 	"github.com/crossplane/provider-gcp/pkg/clients/router"
 )
@@ -45,18 +46,18 @@ const (
 	testRouterName = "test-router"
 )
 
-type routerModifier func(*v1beta1.Router)
+type routerModifier func(*v1alpha1.Router)
 
 func routerWithConditions(c ...xpv1.Condition) routerModifier {
-	return func(i *v1beta1.Router) { i.Status.SetConditions(c...) }
+	return func(i *v1alpha1.Router) { i.Status.SetConditions(c...) }
 }
 
 func routerWithDescription(d string) routerModifier {
-	return func(i *v1beta1.Router) { i.Spec.ForProvider.Description = &d }
+	return func(i *v1alpha1.Router) { i.Spec.ForProvider.Description = &d }
 }
 
-func routerObj(im ...routerModifier) *v1beta1.Router {
-	i := &v1beta1.Router{
+func routerObj(im ...routerModifier) *v1alpha1.Router {
+	i := &v1alpha1.Router{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       testRouterName,
 			Finalizers: []string{},
@@ -64,8 +65,8 @@ func routerObj(im ...routerModifier) *v1beta1.Router {
 				meta.AnnotationKeyExternalName: testRouterName,
 			},
 		},
-		Spec: v1beta1.RouterSpec{
-			ForProvider: v1beta1.RouterParameters{},
+		Spec: v1alpha1.RouterSpec{
+			ForProvider: v1alpha1.RouterParameters{},
 		},
 	}
 
