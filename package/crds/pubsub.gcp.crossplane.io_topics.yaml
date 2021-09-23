@@ -63,6 +63,31 @@ spec:
                       CryptoKey to be used to protect access to messages published
                       on this topic. \n The expected format is `projects/*/locations/*/keyRings/*/cryptoKeys/*`."
                     type: string
+                  kmsKeyNameRef:
+                    description: KmsKeyNameRef allows you to specify custom resource
+                      name of the KMS Key to fill KmsKeyName field.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  kmsKeyNameSelector:
+                    description: KmsKeyNameSelector allows you to use selector constraints
+                      to select a KMS Key.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
                   labels:
                     additionalProperties:
                       type: string
