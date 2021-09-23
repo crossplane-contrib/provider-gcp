@@ -86,6 +86,7 @@ type RouterBgp struct {
 	//   "CUSTOM"
 	//   "DEFAULT"
 	// +optional
+	// +kubebuilder:validation:Enum=CUSTOM;DEFAULT
 	AdvertiseMode *string `json:"advertiseMode,omitempty"`
 
 	// AdvertisedGroups: User-specified list of prefix groups to advertise
@@ -97,6 +98,7 @@ type RouterBgp struct {
 	// Possible values:
 	//   "ALL_SUBNETS"
 	// +optional
+	// +kubebuilder:validation:Enum=ALL_SUBNETS
 	AdvertisedGroups []string `json:"advertisedGroups,omitempty"`
 
 	// AdvertisedIpRanges: User-specified list of individual IP ranges to
@@ -136,6 +138,7 @@ type RouterBgpPeer struct {
 	//   "CUSTOM"
 	//   "DEFAULT"
 	// +optional
+	// +kubebuilder:validation:Enum=CUSTOM;DEFAULT
 	AdvertiseMode *string `json:"advertiseMode,omitempty"`
 
 	// AdvertisedGroups: User-specified list of prefix groups to advertise
@@ -151,6 +154,7 @@ type RouterBgpPeer struct {
 	// Possible values:
 	//   "ALL_SUBNETS"
 	// +optional
+	// +kubebuilder:validation:Enum=ALL_SUBNETS
 	AdvertisedGroups []string `json:"advertisedGroups,omitempty"`
 
 	// AdvertisedIpRanges: User-specified list of individual IP ranges to
@@ -240,6 +244,7 @@ type RouterNat struct {
 	// Possible values:
 	//   "AUTO_ONLY"
 	//   "MANUAL_ONLY"
+	// +kubebuilder:validation:Enum=AUTO_ONLY;MANUAL_ONLY
 	NatIpAllocateOption string `json:"natIpAllocateOption,omitempty"` // nolint
 
 	// NatIps: A list of URLs of the IP resources used for this Nat service.
@@ -266,6 +271,7 @@ type RouterNat struct {
 	//   "ALL_SUBNETWORKS_ALL_IP_RANGES"
 	//   "ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES"
 	//   "LIST_OF_SUBNETWORKS"
+	// +kubebuilder:validation:Enum=ALL_SUBNETWORKS_ALL_IP_RANGES;ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES;LIST_OF_SUBNETWORKS
 	SourceSubnetworkIpRangesToNat string `json:"sourceSubnetworkIpRangesToNat"` // nolint
 
 	// Subnetworks: A list of Subnetwork resources whose traffic should be
@@ -314,6 +320,7 @@ type RouterNatSubnetworkToNat struct {
 	//   "LIST_OF_SECONDARY_IP_RANGES"
 	//   "PRIMARY_IP_RANGE"
 	// +optional
+	// +kubebuilder:validation:Enum=ALL_IP_RANGES;LIST_OF_SECONDARY_IP_RANGES;PRIMARY_IP_RANGE
 	SourceIpRangesToNat []string `json:"sourceIpRangesToNat,omitempty"` // nolint
 }
 
@@ -336,6 +343,7 @@ type RouterNatLogConfig struct {
 	//   "ERRORS_ONLY"
 	//   "TRANSLATIONS_ONLY"
 	// +optional
+	// +kubebuilder:validation:Enum=ALL;ERRORS_ONLY;TRANSLATIONS_ONLY
 	Filter *string `json:"filter,omitempty"`
 }
 
