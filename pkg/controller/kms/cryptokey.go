@@ -19,19 +19,16 @@ package kms
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	kmsv1 "google.golang.org/api/cloudkms/v1"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
@@ -48,22 +45,21 @@ const (
 )
 
 // SetupCryptoKey adds a controller that reconciles CryptoKeys.
-func SetupCryptoKey(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
+func SetupCryptoKey(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1alpha1.CryptoKeyGroupKind)
+
+	r := managed.NewReconciler(mgr,
+		resource.ManagedKind(v1alpha1.CryptoKeyGroupVersionKind),
+		managed.WithExternalConnecter(&cryptoKeyConnecter{client: mgr.GetClient()}),
+		managed.WithPollInterval(o.PollInterval),
+		managed.WithLogger(o.Logger.WithValues("controller", name)),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		WithOptions(controller.Options{
-			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
-		}).
+		WithOptions(o.ForControllerRuntime()).
 		For(&v1alpha1.CryptoKey{}).
-		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1alpha1.CryptoKeyGroupVersionKind),
-			managed.WithExternalConnecter(&cryptoKeyConnecter{client: mgr.GetClient()}),
-			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
-			managed.WithPollInterval(poll),
-			managed.WithLogger(l.WithValues("controller", name)),
-			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
+		Complete(ratelimiter.NewReconciler(name, r, o.GlobalRateLimiter))
 }
 
 type cryptoKeyConnecter struct {

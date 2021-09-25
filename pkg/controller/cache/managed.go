@@ -20,19 +20,16 @@ import (
 	"context"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	redis "google.golang.org/api/redis/v1"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
@@ -58,21 +55,21 @@ const (
 
 // SetupCloudMemorystoreInstance adds a controller that reconciles
 // CloudMemorystoreInstances.
-func SetupCloudMemorystoreInstance(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
+func SetupCloudMemorystoreInstance(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1beta1.CloudMemorystoreInstanceGroupKind)
+
+	r := managed.NewReconciler(mgr,
+		resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
+		managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
+		managed.WithPollInterval(o.PollInterval),
+		managed.WithLogger(o.Logger.WithValues("controller", name)),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		WithOptions(controller.Options{
-			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
-		}).
+		WithOptions(o.ForControllerRuntime()).
 		For(&v1beta1.CloudMemorystoreInstance{}).
-		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1beta1.CloudMemorystoreInstanceGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
-			managed.WithPollInterval(poll),
-			managed.WithLogger(l.WithValues("controller", name)),
-			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
+		Complete(ratelimiter.NewReconciler(name, r, o.GlobalRateLimiter))
 }
 
 type connecter struct {
