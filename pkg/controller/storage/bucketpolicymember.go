@@ -93,7 +93,7 @@ func (e *bucketPolicyMemberExternal) Observe(ctx context.Context, mg resource.Ma
 
 	instance, err := e.bucketpolicy.GetIamPolicy(gcp.StringValue(cr.Spec.ForProvider.Bucket)).OptionsRequestedPolicyVersion(iamv1alpha1.PolicyVersion).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(err, errGetPolicy)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetPolicy)
 	}
 
 	changed := bucketpolicy.BindRoleToMember(cr.Spec.ForProvider, instance)

@@ -113,6 +113,23 @@ func TestBucketPolicyMemberObserve(t *testing.T) {
 				err:         errors.Wrap(gError(http.StatusInternalServerError, "{}\n"), errGetPolicy),
 			},
 		},
+		"ObserveSucceededWhileBucketNotFound": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+			}),
+			args: args{
+				ctx: context.Background(),
+				mg: BucketPolicyMember(
+					bpmWithName(bpmMetadataName),
+				),
+			},
+			want: want{
+				mg: BucketPolicyMember(
+					bpmWithName(bpmMetadataName)),
+				observation: managed.ExternalObservation{},
+				err:         nil,
+			},
+		},
 		"ObservedPolicyEmpty": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
