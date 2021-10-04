@@ -91,6 +91,7 @@ func GenerateDatabaseInstance(name string, in v1beta1.CloudSQLInstanceParameters
 		db.Settings.BackupConfiguration.Location = gcp.StringValue(in.Settings.BackupConfiguration.Location)
 		db.Settings.BackupConfiguration.ReplicationLogArchivingEnabled = gcp.BoolValue(in.Settings.BackupConfiguration.ReplicationLogArchivingEnabled)
 		db.Settings.BackupConfiguration.StartTime = gcp.StringValue(in.Settings.BackupConfiguration.StartTime)
+		db.Settings.BackupConfiguration.PointInTimeRecoveryEnabled = gcp.BoolValue(in.Settings.BackupConfiguration.PointInTimeRecoveryEnabled)
 	}
 	if in.Settings.IPConfiguration != nil {
 		if db.Settings.IpConfiguration == nil {
@@ -243,6 +244,9 @@ func LateInitializeSpec(spec *v1beta1.CloudSQLInstanceParameters, in sqladmin.Da
 			spec.Settings.BackupConfiguration.StartTime = gcp.LateInitializeString(
 				spec.Settings.BackupConfiguration.StartTime,
 				in.Settings.BackupConfiguration.StartTime)
+			spec.Settings.BackupConfiguration.PointInTimeRecoveryEnabled = gcp.LateInitializeBool(
+				spec.Settings.BackupConfiguration.PointInTimeRecoveryEnabled,
+				in.Settings.BackupConfiguration.PointInTimeRecoveryEnabled)
 		}
 		if in.Settings.IpConfiguration != nil {
 			if spec.Settings.IPConfiguration == nil {

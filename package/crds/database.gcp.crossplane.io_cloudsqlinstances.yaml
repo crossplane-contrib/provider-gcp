@@ -193,6 +193,11 @@ spec:
                           location:
                             description: 'Location: The location of the backup.'
                             type: string
+                          pointInTimeRecoveryEnabled:
+                            description: 'PointInTimeRecoveryEnabled: True if Point-in-time
+                              recovery is enabled. Will restart database if enabled
+                              after instance creation.'
+                            type: boolean
                           replicationLogArchivingEnabled:
                             description: 'ReplicationLogArchivingEnabled: Reserved
                               for future use.'

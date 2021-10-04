@@ -58,6 +58,7 @@ func params(m ...func(*v1beta1.CloudSQLInstanceParameters)) *v1beta1.CloudSQLIns
 				Location:                       gcp.StringPtr("us-west1"),
 				ReplicationLogArchivingEnabled: gcp.BoolPtr(true),
 				StartTime:                      gcp.StringPtr("20191018"),
+				PointInTimeRecoveryEnabled:     gcp.BoolPtr(false),
 			},
 			IPConfiguration: &v1beta1.IPConfiguration{
 				AuthorizedNetworks: []*v1beta1.ACLEntry{
@@ -165,6 +166,7 @@ func db(m ...func(*sqladmin.DatabaseInstance)) *sqladmin.DatabaseInstance {
 				Location:                       "us-west1",
 				ReplicationLogArchivingEnabled: true,
 				StartTime:                      "20191018",
+				PointInTimeRecoveryEnabled:     false,
 			},
 			IpConfiguration: &sqladmin.IpConfiguration{
 				AuthorizedNetworks: []*sqladmin.AclEntry{
