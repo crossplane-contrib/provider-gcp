@@ -325,6 +325,11 @@ type BackupConfiguration struct {
 	// timezone in the 24 hour format - HH:MM.
 	// +optional
 	StartTime *string `json:"startTime,omitempty"`
+
+	// PointInTimeRecoveryEnabled: True if Point-in-time recovery is enabled.
+	// Will restart database if enabled after instance creation.
+	// +optional
+	PointInTimeRecoveryEnabled *bool `json:"pointInTimeRecoveryEnabled,omitempty"`
 }
 
 // DatabaseFlags are database flags for Cloud SQL instances.
