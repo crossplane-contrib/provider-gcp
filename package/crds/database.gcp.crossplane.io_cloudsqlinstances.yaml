@@ -74,7 +74,7 @@ spec:
                       The databaseVersion field can not be changed after instance
                       creation. MySQL Second Generation instances: MYSQL_5_7 (default)
                       or MYSQL_5_6. PostgreSQL instances: POSTGRES_9_6, POSTGRES_10,
-                      POSTGRES_11, POSTGRES_12, POSTGRES_13 (default). MySQL First Generation
+                      POSTGRES_11, POSTGRES_12, POSTGRES_13 MySQL First Generation
                       instances: MYSQL_5_6 (default) or MYSQL_5_5'
                     type: string
                   diskEncryptionConfiguration:
