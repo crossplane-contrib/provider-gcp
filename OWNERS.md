@@ -17,3 +17,4 @@ guidelines and responsibilities for the steering committee and maintainers.
 * Hasan Türken <hasan@upbound.io> ([turkenh](https://github.com/turkenh))
 * Alper Rifat Uluçınar <alper@upbound.io> ([ulucinar](https://github.com/ulucinar))
 * Aaron Eaton <aaron@upbound.io>  ([AaronME](https://github.com/AaronME))
+* Gabriel Ferreira <gabidferreira9@gmail.com> ([Feggah](https://github.com/Feggah))
