@@ -45,6 +45,15 @@ var (
 	TopicGroupVersionKind = SchemeGroupVersion.WithKind(TopicKind)
 )
 
+// Subscription type metadata.
+var (
+	SubscriptionKind             = reflect.TypeOf(Subscription{}).Name()
+	SubscriptionGroupKind        = schema.GroupKind{Group: Group, Kind: SubscriptionKind}.String()
+	SubscriptionKindAPIVersion   = SubscriptionKind + "." + SchemeGroupVersion.String()
+	SubscriptionGroupVersionKind = SchemeGroupVersion.WithKind(SubscriptionKind)
+)
+
 func init() {
-	SchemeBuilder.Register(&Topic{}, &TopicList{})
+	SchemeBuilder.Register(&Topic{}, &TopicList{},
+		&Subscription{}, &SubscriptionList{})
 }
