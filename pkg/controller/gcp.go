@@ -56,6 +56,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll ti
 		kms.SetupKeyRing,
 		kms.SetupCryptoKey,
 		kms.SetupCryptoKeyPolicy,
+		pubsub.SetupSubscription,
 		pubsub.SetupTopic,
 		servicenetworking.SetupConnection,
 		storage.SetupBucket,
