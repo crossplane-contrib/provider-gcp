@@ -78,6 +78,7 @@ type SubscriptionParameters struct {
 	// configures how far back in time a `Seek` can be done. Defaults to 7
 	// days. Cannot be more than 7 days or less than 10 minutes.
 	// +optional
+	// +kubebuilder:validation:Pattern=^[0-9]*s$
 	MessageRetentionDuration string `json:"messageRetentionDuration,omitempty"`
 
 	// PushConfig is a parameter which configures push delivery. An empty
@@ -122,6 +123,7 @@ type DeadLetterPolicy struct {
 type ExpirationPolicy struct {
 	// TTL is the duration of "time-to-live" for an associated resource.
 	// The resource expires if it is not active for a period of `ttl`.
+	// +kubebuilder:validation:Pattern=^[0-9]*s$
 	TTL string `json:"ttl,omitempty"`
 }
 

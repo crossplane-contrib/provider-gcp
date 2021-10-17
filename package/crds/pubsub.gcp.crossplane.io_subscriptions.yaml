@@ -105,6 +105,7 @@ spec:
                         description: TTL is the duration of "time-to-live" for an
                           associated resource. The resource expires if it is not active
                           for a period of `ttl`.
+                        pattern: ^[0-9]*s$
                         type: string
                     type: object
                   filter:
@@ -127,6 +128,7 @@ spec:
                       messages, and thus configures how far back in time a `Seek`
                       can be done. Defaults to 7 days. Cannot be more than 7 days
                       or less than 10 minutes.
+                    pattern: ^[0-9]*s$
                     type: string
                   pushConfig:
                     description: PushConfig is a parameter which configures push delivery.
