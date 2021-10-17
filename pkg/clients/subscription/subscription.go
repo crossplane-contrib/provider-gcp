@@ -181,7 +181,10 @@ func LateInitialize(projectID string, p *v1alpha1.SubscriptionParameters, s pubs
 func IsUpToDate(projectID string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) bool {
 	observed := &v1alpha1.SubscriptionParameters{}
 	LateInitialize(projectID, observed, s)
-	p.Topic = topic.GetFullyQualifiedName(projectID, p.Topic)
+	if p.Topic != "" {
+		p.Topic = topic.GetFullyQualifiedName(projectID, p.Topic)
+	}
+
 	return cmp.Equal(observed, &p)
 }
 
