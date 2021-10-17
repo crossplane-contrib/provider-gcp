@@ -102,7 +102,7 @@ spec:
                       is 1 day.
                     properties:
                       ttl:
-                        description: Ttl is the duration of "time-to-live" for an
+                        description: TTL is the duration of "time-to-live" for an
                           associated resource. The resource expires if it is not active
                           for a period of `ttl`.
                         type: string

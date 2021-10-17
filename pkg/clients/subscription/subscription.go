@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	"github.com/crossplane/provider-gcp/pkg/clients/topic"
 
-	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	pubsub "google.golang.org/api/pubsub/v1"
 )
@@ -89,7 +89,7 @@ func setPushConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
 func setExpirationPolicy(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
 	if p.ExpirationPolicy != nil {
 		s.ExpirationPolicy = &pubsub.ExpirationPolicy{
-			Ttl: p.ExpirationPolicy.Ttl,
+			Ttl: p.ExpirationPolicy.TTL,
 		}
 	}
 }
@@ -151,7 +151,7 @@ func LateInitialize(projectID string, p *v1alpha1.SubscriptionParameters, s pubs
 
 	if p.ExpirationPolicy == nil && s.ExpirationPolicy != nil {
 		p.ExpirationPolicy = &v1alpha1.ExpirationPolicy{
-			Ttl: s.ExpirationPolicy.Ttl,
+			TTL: s.ExpirationPolicy.Ttl,
 		}
 	}
 

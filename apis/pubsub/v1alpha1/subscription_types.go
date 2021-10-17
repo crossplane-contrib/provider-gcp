@@ -120,9 +120,9 @@ type DeadLetterPolicy struct {
 
 // ExpirationPolicy contains configuration for resource expiration.
 type ExpirationPolicy struct {
-	// Ttl is the duration of "time-to-live" for an associated resource.
+	// TTL is the duration of "time-to-live" for an associated resource.
 	// The resource expires if it is not active for a period of `ttl`.
-	Ttl string `json:"ttl,omitempty"`
+	TTL string `json:"ttl,omitempty"`
 }
 
 // PushConfig contains configuration for a push delivery endpoint.

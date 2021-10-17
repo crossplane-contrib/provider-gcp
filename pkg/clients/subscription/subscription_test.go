@@ -41,7 +41,7 @@ func params() *v1alpha1.SubscriptionParameters {
 		},
 		Detached:                 true,
 		EnableMessageOrdering:    true,
-		ExpirationPolicy:         &v1alpha1.ExpirationPolicy{Ttl: "1296000s"},
+		ExpirationPolicy:         &v1alpha1.ExpirationPolicy{TTL: "1296000s"},
 		Filter:                   "foo",
 		Labels:                   map[string]string{"example": "true"},
 		MessageRetentionDuration: "864000s",
@@ -145,7 +145,7 @@ func TestLateInitialize(t *testing.T) {
 					},
 					Detached:                 true,
 					EnableMessageOrdering:    true,
-					ExpirationPolicy:         &v1alpha1.ExpirationPolicy{Ttl: "1296000s"},
+					ExpirationPolicy:         &v1alpha1.ExpirationPolicy{TTL: "1296000s"},
 					Filter:                   "foo",
 					Labels:                   map[string]string{"example": "true"},
 					MessageRetentionDuration: "864000s",
@@ -188,15 +188,15 @@ func TestIsUpToDate(t *testing.T) {
 		args
 		result bool
 	}{
-		//"NotUpToDate": {
-		//	args: args{
-		//		obs: *subscription(),
-		//		param: v1alpha1.SubscriptionParameters{
-		//			RetryPolicy: nil,
-		//		},
-		//	},
-		//	result: false,
-		//},
+		"NotUpToDate": {
+			args: args{
+				obs: *subscription(),
+				param: v1alpha1.SubscriptionParameters{
+					RetryPolicy: nil,
+				},
+			},
+			result: false,
+		},
 		"UpToDate": {
 			args: args{
 				obs:   *subscription(),
