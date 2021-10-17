@@ -171,7 +171,7 @@ func TestLateInitialize(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			LateInitialize(projectID, tc.args.param, tc.args.obs)
+			LateInitialize(tc.args.param, tc.args.obs)
 			if diff := cmp.Diff(tc.args.param, tc.out); diff != "" {
 				t.Errorf("LateInitialize(...): -want, +got:\n%s", diff)
 			}

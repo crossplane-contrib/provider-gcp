@@ -106,7 +106,7 @@ func setDeadLetterPolicy(p v1alpha1.SubscriptionParameters, s *pubsub.Subscripti
 
 // LateInitialize fills the empty fields of SubscriptionParameters if the corresponding
 // fields are given in Subscription.
-func LateInitialize(projectID string, p *v1alpha1.SubscriptionParameters, s pubsub.Subscription) {
+func LateInitialize(p *v1alpha1.SubscriptionParameters, s pubsub.Subscription) { // nolint:gocyclo
 	if (p.AckDeadlineSeconds == 10 || p.AckDeadlineSeconds == 0) && s.AckDeadlineSeconds != 0 {
 		p.AckDeadlineSeconds = s.AckDeadlineSeconds
 	}
@@ -180,7 +180,7 @@ func LateInitialize(projectID string, p *v1alpha1.SubscriptionParameters, s pubs
 // IsUpToDate checks whether Subscription is configured with given SubscriptionParameters.
 func IsUpToDate(projectID string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) bool {
 	observed := &v1alpha1.SubscriptionParameters{}
-	LateInitialize(projectID, observed, s)
+	LateInitialize(observed, s)
 	if p.Topic != "" {
 		p.Topic = topic.GetFullyQualifiedName(projectID, p.Topic)
 	}
@@ -193,7 +193,7 @@ func IsUpToDate(projectID string, p v1alpha1.SubscriptionParameters, s pubsub.Su
 // enableMessageOrdering, deadLetterPolicy, topic are not mutable
 func GenerateUpdateRequest(projectID, name string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) *pubsub.UpdateSubscriptionRequest {
 	observed := &v1alpha1.SubscriptionParameters{}
-	LateInitialize(projectID, observed, s)
+	LateInitialize(observed, s)
 
 	us := &pubsub.UpdateSubscriptionRequest{
 		Subscription: &pubsub.Subscription{Name: name},

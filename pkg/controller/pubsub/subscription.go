@@ -21,28 +21,23 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
-
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	pubsub "google.golang.org/api/pubsub/v1"
-
-	"github.com/crossplane/crossplane-runtime/pkg/errors"
-	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/subscription"
 )
 
@@ -111,7 +106,7 @@ func (e *subscriptionExternal) Observe(ctx context.Context, mg resource.Managed)
 	}
 
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
-	subscription.LateInitialize(e.projectID, &cr.Spec.ForProvider, *s)
+	subscription.LateInitialize(&cr.Spec.ForProvider, *s)
 
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.client.Update(ctx, cr); err != nil {
