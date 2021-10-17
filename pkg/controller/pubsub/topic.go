@@ -127,7 +127,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotTopic)
 	}
 	cr.SetConditions(xpv1.Creating())
-	_, err := e.ps.Projects.Topics.Create(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr)), topic.GenerateTopic(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider)).Context(ctx).Do()
+	_, err := e.ps.Projects.Topics.Create(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr)), topic.GenerateTopic(meta.GetExternalName(cr), cr.Spec.ForProvider)).Context(ctx).Do()
 	return managed.ExternalCreation{}, errors.Wrap(err, errCreateTopic)
 }
 
@@ -142,7 +142,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errGetTopic)
 	}
-	_, err = e.ps.Projects.Topics.Patch(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr)), topic.GenerateUpdateRequest(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider, *t)).Context(ctx).Do()
+	_, err = e.ps.Projects.Topics.Patch(topic.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr)), topic.GenerateUpdateRequest(meta.GetExternalName(cr), cr.Spec.ForProvider, *t)).Context(ctx).Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateTopic)
 }
 

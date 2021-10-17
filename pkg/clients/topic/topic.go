@@ -37,7 +37,7 @@ func GetFullyQualifiedName(project string, name string) string {
 }
 
 // GenerateTopic produces a Topic that is configured via given TopicParameters.
-func GenerateTopic(projectID, name string, s v1alpha1.TopicParameters) *pubsub.Topic {
+func GenerateTopic(name string, s v1alpha1.TopicParameters) *pubsub.Topic {
 	t := &pubsub.Topic{
 		Name:       name,
 		Labels:     s.Labels,
@@ -77,7 +77,7 @@ func IsUpToDate(s v1alpha1.TopicParameters, t pubsub.Topic) bool {
 
 // GenerateUpdateRequest produces an UpdateTopicRequest with the difference
 // between TopicParameters and Topic.
-func GenerateUpdateRequest(projectID, name string, s v1alpha1.TopicParameters, t pubsub.Topic) *pubsub.UpdateTopicRequest {
+func GenerateUpdateRequest(name string, s v1alpha1.TopicParameters, t pubsub.Topic) *pubsub.UpdateTopicRequest {
 	observed := &v1alpha1.TopicParameters{}
 	LateInitialize(observed, t)
 	ut := &pubsub.UpdateTopicRequest{
