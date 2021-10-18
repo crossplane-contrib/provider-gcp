@@ -67,7 +67,7 @@ func subscription() *pubsub.Subscription {
 		Name:               name,
 		AckDeadlineSeconds: 15,
 		DeadLetterPolicy: &pubsub.DeadLetterPolicy{
-			DeadLetterTopic:     topicName,
+			DeadLetterTopic:     topicNameExternal,
 			MaxDeliveryAttempts: 5,
 		},
 		Detached:              true,
@@ -250,7 +250,7 @@ func TestGenerateUpdateRequest(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := GenerateUpdateRequest(projectID, tc.args.name, tc.args.param, tc.args.obs)
+			got := GenerateUpdateRequest(tc.args.name, tc.args.param, tc.args.obs)
 			if diff := cmp.Diff(tc.result, got); diff != "" {
 				t.Errorf("GenerateUpdateRequest(...): -want, +got:\n%s", diff)
 			}

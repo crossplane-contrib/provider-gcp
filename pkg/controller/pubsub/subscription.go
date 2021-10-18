@@ -150,7 +150,7 @@ func (e *subscriptionExternal) Update(ctx context.Context, mg resource.Managed) 
 	}
 
 	_, err = e.ps.Projects.Subscriptions.Patch(subscription.GetFullyQualifiedName(e.projectID, meta.GetExternalName(cr)),
-		subscription.GenerateUpdateRequest(e.projectID, meta.GetExternalName(cr), cr.Spec.ForProvider, *s)).Context(ctx).Do()
+		subscription.GenerateUpdateRequest(meta.GetExternalName(cr), cr.Spec.ForProvider, *s)).Context(ctx).Do()
 
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateSubscription)
 }

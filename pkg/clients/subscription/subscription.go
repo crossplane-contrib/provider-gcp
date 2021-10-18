@@ -50,7 +50,7 @@ func GenerateSubscription(projectID, name string, p v1alpha1.SubscriptionParamet
 		Topic:                    topic.GetFullyQualifiedName(projectID, p.Topic),
 	}
 
-	setDeadLetterPolicy(p, s)
+	setDeadLetterPolicy(projectID, p, s)
 	setExpirationPolicy(p, s)
 	setPushConfig(p, s)
 	setRetryPolicy(p, s)
@@ -95,10 +95,10 @@ func setExpirationPolicy(p v1alpha1.SubscriptionParameters, s *pubsub.Subscripti
 }
 
 // setDeadLetterPolicy sets DeadLetterPolicy of subscription based on SubscriptionParameters.
-func setDeadLetterPolicy(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
+func setDeadLetterPolicy(projectID string, p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
 	if p.DeadLetterPolicy != nil {
 		s.DeadLetterPolicy = &pubsub.DeadLetterPolicy{
-			DeadLetterTopic:     p.DeadLetterPolicy.DeadLetterTopic,
+			DeadLetterTopic:     topic.GetFullyQualifiedName(projectID, p.DeadLetterPolicy.DeadLetterTopic),
 			MaxDeliveryAttempts: p.DeadLetterPolicy.MaxDeliveryAttempts,
 		}
 	}
@@ -185,13 +185,17 @@ func IsUpToDate(projectID string, p v1alpha1.SubscriptionParameters, s pubsub.Su
 		p.Topic = topic.GetFullyQualifiedName(projectID, p.Topic)
 	}
 
+	if p.DeadLetterPolicy != nil && p.DeadLetterPolicy.DeadLetterTopic != "" {
+		p.DeadLetterPolicy.DeadLetterTopic = topic.GetFullyQualifiedName(projectID, p.DeadLetterPolicy.DeadLetterTopic)
+	}
+
 	return cmp.Equal(observed, &p)
 }
 
 // GenerateUpdateRequest produces an UpdateSubscriptionRequest with the difference
 // between SubscriptionParameters and Subscription.
 // enableMessageOrdering, deadLetterPolicy, topic are not mutable
-func GenerateUpdateRequest(projectID, name string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) *pubsub.UpdateSubscriptionRequest {
+func GenerateUpdateRequest(name string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) *pubsub.UpdateSubscriptionRequest {
 	observed := &v1alpha1.SubscriptionParameters{}
 	LateInitialize(observed, s)
 
