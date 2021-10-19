@@ -4,12 +4,9 @@ metadata:
   name: example-cluster
 spec:
   forProvider:
-    initialClusterVersion: "1.18"
+    initialClusterVersion: "1.20"
     location: us-west2
-    masterAuth:
-      # setting this master auth user name enables basic auth so that a client (e.g.,
-      # provider-helm), can connect with the generated kubeconfig from the connection secret
-      username: admin
+    serviceAccount: sa-test
     networkConfig:
       enableIntraNodeVisibility: true
     loggingService: logging.googleapis.com/kubernetes
