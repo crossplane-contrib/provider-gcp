@@ -26,10 +26,12 @@ import (
 type ProviderSpec struct {
 	// CredentialsSecretRef references a specific secret's key that contains
 	// the credentials that are used to connect to the GCP API.
-	CredentialsSecretRef xpv1.SecretKeySelector `json:"credentialsSecretRef"`
+	CredentialsSecretRef xpv1.SecretKeySelector `json:"credentialsSecretRef,omitempty"`
 
 	// ProjectID is the project name (not numerical ID) of this GCP Provider.
 	ProjectID string `json:"projectID"`
+	// ImpersonateServiceAccount is the GCP service account to impersonate instead of providing service account keys.
+	ImpersonateServiceAccount string `json:"impersonateServiceAccount,omitempty"`
 }
 
 // +kubebuilder:object:root=true

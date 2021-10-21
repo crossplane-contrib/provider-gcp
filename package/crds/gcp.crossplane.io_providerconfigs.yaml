@@ -73,6 +73,10 @@ spec:
                     required:
                     - path
                     type: object
+                  impersonateServiceAccount:
+                    description: ImpersonateServiceAccount is the GCP service account
+                      to impersonate instead of providing service account keys
+                    type: string
                   secretRef:
                     description: A SecretRef is a reference to a secret key that contains
                       the credentials that must be used to connect to the provider.
@@ -99,8 +103,6 @@ spec:
                     - Environment
                     - Filesystem
                     type: string
-                required:
-                - source
                 type: object
               projectID:
                 description: ProjectID is the project name (not numerical ID) of this

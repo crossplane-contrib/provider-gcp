@@ -61,6 +61,10 @@ func UseProvider(ctx context.Context, c client.Client, mg resource.Managed) (pro
 		return "", nil, err
 	}
 
+	if account := p.Spec.ImpersonateServiceAccount; account != "" {
+		return p.Spec.ProjectID, option.ImpersonateCredentials(account), nil
+	}
+
 	ref := p.Spec.CredentialsSecretRef
 	s := &v1.Secret{}
 	if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
@@ -78,6 +82,9 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 	}
 	if err := c.Get(ctx, types.NamespacedName{Name: mg.GetProviderConfigReference().Name}, pc); err != nil {
 		return "", nil, err
+	}
+	if account := pc.Spec.Credentials.ImpersonateServiceAccount; account != "" {
+		return pc.Spec.ProjectID, option.ImpersonateCredentials(account), nil
 	}
 	data, err := resource.CommonCredentialExtractor(ctx, pc.Spec.Credentials.Source, c, pc.Spec.Credentials.CommonCredentialSelectors)
 	if err != nil {

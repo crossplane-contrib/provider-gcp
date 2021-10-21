@@ -35,9 +35,11 @@ type ProviderConfigSpec struct {
 type ProviderCredentials struct {
 	// Source of the provider credentials.
 	// +kubebuilder:validation:Enum=None;Secret;Environment;Filesystem
-	Source xpv1.CredentialsSource `json:"source"`
+	Source xpv1.CredentialsSource `json:"source,omitempty"`
 
 	xpv1.CommonCredentialSelectors `json:",inline"`
+	// ImpersonateServiceAccount is the GCP service account to impersonate instead of providing service account keys
+	ImpersonateServiceAccount string `json:"impersonateServiceAccount,omitempty"`
 }
 
 // A ProviderConfigStatus represents the status of a ProviderConfig.
