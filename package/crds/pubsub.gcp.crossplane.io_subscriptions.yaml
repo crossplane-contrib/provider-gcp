@@ -1,0 +1,288 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.2
+  creationTimestamp: null
+  name: subscriptions.pubsub.gcp.crossplane.io
+spec:
+  group: pubsub.gcp.crossplane.io
+  names:
+    kind: Subscription
+    listKind: SubscriptionList
+    plural: subscriptions
+    singular: subscription
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Subscription is a managed resource that represents a Google PubSub
+          Subscription.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SubscriptionSpec defines the desired state of a Subscription.
+            properties:
+              deletionPolicy:
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: SubscriptionParameters defines parameters for a desired
+                  Subscription.
+                properties:
+                  ackDeadlineSeconds:
+                    description: AckDeadlineSeconds is the approximate amount of time
+                      Pub/Sub waits for the subscriber to acknowledge receipt before
+                      resending the message. The minimum custom deadline you can specify
+                      is 10 seconds. The maximum custom deadline you can specify is
+                      600 seconds (10 minutes). If this parameter is 0, a default
+                      value of 10 seconds is used.
+                    format: int64
+                    type: integer
+                  deadLetterPolicy:
+                    description: DeadLetterPolicy is the policy that specifies the
+                      conditions for dead lettering messages in this subscription.
+                      If dead_letter_policy is not set, dead lettering is disabled.
+                    properties:
+                      deadLetterTopic:
+                        description: DeadLetterTopic is the name of the topic to which
+                          dead letter messages should be published. Format is `projects/{project}/topics/{topic}`.
+                        type: string
+                      maxDeliveryAttempts:
+                        description: MaxDeliveryAttempts is the maximum number of
+                          delivery attempts for any message. The value must be between
+                          5 and 100.
+                        format: int64
+                        type: integer
+                    type: object
+                  detached:
+                    description: Detached is the flag which indicates whether the
+                      subscription is detached from its topic. Detached subscriptions
+                      don't receive messages from their topic and don't retain any
+                      backlog.
+                    type: boolean
+                  enableMessageOrdering:
+                    description: EnableMessageOrdering is the flag which controls
+                      message delivery order to subscribers. When it is true, messages
+                      published with the same `ordering_key` in `PubsubMessage` will
+                      be delivered to the subscribers in the order in which they are
+                      received by the Pub/Sub system. Otherwise, they may be delivered
+                      in any order.
+                    type: boolean
+                  expirationPolicy:
+                    description: ExpirationPolicy is the policy that specifies the
+                      conditions for this subscription's expiration. If `expiration_policy`
+                      is not set, a *default policy* with `ttl` of 31 days will be
+                      used. The minimum allowed value for `expiration_policy.ttl`
+                      is 1 day.
+                    properties:
+                      ttl:
+                        description: TTL is the duration of "time-to-live" for an
+                          associated resource. The resource expires if it is not active
+                          for a period of `ttl`.
+                        pattern: ^[0-9]*s$
+                        type: string
+                    type: object
+                  filter:
+                    description: Filter is an expression written in the Pub/Sub filter
+                      language (https://cloud.google.com/pubsub/docs/filtering). If
+                      non-empty, then only `PubsubMessage`s whose `attributes` field
+                      matches the filter are delivered on this subscription. If empty,
+                      then no messages are filtered out.
+                    type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels are used as additional metadata on Subscription.
+                    type: object
+                  messageRetentionDuration:
+                    description: MessageRetentionDuration is a parameter which defines
+                      how long to retain unacknowledged messages in the subscription's
+                      backlog, from the moment a message is published. If `retain_acked_messages`
+                      is true, then this also configures the retention of acknowledged
+                      messages, and thus configures how far back in time a `Seek`
+                      can be done. Defaults to 7 days. Cannot be more than 7 days
+                      or less than 10 minutes.
+                    pattern: ^[0-9]*s$
+                    type: string
+                  pushConfig:
+                    description: PushConfig is a parameter which configures push delivery.
+                      An empty `pushConfig` signifies that the subscriber will pull
+                      and ack messages using API methods.
+                    properties:
+                      attributes:
+                        additionalProperties:
+                          type: string
+                        description: Attributes is the map of endpoint configuration
+                          attributes that can be used to control different aspects
+                          of the message delivery.
+                        type: object
+                      oidcToken:
+                        description: OidcToken is a set of parameters to attach OIDC
+                          JWT token as an `Authorization` header in the HTTP request
+                          for every pushed message.
+                        properties:
+                          audience:
+                            description: Audience is the "audience" to be used when
+                              generating OIDC token.
+                            type: string
+                          serviceAccountEmail:
+                            description: ServiceAccountEmail is the email to be used
+                              for generating the OIDC token
+                            type: string
+                        type: object
+                      pushEndpoint:
+                        description: PushEndpoint is a URL locating the endpoint to
+                          which messages should be pushed.
+                        type: string
+                    type: object
+                  retainAckedMessages:
+                    description: RetainAckedMessages is a message which indicates
+                      whether to retain acknowledged messages. If true, then messages
+                      are not expunged from the subscription's backlog, even if they
+                      are acknowledged, until they fall out of the `message_retention_duration`
+                      window.
+                    type: boolean
+                  retryPolicy:
+                    description: RetryPolicy is the policy that specifies how Pub/Sub
+                      retries message delivery for this subscription. If not set,
+                      the default retry policy is applied. This generally implies
+                      that messages will be retried as soon as possible for healthy
+                      subscribers.
+                    properties:
+                      maximumBackoff:
+                        description: MaximumBackoff is the maximum delay between consecutive
+                          deliveries of a given message. Value should be between 0
+                          and 600 seconds. Defaults to 600 seconds.
+                        type: string
+                      minimumBackoff:
+                        description: MinimumBackoff is the minimum delay between consecutive
+                          deliveries of a given message. Value should be between 0
+                          and 600 seconds. Defaults to 10 seconds.
+                        type: string
+                    type: object
+                  topic:
+                    description: 'TODO: Add referencer & selector for Topic resource.
+                      Topic is the name of the topic from which this subscription
+                      is receiving messages. Format is `projects/{project}/topics/{topic}`.'
+                    type: string
+                type: object
+              providerConfigRef:
+                default:
+                  name: default
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: SubscriptionStatus represents the observed state of a Subscription.
+            properties:
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -1,0 +1,17 @@
+apiVersion: pubsub.gcp.crossplane.io/v1alpha1
+kind: Subscription
+metadata:
+  name: my-subscription
+spec:
+  forProvider:
+    labels:
+      example: "true"
+    topic: my-topic
+    ackDeadlineSeconds: 25
+    expirationPolicy:
+      ttl: "864000s"
+    deadLetterPolicy:
+      deadLetterTopic: my-topic
+  providerConfigRef:
+    name: gcp-provider
+  deletionPolicy: Delete
