@@ -78,7 +78,7 @@ func TestGenerateTopic(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := GenerateTopic(tc.projectID, tc.name, tc.s)
+			got := GenerateTopic(tc.name, tc.s)
 			if diff := cmp.Diff(tc.out, got); diff != "" {
 				t.Errorf("GenerateTopic(...): -want, +got:\n%s", diff)
 			}
@@ -182,7 +182,7 @@ func TestGenerateUpdateRequest(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := GenerateUpdateRequest(tc.args.projectID, tc.args.name, tc.args.param, tc.args.obs)
+			got := GenerateUpdateRequest(tc.args.name, tc.args.param, tc.args.obs)
 			if diff := cmp.Diff(tc.result, got); diff != "" {
 				t.Errorf("GenerateUpdateRequest(...): -want, +got:\n%s", diff)
 			}

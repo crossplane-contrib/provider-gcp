@@ -39,8 +39,6 @@ type TopicParameters struct {
 	// +optional
 	MessageStoragePolicy *MessageStoragePolicy `json:"messageStoragePolicy,omitempty"`
 
-	// TODO(muvaf): Add referencer & selector when we have KMS as managed resource.
-
 	// KmsKeyName is the resource name of the Cloud KMS CryptoKey to be used to
 	// protect access to messages published on this topic.
 	//
