@@ -323,6 +323,19 @@ func TestLateInitializeSpec(t *testing.T) {
 				p.Settings.DataDiskSizeGb = gcp.Int64Ptr(30)
 			})},
 		},
+		"ReplicaNamesSynced": {
+			args: args{
+				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
+					p.ReplicaNames = []string{"my-replica1"}
+				}),
+				db: db(func(db *sqladmin.DatabaseInstance) {
+					db.ReplicaNames = []string{"my-replica1", "my-replica2"}
+				}),
+			},
+			want: want{params: params(func(p *v1beta1.CloudSQLInstanceParameters) {
+				p.ReplicaNames = []string{"my-replica1", "my-replica2"}
+			})},
+		},
 		"AutoResizeAllowsIncrease": {
 			args: args{
 				params: params(func(p *v1beta1.CloudSQLInstanceParameters) {

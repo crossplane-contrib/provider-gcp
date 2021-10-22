@@ -188,7 +188,7 @@ func LateInitializeSpec(spec *v1beta1.CloudSQLInstanceParameters, in sqladmin.Da
 	spec.GceZone = gcp.LateInitializeString(spec.GceZone, in.GceZone)
 	spec.InstanceType = gcp.LateInitializeString(spec.InstanceType, in.InstanceType)
 	spec.MaxDiskSize = gcp.LateInitializeInt64(spec.MaxDiskSize, in.MaxDiskSize)
-	spec.ReplicaNames = gcp.LateInitializeStringSlice(spec.ReplicaNames, in.ReplicaNames)
+	spec.ReplicaNames = in.ReplicaNames
 	spec.SuspensionReason = gcp.LateInitializeStringSlice(spec.SuspensionReason, in.SuspensionReason)
 	if in.Settings != nil {
 		if spec.Settings.Tier == "" {
