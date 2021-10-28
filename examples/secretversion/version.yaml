@@ -1,0 +1,19 @@
+---
+apiVersion: secretversion.gcp.crossplane.io/v1alpha1
+kind: SecretVersion
+metadata:
+  name: "4"
+spec:
+  forProvider:
+    # payload:
+    #   data: thisisahugesecret
+    secretRef: real
+    desiredSecretVersionState: 1
+    kubeSecRef: 
+      name: file
+      namespace: default
+      key : key1
+
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: gcp-provider
