@@ -45,6 +45,14 @@ var (
 	FirewallGroupVersionKind = SchemeGroupVersion.WithKind(FirewallKind)
 )
 
+// Router type metadata.
+var (
+	RouterKind             = reflect.TypeOf(Router{}).Name()
+	RouterGroupKind        = schema.GroupKind{Group: Group, Kind: RouterKind}.String()
+	RouterKindAPIVersion   = RouterKind + "." + SchemeGroupVersion.String()
+	RouterGroupVersionKind = SchemeGroupVersion.WithKind(RouterKind)
+)
+
 func init() {
-	SchemeBuilder.Register(&Firewall{}, &FirewallList{})
+	SchemeBuilder.Register(&Firewall{}, &FirewallList{}, &Router{}, &RouterList{})
 }
