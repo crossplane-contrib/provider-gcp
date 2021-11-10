@@ -19,6 +19,8 @@ package controller
 import (
 	"time"
 
+	"github.com/crossplane/provider-gcp/pkg/controller/registry"
+
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -62,6 +64,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll ti
 		storage.SetupBucket,
 		storage.SetupBucketPolicy,
 		storage.SetupBucketPolicyMember,
+		registry.SetupContainerRegistry,
 	} {
 		if err := setup(mgr, l, rl, poll); err != nil {
 			return err
