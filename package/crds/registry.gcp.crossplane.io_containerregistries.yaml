@@ -55,8 +55,12 @@ spec:
                 - Delete
                 type: string
               forProvider:
+                description: ContainerRegistryParameters define the desired state
+                  of a ContainerRegistry
                 properties:
                   location:
+                    description: 'The location of the registry. Possible Values: ASIA,
+                      EU, US'
                     type: string
                 type: object
               providerConfigRef:
@@ -107,10 +111,14 @@ spec:
             description: ContainerRegistryStatus defines the observed state of ContainerRegistry
             properties:
               atProvider:
+                description: ContainerRegistryObservation is used to show the observed
+                  state of the ContainerRegistry
                 properties:
                   bucketLink:
+                    description: The URI of the bucket.
                     type: string
                   id:
+                    description: The name of the bucket.
                     type: string
                 type: object
               conditions:

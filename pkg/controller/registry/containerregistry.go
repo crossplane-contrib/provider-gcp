@@ -36,14 +36,15 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/crossplane/provider-gcp/apis/registry/v1alpha1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"github.com/crossplane/provider-gcp/apis/registry/v1alpha1"
+	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 )
 
 // Error strings.
@@ -52,10 +53,8 @@ const (
 	errNotGcr           = "managed resource is not a Google Container Registry (GCR)"
 	errHandshake        = "an error occurred during handshake"
 	errGetBucket        = "cannot get Bucket object"
-	errCreate           = "cannot create Google Container Registry (GCR) object"
-	errUpdate           = "cannot update Google Container Registry (GCR) object"
 
-	gcrUrl                          = "gcr.io"
+	gcrURL                          = "gcr.io"
 	testRepoName                    = "crossplane-test"
 	bucketNameFormatWithLocation    = "%s.artifacts.%s.appspot.com"
 	bucketNameFormatWithoutLocation = "artifacts.%s.appspot.com"
@@ -141,7 +140,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotGcr)
 	}
 
-	location := gcrUrl
+	location := gcrURL
 
 	if cr.Spec.ForProvider.Location != "" {
 		location = fmt.Sprintf("%s.%s", strings.ToLower(cr.Spec.ForProvider.Location), location)

@@ -24,15 +24,21 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// ContainerRegistryParameters define the desired state of a ContainerRegistry
 type ContainerRegistryParameters struct {
+	// The location of the registry.
+	// Possible Values: ASIA, EU, US
 	// +optional
 	// +immutable
 	Location string `json:"location,omitempty"`
 }
 
+// ContainerRegistryObservation is used to show the observed state of the ContainerRegistry
 type ContainerRegistryObservation struct {
+	// The name of the bucket.
 	ID string `json:"id,omitempty"`
 
+	// The URI of the bucket.
 	BucketLink string `json:"bucketLink,omitempty"`
 }
 
