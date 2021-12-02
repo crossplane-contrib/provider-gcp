@@ -114,11 +114,11 @@ spec:
                 description: ContainerRegistryObservation is used to show the observed
                   state of the ContainerRegistry
                 properties:
+                  bucketID:
+                    description: The name of the bucket.
+                    type: string
                   bucketLink:
                     description: The URI of the bucket.
-                    type: string
-                  id:
-                    description: The name of the bucket.
                     type: string
                 type: object
               conditions:

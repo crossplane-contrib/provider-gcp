@@ -19,8 +19,6 @@ package controller
 import (
 	"time"
 
-	"github.com/crossplane/provider-gcp/pkg/controller/registry"
-
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -35,6 +33,7 @@ import (
 	"github.com/crossplane/provider-gcp/pkg/controller/iam"
 	"github.com/crossplane/provider-gcp/pkg/controller/kms"
 	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
+	"github.com/crossplane/provider-gcp/pkg/controller/registry"
 	"github.com/crossplane/provider-gcp/pkg/controller/servicenetworking"
 	"github.com/crossplane/provider-gcp/pkg/controller/storage"
 )

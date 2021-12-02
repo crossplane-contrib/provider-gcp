@@ -36,7 +36,7 @@ type ContainerRegistryParameters struct {
 // ContainerRegistryObservation is used to show the observed state of the ContainerRegistry
 type ContainerRegistryObservation struct {
 	// The name of the bucket.
-	ID string `json:"id,omitempty"`
+	BucketID string `json:"bucketID,omitempty"`
 
 	// The URI of the bucket.
 	BucketLink string `json:"bucketLink,omitempty"`
@@ -54,8 +54,8 @@ type ContainerRegistryStatus struct {
 	AtProvider          ContainerRegistryObservation `json:"atProvider,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:resource:scope=Cluster

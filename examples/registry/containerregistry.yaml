@@ -5,7 +5,6 @@ metadata:
 spec:
   forProvider:
     location: "EU"
-    project: "crossplane-playground"
   providerConfigRef:
     name: gcp-provider
   deletionPolicy: Delete

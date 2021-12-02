@@ -21,27 +21,25 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-
-	"google.golang.org/api/storage/v1"
-
-	"github.com/google/go-containerregistry/pkg/authn"
-
 	"time"
 
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"google.golang.org/api/storage/v1"
+	"k8s.io/client-go/util/workqueue"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-	"k8s.io/client-go/util/workqueue"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/crossplane/provider-gcp/apis/registry/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
@@ -85,13 +83,11 @@ type connecter struct {
 // Connect sets up iam client using credentials from the provider
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	projectID, _, err := gcp.GetAuthInfo(ctx, c.client, mg)
-
 	if err != nil {
 		return nil, err
 	}
 
 	storageService, err := storage.NewService(ctx)
-
 	if err != nil {
 		return nil, errors.Wrap(err, errNewStorageClient)
 	}
@@ -107,23 +103,29 @@ type external struct {
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.ContainerRegistry)
-
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotGcr)
 	}
 
-	bucket, err := e.getBucket(e.getBucketName(cr))
-
+	bucket, err := e.getBucket(cr)
 	if gcp.IsErrorNotFound(err) {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
-
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetBucket)
 	}
 
-	populateCRFromBucket(cr, bucket)
+	// We skip deletion. This means that when you delete a Container Registry resource, the created Bucket will not be
+	// deleted. So, after the deletion starts, if observation output still sets the ResourceExists field to true, we
+	// will see that the CR could not be deleted. Therefore, it was necessary to make a deletionTimestamp check here.
+	if meta.WasDeleted(cr) {
+		return managed.ExternalObservation{
+			ResourceExists: false,
+		}, nil
+	}
 
+	cr.Status.AtProvider.BucketID = bucket.Id
+	cr.Status.AtProvider.BucketLink = bucket.SelfLink
 	cr.Status.SetConditions(xpv1.Available())
 
 	return managed.ExternalObservation{
@@ -135,29 +137,29 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.ContainerRegistry)
-
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotGcr)
 	}
 
 	location := gcrURL
-
 	if cr.Spec.ForProvider.Location != "" {
 		location = fmt.Sprintf("%s.%s", strings.ToLower(cr.Spec.ForProvider.Location), location)
 	}
 
 	ref, err := name.ParseReference(fmt.Sprintf("%s/%s/%s", location, e.projectID, testRepoName))
-
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
 
 	auth, err := authn.DefaultKeychain.Resolve(ref.Context().Registry)
-
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
 
+	// A Bucket is required to properly run image actions (e.g. push, pull) in the Registry. So when a ContainerRegistry MR
+	// created, an external Bucket resource will be created in GCP side.
+	// In order to trigger a Bucket creation mentioned above, it is sufficient to perform a handshake with the gcr.io service.
+	// The following NewWithContext function performs a handshake operation.
 	if _, err := transport.NewWithContext(ctx, ref.Context().Registry, auth, http.DefaultTransport,
 		[]string{ref.Scope(transport.PushScope)}); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errHandshake)
@@ -166,33 +168,27 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalCreation{}, nil
 }
 
+// Update function is skipped because, the ContainerRegistry resource only ensures that, a Bucket was created in the
+// specified location.
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	return managed.ExternalUpdate{}, nil
 }
 
+// Delete function is skipped because, deleting the created Bucket can cause data loss.
+// The main aim is that prevent data loss in case this Bucket was used for other purposes.
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	return nil
 }
 
-func populateCRFromBucket(cr *v1alpha1.ContainerRegistry, bucket *storage.Bucket) {
-	cr.Status.AtProvider.ID = bucket.Id
-	cr.Status.AtProvider.BucketLink = bucket.SelfLink
-}
-
-func (e *external) getBucketName(cr *v1alpha1.ContainerRegistry) string {
+func (e *external) getBucket(cr *v1alpha1.ContainerRegistry) (*storage.Bucket, error) {
 	bucketName := ""
-
 	if cr.Spec.ForProvider.Location != "" {
 		bucketName = fmt.Sprintf(bucketNameFormatWithLocation, strings.ToLower(cr.Spec.ForProvider.Location), e.projectID)
 	} else {
 		bucketName = fmt.Sprintf(bucketNameFormatWithoutLocation, e.projectID)
 	}
-	return bucketName
-}
 
-func (e *external) getBucket(bucketName string) (*storage.Bucket, error) {
 	bucket, err := e.storage.Buckets.Get(bucketName).Do()
-
 	if err != nil {
 		return bucket, err
 	}
