@@ -244,5 +244,5 @@ func IsUpToDate(name string, in *v1alpha1.RouterParameters, observed *compute.Ro
 		return true, errors.New(errCheckUpToDate)
 	}
 	GenerateRouter(name, *in, desired)
-	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(compute.Router{}, "ForceSendFields")), nil
+	return cmp.Equal(desired, observed, cmpopts.EquateEmpty(), gcp.EquateComputeURLs(), cmpopts.IgnoreFields(compute.Router{}, "ForceSendFields")), nil
 }

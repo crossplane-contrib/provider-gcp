@@ -1,11 +1,11 @@
 ---
-apiVersion: compute.gcp.crossplane.io/v1beta1
+apiVersion: compute.gcp.crossplane.io/v1alpha1
 kind: Router
 metadata:
   name: router-test
 spec:
   forProvider:
-    description: A test router to verfiy provider-gcp changes
+    description: A test router to verify provider-gcp changes
     region: us-west1
     networkRef:
       name: network-example
