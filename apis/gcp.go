@@ -30,6 +30,7 @@ import (
 	iam "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
 	kms "github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
 	pubsub "github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
+	registry "github.com/crossplane/provider-gcp/apis/registry/v1alpha1"
 	servicenetworkingv1beta1 "github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
 	storagev1alpha1 "github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
 	storagev1alpha3 "github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
@@ -55,6 +56,7 @@ func init() {
 		storagev1alpha1.SchemeBuilder.AddToScheme,
 		storagev1alpha3.SchemeBuilder.AddToScheme,
 		dnsv1alpha1.SchemeBuilder.AddToScheme,
+		registry.SchemeBuilder.AddToScheme,
 	)
 }
 

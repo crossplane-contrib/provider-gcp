@@ -1,0 +1,10 @@
+apiVersion: registry.gcp.crossplane.io/v1alpha1
+kind: ContainerRegistry
+metadata:
+  name: container-registry-example
+spec:
+  forProvider:
+    location: "EU"
+  providerConfigRef:
+    name: gcp-provider
+  deletionPolicy: Delete
