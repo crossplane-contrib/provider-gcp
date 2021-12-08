@@ -1,0 +1,11 @@
+---
+apiVersion: compute.gcp.crossplane.io/v1beta1
+kind: GlobalAddress
+metadata:
+  name: example-global-address
+spec:
+  forProvider:
+    addressType: INTERNAL
+    purpose: VPC_PEERING
+  providerConfigRef:
+    name: example
