@@ -18,20 +18,17 @@ package storage
 
 import (
 	"context"
-	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"
 	"github.com/imdario/mergo"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
@@ -53,21 +50,21 @@ const (
 )
 
 // SetupBucket adds a controller that reconciles Buckets.
-func SetupBucket(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
+func SetupBucket(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1alpha3.BucketGroupKind)
+
+	r := managed.NewReconciler(mgr,
+		resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
+		managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
+		managed.WithPollInterval(o.PollInterval),
+		managed.WithLogger(o.Logger.WithValues("controller", name)),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		WithOptions(controller.Options{
-			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
-		}).
+		WithOptions(o.ForControllerRuntime()).
 		For(&v1alpha3.Bucket{}).
-		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1alpha3.BucketGroupVersionKind),
-			managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
-			managed.WithPollInterval(poll),
-			managed.WithLogger(l.WithValues("controller", name)),
-			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
+		Complete(ratelimiter.NewReconciler(name, r, o.GlobalRateLimiter))
 }
 
 // A BucketClient produces a BucketHandler for the named bucket.

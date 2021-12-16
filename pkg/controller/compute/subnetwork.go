@@ -18,19 +18,16 @@ package compute
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	googlecompute "google.golang.org/api/compute/v1"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
@@ -56,23 +53,22 @@ const (
 
 // SetupSubnetwork adds a controller that reconciles Subnetwork
 // managed resources.
-func SetupSubnetwork(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll time.Duration) error {
+func SetupSubnetwork(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1beta1.SubnetworkGroupKind)
+
+	r := managed.NewReconciler(mgr,
+		resource.ManagedKind(v1beta1.SubnetworkGroupVersionKind),
+		managed.WithExternalConnecter(&subnetworkConnector{kube: mgr.GetClient()}),
+		managed.WithConnectionPublishers(),
+		managed.WithPollInterval(o.PollInterval),
+		managed.WithLogger(o.Logger.WithValues("controller", name)),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		WithOptions(controller.Options{
-			RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
-		}).
+		WithOptions(o.ForControllerRuntime()).
 		For(&v1beta1.Subnetwork{}).
-		Complete(managed.NewReconciler(mgr,
-			resource.ManagedKind(v1beta1.SubnetworkGroupVersionKind),
-			managed.WithExternalConnecter(&subnetworkConnector{kube: mgr.GetClient()}),
-			managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
-			managed.WithConnectionPublishers(),
-			managed.WithPollInterval(poll),
-			managed.WithLogger(l.WithValues("controller", name)),
-			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
+		Complete(ratelimiter.NewReconciler(name, r, o.GlobalRateLimiter))
 }
 
 type subnetworkConnector struct {

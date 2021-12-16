@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	cloud.google.com/go/storage v1.15.0
-	github.com/crossplane/crossplane-runtime v0.15.1-0.20210913015452-6a7a44ac50aa
+	github.com/crossplane/crossplane-runtime v0.15.1-0.20211202230900-d43d510ec578
 	github.com/crossplane/crossplane-tools v0.0.0-20210916125540-071de511ae8e
 	github.com/google/go-cmp v0.5.6
 	github.com/google/go-containerregistry v0.6.0
