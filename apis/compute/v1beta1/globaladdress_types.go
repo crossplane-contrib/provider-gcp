@@ -170,6 +170,7 @@ type GlobalAddressStatus struct {
 
 // A GlobalAddress is a managed resource that represents a Google Compute Engine
 // Global Address.
+// +kubebuilder:printcolumn:name="IP",type="string",JSONPath=".spec.forProvider.address"
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:object:root=true
