@@ -135,6 +135,10 @@ type CloudSQLInstanceParameters struct {
 	// the suspension.
 	// +optional
 	SuspensionReason []string `json:"suspensionReason,omitempty"`
+
+	// Read-replica configuration for connecting to the primary instance.
+	// +optional
+	ReplicaConfiguration *ReplicaConfiguration `json:"replicaConfiguration,omitempty"`
 }
 
 // Settings is Cloud SQL database instance settings.
@@ -406,6 +410,86 @@ type OnPremisesConfiguration struct {
 	// HostPort: The host and port of the on-premises instance in host:port
 	// format
 	HostPort string `json:"hostPort"`
+}
+
+// ReplicaConfiguration Read-replica configuration for connecting to the primary instance.
+type ReplicaConfiguration struct {
+	// FailoverTarget: Specifies if the replica is the failover target. If
+	// the field is set to *true* the replica will be designated as a
+	// failover replica.
+	// +optional
+	FailoverTarget *bool `json:"failoverTarget,omitempty"`
+
+	// MysqlReplicaConfiguration: MySQL specific configuration when
+	// replicating from a MySQL on-premises primary instance. Replication
+	// configuration information such as the username, password,
+	// certificates, and keys are not stored in the instance metadata. The
+	// configuration information is used only to set up the replication
+	// connection and is stored by MySQL in a file named **master.info** in
+	// the data directory.
+	// +optional
+	MysqlReplicaConfiguration *MySqlReplicaConfiguration `json:"mysqlReplicaConfiguration,omitempty"`
+}
+
+// MySqlReplicaConfiguration: Read-replica configuration specific to
+// MySQL databases. https://cloud.google.com/sql/docs/mysql/admin-api/rest/v1/instances#ReplicaConfiguration
+type MySqlReplicaConfiguration struct {
+
+	// SecretRef: Kubernetes Secret containing all credentials for MySqlReplicaConfiguration
+	// +optional
+	SecretRef *xpv1.SecretReference `json:"secretRef,omitempty"`
+
+	// CaCertificateKey: key in the secret representing PEM representation of the trusted CA's x509
+	// certificate.
+	// +optional
+	CaCertificateKey *string `json:"caCertificateKey,omitempty"`
+
+	// ClientCertificateKey: key in the secret representing  PEM representation of the replica's x509
+	// certificate.
+	// +optional
+	ClientCertificateKey *string `json:"clientCertificateKey,omitempty"`
+
+	// ClientKey: key in the secret representing PEM representation of the replica's private key. The
+	// corresponsing public key is encoded in the client's certificate.
+	// +optional
+	ClientKey *string `json:"clientKey,omitempty"`
+
+	// ConnectRetryInterval: Seconds to wait between connect retries.
+	// MySQL's default is 60 seconds.
+	// +optional
+	ConnectRetryInterval *int64 `json:"connectRetryInterval,omitempty"`
+
+	// DumpFilePath: Path to a SQL dump file in Google Cloud Storage from
+	// which the replica instance is to be created. The URI is in the form
+	// gs://bucketName/fileName. Compressed gzip files (.gz) are also
+	// supported. Dumps have the binlog co-ordinates from which replication
+	// begins. This can be accomplished by setting --master-data to 1 when
+	// using mysqldump.
+	// +optional
+	DumpFilePath *string `json:"dumpFilePath,omitempty"`
+
+	// MasterHeartbeatPeriod: Interval in milliseconds between replication
+	// heartbeats.
+	// +optional
+	MasterHeartbeatPeriod *int64 `json:"masterHeartbeatPeriod,omitempty"`
+
+	// Password: key in the secret representing the password for the replication connection.
+	// +optional
+	PasswordKey *string `json:"passwordKey,omitempty"`
+
+	// SslCipher: A list of permissible ciphers to use for SSL encryption.
+	// +optional
+	SslCipher *string `json:"sslCipher,omitempty"`
+
+	// Username: key in the secret representing the username for the replication connection.
+	// +optional
+	UsernameKey *string `json:"usernameKey,omitempty"`
+
+	// VerifyServerCertificate: Whether or not to check the primary
+	// instance's Common Name value in the certificate that it sends during
+	// the SSL handshake.
+	// +optional
+	VerifyServerCertificate *bool `json:"verifyServerCertificate,omitempty"`
 }
 
 // CloudSQLInstanceObservation is used to show the observed state of the Cloud SQL resource on GCP.

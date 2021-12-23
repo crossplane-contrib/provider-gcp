@@ -206,7 +206,7 @@ func TestObserve(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				instance := instance(withBackupConfigurationStartTime("22:00"))
 				db := &sqladmin.DatabaseInstance{}
-				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance), instance.Spec.ForProvider, db)
+				cloudsql.GenerateDatabaseInstance(cloudsql.CloudSQLOptions{Name: meta.GetExternalName(instance), Spec: &instance.Spec.ForProvider, Instance: db})
 				_ = json.NewEncoder(w).Encode(db)
 			}),
 			kube: &test.MockClient{
@@ -229,7 +229,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				db := &sqladmin.DatabaseInstance{}
-				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
+				cloudsql.GenerateDatabaseInstance(cloudsql.CloudSQLOptions{Name: meta.GetExternalName(instance()), Spec: &instance().Spec.ForProvider, Instance: db })
 				db.State = v1beta1.StateCreating
 				_ = json.NewEncoder(w).Encode(db)
 			}),
@@ -253,7 +253,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				db := &sqladmin.DatabaseInstance{}
-				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
+				cloudsql.GenerateDatabaseInstance(cloudsql.CloudSQLOptions{Name: meta.GetExternalName(instance()), Spec: &instance().Spec.ForProvider, Instance: db})
 				db.State = v1beta1.StateMaintenance
 				_ = json.NewEncoder(w).Encode(db)
 			}),
@@ -277,7 +277,7 @@ func TestObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				db := &sqladmin.DatabaseInstance{}
-				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
+				cloudsql.GenerateDatabaseInstance(cloudsql.CloudSQLOptions{Name: meta.GetExternalName(instance()), Spec: &instance().Spec.ForProvider, Instance: db})
 				db.ConnectionName = connectionName
 				db.State = v1beta1.StateRunnable
 				_ = json.NewEncoder(w).Encode(db)
