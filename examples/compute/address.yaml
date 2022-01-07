@@ -1,0 +1,11 @@
+---
+apiVersion: compute.gcp.crossplane.io/v1beta1
+kind: Address
+metadata:
+  name: example-address
+spec:
+  forProvider:
+    addressType: EXTERNAL
+    region: us-east1
+  providerConfigRef:
+    name: example

@@ -40,11 +40,11 @@ import (
 
 // Error strings.
 const (
-	errNotGlobalAddress     = "managed resource is not a GlobalAddress"
-	errGetAddress           = "cannot get external Address resource"
-	errCreateAddress        = "cannot create external Address resource"
-	errDeleteAddress        = "cannot delete external Address resource"
-	errManagedAddressUpdate = "cannot update managed GlobalAddress resource"
+	errNotGlobalAddress           = "managed resource is not a GlobalAddress"
+	errGetGlobalAddress           = "cannot get external Address resource"
+	errCreateGlobalAddress        = "cannot create external Address resource"
+	errDeleteGlobalAddress        = "cannot delete external Address resource"
+	errManagedGlobalAddressUpdate = "cannot update managed GlobalAddress resource"
 )
 
 // SetupGlobalAddress adds a controller that reconciles
@@ -96,7 +96,7 @@ func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 	}
 	observed, err := e.GlobalAddresses.Get(e.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetAddress)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetGlobalAddress)
 	}
 
 	// Global addresses are always "up to date" because they can't be updated. ¯\_(ツ)_/¯
@@ -106,7 +106,7 @@ func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 	globaladdress.LateInitializeSpec(&cr.Spec.ForProvider, *observed)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
 		if err := e.kube.Update(ctx, cr); err != nil {
-			return eo, errors.Wrap(err, errManagedAddressUpdate)
+			return eo, errors.Wrap(err, errManagedGlobalAddressUpdate)
 		}
 	}
 
@@ -119,7 +119,7 @@ func (e *gaExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 		cr.SetConditions(xpv1.Available())
 	}
 
-	return eo, errors.Wrap(err, errManagedAddressUpdate)
+	return eo, errors.Wrap(err, errManagedGlobalAddressUpdate)
 }
 
 func (e *gaExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
@@ -132,7 +132,7 @@ func (e *gaExternal) Create(ctx context.Context, mg resource.Managed) (managed.E
 	address := &compute.Address{}
 	globaladdress.GenerateGlobalAddress(meta.GetExternalName(cr), cr.Spec.ForProvider, address)
 	_, err := e.GlobalAddresses.Insert(e.projectID, address).Context(ctx).Do()
-	return managed.ExternalCreation{}, errors.Wrap(err, errCreateAddress)
+	return managed.ExternalCreation{}, errors.Wrap(err, errCreateGlobalAddress)
 }
 
 func (e *gaExternal) Update(_ context.Context, _ resource.Managed) (managed.ExternalUpdate, error) {
@@ -148,5 +148,5 @@ func (e *gaExternal) Delete(ctx context.Context, mg resource.Managed) error {
 
 	cr.Status.SetConditions(xpv1.Deleting())
 	_, err := e.GlobalAddresses.Delete(e.projectID, meta.GetExternalName(cr)).Context(ctx).Do()
-	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteAddress)
+	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteGlobalAddress)
 }

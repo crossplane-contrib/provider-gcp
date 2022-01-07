@@ -38,45 +38,37 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
-	"github.com/crossplane/provider-gcp/pkg/clients/globaladdress"
+	"github.com/crossplane/provider-gcp/pkg/clients/address"
 )
 
 const (
-	testGAName = "test-name"
+	testName = "test-name"
 )
 
-var (
-	errBoom = errors.New("boom")
-)
+var _ managed.ExternalConnecter = &addressConnector{}
+var _ managed.ExternalClient = &addressExternal{}
 
-var _ managed.ExternalConnecter = &gaConnector{}
-var _ managed.ExternalClient = &gaExternal{}
+type addressModifier func(*v1beta1.Address)
 
-type globalAddressModifier func(*v1beta1.GlobalAddress)
-
-func globalAddressWithConditions(c ...xpv1.Condition) globalAddressModifier {
-	return func(i *v1beta1.GlobalAddress) { i.Status.SetConditions(c...) }
+func addressWithConditions(c ...xpv1.Condition) addressModifier {
+	return func(i *v1beta1.Address) { i.Status.SetConditions(c...) }
 }
 
-func globalAddressWithDescription(d string) globalAddressModifier {
-	return func(i *v1beta1.GlobalAddress) { i.Spec.ForProvider.Description = &d }
+func addressWithStatus(status string) addressModifier {
+	return func(i *v1beta1.Address) { i.Status.AtProvider.Status = status }
 }
 
-func globalAddressWithStatus(status string) globalAddressModifier {
-	return func(i *v1beta1.GlobalAddress) { i.Status.AtProvider.Status = status }
-}
-
-func globalAddressObj(im ...globalAddressModifier) *v1beta1.GlobalAddress {
-	i := &v1beta1.GlobalAddress{
+func addressObj(im ...addressModifier) *v1beta1.Address {
+	i := &v1beta1.Address{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       testNetworkName,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.AnnotationKeyExternalName: testGAName,
+				meta.AnnotationKeyExternalName: testName,
 			},
 		},
-		Spec: v1beta1.GlobalAddressSpec{
-			ForProvider: v1beta1.GlobalAddressParameters{},
+		Spec: v1beta1.AddressSpec{
+			ForProvider: v1beta1.AddressParameters{},
 		},
 	}
 
@@ -87,7 +79,7 @@ func globalAddressObj(im ...globalAddressModifier) *v1beta1.GlobalAddress {
 	return i
 }
 
-func TestGlobalAddressObserve(t *testing.T) {
+func TestAddressObserve(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -103,14 +95,14 @@ func TestGlobalAddressObserve(t *testing.T) {
 		args    args
 		want    want
 	}{
-		"NotGlobalAddress": {
+		"NotAddress": {
 			handler: nil,
 			args: args{
 				mg: &v1beta1.Subnetwork{},
 			},
 			want: want{
 				mg:  &v1beta1.Subnetwork{},
-				err: errors.New(errNotGlobalAddress),
+				err: errors.New(errNotAddress),
 			},
 		},
 		"NotFound": {
@@ -123,10 +115,10 @@ func TestGlobalAddressObserve(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Address{})
 			}),
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
-				mg:  globalAddressObj(),
+				mg:  addressObj(),
 				err: nil,
 			},
 		},
@@ -140,39 +132,11 @@ func TestGlobalAddressObserve(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Address{})
 			}),
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
-				mg:  globalAddressObj(),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetGlobalAddress),
-			},
-		},
-		"NotUpToDateSpecUpdateFailed": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusOK)
-				c := globalAddressObj()
-				gn := &compute.Address{}
-				globaladdress.GenerateGlobalAddress(testGAName, c.Spec.ForProvider, gn)
-				gn.Description = "a very interesting testDescription"
-				_ = json.NewEncoder(w).Encode(gn)
-			}),
-			kube: &test.MockClient{
-				MockUpdate: test.NewMockUpdateFn(errBoom),
-			},
-			args: args{
-				mg: globalAddressObj(),
-			},
-			want: want{
-				obs: managed.ExternalObservation{
-					ResourceExists:   true,
-					ResourceUpToDate: true,
-				},
-				mg:  globalAddressObj(globalAddressWithDescription("a very interesting testDescription")),
-				err: errors.Wrap(errBoom, errManagedGlobalAddressUpdate),
+				mg:  addressObj(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errGetAddress),
 			},
 		},
 		"ReservingUnbound": {
@@ -183,7 +147,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := &compute.Address{}
-				globaladdress.GenerateGlobalAddress(testGAName, globalAddressObj().Spec.ForProvider, c)
+				address.GenerateAddress(testName, addressObj().Spec.ForProvider, c)
 				c.Status = v1beta1.StatusReserving
 				_ = json.NewEncoder(w).Encode(c)
 			}),
@@ -191,16 +155,16 @@ func TestGlobalAddressObserve(t *testing.T) {
 				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
 				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: globalAddressObj(
-					globalAddressWithConditions(xpv1.Creating()),
-					globalAddressWithStatus(v1beta1.StatusReserving),
+				mg: addressObj(
+					addressWithConditions(xpv1.Creating()),
+					addressWithStatus(v1beta1.StatusReserving),
 				),
 			},
 		},
@@ -212,7 +176,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				c := &compute.Address{}
-				globaladdress.GenerateGlobalAddress(testGAName, globalAddressObj().Spec.ForProvider, c)
+				address.GenerateAddress(testName, addressObj().Spec.ForProvider, c)
 				c.Status = v1beta1.StatusReserved
 				_ = json.NewEncoder(w).Encode(c)
 			}),
@@ -220,16 +184,16 @@ func TestGlobalAddressObserve(t *testing.T) {
 				MockGet: test.NewMockGetFn(nil),
 			},
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
 				obs: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
 				},
-				mg: globalAddressObj(
-					globalAddressWithConditions(xpv1.Available()),
-					globalAddressWithStatus(v1beta1.StatusReserved),
+				mg: addressObj(
+					addressWithConditions(xpv1.Available()),
+					addressWithStatus(v1beta1.StatusReserved),
 				),
 			},
 		},
@@ -240,7 +204,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := gaExternal{
+			e := addressExternal{
 				kube:      tc.kube,
 				projectID: projectID,
 				Service:   s,
@@ -259,7 +223,7 @@ func TestGlobalAddressObserve(t *testing.T) {
 	}
 }
 
-func TestGlobalAddressCreate(t *testing.T) {
+func TestAddressCreate(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		mg  resource.Managed
@@ -276,14 +240,14 @@ func TestGlobalAddressCreate(t *testing.T) {
 		args    args
 		want    want
 	}{
-		"NotGlobalAddress": {
+		"NotAddress": {
 			handler: nil,
 			args: args{
 				mg: &v1beta1.Subnetwork{},
 			},
 			want: want{
 				mg:  &v1beta1.Subnetwork{},
-				err: errors.New(errNotGlobalAddress),
+				err: errors.New(errNotAddress),
 			},
 		},
 		"Successful": {
@@ -305,10 +269,10 @@ func TestGlobalAddressCreate(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
-				mg:  globalAddressObj(globalAddressWithConditions(xpv1.Creating())),
+				mg:  addressObj(),
 				cre: managed.ExternalCreation{},
 				err: nil,
 			},
@@ -323,11 +287,11 @@ func TestGlobalAddressCreate(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
-				mg:  globalAddressObj(globalAddressWithConditions(xpv1.Creating())),
-				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateGlobalAddress),
+				mg:  addressObj(),
+				err: errors.Wrap(gError(http.StatusConflict, ""), errCreateAddress),
 			},
 		},
 		"Failed": {
@@ -340,11 +304,11 @@ func TestGlobalAddressCreate(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
-				mg:  globalAddressObj(globalAddressWithConditions(xpv1.Creating())),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateGlobalAddress),
+				mg:  addressObj(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateAddress),
 			},
 		},
 	}
@@ -354,7 +318,7 @@ func TestGlobalAddressCreate(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := gaExternal{
+			e := addressExternal{
 				kube:      tc.kube,
 				projectID: projectID,
 				Service:   s,
@@ -370,7 +334,7 @@ func TestGlobalAddressCreate(t *testing.T) {
 	}
 }
 
-func TestGlobalAddressDelete(t *testing.T) {
+func TestAddressDelete(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -385,14 +349,14 @@ func TestGlobalAddressDelete(t *testing.T) {
 		args    args
 		want    want
 	}{
-		"NotGlobalAddress": {
+		"NotAddress": {
 			handler: nil,
 			args: args{
 				mg: &v1beta1.Subnetwork{},
 			},
 			want: want{
 				mg:  &v1beta1.Subnetwork{},
-				err: errors.New(errNotGlobalAddress),
+				err: errors.New(errNotAddress),
 			},
 		},
 		"Successful": {
@@ -405,10 +369,10 @@ func TestGlobalAddressDelete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
-				mg:  globalAddressObj(globalAddressWithConditions(xpv1.Deleting())),
+				mg:  addressObj(),
 				err: nil,
 			},
 		},
@@ -422,10 +386,10 @@ func TestGlobalAddressDelete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
-				mg:  globalAddressObj(globalAddressWithConditions(xpv1.Deleting())),
+				mg:  addressObj(),
 				err: nil,
 			},
 		},
@@ -439,11 +403,11 @@ func TestGlobalAddressDelete(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(&compute.Operation{})
 			}),
 			args: args{
-				mg: globalAddressObj(),
+				mg: addressObj(),
 			},
 			want: want{
-				mg:  globalAddressObj(globalAddressWithConditions(xpv1.Deleting())),
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteGlobalAddress),
+				mg:  addressObj(),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errDeleteAddress),
 			},
 		},
 	}
@@ -453,7 +417,7 @@ func TestGlobalAddressDelete(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := gaExternal{
+			e := addressExternal{
 				kube:      tc.kube,
 				projectID: projectID,
 				Service:   s,
@@ -469,7 +433,7 @@ func TestGlobalAddressDelete(t *testing.T) {
 	}
 }
 
-func TestGlobalAddressUpdate(t *testing.T) {
+func TestAddressUpdate(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -499,7 +463,7 @@ func TestGlobalAddressUpdate(t *testing.T) {
 			server := httptest.NewServer(tc.handler)
 			defer server.Close()
 			s, _ := compute.NewService(context.Background(), option.WithEndpoint(server.URL), option.WithoutAuthentication())
-			e := gaExternal{
+			e := addressExternal{
 				kube:      tc.kube,
 				projectID: projectID,
 				Service:   s,

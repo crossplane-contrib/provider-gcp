@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.6.2
   creationTimestamp: null
-  name: globaladdresses.compute.gcp.crossplane.io
+  name: addresses.compute.gcp.crossplane.io
 spec:
   group: compute.gcp.crossplane.io
   names:
@@ -12,15 +12,18 @@ spec:
     - crossplane
     - managed
     - gcp
-    kind: GlobalAddress
-    listKind: GlobalAddressList
-    plural: globaladdresses
-    singular: globaladdress
+    kind: Address
+    listKind: AddressList
+    plural: addresses
+    singular: address
   scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.forProvider.address
       name: IP
+      type: string
+    - jsonPath: .spec.forProvider.region
+      name: REGION
       type: string
     - jsonPath: .status.conditions[?(@.type=='Ready')].status
       name: READY
@@ -31,8 +34,8 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: A GlobalAddress is a managed resource that represents a Google
-          Compute Engine Global Address.
+        description: An Address is a managed resource that represents a Google Compute
+          Engine Address.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -47,7 +50,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: A GlobalAddressSpec defines the desired state of a GlobalAddress.
+            description: A AddressSpec defines the desired state of anAddress.
             properties:
               deletionPolicy:
                 default: Delete
@@ -59,9 +62,9 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: 'GlobalAddressParameters define the desired state of
-                  a Google Compute Engine Global Address. Most fields map directly
-                  to an Address: https://cloud.google.com/compute/docs/reference/rest/v1/globalAddresses'
+                description: 'AddressParameters define the desired state of a Google
+                  Compute Engine Address. Most fields map directly to an Address:
+                  https://cloud.google.com/compute/docs/reference/rest/v1/addresses'
                 properties:
                   address:
                     description: 'Address: The static IP address represented by this
@@ -122,20 +125,33 @@ spec:
                     format: int64
                     type: integer
                   purpose:
-                    description: "Purpose: The purpose of this resource, which can
+                    description: 'Purpose: The purpose of this resource, which can
                       be one of the following values: - `GCE_ENDPOINT` for addresses
-                      that are used by VM instances, alias IP ranges, internal load
-                      balancers, and similar resources. - `DNS_RESOLVER` for a DNS
-                      resolver address in a subnetwork - `VPC_PEERING` for addresses
-                      that are reserved for VPC peer networks. - `NAT_AUTO` for addresses
-                      that are external IP addresses automatically reserved for Cloud
-                      NAT. \n Possible values:   \"DNS_RESOLVER\"   \"GCE_ENDPOINT\"
-                      \  \"NAT_AUTO\"   \"VPC_PEERING\""
+                      that are used by VM instances, alias IP ranges, load balancers,
+                      and similar resources. - `DNS_RESOLVER` for a DNS resolver address
+                      in a subnetwork for a Cloud DNS inbound forwarder IP addresses
+                      (regional internal IP address in a subnet of a VPC network)
+                      - `VPC_PEERING` for global internal IP addresses used for private
+                      services access allocated ranges. - `NAT_AUTO` for the regional
+                      external IP addresses used by Cloud NAT when allocating addresses
+                      using automatic NAT IP address allocation. - `IPSEC_INTERCONNECT`
+                      for addresses created from a private IP range that are reserved
+                      for a VLAN attachment in an IPsec-encrypted Cloud Interconnect
+                      configuration. These addresses are regional resources. Not currently
+                      available publicly. - `SHARED_LOADBALANCER_VIP` for an internal
+                      IP address that is assigned to multiple internal forwarding
+                      rules. - `PRIVATE_SERVICE_CONNECT` for a private network address
+                      that is used to configure Private Service Connect. Only global
+                      internal addresses can use this purpose. Possible values:   "DNS_RESOLVER"   "GCE_ENDPOINT"   "NAT_AUTO"   "VPC_PEERING"   "IPSEC_INTERCONNECT"   "SHARED_LOADBALANCER_VIP"   "PRIVATE_SERVICE_CONNECT"'
                     enum:
                     - DNS_RESOLVER
                     - GCE_ENDPOINT
                     - NAT_AUTO
                     - VPC_PEERING
+                    type: string
+                  region:
+                    description: 'Region: An optional region in which to create the
+                      address.'
                     type: string
                   subnetwork:
                     description: 'Subnetwork: The URL of the subnetwork in which to
@@ -168,6 +184,8 @@ spec:
                           is selected.
                         type: object
                     type: object
+                required:
+                - region
                 type: object
               providerConfigRef:
                 default:
@@ -214,12 +232,11 @@ spec:
             - forProvider
             type: object
           status:
-            description: A GlobalAddressStatus represents the observed state of a
-              GlobalAddress.
+            description: A AddressStatus represents the observed state of an Address.
             properties:
               atProvider:
-                description: A GlobalAddressObservation reflects the observed state
-                  of a GlobalAddress on GCP.
+                description: A AddressObservation reflects the observed state of an
+                  Address on GCP.
                 properties:
                   creationTimestamp:
                     description: CreationTimestamp in RFC3339 text format.

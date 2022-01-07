@@ -61,8 +61,17 @@ var (
 	GlobalAddressGroupVersionKind = SchemeGroupVersion.WithKind(GlobalAddressKind)
 )
 
+// Address type metadata.
+var (
+	AddressKind             = reflect.TypeOf(Address{}).Name()
+	AddressGroupKind        = schema.GroupKind{Group: Group, Kind: AddressKind}.String()
+	AddressKindAPIVersion   = AddressKind + "." + SchemeGroupVersion.String()
+	AddressGroupVersionKind = SchemeGroupVersion.WithKind(AddressKind)
+)
+
 func init() {
 	SchemeBuilder.Register(&Network{}, &NetworkList{})
 	SchemeBuilder.Register(&Subnetwork{}, &SubnetworkList{})
 	SchemeBuilder.Register(&GlobalAddress{}, &GlobalAddressList{})
+	SchemeBuilder.Register(&Address{}, &AddressList{})
 }

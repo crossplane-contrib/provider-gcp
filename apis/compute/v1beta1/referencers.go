@@ -68,6 +68,55 @@ func (mg *GlobalAddress) ResolveReferences(ctx context.Context, c client.Reader)
 	mg.Spec.ForProvider.Network = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.NetworkRef = rsp.ResolvedReference
 
+	// Resolve spec.forProvider.subnetwork
+	rsp, err = r.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Subnetwork),
+		Reference:    mg.Spec.ForProvider.SubnetworkRef,
+		Selector:     mg.Spec.ForProvider.SubnetworkSelector,
+		To:           reference.To{Managed: &Subnetwork{}, List: &SubnetworkList{}},
+		Extract:      SubnetworkURL(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "spec.forProvider.subnetwork")
+	}
+	mg.Spec.ForProvider.Subnetwork = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.ForProvider.SubnetworkRef = rsp.ResolvedReference
+
+	return nil
+}
+
+// ResolveReferences of this Address
+func (mg *Address) ResolveReferences(ctx context.Context, c client.Reader) error {
+	r := reference.NewAPIResolver(c, mg)
+
+	// Resolve spec.forProvider.network
+	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Network),
+		Reference:    mg.Spec.ForProvider.NetworkRef,
+		Selector:     mg.Spec.ForProvider.NetworkSelector,
+		To:           reference.To{Managed: &Network{}, List: &NetworkList{}},
+		Extract:      NetworkURL(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "spec.forProvider.network")
+	}
+	mg.Spec.ForProvider.Network = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.ForProvider.NetworkRef = rsp.ResolvedReference
+
+	// Resolve spec.forProvider.subnetwork
+	rsp, err = r.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Subnetwork),
+		Reference:    mg.Spec.ForProvider.SubnetworkRef,
+		Selector:     mg.Spec.ForProvider.SubnetworkSelector,
+		To:           reference.To{Managed: &Subnetwork{}, List: &SubnetworkList{}},
+		Extract:      SubnetworkURL(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "spec.forProvider.subnetwork")
+	}
+	mg.Spec.ForProvider.Subnetwork = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.ForProvider.SubnetworkRef = rsp.ResolvedReference
+
 	return nil
 }
 

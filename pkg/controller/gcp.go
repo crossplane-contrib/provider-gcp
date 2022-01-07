@@ -41,6 +41,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 	for _, setup := range []func(ctrl.Manager, controller.Options) error{
 		cache.SetupCloudMemorystoreInstance,
 		compute.SetupGlobalAddress,
+		compute.SetupAddress,
 		compute.SetupNetwork,
 		compute.SetupSubnetwork,
 		compute.SetupFirewall,
