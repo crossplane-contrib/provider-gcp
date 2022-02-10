@@ -7,7 +7,8 @@ spec:
   defaultScope: crossplane-system
   vault:
     server: http://vault.vault-system:8200
-    pathPrefix: secret/production/
+    parentPath: secret/production/
+    version: v1
     auth:
       method: Token
       token:
