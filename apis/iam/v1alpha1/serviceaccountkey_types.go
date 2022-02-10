@@ -104,7 +104,17 @@ type ServiceAccountKeyObservation struct {
 // ServiceAccountKeySpec defines the desired state of a ServiceAccountKey.
 type ServiceAccountKeySpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ForProvider       ServiceAccountKeyParameters `json:"forProvider"`
+
+	// Todo(turkenh): Move to crossplane runtime ResourceSpec
+	// PublishConnectionDetailsTo specifies the connection secret config which
+	// contains a name, metadata and a reference to secret store config to
+	// which any connection details for this managed resource should be written.
+	// Connection details frequently include the endpoint, username,
+	// and password required to connect to the managed resource.
+	// +optional
+	PublishConnectionDetailsTo *xpv1.PublishConnectionDetailsTo `json:"publishConnectionDetailsTo,omitempty"`
+
+	ForProvider ServiceAccountKeyParameters `json:"forProvider"`
 }
 
 // ServiceAccountKeyStatus represents the observed state of a ServiceAccountKey.
@@ -140,14 +150,14 @@ type ServiceAccountKeyList struct {
 	Items           []ServiceAccountKey `json:"items"`
 }
 
-// Note(turkenh): To be generated with AngryJet
+// Todo(turkenh): To be generated with AngryJet
 
 // SetPublishConnectionDetailsTo sets PublishConnectionDetailsTo
-func (mg *ServiceAccount) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+func (mg *ServiceAccountKey) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
 	mg.Spec.PublishConnectionDetailsTo = r
 }
 
 // GetPublishConnectionDetailsTo returns xpv1.PublishConnectionDetailsTo
-func (mg *ServiceAccount) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+func (mg *ServiceAccountKey) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
 	return mg.Spec.PublishConnectionDetailsTo
 }

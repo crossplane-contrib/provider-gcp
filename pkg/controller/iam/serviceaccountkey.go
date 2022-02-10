@@ -71,7 +71,7 @@ func SetupServiceAccountKey(mgr ctrl.Manager, o controller.Options) error {
 	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
 	enableFeature := true
 	if enableFeature {
-		cps = append(cps, connection.NewManager(mgr.GetClient(), mgr.GetScheme(), connection.StoreConfigKind(scv1alpha1.StoreConfigGroupVersionKind)))
+		cps = append(cps, connection.NewManager(mgr.GetClient(), connection.StoreConfigKind(scv1alpha1.StoreConfigGroupVersionKind)))
 	}
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.ServiceAccountKeyGroupVersionKind),

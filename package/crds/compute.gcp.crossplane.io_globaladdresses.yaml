@@ -1,8 +1,7 @@
-apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: globaladdresses.compute.gcp.crossplane.io
 spec:
@@ -70,7 +69,7 @@ spec:
                   addressType:
                     description: "AddressType: The type of address to reserve, either
                       INTERNAL or EXTERNAL. If unspecified, defaults to EXTERNAL.
-                      \n Possible values:   \"EXTERNAL\"   \"INTERNAL\"   \"UNSPECIFIED_TYPE\""
+                      \n Possible values: \"EXTERNAL\" \"INTERNAL\" \"UNSPECIFIED_TYPE\""
                     enum:
                     - EXTERNAL
                     - INTERNAL
@@ -82,7 +81,7 @@ spec:
                   ipVersion:
                     description: "IPVersion: The IP version that will be used by this
                       address. Valid options are IPV4 or IPV6. \n Possible values:
-                      \  \"IPV4\"   \"IPV6\"   \"UNSPECIFIED_VERSION\""
+                      \"IPV4\" \"IPV6\" \"UNSPECIFIED_VERSION\""
                     enum:
                     - IPV6
                     - IPV4
@@ -129,8 +128,8 @@ spec:
                       resolver address in a subnetwork - `VPC_PEERING` for addresses
                       that are reserved for VPC peer networks. - `NAT_AUTO` for addresses
                       that are external IP addresses automatically reserved for Cloud
-                      NAT. \n Possible values:   \"DNS_RESOLVER\"   \"GCE_ENDPOINT\"
-                      \  \"NAT_AUTO\"   \"VPC_PEERING\""
+                      NAT. \n Possible values: \"DNS_RESOLVER\" \"GCE_ENDPOINT\" \"NAT_AUTO\"
+                      \"VPC_PEERING\""
                     enum:
                     - DNS_RESOLVER
                     - GCE_ENDPOINT
@@ -238,7 +237,7 @@ spec:
                       in the process of being reserved. A RESERVED address is currently
                       reserved and available to use. An IN_USE address is currently
                       being used by another resource and is not available. \n Possible
-                      values:   \"IN_USE\"   \"RESERVED\"   \"RESERVING\""
+                      values: \"IN_USE\" \"RESERVED\" \"RESERVING\""
                     type: string
                   users:
                     description: Users that are using this address.

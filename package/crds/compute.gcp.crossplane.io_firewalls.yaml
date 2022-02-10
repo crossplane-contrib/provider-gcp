@@ -1,8 +1,7 @@
-apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: firewalls.compute.gcp.crossplane.io
 spec:
@@ -135,7 +134,7 @@ spec:
                       applies, either `INGRESS` or `EGRESS`. The default is `INGRESS`.
                       For `INGRESS` traffic, you cannot specify the destinationRanges
                       field, and for `EGRESS` traffic, you cannot specify the sourceRanges
-                      or sourceTags fields. \n Possible values:   \"EGRESS\"   \"INGRESS\""
+                      or sourceTags fields. \n Possible values: \"EGRESS\" \"INGRESS\""
                     type: string
                   disabled:
                     description: 'Disabled: Denotes whether the firewall rule is disabled.
