@@ -139,3 +139,15 @@ type ServiceAccountKeyList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ServiceAccountKey `json:"items"`
 }
+
+// Note(turkenh): To be generated with AngryJet
+
+// SetPublishConnectionDetailsTo sets PublishConnectionDetailsTo
+func (mg *ServiceAccount) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	mg.Spec.PublishConnectionDetailsTo = r
+}
+
+// GetPublishConnectionDetailsTo returns xpv1.PublishConnectionDetailsTo
+func (mg *ServiceAccount) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	return mg.Spec.PublishConnectionDetailsTo
+}
