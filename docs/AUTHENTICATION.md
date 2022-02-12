@@ -20,8 +20,20 @@ Many of the steps can also be found in the [documentation](https://cloud.google.
 These steps assume you already have a running GKE cluster which has already
 enabled Workload Identity and has a sufficiently large node pool.
 
-Note that you can specify any valid strings to the variables below unless the
-variable is explicitly assigned.
+#### 0. Prepare your variables
+
+In the following sections, you'll need to name your resources.
+Define the variables below with any names valid in Kubernetes or GCP so that you
+can smoothly set it up:
+
+```console
+$ PROJECT_ID=<YOUR_GCP_PROJECT_ID>                               # e.g.) acme-prod
+$ PROVIDER_GCP=<YOUR_PROVIDER_GCP_NAME>                          # e.g.) provider-gcp
+$ VERSION=<YOUR_PROVIDER_GCP_VERSION>                            # e.g.) 0.20.0
+$ GCP_SERVICE_ACCOUNT=<YOUR_CROSSPLANE_GCP_SERVICE_ACCOUNT_NAME> # e.g.) crossplane
+$ ROLE=<YOUR_ROLE_FOR_CROSSPLANE_GCP_SERVICE_ACCOUNT>            # e.g.) roles/cloudsql.admin
+$ CONTROLLER_CONFIG=<YOUR_CONTROLLER_CONFIG_NAME>                # e.g.) gcp-config (Optional)
+```
 
 #### 1. Install Crossplane
 
@@ -87,6 +99,12 @@ $ KUBERNETES_SERVICE_ACCOUNT=${REVISION}
 
 ##### 2.1. [Option 2] Use a user-managed `ServiceAccount`
 
+Name your Kubernetes `ServiceAccount`:
+
+```console
+$ KUBERNETES_SERVICE_ACCOUNT=<YOUR_KUBERNETES_SERVICE_ACCOUNT>
+```
+
 Create a `ServiceAccount`, `ControllerConfig`, and `ClusterRoleBinding`:
 
 ```console
@@ -150,7 +168,7 @@ kind: ProviderConfig
 metadata:
   name: default
 spec:
-  projectID: $PROJECT_ID
+  projectID: ${PROJECT_ID}
   credentials:
     source: InjectedIdentity
 EOF
