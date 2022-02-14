@@ -995,20 +995,6 @@ func newBinaryAuthorizationUpdateFn(in *v1beta2.BinaryAuthorization) UpdateFn {
 	}
 }
 
-// newAutopilotUpdateFn returns a function that updates the Autopilot of a cluster.
-func newAutopilotUpdateFn(in *v1beta2.Autopilot) UpdateFn {
-	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateAutopilot(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredAutopilot: out.Autopilot,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
 // newDatabaseEncryptionUpdateFn returns a function that updates the DatabaseEncryption of a cluster.
 func newDatabaseEncryptionUpdateFn(in *v1beta2.DatabaseEncryption) UpdateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
@@ -1286,9 +1272,7 @@ func IsUpToDate(name string, in *v1beta2.ClusterParameters, observed *container.
 		cmpopts.IgnoreFields(container.AddonsConfig{}, "NetworkPolicyConfig.ForceSendFields")) {
 		return false, newAddonsConfigUpdateFn(in.AddonsConfig), nil
 	}
-	if !cmp.Equal(desired.Autopilot, observed.Autopilot, cmpopts.EquateEmpty()) {
-		return false, newAutopilotUpdateFn(in.Autopilot), nil
-	}
+
 	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling, cmpopts.EquateEmpty()) {
 		return false, newAutoscalingUpdateFn(in.Autoscaling), nil
 	}

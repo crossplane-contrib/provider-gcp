@@ -21,6 +21,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 
+	"github.com/crossplane/provider-gcp/pkg/controller/artifactregistry"
 	"github.com/crossplane/provider-gcp/pkg/controller/cache"
 	"github.com/crossplane/provider-gcp/pkg/controller/compute"
 	"github.com/crossplane/provider-gcp/pkg/controller/config"
@@ -63,6 +64,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		storage.SetupBucketPolicy,
 		storage.SetupBucketPolicyMember,
 		registry.SetupContainerRegistry,
+		artifactregistry.SetupRepository,
 	} {
 		if err := setup(mgr, o); err != nil {
 			return err
