@@ -20,6 +20,7 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
+	artifactregistry "github.com/crossplane/provider-gcp/apis/artifactregistry/v1alpha1"
 	cachev1beta1 "github.com/crossplane/provider-gcp/apis/cache/v1beta1"
 	computev1alpha1 "github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
 	computev1beta1 "github.com/crossplane/provider-gcp/apis/compute/v1beta1"
@@ -57,6 +58,7 @@ func init() {
 		storagev1alpha3.SchemeBuilder.AddToScheme,
 		dnsv1alpha1.SchemeBuilder.AddToScheme,
 		registry.SchemeBuilder.AddToScheme,
+		artifactregistry.SchemeBuilder.AddToScheme,
 	)
 }
 

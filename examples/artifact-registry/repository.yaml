@@ -1,0 +1,13 @@
+apiVersion: artifactregistry.gcp.crossplane.io/v1alpha1
+kind: Repository
+metadata:
+  name: my-repository
+spec:
+  forProvider:
+    location: us-west2
+    labels:
+      example: "true"
+    format: DOCKER
+
+  providerConfigRef:
+    name: gcp-provider

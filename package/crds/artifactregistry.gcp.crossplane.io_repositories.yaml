@@ -1,0 +1,249 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.2
+  creationTimestamp: null
+  name: repositories.artifactregistry.gcp.crossplane.io
+spec:
+  group: artifactregistry.gcp.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
+    kind: Repository
+    listKind: RepositoryList
+    plural: repositories
+    singular: repository
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Repository is a managed resource that represents a Google Artifact
+          registry Repository.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: RepositorySpec defines the desired state of Repository
+            properties:
+              deletionPolicy:
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: RepositoryParameters define the desired state of a Repository
+                properties:
+                  description:
+                    description: 'Description: The user-provided description of the
+                      repository.'
+                    type: string
+                  format:
+                    description: "Format: The format of packages that are stored in
+                      the repository. \n Possible values:   \"FORMAT_UNSPECIFIED\"
+                      - Unspecified package format.   \"DOCKER\" - Docker package
+                      format.   \"MAVEN\" - Maven package format.   \"NPM\" - NPM
+                      package format.   \"PYPI\" - PyPI package format. Deprecated,
+                      use PYTHON instead.   \"APT\" - APT package format.   \"YUM\"
+                      - YUM package format.   \"PYTHON\" - Python package format."
+                    enum:
+                    - FORMAT_UNSPECIFIED
+                    - DOCKER
+                    - MAVEN
+                    - NPM
+                    - APT
+                    - YUM
+                    - PYTHON
+                    type: string
+                  kmsKeyName:
+                    description: "KmsKeyName is the resource name of the Cloud KMS
+                      CryptoKey to be used to protect access to messages published
+                      on this topic. \n The expected format is `projects/*/locations/*/keyRings/*/cryptoKeys/*`."
+                    type: string
+                  kmsKeyNameRef:
+                    description: KmsKeyNameRef allows you to specify custom resource
+                      name of the KMS Key to fill KmsKeyName field.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  kmsKeyNameSelector:
+                    description: KmsKeyNameSelector allows you to use selector constraints
+                      to select a KMS Key.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: 'Labels: Labels with user-defined metadata. This
+                      field may contain up to 64 entries. Label keys and values may
+                      be no longer than 63 characters. Label keys must begin with
+                      a lowercase letter and may only contain lowercase letters, numeric
+                      characters, underscores, and dashes.'
+                    type: object
+                  location:
+                    description: 'Location: The name of the Google Compute zone or
+                      region'
+                    type: string
+                  mavenConfig:
+                    description: 'MavenConfig: Maven repository config contains repository
+                      level configuration for the repositories of maven type.'
+                    properties:
+                      allowSnapshotOverwrites:
+                        description: 'AllowSnapshotOverwrites: The repository with
+                          this flag will allow publishing the same snapshot versions.'
+                        type: boolean
+                      versionPolicy:
+                        description: "VersionPolicy: Version policy defines the versions
+                          that the registry will accept. \n Possible values:   \"VERSION_POLICY_UNSPECIFIED\"
+                          - VERSION_POLICY_UNSPECIFIED - the version policy is not
+                          defined. When the version policy is not defined, no validation
+                          is performed for the versions.   \"RELEASE\" - RELEASE -
+                          repository will accept only Release versions.   \"SNAPSHOT\"
+                          - SNAPSHOT - repository will accept only Snapshot versions."
+                        type: string
+                    type: object
+                required:
+                - location
+                type: object
+              providerConfigRef:
+                default:
+                  name: default
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: RepositoryStatus defines the observed state of Repository
+            properties:
+              atProvider:
+                description: RepositoryObservation is used to show the observed state
+                  of the Repository
+                properties:
+                  createTime:
+                    description: 'CreateTime: The time when the repository was created.'
+                    type: string
+                  updateTime:
+                    description: 'UpdateTime: The time when the repository was last
+                      updated.'
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
