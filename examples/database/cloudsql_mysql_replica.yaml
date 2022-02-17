@@ -1,0 +1,25 @@
+apiVersion: database.gcp.crossplane.io/v1beta1
+kind: CloudSQLInstance
+metadata:
+  name: mysql-replica
+spec:
+  forProvider:
+    databaseVersion: MYSQL_5_7
+    region: us-west2
+    settings:
+      tier: db-custom-1-3840
+      dataDiskSizeGb: 20
+    masterInstanceName: mysql-instance
+    replicaConfiguration:
+      failoverTarget: false
+      mysqlReplicaConfiguration:
+        secretRef:
+          name: cloudsql-replica-creds
+          namespace: default
+        usernameKey: "username"
+        passwordKey: "password"
+  providerConfigRef:
+    name: default
+  writeConnectionSecretToRef:
+    name: example-cloudsql-replica-connection-details
+    namespace: crossplane-system

@@ -22,6 +22,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -38,6 +40,7 @@ import (
 	"github.com/crossplane/provider-gcp/apis/database/v1beta1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/cloudsql"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -52,6 +55,7 @@ const (
 	errGetFailed        = "cannot get the CloudSQL instance"
 	errGeneratePassword = "cannot generate root password"
 	errCheckUpToDate    = "cannot determine if CloudSQL instance is up to date"
+	errGetSecretFailed  = "failed to get Kubernetes secret for spec.replicaConfiguration.mysqlReplicaConfiguration.secretRef"
 )
 
 // SetupCloudSQLInstance adds a controller that reconciles
@@ -105,8 +109,21 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errGetFailed)
 	}
+
+	// in case secretRef is defined, fetch the Secret
+	var sc *corev1.Secret
+	if cr.Spec.ForProvider.ReplicaConfiguration != nil &&
+		cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration != nil &&
+		cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration.SecretRef != nil {
+
+		sc, err = c.fetchSecret(ctx, cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration.SecretRef)
+		if err != nil {
+			return managed.ExternalObservation{}, errors.Wrap(err, errGetSecretFailed)
+		}
+	}
+
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
-	cloudsql.LateInitializeSpec(&cr.Spec.ForProvider, *instance)
+	cloudsql.LateInitializeSpec(cloudsql.CloudSQLOptions{Instance: instance, Spec: &cr.Spec.ForProvider, Secret: sc})
 	// TODO(muvaf): reflection in production code might cause performance bottlenecks. Generating comparison
 	// methods would make more sense.
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
@@ -124,7 +141,7 @@ func (c *cloudsqlExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		cr.Status.SetConditions(xpv1.Unavailable())
 	}
 
-	upToDate, err := cloudsql.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, instance)
+	upToDate, err := cloudsql.IsUpToDate(cloudsql.CloudSQLOptions{Name: meta.GetExternalName(cr), Spec: &cr.Spec.ForProvider, Instance: instance, Secret: sc})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
 	}
@@ -142,7 +159,24 @@ func (c *cloudsqlExternal) Create(ctx context.Context, mg resource.Managed) (man
 	}
 	cr.SetConditions(xpv1.Creating())
 	instance := &sqladmin.DatabaseInstance{}
-	cloudsql.GenerateDatabaseInstance(meta.GetExternalName(cr), cr.Spec.ForProvider, instance)
+
+    // in case secretRef is defined, fetch the Secret
+	var sc *corev1.Secret
+	if cr.Spec.ForProvider.ReplicaConfiguration != nil &&
+		cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration != nil &&
+		cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration.SecretRef != nil {
+
+		var err error
+		sc, err = c.fetchSecret(ctx, cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration.SecretRef)
+		if err != nil {
+			return managed.ExternalCreation{}, errors.Wrap(err, errGetSecretFailed)
+		}
+	}
+
+	err := cloudsql.GenerateDatabaseInstance(cloudsql.CloudSQLOptions{Name: meta.GetExternalName(cr), Instance: instance, Spec: &cr.Spec.ForProvider, Secret: sc})
+	if err != nil {
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateFailed)
+	}
 	pw, err := password.Generate()
 	if err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errGeneratePassword)
@@ -172,11 +206,27 @@ func (c *cloudsqlExternal) Update(ctx context.Context, mg resource.Managed) (man
 	if cr.Status.AtProvider.State == v1beta1.StateCreating {
 		return managed.ExternalUpdate{}, nil
 	}
+
+    // in case secretRef is defined, fetch the Secret
+	var sc *corev1.Secret
+	if cr.Spec.ForProvider.ReplicaConfiguration != nil &&
+		cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration != nil &&
+		cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration.SecretRef != nil {
+
+		var err error
+		sc, err = c.fetchSecret(ctx, cr.Spec.ForProvider.ReplicaConfiguration.MysqlReplicaConfiguration.SecretRef)
+		if err != nil {
+			return managed.ExternalUpdate{}, errors.Wrap(err, errGetSecretFailed)
+		}
+	}
 	instance := &sqladmin.DatabaseInstance{}
-	cloudsql.GenerateDatabaseInstance(meta.GetExternalName(cr), cr.Spec.ForProvider, instance)
+	err := cloudsql.GenerateDatabaseInstance(cloudsql.CloudSQLOptions{Name: meta.GetExternalName(cr), Spec: &cr.Spec.ForProvider, Instance: instance, Secret: sc})
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
+	}
 	// TODO(muvaf): the returned operation handle could help us not to send Patch
 	// request aggressively.
-	_, err := c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
+	_, err = c.db.Patch(c.projectID, meta.GetExternalName(cr), instance).Context(ctx).Do()
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
 }
 
@@ -241,4 +291,16 @@ func (t *cloudsqlTagger) Initialize(ctx context.Context, mg resource.Managed) er
 		cr.Spec.ForProvider.Settings.UserLabels[k] = strings.ToLower(strings.ReplaceAll(v, ".", "_"))
 	}
 	return errors.Wrap(t.kube.Update(ctx, cr), errManagedUpdateFailed)
+}
+
+// fetchSecret get Secret from SecretReference
+func (c *cloudsqlExternal) fetchSecret(ctx context.Context, ref *xpv1.SecretReference) (*corev1.Secret, error) {
+	nn := types.NamespacedName{
+		Name:      ref.Name,
+		Namespace: ref.Namespace,
+	}
+	sc := &corev1.Secret{}
+	err := c.kube.Get(ctx, nn, sc)
+
+	return sc, err
 }
