@@ -310,11 +310,6 @@ func (in *ServiceAccountKeyParameters) DeepCopy() *ServiceAccountKeyParameters {
 func (in *ServiceAccountKeySpec) DeepCopyInto(out *ServiceAccountKeySpec) {
 	*out = *in
 	in.ResourceSpec.DeepCopyInto(&out.ResourceSpec)
-	if in.PublishConnectionDetailsTo != nil {
-		in, out := &in.PublishConnectionDetailsTo, &out.PublishConnectionDetailsTo
-		*out = new(v1.PublishConnectionDetailsTo)
-		(*in).DeepCopyInto(*out)
-	}
 	in.ForProvider.DeepCopyInto(&out.ForProvider)
 }
 

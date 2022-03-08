@@ -4,6 +4,8 @@ go 1.17
 
 replace github.com/crossplane/crossplane-runtime => ../crossplane-runtime
 
+replace github.com/crossplane/crossplane-tools => ../crossplane-tools
+
 require (
 	cloud.google.com/go/storage v1.15.0
 	github.com/crossplane/crossplane-runtime v0.15.1-0.20211202230900-d43d510ec578
