@@ -25,15 +25,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/connection"
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
+	"github.com/crossplane/crossplane-runtime/pkg/features"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
+	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	"github.com/crossplane/provider-gcp/pkg/clients/serviceaccount"
 )
@@ -52,12 +55,18 @@ const (
 func SetupServiceAccount(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1alpha1.ServiceAccountGroupKind)
 
+	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
+	if o.Features.Enabled(features.EnableAlphaExternalSecretStores) {
+		cps = append(cps, connection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind))
+	}
+
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.ServiceAccountGroupVersionKind),
 		managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 		managed.WithPollInterval(o.PollInterval),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
-		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		managed.WithConnectionPublishers(cps...))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

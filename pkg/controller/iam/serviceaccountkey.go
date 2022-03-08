@@ -30,6 +30,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
+	"github.com/crossplane/crossplane-runtime/pkg/features"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
@@ -69,10 +70,10 @@ func SetupServiceAccountKey(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1alpha1.ServiceAccountKeyGroupKind)
 
 	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
-	enableFeature := true
-	if enableFeature {
+	if o.Features.Enabled(features.EnableAlphaExternalSecretStores) {
 		cps = append(cps, connection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind))
 	}
+
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.ServiceAccountKeyGroupVersionKind),
 		managed.WithInitializers(),
