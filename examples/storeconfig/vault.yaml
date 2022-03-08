@@ -6,15 +6,9 @@ spec:
   type: Vault
   defaultScope: crossplane-system
   vault:
-    server: https://vault-cluster.vault-system:8200
+    server: http://vault.vault-system:8200
     mountPath: kv/
     version: v1
-    caBundle:
-      source: Secret
-      secretRef:
-        namespace: crossplane-system
-        name: vault-tls
-        key: ca.crt
     auth:
       method: Token
       token:

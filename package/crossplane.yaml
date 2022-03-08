@@ -81,4 +81,4 @@ metadata:
 
 spec:
   controller:
-    image: crossplane/provider-gcp-controller:VERSION
+    image: turkenh/provider-gcp-controller:VERSION
