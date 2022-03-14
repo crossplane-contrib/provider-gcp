@@ -1,0 +1,7 @@
+apiVersion: gcp.secrets.crossplane.io/v1alpha1
+kind: StoreConfig
+metadata:
+  name: default
+spec:
+  type: Kubernetes
+  defaultScope: crossplane-system
