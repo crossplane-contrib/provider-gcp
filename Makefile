@@ -77,13 +77,6 @@ cobertura:
 		$(GOCOVER_COBERTURA) > $(GO_TEST_OUTPUT)/cobertura-coverage.xml
 
 CRD_DIR=package/crds
-crds.clean:
-	@$(INFO) cleaning generated CRDs
-	@find $(CRD_DIR) -name *.yaml -exec sed -i.sed -e '1,2d' {} \; || $(FAIL)
-	@find $(CRD_DIR) -name *.yaml.sed -delete || $(FAIL)
-	@$(OK) cleaned generated CRDs
-
-generate.done: crds.clean
 
 # integration tests
 e2e.run: test-integration
