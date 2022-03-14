@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	cloud.google.com/go/storage v1.15.0
-	github.com/crossplane/crossplane-runtime v0.15.1-0.20211202230900-d43d510ec578
+	github.com/crossplane/crossplane-runtime v0.15.1-0.20220311124323-6966b5a68a7c
 	github.com/crossplane/crossplane-tools v0.0.0-20220310165030-1f43fc12793e
 	github.com/google/go-cmp v0.5.6
 	github.com/google/go-containerregistry v0.6.0
@@ -93,5 +93,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/crossplane/crossplane-runtime => github.com/turkenh/crossplane-runtime v0.0.0-20220314141040-6f74175d3c1f
