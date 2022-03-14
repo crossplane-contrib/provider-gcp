@@ -1,8 +1,7 @@
-apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: clusters.container.gcp.crossplane.io
 spec:
@@ -88,9 +87,9 @@ spec:
                             type: boolean
                           loadBalancerType:
                             description: "LoadBalancerType: Which load balancer type
-                              is installed for Cloud Run. \n Possible values:   \"LOAD_BALANCER_TYPE_UNSPECIFIED\"
-                              - Load balancer type for Cloud Run is unspecified.   \"LOAD_BALANCER_TYPE_EXTERNAL\"
-                              - Install external load balancer for Cloud Run.   \"LOAD_BALANCER_TYPE_INTERNAL\"
+                              is installed for Cloud Run. \n Possible values: \"LOAD_BALANCER_TYPE_UNSPECIFIED\"
+                              - Load balancer type for Cloud Run is unspecified. \"LOAD_BALANCER_TYPE_EXTERNAL\"
+                              - Install external load balancer for Cloud Run. \"LOAD_BALANCER_TYPE_INTERNAL\"
                               - Install internal load balancer for Cloud Run."
                             type: string
                         required:
@@ -394,11 +393,10 @@ spec:
                         type: string
                       state:
                         description: "State: Denotes the state of etcd encryption.
-                          \n Possible values:   \"UNKNOWN\" - Should never be set
-                          \  \"ENCRYPTED\" - Secrets in etcd are encrypted.   \"DECRYPTED\"
-                          - Secrets in etcd are stored in plain text (at etcd level)
-                          - this is unrelated to Google Compute Engine level full
-                          disk encryption."
+                          \n Possible values: \"UNKNOWN\" - Should never be set \"ENCRYPTED\"
+                          - Secrets in etcd are encrypted. \"DECRYPTED\" - Secrets
+                          in etcd are stored in plain text (at etcd level) - this
+                          is unrelated to Google Compute Engine level full disk encryption."
                         type: string
                     type: object
                   defaultMaxPodsConstraint:
@@ -736,9 +734,9 @@ spec:
                       datapathProvider:
                         description: "DatapathProvider: The desired datapath provider
                           for this cluster. By default, uses the IPTables-based kube-proxy
-                          implementation. \n Possible values:   \"DATAPATH_PROVIDER_UNSPECIFIED\"
-                          - Default value.   \"LEGACY_DATAPATH\" - Use the IPTables
-                          implementation based on kube-proxy.   \"ADVANCED_DATAPATH\"
+                          implementation. \n Possible values: \"DATAPATH_PROVIDER_UNSPECIFIED\"
+                          - Default value. \"LEGACY_DATAPATH\" - Use the IPTables
+                          implementation based on kube-proxy. \"ADVANCED_DATAPATH\"
                           - Use the eBPF based GKE Dataplane V2 with additional features.
                           See the [GKE Dataplane V2 documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/
                           dataplane-v2) for more."
@@ -766,12 +764,12 @@ spec:
                         description: "PrivateIpv6GoogleAccess: The desired state of
                           IPv6 connectivity to Google Services. By default, no private
                           IPv6 access to or from Google Services (all access will
-                          be via IPv4) \n Possible values:   \"PRIVATE_IPV6_GOOGLE_ACCESS_UNSPECIFIED\"
-                          - Default value. Same as DISABLED   \"PRIVATE_IPV6_GOOGLE_ACCESS_DISABLED\"
-                          - No private access to or from Google Services   \"PRIVATE_IPV6_GOOGLE_ACCESS_TO_GOOGLE\"
+                          be via IPv4) \n Possible values: \"PRIVATE_IPV6_GOOGLE_ACCESS_UNSPECIFIED\"
+                          - Default value. Same as DISABLED \"PRIVATE_IPV6_GOOGLE_ACCESS_DISABLED\"
+                          - No private access to or from Google Services \"PRIVATE_IPV6_GOOGLE_ACCESS_TO_GOOGLE\"
                           - Enables private IPv6 access to Google Services from GKE
-                          \  \"PRIVATE_IPV6_GOOGLE_ACCESS_BIDIRECTIONAL\" - Enables
-                          priate IPv6 access to and from Google Services"
+                          \"PRIVATE_IPV6_GOOGLE_ACCESS_BIDIRECTIONAL\" - Enables priate
+                          IPv6 access to and from Google Services"
                         type: string
                     type: object
                   networkPolicy:
@@ -784,8 +782,8 @@ spec:
                         type: boolean
                       provider:
                         description: "Provider: The selected network policy provider.
-                          \n Possible values:   \"PROVIDER_UNSPECIFIED\" - Not set
-                          \  \"CALICO\" - Tigera (Calico Felix)."
+                          \n Possible values: \"PROVIDER_UNSPECIFIED\" - Not set \"CALICO\"
+                          - Tigera (Calico Felix)."
                         type: string
                     type: object
                   networkRef:
@@ -873,15 +871,15 @@ spec:
                     properties:
                       channel:
                         description: "Channel: channel specifies which release channel
-                          the cluster is subscribed to. \n Possible values:   \"UNSPECIFIED\"
-                          - No channel specified.   \"RAPID\" - RAPID channel is offered
+                          the cluster is subscribed to. \n Possible values: \"UNSPECIFIED\"
+                          - No channel specified. \"RAPID\" - RAPID channel is offered
                           on an early access basis for customers who want to test
                           new releases. WARNING: Versions available in the RAPID Channel
                           may be subject to unresolved issues with no known workaround
-                          and are not subject to any SLAs.   \"REGULAR\" - Clusters
+                          and are not subject to any SLAs. \"REGULAR\" - Clusters
                           subscribed to REGULAR receive versions that are considered
                           GA quality. REGULAR is intended for production users who
-                          want to take advantage of new features.   \"STABLE\" - Clusters
+                          want to take advantage of new features. \"STABLE\" - Clusters
                           subscribed to STABLE receive versions that are known to
                           be stable and reliable in production."
                         type: string
@@ -1004,12 +1002,64 @@ spec:
                 required:
                 - name
                 type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
               writeConnectionSecretToRef:
                 description: WriteConnectionSecretToReference specifies the namespace
                   and name of a Secret to which any connection details for this managed
                   resource should be written. Connection details frequently include
                   the endpoint, username, and password required to connect to the
-                  managed resource.
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
                 properties:
                   name:
                     description: Name of the secret.
@@ -1040,12 +1090,12 @@ spec:
                       properties:
                         code:
                           description: "Code: Machine-friendly representation of the
-                            condition \n Possible values:   \"UNKNOWN\" - UNKNOWN
-                            indicates a generic condition.   \"GCE_STOCKOUT\" - GCE_STOCKOUT
-                            indicates a Google Compute Engine stockout.   \"GKE_SERVICE_ACCOUNT_DELETED\"
+                            condition \n Possible values: \"UNKNOWN\" - UNKNOWN indicates
+                            a generic condition. \"GCE_STOCKOUT\" - GCE_STOCKOUT indicates
+                            a Google Compute Engine stockout. \"GKE_SERVICE_ACCOUNT_DELETED\"
                             - GKE_SERVICE_ACCOUNT_DELETED indicates that the user
-                            deleted their robot service account.   \"GCE_QUOTA_EXCEEDED\"
-                            - Google Compute Engine quota was exceeded.   \"SET_BY_OPERATOR\"
+                            deleted their robot service account. \"GCE_QUOTA_EXCEEDED\"
+                            - Google Compute Engine quota was exceeded. \"SET_BY_OPERATOR\"
                             - Cluster state was manually changed by an SRE due to
                             a system logic error. More codes TBA"
                           type: string
@@ -1177,14 +1227,14 @@ spec:
                             properties:
                               code:
                                 description: "Code: Machine-friendly representation
-                                  of the condition \n Possible values:   \"UNKNOWN\"
-                                  - UNKNOWN indicates a generic condition.   \"GCE_STOCKOUT\"
+                                  of the condition \n Possible values: \"UNKNOWN\"
+                                  - UNKNOWN indicates a generic condition. \"GCE_STOCKOUT\"
                                   - GCE_STOCKOUT indicates a Google Compute Engine
-                                  stockout.   \"GKE_SERVICE_ACCOUNT_DELETED\" - GKE_SERVICE_ACCOUNT_DELETED
+                                  stockout. \"GKE_SERVICE_ACCOUNT_DELETED\" - GKE_SERVICE_ACCOUNT_DELETED
                                   indicates that the user deleted their robot service
-                                  account.   \"GCE_QUOTA_EXCEEDED\" - Google Compute
-                                  Engine quota was exceeded.   \"SET_BY_OPERATOR\"
-                                  - Cluster state was manually changed by an SRE due
+                                  account. \"GCE_QUOTA_EXCEEDED\" - Google Compute
+                                  Engine quota was exceeded. \"SET_BY_OPERATOR\" -
+                                  Cluster state was manually changed by an SRE due
                                   to a system logic error. More codes TBA"
                                 type: string
                               message:
@@ -1271,13 +1321,13 @@ spec:
                                 a URL in the metadata server. Additionally, to avoid
                                 ambiguity, keys must not conflict with any other metadata
                                 keys for the project or be one of the reserved keys:
-                                \ \"cluster-location\"  \"cluster-name\"  \"cluster-uid\"
-                                \ \"configure-sh\"  \"containerd-configure-sh\"  \"enable-oslogin\"
-                                \ \"gci-ensure-gke-docker\"  \"gci-update-strategy\"
-                                \ \"instance-template\"  \"kube-env\"  \"startup-script\"
-                                \ \"user-data\"  \"disable-address-manager\"  \"windows-startup-script-ps1\"
-                                \ \"common-psm1\"  \"k8s-node-setup-psm1\"  \"install-ssh-psm1\"
-                                \ \"user-profile-psm1\"  \"serial-port-logging-enable\"
+                                \"cluster-location\" \"cluster-name\" \"cluster-uid\"
+                                \"configure-sh\" \"containerd-configure-sh\" \"enable-oslogin\"
+                                \"gci-ensure-gke-docker\" \"gci-update-strategy\"
+                                \"instance-template\" \"kube-env\" \"startup-script\"
+                                \"user-data\" \"disable-address-manager\" \"windows-startup-script-ps1\"
+                                \"common-psm1\" \"k8s-node-setup-psm1\" \"install-ssh-psm1\"
+                                \"user-profile-psm1\" \"serial-port-logging-enable\"
                                 Values are free-form strings, and only have meaning
                                 as interpreted by the image running in the instance.
                                 The only restriction placed on them is that each value's
@@ -1376,9 +1426,9 @@ spec:
                                 properties:
                                   effect:
                                     description: "Effect: Effect for taint. \n Possible
-                                      values:   \"EFFECT_UNSPECIFIED\" - Not set   \"NO_SCHEDULE\"
-                                      - NoSchedule   \"PREFER_NO_SCHEDULE\" - PreferNoSchedule
-                                      \  \"NO_EXECUTE\" - NoExecute"
+                                      values: \"EFFECT_UNSPECIFIED\" - Not set \"NO_SCHEDULE\"
+                                      - NoSchedule \"PREFER_NO_SCHEDULE\" - PreferNoSchedule
+                                      \"NO_EXECUTE\" - NoExecute"
                                     type: string
                                   key:
                                     description: 'Key: Key for taint.'
@@ -1466,20 +1516,20 @@ spec:
                           type: string
                         status:
                           description: "Status: The status of the nodes in this pool
-                            instance. \n Possible values:   \"STATUS_UNSPECIFIED\"
-                            - Not set.   \"PROVISIONING\" - The PROVISIONING state
-                            indicates the node pool is being created.   \"RUNNING\"
-                            - The RUNNING state indicates the node pool has been created
-                            and is fully usable.   \"RUNNING_WITH_ERROR\" - The RUNNING_WITH_ERROR
+                            instance. \n Possible values: \"STATUS_UNSPECIFIED\" -
+                            Not set. \"PROVISIONING\" - The PROVISIONING state indicates
+                            the node pool is being created. \"RUNNING\" - The RUNNING
+                            state indicates the node pool has been created and is
+                            fully usable. \"RUNNING_WITH_ERROR\" - The RUNNING_WITH_ERROR
                             state indicates the node pool has been created and is
                             partially usable. Some error state has occurred and some
                             functionality may be impaired. Customer may need to reissue
-                            a request or trigger a new update.   \"RECONCILING\" -
-                            The RECONCILING state indicates that some work is actively
+                            a request or trigger a new update. \"RECONCILING\" - The
+                            RECONCILING state indicates that some work is actively
                             being done on the node pool, such as upgrading node software.
-                            Details can be found in the `statusMessage` field.   \"STOPPING\"
+                            Details can be found in the `statusMessage` field. \"STOPPING\"
                             - The STOPPING state indicates the node pool is being
-                            deleted.   \"ERROR\" - The ERROR state indicates the node
+                            deleted. \"ERROR\" - The ERROR state indicates the node
                             pool may be unusable. Details can be found in the `statusMessage`
                             field."
                           type: string
@@ -1517,18 +1567,18 @@ spec:
                     type: string
                   status:
                     description: "Status: The current status of this cluster. \n Possible
-                      values:   \"STATUS_UNSPECIFIED\" - Not set.   \"PROVISIONING\"
-                      - The PROVISIONING state indicates the cluster is being created.
-                      \  \"RUNNING\" - The RUNNING state indicates the cluster has
-                      been created and is fully usable.   \"RECONCILING\" - The RECONCILING
+                      values: \"STATUS_UNSPECIFIED\" - Not set. \"PROVISIONING\" -
+                      The PROVISIONING state indicates the cluster is being created.
+                      \"RUNNING\" - The RUNNING state indicates the cluster has been
+                      created and is fully usable. \"RECONCILING\" - The RECONCILING
                       state indicates that some work is actively being done on the
                       cluster, such as upgrading the master or node software. Details
-                      can be found in the `statusMessage` field.   \"STOPPING\" -
-                      The STOPPING state indicates the cluster is being deleted.   \"ERROR\"
+                      can be found in the `statusMessage` field. \"STOPPING\" - The
+                      STOPPING state indicates the cluster is being deleted. \"ERROR\"
                       - The ERROR state indicates the cluster may be unusable. Details
-                      can be found in the `statusMessage` field.   \"DEGRADED\" -
-                      The DEGRADED state indicates the cluster requires user action
-                      to restore full functionality. Details can be found in the `statusMessage`
+                      can be found in the `statusMessage` field. \"DEGRADED\" - The
+                      DEGRADED state indicates the cluster requires user action to
+                      restore full functionality. Details can be found in the `statusMessage`
                       field."
                     type: string
                   statusMessage:

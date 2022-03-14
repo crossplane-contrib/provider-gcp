@@ -1,8 +1,7 @@
-apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: routers.compute.gcp.crossplane.io
 spec:
@@ -65,7 +64,7 @@ spec:
                       advertiseMode:
                         description: "AdvertiseMode: User-specified flag to indicate
                           which mode to use for advertisement. The options are DEFAULT
-                          or CUSTOM. \n Possible values:   \"CUSTOM\"   \"DEFAULT\""
+                          or CUSTOM. \n Possible values: \"CUSTOM\" \"DEFAULT\""
                         enum:
                         - CUSTOM
                         - DEFAULT
@@ -77,7 +76,7 @@ spec:
                           to all peers of the router. These groups will be advertised
                           in addition to any specified prefixes. Leave this field
                           blank to advertise no custom groups. \n Possible values:
-                          \  \"ALL_SUBNETS\""
+                          \"ALL_SUBNETS\""
                         enum:
                         - ALL_SUBNETS
                         items:
@@ -127,7 +126,7 @@ spec:
                         advertiseMode:
                           description: "AdvertiseMode: User-specified flag to indicate
                             which mode to use for advertisement. \n Possible values:
-                            \  \"CUSTOM\"   \"DEFAULT\""
+                            \"CUSTOM\" \"DEFAULT\""
                           enum:
                           - CUSTOM
                           - DEFAULT
@@ -142,7 +141,7 @@ spec:
                             and overrides the list defined for the router (in the
                             \"bgp\" message). These groups are advertised in addition
                             to any specified prefixes. Leave this field blank to advertise
-                            no custom groups. \n Possible values:   \"ALL_SUBNETS\""
+                            no custom groups. \n Possible values: \"ALL_SUBNETS\""
                           enum:
                           - ALL_SUBNETS
                           items:
@@ -298,7 +297,7 @@ spec:
                                 Export logs only for connection failures. - TRANSLATIONS_ONLY:
                                 Export logs only for successful connections. - ALL:
                                 Export logs for all connections, successful and unsuccessful.
-                                \n Possible values:   \"ALL\"   \"ERRORS_ONLY\"   \"TRANSLATIONS_ONLY\""
+                                \n Possible values: \"ALL\" \"ERRORS_ONLY\" \"TRANSLATIONS_ONLY\""
                               enum:
                               - ALL
                               - ERRORS_ONLY
@@ -325,7 +324,7 @@ spec:
                             fails for new VMs. - AUTO_ONLY: Nat IPs are allocated
                             by Google Cloud Platform; customers can't specify any
                             Nat IPs. When choosing AUTO_ONLY, then nat_ip should be
-                            empty. \n Possible values:   \"AUTO_ONLY\"   \"MANUAL_ONLY\""
+                            empty. \n Possible values: \"AUTO_ONLY\" \"MANUAL_ONLY\""
                           enum:
                           - AUTO_ONLY
                           - MANUAL_ONLY
@@ -349,8 +348,8 @@ spec:
                             Note that if this field contains ALL_SUBNETWORKS_ALL_IP_RANGES
                             or ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES, then there should
                             not be any other Router.Nat section in any Router for
-                            this network in this region. \n Possible values:   \"ALL_SUBNETWORKS_ALL_IP_RANGES\"
-                            \  \"ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES\"   \"LIST_OF_SUBNETWORKS\""
+                            this network in this region. \n Possible values: \"ALL_SUBNETWORKS_ALL_IP_RANGES\"
+                            \"ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES\" \"LIST_OF_SUBNETWORKS\""
                           enum:
                           - ALL_SUBNETWORKS_ALL_IP_RANGES
                           - ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES
@@ -383,8 +382,8 @@ spec:
                                   a single value are valid except NAT_IP_RANGE_OPTION_UNSPECIFIED.
                                   The only valid option with multiple values is: [\"PRIMARY_IP_RANGE\",
                                   \"LIST_OF_SECONDARY_IP_RANGES\"] Default: [ALL_IP_RANGES]
-                                  \n Possible values:   \"ALL_IP_RANGES\"   \"LIST_OF_SECONDARY_IP_RANGES\"
-                                  \  \"PRIMARY_IP_RANGE\""
+                                  \n Possible values: \"ALL_IP_RANGES\" \"LIST_OF_SECONDARY_IP_RANGES\"
+                                  \"PRIMARY_IP_RANGE\""
                                 enum:
                                 - ALL_IP_RANGES
                                 - LIST_OF_SECONDARY_IP_RANGES
@@ -474,12 +473,64 @@ spec:
                 required:
                 - name
                 type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
               writeConnectionSecretToRef:
                 description: WriteConnectionSecretToReference specifies the namespace
                   and name of a Secret to which any connection details for this managed
                   resource should be written. Connection details frequently include
                   the endpoint, username, and password required to connect to the
-                  managed resource.
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
                 properties:
                   name:
                     description: Name of the secret.

@@ -1,8 +1,7 @@
-apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: bucketpolicymembers.storage.gcp.crossplane.io
 spec:
@@ -90,32 +89,31 @@ spec:
                     description: "Member: Specifies the identity requesting access
                       for a Cloud Platform resource. `member` can have the following
                       values: \n * `allUsers`: A special identifier that represents
-                      anyone who is    on the internet; with or without a Google account.
+                      anyone who is on the internet; with or without a Google account.
                       \n * `allAuthenticatedUsers`: A special identifier that represents
-                      anyone    who is authenticated with a Google account or a service
+                      anyone who is authenticated with a Google account or a service
                       account. \n * `user:{emailid}`: An email address that represents
-                      a specific Google    account. For example, `alice@example.com`
+                      a specific Google account. For example, `alice@example.com`
                       . \n * `serviceAccount:{emailid}`: An email address that represents
-                      a service    account. For example, `my-other-app@appspot.gserviceaccount.com`.
+                      a service account. For example, `my-other-app@appspot.gserviceaccount.com`.
                       \n * `group:{emailid}`: An email address that represents a Google
-                      group.    For example, `admins@example.com`. \n * `deleted:user:{emailid}?uid={uniqueid}`:
-                      An email address (plus unique    identifier) representing a
-                      user that has been recently deleted. For    example, `alice@example.com?uid=123456789012345678901`.
-                      If the user is    recovered, this value reverts to `user:{emailid}`
-                      and the recovered user    retains the role in the binding. \n
-                      * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email
-                      address (plus    unique identifier) representing a service account
-                      that has been recently    deleted. For example, \n `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`.
-                      \n    If the service account is undeleted, this value reverts
-                      to    `serviceAccount:{emailid}` and the undeleted service account
-                      retains the    role in the binding. \n * `deleted:group:{emailid}?uid={uniqueid}`:
-                      An email address (plus unique    identifier) representing a
-                      Google group that has been recently    deleted. For example,
-                      `admins@example.com?uid=123456789012345678901`. If    the group
-                      is recovered, this value reverts to `group:{emailid}` and the
-                      \   recovered group retains the role in the binding. \n * `domain:{domain}`:
-                      The G Suite domain (primary) that represents all the    users
-                      of that domain. For example, `google.com` or `example.com`."
+                      group. For example, `admins@example.com`. \n * `deleted:user:{emailid}?uid={uniqueid}`:
+                      An email address (plus unique identifier) representing a user
+                      that has been recently deleted. For example, `alice@example.com?uid=123456789012345678901`.
+                      If the user is recovered, this value reverts to `user:{emailid}`
+                      and the recovered user retains the role in the binding. \n *
+                      `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email
+                      address (plus unique identifier) representing a service account
+                      that has been recently deleted. For example, \n `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`.
+                      \n If the service account is undeleted, this value reverts to
+                      `serviceAccount:{emailid}` and the undeleted service account
+                      retains the role in the binding. \n * `deleted:group:{emailid}?uid={uniqueid}`:
+                      An email address (plus unique identifier) representing a Google
+                      group that has been recently deleted. For example, `admins@example.com?uid=123456789012345678901`.
+                      If the group is recovered, this value reverts to `group:{emailid}`
+                      and the recovered group retains the role in the binding. \n
+                      * `domain:{domain}`: The G Suite domain (primary) that represents
+                      all the users of that domain. For example, `google.com` or `example.com`."
                     type: string
                   role:
                     description: 'Role: Role that is assigned to `members`. For example,
@@ -173,12 +171,64 @@ spec:
                 required:
                 - name
                 type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
               writeConnectionSecretToRef:
                 description: WriteConnectionSecretToReference specifies the namespace
                   and name of a Secret to which any connection details for this managed
                   resource should be written. Connection details frequently include
                   the endpoint, username, and password required to connect to the
-                  managed resource.
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
                 properties:
                   name:
                     description: Name of the secret.
