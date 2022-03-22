@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/connection"
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
@@ -34,8 +35,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
+	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/pkg/clients"
 	np "github.com/crossplane/provider-gcp/pkg/clients/nodepool"
+	"github.com/crossplane/provider-gcp/pkg/features"
 )
 
 // Error strings.
@@ -54,12 +57,18 @@ const (
 func SetupNodePool(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1beta1.NodePoolGroupKind)
 
+	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
+	if o.Features.Enabled(features.EnableAlphaExternalSecretStores) {
+		cps = append(cps, connection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind))
+	}
+
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.NodePoolGroupVersionKind),
 		managed.WithExternalConnecter(&nodePoolConnector{kube: mgr.GetClient()}),
 		managed.WithPollInterval(o.PollInterval),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
-		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		managed.WithConnectionPublishers(cps...))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

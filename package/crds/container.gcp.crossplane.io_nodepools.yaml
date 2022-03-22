@@ -1,8 +1,9 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: nodepools.container.gcp.crossplane.io
 spec:
@@ -253,14 +254,14 @@ spec:
                           These are reflected as part of a URL in the metadata server.
                           Additionally, to avoid ambiguity, keys must not conflict
                           with any other metadata keys for the project or be one of
-                          the reserved keys:  \"cluster-location\"  \"cluster-name\"
-                          \ \"cluster-uid\"  \"configure-sh\"  \"containerd-configure-sh\"
-                          \ \"enable-oslogin\"  \"gci-ensure-gke-docker\"  \"gci-update-strategy\"
-                          \ \"instance-template\"  \"kube-env\"  \"startup-script\"
-                          \ \"user-data\"  \"disable-address-manager\"  \"windows-startup-script-ps1\"
-                          \ \"common-psm1\"  \"k8s-node-setup-psm1\"  \"install-ssh-psm1\"
-                          \ \"user-profile-psm1\"  \"serial-port-logging-enable\"
-                          Values are free-form strings, and only have meaning as interpreted
+                          the reserved keys: \"cluster-location\" \"cluster-name\"
+                          \"cluster-uid\" \"configure-sh\" \"containerd-configure-sh\"
+                          \"enable-oslogin\" \"gci-ensure-gke-docker\" \"gci-update-strategy\"
+                          \"instance-template\" \"kube-env\" \"startup-script\" \"user-data\"
+                          \"disable-address-manager\" \"windows-startup-script-ps1\"
+                          \"common-psm1\" \"k8s-node-setup-psm1\" \"install-ssh-psm1\"
+                          \"user-profile-psm1\" \"serial-port-logging-enable\" Values
+                          are free-form strings, and only have meaning as interpreted
                           by the image running in the instance. The only restriction
                           placed on them is that each value's size must be less than
                           or equal to 32 KB. \n The total size of all keys and values
@@ -310,12 +311,12 @@ spec:
                           consumeReservationType:
                             description: "ConsumeReservationType: Corresponds to the
                               type of reservation consumption. \n Possible values:
-                              \  \"UNSPECIFIED\" - Default value. This should not
-                              be used.   \"NO_RESERVATION\" - Do not consume from
-                              any reserved capacity.   \"ANY_RESERVATION\" - Consume
-                              any reservation available.   \"SPECIFIC_RESERVATION\"
-                              - Must consume from a specific reservation. Must specify
-                              key value fields for specifying the reservations."
+                              \"UNSPECIFIED\" - Default value. This should not be
+                              used. \"NO_RESERVATION\" - Do not consume from any reserved
+                              capacity. \"ANY_RESERVATION\" - Consume any reservation
+                              available. \"SPECIFIC_RESERVATION\" - Must consume from
+                              a specific reservation. Must specify key value fields
+                              for specifying the reservations."
                             type: string
                           key:
                             description: 'Key: Corresponds to the label key of a reservation
@@ -336,8 +337,8 @@ spec:
                         properties:
                           type:
                             description: "Type: Type of the sandbox to use for the
-                              node. \n Possible values:   \"UNSPECIFIED\" - Default
-                              value. This should not be used.   \"GVISOR\" - Run sandbox
+                              node. \n Possible values: \"UNSPECIFIED\" - Default
+                              value. This should not be used. \"GVISOR\" - Run sandbox
                               using gvisor."
                             type: string
                         required:
@@ -392,9 +393,9 @@ spec:
                           properties:
                             effect:
                               description: "Effect: Effect for taint. \n Possible
-                                values:   \"EFFECT_UNSPECIFIED\" - Not set   \"NO_SCHEDULE\"
-                                - NoSchedule   \"PREFER_NO_SCHEDULE\" - PreferNoSchedule
-                                \  \"NO_EXECUTE\" - NoExecute"
+                                values: \"EFFECT_UNSPECIFIED\" - Not set \"NO_SCHEDULE\"
+                                - NoSchedule \"PREFER_NO_SCHEDULE\" - PreferNoSchedule
+                                \"NO_EXECUTE\" - NoExecute"
                               type: string
                             key:
                               description: 'Key: Key for taint.'
@@ -415,15 +416,14 @@ spec:
                           mode:
                             description: "Mode: Mode is the configuration for how
                               to expose metadata to workloads running on the node
-                              pool. \n Possible values:   \"MODE_UNSPECIFIED\" - Not
-                              set.   \"GCE_METADATA\" - Expose all Compute Engine
-                              metadata to pods.   \"GKE_METADATA\" - Run the GKE Metadata
-                              Server on this node. The GKE Metadata Server exposes
-                              a metadata API to workloads that is compatible with
-                              the V1 Compute Metadata APIs exposed by the Compute
-                              Engine and App Engine Metadata Servers. This feature
-                              can only be enabled if Workload Identity is enabled
-                              at the cluster level."
+                              pool. \n Possible values: \"MODE_UNSPECIFIED\" - Not
+                              set. \"GCE_METADATA\" - Expose all Compute Engine metadata
+                              to pods. \"GKE_METADATA\" - Run the GKE Metadata Server
+                              on this node. The GKE Metadata Server exposes a metadata
+                              API to workloads that is compatible with the V1 Compute
+                              Metadata APIs exposed by the Compute Engine and App
+                              Engine Metadata Servers. This feature can only be enabled
+                              if Workload Identity is enabled at the cluster level."
                             type: string
                         required:
                         - mode
@@ -514,12 +514,64 @@ spec:
                 required:
                 - name
                 type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
               writeConnectionSecretToRef:
                 description: WriteConnectionSecretToReference specifies the namespace
                   and name of a Secret to which any connection details for this managed
                   resource should be written. Connection details frequently include
                   the endpoint, username, and password required to connect to the
-                  managed resource.
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
                 properties:
                   name:
                     description: Name of the secret.
@@ -550,12 +602,12 @@ spec:
                       properties:
                         code:
                           description: "Code: Machine-friendly representation of the
-                            condition \n Possible values:   \"UNKNOWN\" - UNKNOWN
-                            indicates a generic condition.   \"GCE_STOCKOUT\" - GCE_STOCKOUT
-                            indicates a Google Compute Engine stockout.   \"GKE_SERVICE_ACCOUNT_DELETED\"
+                            condition \n Possible values: \"UNKNOWN\" - UNKNOWN indicates
+                            a generic condition. \"GCE_STOCKOUT\" - GCE_STOCKOUT indicates
+                            a Google Compute Engine stockout. \"GKE_SERVICE_ACCOUNT_DELETED\"
                             - GKE_SERVICE_ACCOUNT_DELETED indicates that the user
-                            deleted their robot service account.   \"GCE_QUOTA_EXCEEDED\"
-                            - Google Compute Engine quota was exceeded.   \"SET_BY_OPERATOR\"
+                            deleted their robot service account. \"GCE_QUOTA_EXCEEDED\"
+                            - Google Compute Engine quota was exceeded. \"SET_BY_OPERATOR\"
                             - Cluster state was manually changed by an SRE due to
                             a system logic error. More codes TBA"
                           type: string
@@ -602,20 +654,20 @@ spec:
                     type: string
                   status:
                     description: "Status: The status of the nodes in this pool instance.
-                      \n Possible values:   \"STATUS_UNSPECIFIED\" - Not set.   \"PROVISIONING\"
+                      \n Possible values: \"STATUS_UNSPECIFIED\" - Not set. \"PROVISIONING\"
                       - The PROVISIONING state indicates the node pool is being created.
-                      \  \"RUNNING\" - The RUNNING state indicates the node pool has
-                      been created and is fully usable.   \"RUNNING_WITH_ERROR\" -
-                      The RUNNING_WITH_ERROR state indicates the node pool has been
-                      created and is partially usable. Some error state has occurred
-                      and some functionality may be impaired. Customer may need to
-                      reissue a request or trigger a new update.   \"RECONCILING\"
-                      - The RECONCILING state indicates that some work is actively
-                      being done on the node pool, such as upgrading node software.
-                      Details can be found in the `statusMessage` field.   \"STOPPING\"
-                      - The STOPPING state indicates the node pool is being deleted.
-                      \  \"ERROR\" - The ERROR state indicates the node pool may be
-                      unusable. Details can be found in the `statusMessage` field."
+                      \"RUNNING\" - The RUNNING state indicates the node pool has
+                      been created and is fully usable. \"RUNNING_WITH_ERROR\" - The
+                      RUNNING_WITH_ERROR state indicates the node pool has been created
+                      and is partially usable. Some error state has occurred and some
+                      functionality may be impaired. Customer may need to reissue
+                      a request or trigger a new update. \"RECONCILING\" - The RECONCILING
+                      state indicates that some work is actively being done on the
+                      node pool, such as upgrading node software. Details can be found
+                      in the `statusMessage` field. \"STOPPING\" - The STOPPING state
+                      indicates the node pool is being deleted. \"ERROR\" - The ERROR
+                      state indicates the node pool may be unusable. Details can be
+                      found in the `statusMessage` field."
                     type: string
                   statusMessage:
                     description: 'StatusMessage: Additional information about the

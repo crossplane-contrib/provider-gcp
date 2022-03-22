@@ -21,12 +21,16 @@ import (
 	"fmt"
 	"path"
 
+	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
+	"github.com/crossplane/provider-gcp/pkg/features"
+
 	compute "google.golang.org/api/compute/v1"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpconnection "github.com/crossplane/crossplane-runtime/pkg/connection"
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
@@ -75,13 +79,19 @@ const (
 func SetupConnection(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1beta1.ConnectionGroupKind)
 
+	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
+	if o.Features.Enabled(features.EnableAlphaExternalSecretStores) {
+		cps = append(cps, xpconnection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind))
+	}
+
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.ConnectionGroupVersionKind),
 		managed.WithExternalConnecter(&connector{client: mgr.GetClient()}),
 		managed.WithConnectionPublishers(),
 		managed.WithPollInterval(o.PollInterval),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
-		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		managed.WithConnectionPublishers(cps...))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

@@ -1,8 +1,9 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: cryptokeys.kms.gcp.crossplane.io
 spec:
@@ -108,12 +109,12 @@ spec:
                     type: string
                   purpose:
                     description: "Purpose: Immutable. The immutable purpose of this
-                      CryptoKey. \n Possible values:   \"CRYPTO_KEY_PURPOSE_UNSPECIFIED\"
-                      - Not specified.   \"ENCRYPT_DECRYPT\" - CryptoKeys with this
-                      purpose may be used with Encrypt and Decrypt.   \"ASYMMETRIC_SIGN\"
+                      CryptoKey. \n Possible values: \"CRYPTO_KEY_PURPOSE_UNSPECIFIED\"
+                      - Not specified. \"ENCRYPT_DECRYPT\" - CryptoKeys with this
+                      purpose may be used with Encrypt and Decrypt. \"ASYMMETRIC_SIGN\"
                       - CryptoKeys with this purpose may be used with AsymmetricSign
-                      and GetPublicKey.   \"ASYMMETRIC_DECRYPT\" - CryptoKeys with
-                      this purpose may be used with AsymmetricDecrypt and GetPublicKey."
+                      and GetPublicKey. \"ASYMMETRIC_DECRYPT\" - CryptoKeys with this
+                      purpose may be used with AsymmetricDecrypt and GetPublicKey."
                     enum:
                     - ENCRYPT_DECRYPT
                     - ASYMMETRIC_SIGN
@@ -138,36 +139,36 @@ spec:
                           a CryptoKeyVersion based on this template. \n For backwards
                           compatibility, GOOGLE_SYMMETRIC_ENCRYPTION is implied if
                           both this field is omitted and CryptoKey.purpose is ENCRYPT_DECRYPT.
-                          \n Possible values:   \"CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED\"
-                          - Not specified.   \"GOOGLE_SYMMETRIC_ENCRYPTION\" - Creates
-                          symmetric encryption keys.   \"RSA_SIGN_PSS_2048_SHA256\"
-                          - RSASSA-PSS 2048 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_3072_SHA256\"
-                          - RSASSA-PSS 3072 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_4096_SHA256\"
-                          - RSASSA-PSS 4096 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_4096_SHA512\"
-                          - RSASSA-PSS 4096 bit key with a SHA512 digest.   \"RSA_SIGN_PKCS1_2048_SHA256\"
+                          \n Possible values: \"CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED\"
+                          - Not specified. \"GOOGLE_SYMMETRIC_ENCRYPTION\" - Creates
+                          symmetric encryption keys. \"RSA_SIGN_PSS_2048_SHA256\"
+                          - RSASSA-PSS 2048 bit key with a SHA256 digest. \"RSA_SIGN_PSS_3072_SHA256\"
+                          - RSASSA-PSS 3072 bit key with a SHA256 digest. \"RSA_SIGN_PSS_4096_SHA256\"
+                          - RSASSA-PSS 4096 bit key with a SHA256 digest. \"RSA_SIGN_PSS_4096_SHA512\"
+                          - RSASSA-PSS 4096 bit key with a SHA512 digest. \"RSA_SIGN_PKCS1_2048_SHA256\"
                           - RSASSA-PKCS1-v1_5 with a 2048 bit key and a SHA256 digest.
-                          \  \"RSA_SIGN_PKCS1_3072_SHA256\" - RSASSA-PKCS1-v1_5 with
-                          a 3072 bit key and a SHA256 digest.   \"RSA_SIGN_PKCS1_4096_SHA256\"
+                          \"RSA_SIGN_PKCS1_3072_SHA256\" - RSASSA-PKCS1-v1_5 with
+                          a 3072 bit key and a SHA256 digest. \"RSA_SIGN_PKCS1_4096_SHA256\"
                           - RSASSA-PKCS1-v1_5 with a 4096 bit key and a SHA256 digest.
-                          \  \"RSA_SIGN_PKCS1_4096_SHA512\" - RSASSA-PKCS1-v1_5 with
-                          a 4096 bit key and a SHA512 digest.   \"RSA_DECRYPT_OAEP_2048_SHA256\"
-                          - RSAES-OAEP 2048 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_3072_SHA256\"
-                          - RSAES-OAEP 3072 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_4096_SHA256\"
-                          - RSAES-OAEP 4096 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_4096_SHA512\"
-                          - RSAES-OAEP 4096 bit key with a SHA512 digest.   \"EC_SIGN_P256_SHA256\"
-                          - ECDSA on the NIST P-256 curve with a SHA256 digest.   \"EC_SIGN_P384_SHA384\"
-                          - ECDSA on the NIST P-384 curve with a SHA384 digest.   \"EXTERNAL_SYMMETRIC_ENCRYPTION\"
+                          \"RSA_SIGN_PKCS1_4096_SHA512\" - RSASSA-PKCS1-v1_5 with
+                          a 4096 bit key and a SHA512 digest. \"RSA_DECRYPT_OAEP_2048_SHA256\"
+                          - RSAES-OAEP 2048 bit key with a SHA256 digest. \"RSA_DECRYPT_OAEP_3072_SHA256\"
+                          - RSAES-OAEP 3072 bit key with a SHA256 digest. \"RSA_DECRYPT_OAEP_4096_SHA256\"
+                          - RSAES-OAEP 4096 bit key with a SHA256 digest. \"RSA_DECRYPT_OAEP_4096_SHA512\"
+                          - RSAES-OAEP 4096 bit key with a SHA512 digest. \"EC_SIGN_P256_SHA256\"
+                          - ECDSA on the NIST P-256 curve with a SHA256 digest. \"EC_SIGN_P384_SHA384\"
+                          - ECDSA on the NIST P-384 curve with a SHA384 digest. \"EXTERNAL_SYMMETRIC_ENCRYPTION\"
                           - Algorithm representing symmetric encryption by an external
                           key manager."
                         type: string
                       protectionLevel:
                         description: "ProtectionLevel: ProtectionLevel to use when
                           creating a CryptoKeyVersion based on this template. Immutable.
-                          Defaults to SOFTWARE. \n Possible values:   \"PROTECTION_LEVEL_UNSPECIFIED\"
-                          - Not specified.   \"SOFTWARE\" - Crypto operations are
-                          performed in software.   \"HSM\" - Crypto operations are
-                          performed in a Hardware Security Module.   \"EXTERNAL\"
-                          - Crypto operations are performed by an external key manager."
+                          Defaults to SOFTWARE. \n Possible values: \"PROTECTION_LEVEL_UNSPECIFIED\"
+                          - Not specified. \"SOFTWARE\" - Crypto operations are performed
+                          in software. \"HSM\" - Crypto operations are performed in
+                          a Hardware Security Module. \"EXTERNAL\" - Crypto operations
+                          are performed by an external key manager."
                         enum:
                         - SOFTWARE
                         - HSM
@@ -201,12 +202,64 @@ spec:
                 required:
                 - name
                 type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
               writeConnectionSecretToRef:
                 description: WriteConnectionSecretToReference specifies the namespace
                   and name of a Secret to which any connection details for this managed
                   resource should be written. Connection details frequently include
                   the endpoint, username, and password required to connect to the
-                  managed resource.
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
                 properties:
                   name:
                     description: Name of the secret.
@@ -259,25 +312,25 @@ spec:
                       algorithm:
                         description: "Algorithm: Output only. The CryptoKeyVersionAlgorithm
                           that this CryptoKeyVersion supports. \n Possible values:
-                          \  \"CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED\" - Not specified.
-                          \  \"GOOGLE_SYMMETRIC_ENCRYPTION\" - Creates symmetric encryption
-                          keys.   \"RSA_SIGN_PSS_2048_SHA256\" - RSASSA-PSS 2048 bit
-                          key with a SHA256 digest.   \"RSA_SIGN_PSS_3072_SHA256\"
-                          - RSASSA-PSS 3072 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_4096_SHA256\"
-                          - RSASSA-PSS 4096 bit key with a SHA256 digest.   \"RSA_SIGN_PSS_4096_SHA512\"
-                          - RSASSA-PSS 4096 bit key with a SHA512 digest.   \"RSA_SIGN_PKCS1_2048_SHA256\"
+                          \"CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED\" - Not specified.
+                          \"GOOGLE_SYMMETRIC_ENCRYPTION\" - Creates symmetric encryption
+                          keys. \"RSA_SIGN_PSS_2048_SHA256\" - RSASSA-PSS 2048 bit
+                          key with a SHA256 digest. \"RSA_SIGN_PSS_3072_SHA256\" -
+                          RSASSA-PSS 3072 bit key with a SHA256 digest. \"RSA_SIGN_PSS_4096_SHA256\"
+                          - RSASSA-PSS 4096 bit key with a SHA256 digest. \"RSA_SIGN_PSS_4096_SHA512\"
+                          - RSASSA-PSS 4096 bit key with a SHA512 digest. \"RSA_SIGN_PKCS1_2048_SHA256\"
                           - RSASSA-PKCS1-v1_5 with a 2048 bit key and a SHA256 digest.
-                          \  \"RSA_SIGN_PKCS1_3072_SHA256\" - RSASSA-PKCS1-v1_5 with
-                          a 3072 bit key and a SHA256 digest.   \"RSA_SIGN_PKCS1_4096_SHA256\"
+                          \"RSA_SIGN_PKCS1_3072_SHA256\" - RSASSA-PKCS1-v1_5 with
+                          a 3072 bit key and a SHA256 digest. \"RSA_SIGN_PKCS1_4096_SHA256\"
                           - RSASSA-PKCS1-v1_5 with a 4096 bit key and a SHA256 digest.
-                          \  \"RSA_SIGN_PKCS1_4096_SHA512\" - RSASSA-PKCS1-v1_5 with
-                          a 4096 bit key and a SHA512 digest.   \"RSA_DECRYPT_OAEP_2048_SHA256\"
-                          - RSAES-OAEP 2048 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_3072_SHA256\"
-                          - RSAES-OAEP 3072 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_4096_SHA256\"
-                          - RSAES-OAEP 4096 bit key with a SHA256 digest.   \"RSA_DECRYPT_OAEP_4096_SHA512\"
-                          - RSAES-OAEP 4096 bit key with a SHA512 digest.   \"EC_SIGN_P256_SHA256\"
-                          - ECDSA on the NIST P-256 curve with a SHA256 digest.   \"EC_SIGN_P384_SHA384\"
-                          - ECDSA on the NIST P-384 curve with a SHA384 digest.   \"EXTERNAL_SYMMETRIC_ENCRYPTION\"
+                          \"RSA_SIGN_PKCS1_4096_SHA512\" - RSASSA-PKCS1-v1_5 with
+                          a 4096 bit key and a SHA512 digest. \"RSA_DECRYPT_OAEP_2048_SHA256\"
+                          - RSAES-OAEP 2048 bit key with a SHA256 digest. \"RSA_DECRYPT_OAEP_3072_SHA256\"
+                          - RSAES-OAEP 3072 bit key with a SHA256 digest. \"RSA_DECRYPT_OAEP_4096_SHA256\"
+                          - RSAES-OAEP 4096 bit key with a SHA256 digest. \"RSA_DECRYPT_OAEP_4096_SHA512\"
+                          - RSAES-OAEP 4096 bit key with a SHA512 digest. \"EC_SIGN_P256_SHA256\"
+                          - ECDSA on the NIST P-256 curve with a SHA256 digest. \"EC_SIGN_P384_SHA384\"
+                          - ECDSA on the NIST P-384 curve with a SHA384 digest. \"EXTERNAL_SYMMETRIC_ENCRYPTION\"
                           - Algorithm representing symmetric encryption by an external
                           key manager."
                         type: string
@@ -294,12 +347,12 @@ spec:
                             type: string
                           format:
                             description: "Format: Output only. The format of the attestation
-                              data. \n Possible values:   \"ATTESTATION_FORMAT_UNSPECIFIED\"
-                              - Not specified.   \"CAVIUM_V1_COMPRESSED\" - Cavium
-                              HSM attestation compressed with gzip. Note that this
-                              format is defined by Cavium and subject to change at
-                              any time.   \"CAVIUM_V2_COMPRESSED\" - Cavium HSM attestation
-                              V2 compressed with gzip. This is a new format introduced
+                              data. \n Possible values: \"ATTESTATION_FORMAT_UNSPECIFIED\"
+                              - Not specified. \"CAVIUM_V1_COMPRESSED\" - Cavium HSM
+                              attestation compressed with gzip. Note that this format
+                              is defined by Cavium and subject to change at any time.
+                              \"CAVIUM_V2_COMPRESSED\" - Cavium HSM attestation V2
+                              compressed with gzip. This is a new format introduced
                               in Cavium's version 3.2-08."
                             type: string
                         type: object
@@ -352,35 +405,35 @@ spec:
                       protectionLevel:
                         description: "ProtectionLevel: Output only. The ProtectionLevel
                           describing how crypto operations are performed with this
-                          CryptoKeyVersion. \n Possible values:   \"PROTECTION_LEVEL_UNSPECIFIED\"
-                          - Not specified.   \"SOFTWARE\" - Crypto operations are
-                          performed in software.   \"HSM\" - Crypto operations are
-                          performed in a Hardware Security Module.   \"EXTERNAL\"
-                          - Crypto operations are performed by an external key manager."
+                          CryptoKeyVersion. \n Possible values: \"PROTECTION_LEVEL_UNSPECIFIED\"
+                          - Not specified. \"SOFTWARE\" - Crypto operations are performed
+                          in software. \"HSM\" - Crypto operations are performed in
+                          a Hardware Security Module. \"EXTERNAL\" - Crypto operations
+                          are performed by an external key manager."
                         type: string
                       state:
                         description: "State: The current state of the CryptoKeyVersion.
-                          \n Possible values:   \"CRYPTO_KEY_VERSION_STATE_UNSPECIFIED\"
-                          - Not specified.   \"PENDING_GENERATION\" - This version
-                          is still being generated. It may not be used, enabled, disabled,
+                          \n Possible values: \"CRYPTO_KEY_VERSION_STATE_UNSPECIFIED\"
+                          - Not specified. \"PENDING_GENERATION\" - This version is
+                          still being generated. It may not be used, enabled, disabled,
                           or destroyed yet. Cloud KMS will automatically mark this
-                          version ENABLED as soon as the version is ready.   \"ENABLED\"
+                          version ENABLED as soon as the version is ready. \"ENABLED\"
                           - This version may be used for cryptographic operations.
-                          \  \"DISABLED\" - This version may not be used, but the
-                          key material is still available, and the version can be
-                          placed back into the ENABLED state.   \"DESTROYED\" - This
-                          version is destroyed, and the key material is no longer
-                          stored. A version may not leave this state once entered.
-                          \  \"DESTROY_SCHEDULED\" - This version is scheduled for
-                          destruction, and will be destroyed soon. Call RestoreCryptoKeyVersion
-                          to put it back into the DISABLED state.   \"PENDING_IMPORT\"
-                          - This version is still being imported. It may not be used,
-                          enabled, disabled, or destroyed yet. Cloud KMS will automatically
-                          mark this version ENABLED as soon as the version is ready.
-                          \  \"IMPORT_FAILED\" - This version was not imported successfully.
-                          It may not be used, enabled, disabled, or destroyed. The
-                          submitted key material has been discarded. Additional details
-                          can be found in CryptoKeyVersion.import_failure_reason."
+                          \"DISABLED\" - This version may not be used, but the key
+                          material is still available, and the version can be placed
+                          back into the ENABLED state. \"DESTROYED\" - This version
+                          is destroyed, and the key material is no longer stored.
+                          A version may not leave this state once entered. \"DESTROY_SCHEDULED\"
+                          - This version is scheduled for destruction, and will be
+                          destroyed soon. Call RestoreCryptoKeyVersion to put it back
+                          into the DISABLED state. \"PENDING_IMPORT\" - This version
+                          is still being imported. It may not be used, enabled, disabled,
+                          or destroyed yet. Cloud KMS will automatically mark this
+                          version ENABLED as soon as the version is ready. \"IMPORT_FAILED\"
+                          - This version was not imported successfully. It may not
+                          be used, enabled, disabled, or destroyed. The submitted
+                          key material has been discarded. Additional details can
+                          be found in CryptoKeyVersion.import_failure_reason."
                         type: string
                     type: object
                 type: object
