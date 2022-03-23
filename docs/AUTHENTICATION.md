@@ -55,9 +55,8 @@ metadata:
   name: ${PROVIDER_GCP}
 spec:
   package: crossplane/provider-gcp:v${VERSION} # v0.20.0 or later
-  # Set a controllerConfigRef if you have a ControllerConfig:
-  # controllerConfigRef:
-  #   name: ${CONTROLLER_CONFIG}
+  controllerConfigRef:
+    name: ${CONTROLLER_CONFIG}
 EOF
 ```
 
