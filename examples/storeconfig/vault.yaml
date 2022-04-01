@@ -1,4 +1,4 @@
-apiVersion: gcp.secrets.crossplane.io/v1alpha1
+apiVersion: gcp.crossplane.io/v1alpha1
 kind: StoreConfig
 metadata:
   name: vault

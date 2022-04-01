@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: storeconfigs.gcp.secrets.crossplane.io
+  name: storeconfigs.gcp.crossplane.io
 spec:
-  group: gcp.secrets.crossplane.io
+  group: gcp.crossplane.io
   names:
     categories:
     - crossplane
