@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
+	tjcontroller "github.com/crossplane/terrajet/pkg/controller"
 	"gopkg.in/alecthomas/kingpin.v2"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,14 +31,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/feature"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/terrajet/pkg/terraform"
 
 	"github.com/crossplane/provider-gcp/apis"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
+	"github.com/crossplane/provider-gcp/apis/v1alpha1"
+	"github.com/crossplane/provider-gcp/config"
 	gcp "github.com/crossplane/provider-gcp/pkg/controller"
 	"github.com/crossplane/provider-gcp/pkg/features"
 )
@@ -88,20 +90,25 @@ func main() {
 	kingpin.FatalIfError(err, "Cannot create controller manager")
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add GCP APIs to scheme")
 
-	o := controller.Options{
-		Logger:                  log,
-		MaxConcurrentReconciles: *maxReconcileRate,
-		PollInterval:            *pollInterval,
-		GlobalRateLimiter:       ratelimiter.NewGlobal(*maxReconcileRate),
-		Features:                &feature.Flags{},
+	o := tjcontroller.Options{
+		Options: xpcontroller.Options{
+			Logger:            log,
+			GlobalRateLimiter: ratelimiter.NewGlobal(*maxReconcileRate),
+			PollInterval:      *pollInterval,
+			Features:          &feature.Flags{},
+		},
+		Provider:       config.GetProvider(),
+		WorkspaceStore: terraform.NewWorkspaceStore(log),
+		SetupFn:        clients.TerraformSetupBuilder(*terraformVersion, *providerSource, *providerVersion),
 	}
 
 	if *enableExternalSecretStores {
 		o.Features.Enable(features.EnableAlphaExternalSecretStores)
+		o.SecretStoreConfigGVK = &v1alpha1.StoreConfigGroupVersionKind
 		log.Info("Alpha feature enabled", "flag", features.EnableAlphaExternalSecretStores)
 
 		// Ensure default store config exists.
-		kingpin.FatalIfError(resource.Ignore(kerrors.IsAlreadyExists, mgr.GetClient().Create(context.Background(), &scv1alpha1.StoreConfig{
+		kingpin.FatalIfError(resource.Ignore(kerrors.IsAlreadyExists, mgr.GetClient().Create(context.Background(), &v1alpha1.StoreConfig{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "default",
 			},
