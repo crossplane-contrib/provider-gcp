@@ -22,6 +22,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/crossplane/provider-gcp/apis/classic"
+
+	gcp "github.com/crossplane/provider-gcp/internal/classic/controller"
+	"github.com/crossplane/provider-gcp/internal/classic/features"
+
 	tjcontroller "github.com/crossplane/terrajet/pkg/controller"
 	"gopkg.in/alecthomas/kingpin.v2"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,17 +36,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpcontroller "github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/feature"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/terrajet/pkg/terraform"
 
-	"github.com/crossplane/provider-gcp/apis"
 	"github.com/crossplane/provider-gcp/apis/v1alpha1"
 	"github.com/crossplane/provider-gcp/config"
-	gcp "github.com/crossplane/provider-gcp/pkg/controller"
-	"github.com/crossplane/provider-gcp/pkg/features"
 )
 
 func main() {
@@ -88,18 +91,19 @@ func main() {
 		RenewDeadline:              func() *time.Duration { d := 50 * time.Second; return &d }(),
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
-	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add GCP APIs to scheme")
+	kingpin.FatalIfError(classic.AddToScheme(mgr.GetScheme()), "Cannot add GCP APIs to scheme")
 
+	xpopts := xpcontroller.Options{
+		Logger:            log,
+		GlobalRateLimiter: ratelimiter.NewGlobal(*maxReconcileRate),
+		PollInterval:      *pollInterval,
+		Features:          &feature.Flags{},
+	}
 	o := tjcontroller.Options{
-		Options: xpcontroller.Options{
-			Logger:            log,
-			GlobalRateLimiter: ratelimiter.NewGlobal(*maxReconcileRate),
-			PollInterval:      *pollInterval,
-			Features:          &feature.Flags{},
-		},
+		Options:        xpopts,
 		Provider:       config.GetProvider(),
 		WorkspaceStore: terraform.NewWorkspaceStore(log),
-		SetupFn:        clients.TerraformSetupBuilder(*terraformVersion, *providerSource, *providerVersion),
+		//SetupFn:        clients.TerraformSetupBuilder(*terraformVersion, *providerSource, *providerVersion),
 	}
 
 	if *enableExternalSecretStores {
@@ -112,7 +116,7 @@ func main() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "default",
 			},
-			Spec: scv1alpha1.StoreConfigSpec{
+			Spec: v1alpha1.StoreConfigSpec{
 				// NOTE(turkenh): We only set required spec and expect optional
 				// ones to properly be initialized with CRD level default values.
 				SecretStoreConfig: xpv1.SecretStoreConfig{
@@ -122,6 +126,6 @@ func main() {
 		})), "cannot create default store config")
 	}
 
-	kingpin.FatalIfError(gcp.Setup(mgr, o), "Cannot setup GCP controllers")
+	kingpin.FatalIfError(gcp.Setup(mgr, xpopts), "Cannot setup GCP controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }

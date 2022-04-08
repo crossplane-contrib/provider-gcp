@@ -346,15 +346,14 @@ github.com/creack/pty v1.1.11/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ
 github.com/crossplane-contrib/provider-jet-gcp v0.2.0 h1:hQR+wwOWJk3X8eHUrILw5S1Pk5Gy3W3PLEKucoNnFDs=
 github.com/crossplane-contrib/provider-jet-gcp v0.2.0/go.mod h1:UzBfsBQJJG1wOX8poU/Ay04lg0TyEVShVny9ScGgr0c=
 github.com/crossplane/crossplane-runtime v0.15.1-0.20211004150827-579c1833b513/go.mod h1:gKix9Gq5kRzVe/4XOpwlFgG7OurzrYayviJxWZakhw0=
-github.com/crossplane/crossplane-runtime v0.15.1-0.20220106140106-428b7c390375/go.mod h1:CH05KIlxoEHEE4aLpUhPuvF+9qXsN6/H6YIDnUEjlDs=
 github.com/crossplane/crossplane-runtime v0.15.1-0.20220315141414-988c9ba9c255 h1:l9eAErqfcEzGpq5dMfO/4GTCG2qXgiQgH5J+xhBHqYc=
 github.com/crossplane/crossplane-runtime v0.15.1-0.20220315141414-988c9ba9c255/go.mod h1:IPT3HTsovwmbw3i+SdsOyaC3r3b7TW+otBMmZsHLnSU=
 github.com/crossplane/crossplane-tools v0.0.0-20210916125540-071de511ae8e/go.mod h1:3GzY5sP0PVePArghBh5K4fGzS/3kM0R/NAZn5s7LXqw=
 github.com/crossplane/crossplane-tools v0.0.0-20220310165030-1f43fc12793e h1:HqLaMji3FRPwEBA5P6twPz0HbE6no0XOnByLU5O1noM=
 github.com/crossplane/crossplane-tools v0.0.0-20220310165030-1f43fc12793e/go.mod h1:xFf30hwHd5n0/a0D4ZomId8nxQTTjE0Hc1j4/rWxefc=
 github.com/crossplane/terrajet v0.3.1/go.mod h1:fFjGal+3iF/D3XaxuTHw0xNHO+UslVhxNkNZITDXz44=
-github.com/crossplane/terrajet v0.4.2 h1:tWgjjPDwzwlurRYgaujsXL7NHhehBy1C8PZloTUQ65U=
-github.com/crossplane/terrajet v0.4.2/go.mod h1:oynNx4au8y/tiSb1OanWSMmUf55Cz/O4f1HxH+liI2A=
+github.com/crossplane/terrajet v0.4.0-rc.0.0.20220402205027-6ef18d5e0349 h1:RqqrqE6TbH8Y9ko1CvEJjARl8xKGdXZsggna8LHulmY=
+github.com/crossplane/terrajet v0.4.0-rc.0.0.20220402205027-6ef18d5e0349/go.mod h1:PY1geRNxxNXs2RFhGC36N7dDu3wZPhUZmAk6c4gQxAI=
 github.com/cyphar/filepath-securejoin v0.2.2/go.mod h1:FpkQEhXnPnOthhzymB7CGsFk2G9VLXONKD9G7QGMM+4=
 github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c/go.mod h1:Ct2BUK8SB0YC1SMSibvLzxjeJLnrYEVLULFNiHY9YfQ=
 github.com/d2g/dhcp4client v1.0.0/go.mod h1:j0hNfjhrt2SxUOw55nL0ATM/z4Yt3t2Kd1mW34z5W5s=
