@@ -41,8 +41,9 @@ import (
 	"github.com/crossplane/provider-gcp/apis/classic"
 	"github.com/crossplane/provider-gcp/apis/v1alpha1"
 	"github.com/crossplane/provider-gcp/config"
-	gcp "github.com/crossplane/provider-gcp/internal/classic/controller"
+	gcpclassic "github.com/crossplane/provider-gcp/internal/classic/controller"
 	"github.com/crossplane/provider-gcp/internal/clients"
+	gcp "github.com/crossplane/provider-gcp/internal/controller"
 	"github.com/crossplane/provider-gcp/internal/features"
 )
 
@@ -98,7 +99,7 @@ func main() {
 		PollInterval:      *pollInterval,
 		Features:          &feature.Flags{},
 	}
-	o := tjcontroller.Options{
+	tjopts := tjcontroller.Options{
 		Options:        xpopts,
 		Provider:       config.GetProvider(),
 		WorkspaceStore: terraform.NewWorkspaceStore(log),
@@ -106,8 +107,8 @@ func main() {
 	}
 
 	if *enableExternalSecretStores {
-		o.Features.Enable(features.EnableAlphaExternalSecretStores)
-		o.SecretStoreConfigGVK = &v1alpha1.StoreConfigGroupVersionKind
+		tjopts.Features.Enable(features.EnableAlphaExternalSecretStores)
+		tjopts.SecretStoreConfigGVK = &v1alpha1.StoreConfigGroupVersionKind
 		log.Info("Alpha feature enabled", "flag", features.EnableAlphaExternalSecretStores)
 
 		// Ensure default store config exists.
@@ -125,6 +126,7 @@ func main() {
 		})), "cannot create default store config")
 	}
 
-	kingpin.FatalIfError(gcp.Setup(mgr, xpopts), "Cannot setup GCP controllers")
+	kingpin.FatalIfError(gcp.Setup(mgr, tjopts), "Cannot setup jet GCP controllers")
+	kingpin.FatalIfError(gcpclassic.Setup(mgr, xpopts), "Cannot setup classic GCP controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }
