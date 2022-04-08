@@ -1,0 +1,15 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: RouterInterface
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    ipRange: 169.254.1.1/30
+#    name: interface-1
+#    region: us-central1
+#    router: router-1
+#    vpnTunnel: tunnel-1
+#  providerConfigRef:
+#    name: example

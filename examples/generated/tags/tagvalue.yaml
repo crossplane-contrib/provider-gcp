@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: tags.gcp.jet.crossplane.io/v1alpha1
+#kind: TagValue
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    description: For valuename resources.
+#    parent: tagKeys/${google_tags_tag_key.key.name}
+#    shortName: valuename
+#  providerConfigRef:
+#    name: example

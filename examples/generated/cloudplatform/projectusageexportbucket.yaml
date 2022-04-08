@@ -1,0 +1,12 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: cloudplatform.gcp.jet.crossplane.io/v1alpha1
+#kind: ProjectUsageExportBucket
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    bucketName: usage-tracking-bucket
+#    project: development-project
+#  providerConfigRef:
+#    name: example

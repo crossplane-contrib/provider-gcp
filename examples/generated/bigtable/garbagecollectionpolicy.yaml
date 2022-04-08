@@ -1,0 +1,15 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: bigtable.gcp.jet.crossplane.io/v1alpha1
+#kind: GarbageCollectionPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    columnFamily: name
+#    instanceName: tf-instance
+#    maxAge:
+#    - duration: 168h
+#    table: tf-table
+#  providerConfigRef:
+#    name: example

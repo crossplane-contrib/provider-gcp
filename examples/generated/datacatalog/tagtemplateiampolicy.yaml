@@ -1,0 +1,12 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: datacatalog.gcp.jet.crossplane.io/v1alpha1
+#kind: TagTemplateIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#    tagTemplate: ${google_data_catalog_tag_template.basic_tag_template.name}
+#  providerConfigRef:
+#    name: example

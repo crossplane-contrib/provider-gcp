@@ -1,0 +1,18 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: accessapproval.gcp.jet.crossplane.io/v1alpha1
+#kind: OrganizationSettings
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    enrolledServices:
+#    - cloudProduct: appengine.googleapis.com
+#    - cloudProduct: dataflow.googleapis.com
+#      enrollmentLevel: BLOCK_ALL
+#    notificationEmails:
+#    - testuser@example.com
+#    - example.user@example.com
+#    organizationId: "123456789"
+#  providerConfigRef:
+#    name: example

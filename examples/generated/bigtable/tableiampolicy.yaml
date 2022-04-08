@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: bigtable.gcp.jet.crossplane.io/v1alpha1
+#kind: TableIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    instance: your-bigtable-instance
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#    project: your-project
+#    table: your-bigtable-table
+#  providerConfigRef:
+#    name: example

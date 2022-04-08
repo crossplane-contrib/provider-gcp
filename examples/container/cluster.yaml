@@ -1,0 +1,12 @@
+apiVersion: container.gcp.jet.crossplane.io/v1alpha2
+kind: Cluster
+metadata:
+  name: example-gke-cluster
+spec:
+  forProvider:
+    initialNodeCount: 1
+    location: us-central1
+    removeDefaultNodePool: false
+  writeConnectionSecretToRef:
+    name: example-gke-cluster-secret
+    namespace: crossplane-system

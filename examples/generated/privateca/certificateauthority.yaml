@@ -1,0 +1,44 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: privateca.gcp.jet.crossplane.io/v1alpha1
+#kind: CertificateAuthority
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    certificateAuthorityId: my-certificate-authority
+#    config:
+#    - subjectConfig:
+#      - subject:
+#        - commonName: my-certificate-authority
+#          organization: HashiCorp
+#        subjectAltName:
+#        - dnsNames:
+#          - hashicorp.com
+#      x509Config:
+#      - caOptions:
+#        - isCa: true
+#          maxIssuerPathLength: 10
+#        keyUsage:
+#        - baseKeyUsage:
+#          - certSign: true
+#            contentCommitment: true
+#            crlSign: true
+#            dataEncipherment: true
+#            decipherOnly: true
+#            digitalSignature: true
+#            keyAgreement: true
+#            keyEncipherment: false
+#          extendedKeyUsage:
+#          - clientAuth: false
+#            codeSigning: true
+#            emailProtection: true
+#            serverAuth: true
+#            timeStamping: true
+#    keySpec:
+#    - algorithm: RSA_PKCS1_4096_SHA256
+#    lifetime: 86400s
+#    location: us-central1
+#    pool: ca-pool
+#  providerConfigRef:
+#    name: example

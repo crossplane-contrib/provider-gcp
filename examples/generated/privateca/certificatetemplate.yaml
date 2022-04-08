@@ -1,0 +1,68 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: privateca.gcp.jet.crossplane.io/v1alpha1
+#kind: CertificateTemplate
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    description: An updated sample certificate template
+#    identityConstraints:
+#    - allowSubjectAltNamesPassthrough: true
+#      allowSubjectPassthrough: true
+#      celExpression:
+#      - description: Always true
+#        expression: "true"
+#        location: any.file.anywhere
+#        title: Sample expression
+#    location: us-west1
+#    name: template-test
+#    passthroughExtensions:
+#    - additionalExtensions:
+#      - objectIdPath:
+#        - 1
+#        - 6
+#      knownExtensions:
+#      - EXTENDED_KEY_USAGE
+#    predefinedValues:
+#    - additionalExtensions:
+#      - critical: true
+#        objectId:
+#        - objectIdPath:
+#          - 1
+#          - 6
+#        value: c3RyaW5nCg==
+#      aiaOcspServers:
+#      - string
+#      caOptions:
+#      - isCa: false
+#        maxIssuerPathLength: 6
+#      keyUsage:
+#      - baseKeyUsage:
+#        - certSign: false
+#          contentCommitment: true
+#          crlSign: false
+#          dataEncipherment: true
+#          decipherOnly: true
+#          digitalSignature: true
+#          encipherOnly: true
+#          keyAgreement: true
+#          keyEncipherment: true
+#        extendedKeyUsage:
+#        - clientAuth: true
+#          codeSigning: true
+#          emailProtection: true
+#          ocspSigning: true
+#          serverAuth: true
+#          timeStamping: true
+#        unknownExtendedKeyUsages:
+#        - objectIdPath:
+#          - 1
+#          - 6
+#      policyIds:
+#      - objectIdPath:
+#        - 1
+#        - 6
+#    project: my-project-name
+#  providerConfigRef:
+#    name: example

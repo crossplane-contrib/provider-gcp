@@ -1,0 +1,24 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: assuredworkloads.gcp.jet.crossplane.io/v1alpha1
+#kind: Workload
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    billingAccount: billingAccounts/000000-0000000-0000000-000000
+#    complianceRegime: FEDRAMP_MODERATE
+#    displayName: Workload Example
+#    kmsSettings:
+#    - nextRotationTime: "9999-10-02T15:01:23Z"
+#      rotationPeriod: 10368000s
+#    location: us-west1
+#    organization: "123456789"
+#    provisionedResourcesParent: folders/519620126891
+#    resourceSettings:
+#    - resourceType: CONSUMER_PROJECT
+#    - resourceType: ENCRYPTION_KEYS_PROJECT
+#    - resourceId: '{{ring}}'
+#      resourceType: KEYRING
+#  providerConfigRef:
+#    name: example

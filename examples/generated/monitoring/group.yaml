@@ -1,0 +1,12 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: monitoring.gcp.jet.crossplane.io/v1alpha1
+#kind: Group
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    displayName: tf-test MonitoringGroup
+#    filter: resource.metadata.region="europe-west2"
+#  providerConfigRef:
+#    name: example

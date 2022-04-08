@@ -1,0 +1,8 @@
+apiVersion: cloudplatform.gcp.jet.crossplane.io/v1alpha2
+kind: Folder
+metadata:
+  name: example
+spec:
+  forProvider:
+    displayName: Department 1
+    parent: organizations/1234567

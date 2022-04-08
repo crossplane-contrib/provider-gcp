@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: Disk
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    image: debian-9-stretch-v20200805
+#    labels:
+#      environment: dev
+#    name: test-disk
+#    physicalBlockSizeBytes: 4096
+#    type: pd-ssd
+#    zone: us-central1-a
+#  providerConfigRef:
+#    name: example

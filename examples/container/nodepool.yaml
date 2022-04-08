@@ -1,0 +1,14 @@
+apiVersion: container.gcp.jet.crossplane.io/v1alpha2
+kind: NodePool
+metadata:
+  name: example-node-pool
+spec:
+  forProvider:
+    nodeConfig:
+      - machineType: e2-medium
+        oauthScopes:
+          - https://www.googleapis.com/auth/cloud-platform
+        preemptible: true
+    nodeCount: 1
+    clusterRef:
+      name: example-gke-cluster

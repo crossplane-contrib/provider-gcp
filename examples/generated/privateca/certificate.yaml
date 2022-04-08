@@ -1,0 +1,44 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: privateca.gcp.jet.crossplane.io/v1alpha1
+#kind: Certificate
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    certificateAuthority: ${google_privateca_certificate_authority.test-ca.certificate_authority_id}
+#    config:
+#    - publicKey:
+#      - format: PEM
+#        key: ${filebase64("test-fixtures/rsa_public.pem")}
+#      subjectConfig:
+#      - subject:
+#        - commonName: san1.example.com
+#          countryCode: us
+#          locality: mountain view
+#          organization: google
+#          organizationalUnit: enterprise
+#          province: california
+#          streetAddress: 1600 amphitheatre parkway
+#        subjectAltName:
+#        - emailAddresses:
+#          - email@example.com
+#          ipAddresses:
+#          - 127.0.0.1
+#          uris:
+#          - http://www.ietf.org/rfc/rfc3986.txt
+#      x509Config:
+#      - caOptions:
+#        - isCa: false
+#        keyUsage:
+#        - baseKeyUsage:
+#          - crlSign: false
+#            decipherOnly: false
+#          extendedKeyUsage:
+#          - serverAuth: false
+#    lifetime: 860s
+#    location: us-central1
+#    name: my-certificate
+#    pool: ""
+#  providerConfigRef:
+#    name: example

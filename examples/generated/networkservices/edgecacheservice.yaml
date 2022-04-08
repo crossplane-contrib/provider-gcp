@@ -1,0 +1,34 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: networkservices.gcp.jet.crossplane.io/v1alpha1
+#kind: EdgeCacheService
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    description: some description
+#    name: my-service
+#    routing:
+#    - hostRule:
+#      - description: host rule description
+#        hosts:
+#        - sslcert.tf-test.club
+#        pathMatcher: routes
+#      pathMatcher:
+#      - name: routes
+#        routeRule:
+#        - description: a route rule to match against
+#          headerAction:
+#          - responseHeaderToAdd:
+#            - headerName: x-cache-status
+#              headerValue: '{cdn_cache_status}'
+#          matchRule:
+#          - prefixMatch: /
+#          origin: my-origin
+#          priority: 1
+#          routeAction:
+#          - cdnPolicy:
+#            - cacheMode: CACHE_ALL_STATIC
+#              defaultTtl: 3600s
+#  providerConfigRef:
+#    name: example

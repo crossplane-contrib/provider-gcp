@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dialogflowcx.gcp.jet.crossplane.io/v1alpha1
+#kind: Version
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    description: version 1.0.0
+#    displayName: 1.0.0
+#    parent: ${google_dialogflow_cx_agent.agent.start_flow}
+#  providerConfigRef:
+#    name: example

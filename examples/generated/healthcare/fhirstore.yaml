@@ -1,0 +1,21 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: healthcare.gcp.jet.crossplane.io/v1alpha1
+#kind: FHIRStore
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    dataset: ${google_healthcare_dataset.dataset.id}
+#    disableReferentialIntegrity: false
+#    disableResourceVersioning: false
+#    enableHistoryImport: false
+#    enableUpdateCreate: false
+#    labels:
+#      label1: labelvalue1
+#    name: example-fhir-store
+#    notificationConfig:
+#    - pubsubTopic: ${google_pubsub_topic.topic.id}
+#    version: R4
+#  providerConfigRef:
+#    name: example

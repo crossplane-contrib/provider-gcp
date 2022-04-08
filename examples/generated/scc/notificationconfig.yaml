@@ -1,0 +1,16 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: scc.gcp.jet.crossplane.io/v1alpha1
+#kind: NotificationConfig
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    configId: my-config
+#    description: My custom Cloud Security Command Center Finding Notification Configuration
+#    organization: "123456789"
+#    pubsubTopic: ${google_pubsub_topic.scc_notification.id}
+#    streamingConfig:
+#    - filter: category = "OPEN_FIREWALL" AND state = "ACTIVE"
+#  providerConfigRef:
+#    name: example

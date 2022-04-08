@@ -1,0 +1,14 @@
+apiVersion: sql.gcp.jet.crossplane.io/v1alpha2
+kind: DatabaseInstance
+metadata:
+  name: example-instance
+spec:
+  forProvider:
+    region: "us-central1"
+    databaseVersion: "MYSQL_5_7"
+    settings:
+      - tier: "db-f1-micro"
+        diskSize: 20
+  writeConnectionSecretToRef:
+    name: example-sql-db-instance-secret
+    namespace: crossplane-system

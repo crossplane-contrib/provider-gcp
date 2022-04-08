@@ -1,0 +1,23 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: bigquery.gcp.jet.crossplane.io/v1alpha1
+#kind: Job
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    jobId: job_query
+#    labels:
+#      example-label: example-value
+#    query:
+#    - allowLargeResults: true
+#      destinationTable:
+#      - datasetId: ${google_bigquery_table.foo.dataset_id}
+#        projectId: ${google_bigquery_table.foo.project}
+#        tableId: ${google_bigquery_table.foo.table_id}
+#      flattenResults: true
+#      query: SELECT state FROM [lookerdata:cdc.project_tycho_reports]
+#      scriptOptions:
+#      - keyResultStatement: LAST
+#  providerConfigRef:
+#    name: example

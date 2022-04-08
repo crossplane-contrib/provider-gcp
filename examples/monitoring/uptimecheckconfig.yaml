@@ -1,0 +1,21 @@
+apiVersion: monitoring.gcp.jet.crossplane.io/v1alpha2
+kind: UptimeCheckConfig
+metadata:
+  name: example
+spec:
+  forProvider:
+    contentMatchers:
+      - content: example
+    displayName: http-uptime-check
+    httpCheck:
+      - body: Zm9vJTI1M0RiYXI=
+        contentType: URL_ENCODED
+        path: /some-path
+        port: 8010
+        requestMethod: POST
+    monitoredResource:
+      - labels:
+          host: 192.168.1.1
+          project_id: my-project
+        type: uptime_url
+    timeout: 60s

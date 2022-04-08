@@ -1,0 +1,16 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: datastore.gcp.jet.crossplane.io/v1alpha1
+#kind: Index
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    kind: foo
+#    properties:
+#    - direction: ASCENDING
+#      name: property_a
+#    - direction: ASCENDING
+#      name: property_b
+#  providerConfigRef:
+#    name: example

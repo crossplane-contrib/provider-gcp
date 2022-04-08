@@ -1,0 +1,19 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dataproc.gcp.jet.crossplane.io/v1alpha1
+#kind: AutoscalingPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    basicAlgorithm:
+#    - yarnConfig:
+#      - gracefulDecommissionTimeout: 30s
+#        scaleDownFactor: 0.5
+#        scaleUpFactor: 0.5
+#    location: us-central1
+#    policyId: dataproc-policy
+#    workerConfig:
+#    - maxInstances: 3
+#  providerConfigRef:
+#    name: example

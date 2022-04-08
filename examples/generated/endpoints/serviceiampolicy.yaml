@@ -1,0 +1,12 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: endpoints.gcp.jet.crossplane.io/v1alpha1
+#kind: ServiceIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#    serviceName: ${google_endpoints_service.endpoints_service.service_name}
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,27 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: PacketMirroring
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    collectorIlb:
+#    - url: ${google_compute_forwarding_rule.default.id}
+#    description: bar
+#    filter:
+#    - cidrRanges:
+#      - 0.0.0.0/0
+#      direction: BOTH
+#      ipProtocols:
+#      - tcp
+#    mirroredResources:
+#    - instances:
+#      - url: ${google_compute_instance.mirror.id}
+#      tags:
+#      - foo
+#    name: my-mirroring
+#    network:
+#    - url: ${google_compute_network.default.id}
+#  providerConfigRef:
+#    name: example

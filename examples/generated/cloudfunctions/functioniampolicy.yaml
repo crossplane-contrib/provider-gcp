@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: cloudfunctions.gcp.jet.crossplane.io/v1alpha1
+#kind: FunctionIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    cloudFunction: function-test
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#    project: ${google_cloudfunctions_function.function.project}
+#    region: ${google_cloudfunctions_function.function.region}
+#  providerConfigRef:
+#    name: example

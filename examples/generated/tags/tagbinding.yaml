@@ -1,0 +1,12 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: tags.gcp.jet.crossplane.io/v1alpha1
+#kind: TagBinding
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    parent: //cloudresourcemanager.googleapis.com/projects/${google_project.project.number}
+#    tagValue: tagValues/${google_tags_tag_value.value.name}
+#  providerConfigRef:
+#    name: example

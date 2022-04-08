@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: HaVPNGateway
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    name: ha-vpn-1
+#    network: ${google_compute_network.network1.id}
+#    region: us-central1
+#  providerConfigRef:
+#    name: example

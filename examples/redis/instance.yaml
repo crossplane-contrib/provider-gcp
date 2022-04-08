@@ -1,0 +1,15 @@
+apiVersion: redis.gcp.jet.crossplane.io/v1alpha2
+kind: Instance
+metadata:
+  name: example
+spec:
+  forProvider:
+    tier: STANDARD_HA
+    region: us-west2
+    memorySizeGb: 1
+    labels:
+      owner: instanceowner
+    authEnabled: true
+  writeConnectionSecretToRef:
+    name: example-redis-connection-details
+    namespace: crossplane-system

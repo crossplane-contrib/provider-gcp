@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: BackendBucket
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    bucketName: ${google_storage_bucket.image_bucket.name}
+#    description: Contains beautiful images
+#    enableCdn: true
+#    name: image-backend-bucket
+#  providerConfigRef:
+#    name: example

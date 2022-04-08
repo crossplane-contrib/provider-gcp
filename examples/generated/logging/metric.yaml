@@ -1,0 +1,33 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: logging.gcp.jet.crossplane.io/v1alpha1
+#kind: Metric
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    bucketOptions:
+#    - linearBuckets:
+#      - numFiniteBuckets: 3
+#        offset: 1
+#        width: 1
+#    filter: resource.type=gae_app AND severity>=ERROR
+#    labelExtractors:
+#      mass: EXTRACT(jsonPayload.request)
+#      sku: EXTRACT(jsonPayload.id)
+#    metricDescriptor:
+#    - displayName: My metric
+#      labels:
+#      - description: amount of matter
+#        key: mass
+#        valueType: STRING
+#      - description: Identifying number for item
+#        key: sku
+#        valueType: INT64
+#      metricKind: DELTA
+#      unit: "1"
+#      valueType: DISTRIBUTION
+#    name: my-(custom)/metric
+#    valueExtractor: EXTRACT(jsonPayload.request)
+#  providerConfigRef:
+#    name: example

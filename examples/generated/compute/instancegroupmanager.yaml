@@ -1,0 +1,24 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: InstanceGroupManager
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    autoHealingPolicies:
+#    - healthCheck: ${google_compute_health_check.autohealing.id}
+#      initialDelaySec: 300
+#    baseInstanceName: app
+#    name: appserver-igm
+#    namedPort:
+#    - name: customHTTP
+#      port: 8888
+#    targetPools:
+#    - ${google_compute_target_pool.appserver.id}
+#    targetSize: 2
+#    version:
+#    - instanceTemplate: ${google_compute_instance_template.appserver.id}
+#    zone: us-central1-a
+#  providerConfigRef:
+#    name: example

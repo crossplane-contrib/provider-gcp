@@ -1,0 +1,25 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dataproc.gcp.jet.crossplane.io/v1alpha1
+#kind: Job
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    forceDelete: true
+#    placement:
+#    - clusterName: simplecluster
+#    region: us-central1
+#    sparkConfig:
+#    - args:
+#      - "1000"
+#      jarFileUris:
+#      - file:///usr/lib/spark/examples/jars/spark-examples.jar
+#      loggingConfig:
+#      - driverLogLevels:
+#          root: INFO
+#      mainClass: org.apache.spark.examples.SparkPi
+#      properties:
+#        spark.logConf: "true"
+#  providerConfigRef:
+#    name: example

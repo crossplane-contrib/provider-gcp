@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: endpoints.gcp.jet.crossplane.io/v1alpha1
+#kind: Service
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    openapiConfig: ${file("openapi_spec.yml")}
+#    project: project-id
+#    serviceName: api-name.endpoints.project-id.cloud.goog
+#  providerConfigRef:
+#    name: example

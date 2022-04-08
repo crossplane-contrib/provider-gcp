@@ -1,0 +1,32 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: appengine.gcp.jet.crossplane.io/v1alpha1
+#kind: StandardAppVersion
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    automaticScaling:
+#    - maxConcurrentRequests: 10
+#      maxIdleInstances: 3
+#      maxPendingLatency: 5s
+#      minIdleInstances: 1
+#      minPendingLatency: 1s
+#      standardSchedulerSettings:
+#      - maxInstances: 10
+#        minInstances: 2
+#        targetCpuUtilization: 0.5
+#        targetThroughputUtilization: 0.75
+#    deleteServiceOnDestroy: true
+#    deployment:
+#    - zip:
+#      - sourceUrl: https://storage.googleapis.com/${google_storage_bucket.bucket.name}/${google_storage_bucket_object.object.name}
+#    entrypoint:
+#    - shell: node ./app.js
+#    envVariables:
+#      port: "8080"
+#    runtime: nodejs10
+#    service: myapp
+#    versionId: v1
+#  providerConfigRef:
+#    name: example

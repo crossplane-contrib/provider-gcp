@@ -1,0 +1,16 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dns.gcp.jet.crossplane.io/v1alpha1
+#kind: RecordSet
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    managedZone: example-zone
+#    name: frontend.${google_dns_managed_zone.prod.dns_name}
+#    rrdatas:
+#    - ${google_compute_instance.frontend.network_interface[0].access_config[0].nat_ip}
+#    ttl: 300
+#    type: A
+#  providerConfigRef:
+#    name: example

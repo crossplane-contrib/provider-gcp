@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: apigee.gcp.jet.crossplane.io/v1alpha1
+#kind: Organization
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    analyticsRegion: us-central1
+#    authorizedNetwork: ${google_compute_network.apigee_network.id}
+#    projectId: ${data.google_client_config.current.project}
+#  providerConfigRef:
+#    name: example

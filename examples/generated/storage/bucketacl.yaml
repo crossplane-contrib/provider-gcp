@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: storage.gcp.jet.crossplane.io/v1alpha1
+#kind: BucketACL
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    bucket: ${google_storage_bucket.image-store.name}
+#    roleEntity:
+#    - OWNER:user-my.email@gmail.com
+#    - READER:group-mygroup
+#  providerConfigRef:
+#    name: example

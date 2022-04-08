@@ -1,0 +1,20 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: activedirectory.gcp.jet.crossplane.io/v1alpha1
+#kind: DomainTrust
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    domain: test-managed-ad.com
+#    targetDnsIpAddresses:
+#    - 10.1.0.100
+#    targetDomainName: example-gcp.com
+#    trustDirection: OUTBOUND
+#    trustHandshakeSecretSecretRef:
+#      key: example-key
+#      name: example-secret
+#      namespace: crossplane-system
+#    trustType: FOREST
+#  providerConfigRef:
+#    name: example

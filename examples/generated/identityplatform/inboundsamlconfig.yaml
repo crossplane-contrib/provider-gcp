@@ -1,0 +1,21 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: identityplatform.gcp.jet.crossplane.io/v1alpha1
+#kind: InboundSAMLConfig
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    displayName: Display Name
+#    idpConfig:
+#    - idpCertificates:
+#      - x509Certificate: ${file("test-fixtures/rsa_cert.pem")}
+#      idpEntityId: tf-idp
+#      signRequest: true
+#      ssoUrl: https://example.com
+#    name: saml.tf-config
+#    spConfig:
+#    - callbackUri: https://example.com
+#      spEntityId: tf-sp
+#  providerConfigRef:
+#    name: example

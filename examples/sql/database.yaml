@@ -1,0 +1,8 @@
+apiVersion: sql.gcp.jet.crossplane.io/v1alpha2
+kind: Database
+metadata:
+  name: example-database
+spec:
+  forProvider:
+    instanceRef:
+      name: example-instance

@@ -1,0 +1,31 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: gameservices.gcp.jet.crossplane.io/v1alpha1
+#kind: GameServerConfig
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    configId: tf-test-config
+#    deploymentId: ${google_game_services_game_server_deployment.default.deployment_id}
+#    description: a config description
+#    fleetConfigs:
+#    - fleetSpec: '${jsonencode({ "replicas" : 1, "scheduling" : "Packed", "template"
+#        : { "metadata" : { "name" : "tf-test-game-server-template" }, "spec" : { "ports":
+#        [{"name": "default", "portPolicy": "Dynamic", "containerPort": 7654, "protocol":
+#        "UDP"}], "template" : { "spec" : { "containers" : [{ "name" : "simple-udp-server",
+#        "image" : "gcr.io/agones-images/udp-server:0.14" }] } } } } })}'
+#      name: something-unique
+#    scalingConfigs:
+#    - fleetAutoscalerSpec: '${jsonencode({"policy": {"type": "Webhook","webhook":
+#        {"service": {"name": "autoscaler-webhook-service","namespace": "default","path":
+#        "scale"}}}})}'
+#      name: scaling-config-name
+#      schedules:
+#      - cronJobDuration: 3.500s
+#        cronSpec: 0 0 * * 0
+#      selectors:
+#      - labels:
+#          one: two
+#  providerConfigRef:
+#    name: example

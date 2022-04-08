@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: ImageIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    image: example-image
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#    project: ${google_compute_image.example.project}
+#  providerConfigRef:
+#    name: example

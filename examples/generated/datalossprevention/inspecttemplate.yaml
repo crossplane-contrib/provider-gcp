@@ -1,0 +1,63 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: datalossprevention.gcp.jet.crossplane.io/v1alpha1
+#kind: InspectTemplate
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    description: My description
+#    displayName: display_name
+#    inspectConfig:
+#    - infoTypes:
+#      - name: EMAIL_ADDRESS
+#      - name: PERSON_NAME
+#      - name: LAST_NAME
+#      - name: DOMAIN_NAME
+#      - name: PHONE_NUMBER
+#      - name: FIRST_NAME
+#      limits:
+#      - maxFindingsPerInfoType:
+#        - infoType:
+#          - name: PERSON_NAME
+#          maxFindings: "75"
+#        - infoType:
+#          - name: LAST_NAME
+#          maxFindings: "80"
+#        maxFindingsPerItem: 10
+#        maxFindingsPerRequest: 50
+#      minLikelihood: UNLIKELY
+#      ruleSet:
+#      - infoTypes:
+#        - name: EMAIL_ADDRESS
+#        rules:
+#        - exclusionRule:
+#          - matchingType: MATCHING_TYPE_FULL_MATCH
+#            regex:
+#            - pattern: .+@example.com
+#      - infoTypes:
+#        - name: EMAIL_ADDRESS
+#        - name: DOMAIN_NAME
+#        - name: PHONE_NUMBER
+#        - name: PERSON_NAME
+#        - name: FIRST_NAME
+#        rules:
+#        - exclusionRule:
+#          - dictionary:
+#            - wordList:
+#              - words:
+#                - TEST
+#            matchingType: MATCHING_TYPE_PARTIAL_MATCH
+#      - infoTypes:
+#        - name: PERSON_NAME
+#        rules:
+#        - hotwordRule:
+#          - hotwordRegex:
+#            - pattern: patient
+#            likelihoodAdjustment:
+#            - fixedLikelihood: VERY_LIKELY
+#            proximity:
+#            - windowBefore: 50
+#    parent: projects/my-project-name
+#  providerConfigRef:
+#    name: example

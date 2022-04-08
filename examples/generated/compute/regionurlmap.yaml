@@ -1,0 +1,32 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: RegionURLMap
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    defaultService: ${google_compute_region_backend_service.home.id}
+#    description: a description
+#    hostRule:
+#    - hosts:
+#      - mysite.com
+#      pathMatcher: allpaths
+#    name: regionurlmap
+#    pathMatcher:
+#    - defaultService: ${google_compute_region_backend_service.home.id}
+#      name: allpaths
+#      pathRule:
+#      - paths:
+#        - /home
+#        service: ${google_compute_region_backend_service.home.id}
+#      - paths:
+#        - /login
+#        service: ${google_compute_region_backend_service.login.id}
+#    region: us-central1
+#    test:
+#    - host: hi.com
+#      path: /home
+#      service: ${google_compute_region_backend_service.home.id}
+#  providerConfigRef:
+#    name: example

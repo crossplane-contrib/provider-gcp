@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: iap.gcp.jet.crossplane.io/v1alpha1
+#kind: WebTypeAppEngineIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    appId: ${google_app_engine_application.app.app_id}
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#    project: ${google_project.my_project.project_id}
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: appengine.gcp.jet.crossplane.io/v1alpha1
+#kind: ApplicationURLDispatchRules
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    dispatchRules:
+#    - domain: '*'
+#      path: /*
+#      service: default
+#    - domain: '*'
+#      path: /admin/*
+#      service: myapp
+#  providerConfigRef:
+#    name: example

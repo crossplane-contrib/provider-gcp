@@ -1,0 +1,20 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: ForwardingRule
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    ipProtocol: TCP
+#    loadBalancingScheme: INTERNAL_MANAGED
+#    name: l7-ilb-forwarding-rule
+#    network: ${google_compute_network.ilb_network.id}
+#    networkTier: PREMIUM
+#    portRange: "80"
+#    provider: ${google-beta}
+#    region: europe-west1
+#    subnetwork: ${google_compute_subnetwork.ilb_subnet.id}
+#    target: ${google_compute_region_target_http_proxy.default.id}
+#  providerConfigRef:
+#    name: example

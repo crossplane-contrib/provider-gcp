@@ -1,0 +1,25 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: FirewallPolicyRule
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    action: allow
+#    description: Example Resource
+#    direction: EGRESS
+#    disabled: false
+#    enableLogging: true
+#    firewallPolicy: ${google_compute_firewall_policy.default.id}
+#    match:
+#    - destIpRanges:
+#      - 11.100.0.1/32
+#      layer4Configs:
+#      - ipProtocol: tcp
+#        ports:
+#        - 80
+#        - 8080
+#    priority: 9000
+#  providerConfigRef:
+#    name: example

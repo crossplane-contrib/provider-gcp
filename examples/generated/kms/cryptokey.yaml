@@ -1,0 +1,15 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: kms.gcp.jet.crossplane.io/v1alpha1
+#kind: CryptoKey
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    keyRing: ${google_kms_key_ring.keyring.id}
+#    lifecycle:
+#    - prevent_destroy: true
+#    name: crypto-key-example
+#    rotationPeriod: 100000s
+#  providerConfigRef:
+#    name: example

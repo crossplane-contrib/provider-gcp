@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: HTTPSHealthCheck
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    checkIntervalSec: 1
+#    name: authentication-health-check
+#    requestPath: /health_check
+#    timeoutSec: 1
+#  providerConfigRef:
+#    name: example

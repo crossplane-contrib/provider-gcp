@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: storage.gcp.jet.crossplane.io/v1alpha1
+#kind: ObjectAccessControl
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    bucket: ${google_storage_bucket.bucket.name}
+#    entity: allUsers
+#    object: ${google_storage_bucket_object.object.output_name}
+#    role: READER
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,18 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha2
+#kind: RouterNAT
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    logConfig:
+#    - enable: true
+#      filter: ERRORS_ONLY
+#    natIpAllocateOption: AUTO_ONLY
+#    region: ${google_compute_router.router.region}
+#    routerRef:
+#      name: example
+#    sourceSubnetworkIpRangesToNat: ALL_SUBNETWORKS_ALL_IP_RANGES
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,19 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: pubsub.gcp.jet.crossplane.io/v1alpha1
+#kind: Subscription
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    ackDeadlineSeconds: 20
+#    labels:
+#      foo: bar
+#    name: example-subscription
+#    pushConfig:
+#    - attributes:
+#        x-goog-version: v1
+#      pushEndpoint: https://example.com/push
+#    topic: example-topic
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: InstanceGroupNamedPort
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    group: ${google_container_cluster.my_cluster.node_pool[0].instance_group_urls[0]}
+#    name: http
+#    port: 8080
+#    zone: us-central1-a
+#  providerConfigRef:
+#    name: example

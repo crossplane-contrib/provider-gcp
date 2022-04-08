@@ -1,0 +1,37 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dialogflowcx.gcp.jet.crossplane.io/v1alpha1
+#kind: Page
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    displayName: MyPage
+#    entryFulfillment:
+#    - messages:
+#      - text:
+#        - text:
+#          - Welcome to page
+#    form:
+#    - parameters:
+#      - displayName: param1
+#        entityType: projects/-/locations/-/agents/-/entityTypes/sys.date
+#        fillBehavior:
+#        - initialPromptFulfillment:
+#          - messages:
+#            - text:
+#              - text:
+#                - Please provide param1
+#        redact: "true"
+#        required: "true"
+#    parent: ${google_dialogflow_cx_agent.agent.start_flow}
+#    transitionRoutes:
+#    - condition: $page.params.status = 'FINAL'
+#      targetPage: ${google_dialogflow_cx_page.my_page2.id}
+#      triggerFulfillment:
+#      - messages:
+#        - text:
+#          - text:
+#            - information completed, navigating to page 2
+#  providerConfigRef:
+#    name: example

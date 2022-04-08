@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dataproc.gcp.jet.crossplane.io/v1alpha1
+#kind: JobIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    jobId: your-dataproc-job
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#    project: your-project
+#    region: your-region
+#  providerConfigRef:
+#    name: example

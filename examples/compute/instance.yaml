@@ -1,0 +1,15 @@
+apiVersion: compute.gcp.jet.crossplane.io/v1alpha2
+kind: Instance
+metadata:
+  name: example
+spec:
+  forProvider:
+    machineType: e2-medium
+    zone: us-central1-a
+    labels:
+      managed-by: crossplane
+    networkInterface:
+      - network: default
+    bootDisk:
+      - initializeParams:
+          - image: debian-cloud/debian-9

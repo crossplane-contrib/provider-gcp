@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: containeranalysis.gcp.jet.crossplane.io/v1alpha1
+#kind: Occurrence
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    attestation:
+#    - serializedPayload: ${filebase64("path/to/my/payload.json")}
+#      signatures:
+#      - publicKeyId: ${data.google_kms_crypto_key_version.version.id}
+#        serialized_payload: ${filebase64("path/to/my/payload.json.sig")}
+#    noteName: ${google_container_analysis_note.note.id}
+#    resourceUri: gcr.io/my-project/my-image
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,18 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: ServiceAttachment
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    connectionPreference: ACCEPT_AUTOMATIC
+#    description: A service attachment configured with Terraform
+#    enableProxyProtocol: true
+#    name: my-psc-ilb
+#    natSubnets:
+#    - ${google_compute_subnetwork.psc_ilb_nat.id}
+#    region: us-west2
+#    targetService: ${google_compute_forwarding_rule.psc_ilb_target_service.id}
+#  providerConfigRef:
+#    name: example

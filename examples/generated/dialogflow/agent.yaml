@@ -1,0 +1,24 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dialogflow.gcp.jet.crossplane.io/v1alpha1
+#kind: Agent
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    apiVersion: API_VERSION_V2_BETA_1
+#    avatarUri: https://cloud.google.com/_static/images/cloud/icons/favicons/onecloud/super_cloud.png
+#    classificationThreshold: 0.3
+#    defaultLanguageCode: en
+#    description: Example description.
+#    displayName: dialogflow-agent
+#    enableLogging: true
+#    matchMode: MATCH_MODE_ML_ONLY
+#    supportedLanguageCodes:
+#    - fr
+#    - de
+#    - es
+#    tier: TIER_STANDARD
+#    timeZone: America/New_York
+#  providerConfigRef:
+#    name: example

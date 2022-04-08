@@ -1,0 +1,19 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: cloudrun.gcp.jet.crossplane.io/v1alpha1
+#kind: Service
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    location: us-central1
+#    name: cloudrun-srv
+#    template:
+#    - spec:
+#      - containers:
+#        - image: us-docker.pkg.dev/cloudrun/container/hello
+#    traffic:
+#    - latestRevision: true
+#      percent: 100
+#  providerConfigRef:
+#    name: example

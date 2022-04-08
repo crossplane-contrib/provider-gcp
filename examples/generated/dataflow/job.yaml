@@ -1,0 +1,16 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dataflow.gcp.jet.crossplane.io/v1alpha1
+#kind: Job
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    name: dataflow-job
+#    parameters:
+#      baz: qux
+#      foo: bar
+#    tempGcsLocation: gs://my-bucket/tmp_dir
+#    templateGcsPath: gs://my-bucket/templates/template_file
+#  providerConfigRef:
+#    name: example

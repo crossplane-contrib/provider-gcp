@@ -1,0 +1,16 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: RegionBackendService
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    connectionDrainingTimeoutSec: 10
+#    healthChecks:
+#    - ${google_compute_health_check.default.id}
+#    name: region-service
+#    region: us-central1
+#    sessionAffinity: CLIENT_IP
+#  providerConfigRef:
+#    name: example

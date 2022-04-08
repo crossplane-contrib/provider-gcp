@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: accessapproval.gcp.jet.crossplane.io/v1alpha1
+#kind: ProjectSettings
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    enrolledServices:
+#    - cloudProduct: all
+#      enrollmentLevel: BLOCK_ALL
+#    notificationEmails:
+#    - testuser@example.com
+#    - example.user@example.com
+#    projectId: my-project-name
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,10 @@
+apiVersion: monitoring.gcp.jet.crossplane.io/v1alpha2
+kind: NotificationChannel
+metadata:
+  name: example
+spec:
+  forProvider:
+    displayName: Test Notification Channel
+    labels:
+      email_address: fake_email@blahblah.com
+    type: email

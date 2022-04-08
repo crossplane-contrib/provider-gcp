@@ -1,0 +1,16 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: healthcare.gcp.jet.crossplane.io/v1alpha1
+#kind: HL7V2Store
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    dataset: ${google_healthcare_dataset.dataset.id}
+#    labels:
+#      label1: labelvalue1
+#    name: example-hl7-v2-store
+#    notificationConfigs:
+#    - pubsubTopic: ${google_pubsub_topic.topic.id}
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,15 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: osconfig.gcp.jet.crossplane.io/v1alpha1
+#kind: PatchDeployment
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    instanceFilter:
+#    - all: true
+#    oneTimeSchedule:
+#    - executeTime: "2999-10-10T10:10:10.045123456Z"
+#    patchDeploymentId: patch-deploy-inst
+#  providerConfigRef:
+#    name: example

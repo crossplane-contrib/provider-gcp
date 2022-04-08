@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: RegionDiskResourcePolicyAttachment
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    disk: my-region-disk
+#    name: policy
+#    region: us-central1
+#  providerConfigRef:
+#    name: example

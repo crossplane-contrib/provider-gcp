@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: healthcare.gcp.jet.crossplane.io/v1alpha1
+#kind: Dataset
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    location: us-central1
+#    name: example-dataset
+#    timeZone: UTC
+#  providerConfigRef:
+#    name: example

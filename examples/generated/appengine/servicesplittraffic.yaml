@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: appengine.gcp.jet.crossplane.io/v1alpha1
+#kind: ServiceSplitTraffic
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    migrateTraffic: false
+#    service: myapp
+#    split:
+#    - allocations:
+#        ${(google_app_engine_standard_app_version.liveapp_v1.version_id)}: 0.75
+#        ${(google_app_engine_standard_app_version.liveapp_v2.version_id)}: 0.25
+#      shardBy: IP
+#  providerConfigRef:
+#    name: example

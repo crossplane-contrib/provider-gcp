@@ -1,0 +1,12 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: datacatalog.gcp.jet.crossplane.io/v1alpha1
+#kind: EntryGroupIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    entryGroup: ${google_data_catalog_entry_group.basic_entry_group.name}
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#  providerConfigRef:
+#    name: example

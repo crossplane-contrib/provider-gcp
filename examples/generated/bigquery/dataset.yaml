@@ -1,0 +1,22 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: bigquery.gcp.jet.crossplane.io/v1alpha1
+#kind: Dataset
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    access:
+#    - role: OWNER
+#      userByEmail: ${google_service_account.bqowner.email}
+#    - domain: hashicorp.com
+#      role: READER
+#    datasetId: example_dataset
+#    defaultTableExpirationMs: 3600000
+#    description: This is a test description
+#    friendlyName: test
+#    labels:
+#      env: default
+#    location: EU
+#  providerConfigRef:
+#    name: example

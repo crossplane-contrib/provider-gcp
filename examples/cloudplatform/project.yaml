@@ -1,0 +1,7 @@
+apiVersion: cloudplatform.gcp.jet.crossplane.io/v1alpha2
+kind: Project
+metadata:
+  name: crossplane-jet-example-1289
+spec:
+  forProvider:
+    projectId:  crossplane-jet-gcp-example-project

@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: cloudbuild.gcp.jet.crossplane.io/v1alpha1
+#kind: Trigger
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    filename: cloudbuild.yaml
+#    substitutions:
+#      _BAZ: qux
+#      _FOO: bar
+#    triggerTemplate:
+#    - branchName: master
+#      repoName: my-repo
+#  providerConfigRef:
+#    name: example

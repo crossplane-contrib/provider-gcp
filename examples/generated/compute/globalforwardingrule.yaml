@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: GlobalForwardingRule
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    ipAddress: ${google_compute_global_address.default.id}
+#    ipProtocol: TCP
+#    loadBalancingScheme: EXTERNAL
+#    name: tcp-proxy-xlb-forwarding-rule
+#    portRange: "110"
+#    provider: ${google}
+#    target: ${google_compute_target_tcp_proxy.default.id}
+#  providerConfigRef:
+#    name: example

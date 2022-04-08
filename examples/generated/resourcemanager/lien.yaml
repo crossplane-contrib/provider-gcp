@@ -1,0 +1,15 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: resourcemanager.gcp.jet.crossplane.io/v1alpha1
+#kind: Lien
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    origin: machine-readable-explanation
+#    parent: projects/${google_project.project.number}
+#    reason: This project is an important environment
+#    restrictions:
+#    - resourcemanager.projects.delete
+#  providerConfigRef:
+#    name: example

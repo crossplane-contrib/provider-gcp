@@ -1,0 +1,12 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: AttachedDisk
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    disk: ${google_compute_disk.default.id}
+#    instance: ${google_compute_instance.default.id}
+#  providerConfigRef:
+#    name: example

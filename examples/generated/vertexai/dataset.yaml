@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: vertexai.gcp.jet.crossplane.io/v1alpha1
+#kind: Dataset
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    displayName: terraform
+#    metadataSchemaUri: gs://google-cloud-aiplatform/schema/dataset/metadata/image_1.0.0.yaml
+#    region: us-central1
+#  providerConfigRef:
+#    name: example

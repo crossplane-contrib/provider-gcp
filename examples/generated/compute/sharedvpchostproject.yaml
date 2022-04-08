@@ -1,0 +1,11 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: SharedVPCHostProject
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    project: host-project-id
+#  providerConfigRef:
+#    name: example

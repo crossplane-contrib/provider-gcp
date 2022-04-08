@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: sql.gcp.jet.crossplane.io/v1alpha2
+#kind: User
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    host: me.com
+#    instanceRef:
+#      name: example
+#    passwordSecretRef:
+#      key: example-key
+#      name: example-secret
+#      namespace: crossplane-system
+#  providerConfigRef:
+#    name: example

@@ -1,0 +1,32 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: datacatalog.gcp.jet.crossplane.io/v1alpha1
+#kind: TagTemplate
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    displayName: Demo Tag Template
+#    fields:
+#    - displayName: Source of data asset
+#      fieldId: source
+#      isRequired: true
+#      type:
+#      - primitiveType: STRING
+#    - displayName: Number of rows in the data asset
+#      fieldId: num_rows
+#      type:
+#      - primitiveType: DOUBLE
+#    - displayName: PII type
+#      fieldId: pii_type
+#      type:
+#      - enumType:
+#        - allowedValues:
+#          - displayName: EMAIL
+#          - displayName: SOCIAL SECURITY NUMBER
+#          - displayName: NONE
+#    forceDelete: "false"
+#    region: us-central1
+#    tagTemplateId: my_template
+#  providerConfigRef:
+#    name: example

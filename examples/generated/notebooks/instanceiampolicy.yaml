@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: notebooks.gcp.jet.crossplane.io/v1alpha1
+#kind: InstanceIAMPolicy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    instanceName: notebooks-instance
+#    location: us-west1-a
+#    policyData: ${data.google_iam_policy.admin.policy_data}
+#    project: ${google_notebooks_instance.instance.project}
+#  providerConfigRef:
+#    name: example

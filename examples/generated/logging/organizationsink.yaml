@@ -1,0 +1,15 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: logging.gcp.jet.crossplane.io/v1alpha1
+#kind: OrganizationSink
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    description: some explanation on what this is
+#    destination: storage.googleapis.com/${google_storage_bucket.log-bucket.name}
+#    filter: resource.type = gce_instance AND severity >= WARNING
+#    name: my-sink
+#    orgId: "123456789"
+#  providerConfigRef:
+#    name: example

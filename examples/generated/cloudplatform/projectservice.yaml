@@ -1,0 +1,16 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: cloudplatform.gcp.jet.crossplane.io/v1alpha1
+#kind: ProjectService
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    disableDependentServices: true
+#    project: your-project-id
+#    service: iam.googleapis.com
+#    timeouts:
+#    - create: 30m
+#      update: 40m
+#  providerConfigRef:
+#    name: example

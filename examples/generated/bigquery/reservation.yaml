@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: bigquery.gcp.jet.crossplane.io/v1alpha1
+#kind: Reservation
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    ignoreIdleSlots: false
+#    location: asia-northeast1
+#    name: my-reservation
+#    slotCapacity: 0
+#  providerConfigRef:
+#    name: example

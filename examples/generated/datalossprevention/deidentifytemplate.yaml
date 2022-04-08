@@ -1,0 +1,57 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: datalossprevention.gcp.jet.crossplane.io/v1alpha1
+#kind: DeidentifyTemplate
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    deidentifyConfig:
+#    - infoTypeTransformations:
+#      - transformations:
+#        - infoTypes:
+#          - name: FIRST_NAME
+#          primitiveTransformation:
+#          - replaceWithInfoTypeConfig: true
+#        - infoTypes:
+#          - name: PHONE_NUMBER
+#          - name: AGE
+#          primitiveTransformation:
+#          - replaceConfig:
+#            - newValue:
+#              - integerValue: 9
+#        - infoTypes:
+#          - name: EMAIL_ADDRESS
+#          - name: LAST_NAME
+#          primitiveTransformation:
+#          - characterMaskConfig:
+#            - charactersToIgnore:
+#              - commonCharactersToIgnore: PUNCTUATION
+#              maskingCharacter: X
+#              numberToMask: 4
+#              reverseOrder: true
+#        - infoTypes:
+#          - name: DATE_OF_BIRTH
+#          primitiveTransformation:
+#          - replaceConfig:
+#            - newValue:
+#              - dateValue:
+#                - day: 1
+#                  month: 1
+#                  year: 2020
+#        - infoTypes:
+#          - name: CREDIT_CARD_NUMBER
+#          primitiveTransformation:
+#          - cryptoDeterministicConfig:
+#            - context:
+#              - name: sometweak
+#              cryptoKey:
+#              - transient:
+#                - name: beep
+#              surrogateInfoType:
+#              - name: abc
+#    description: Description
+#    displayName: Displayname
+#    parent: projects/my-project-name
+#  providerConfigRef:
+#    name: example

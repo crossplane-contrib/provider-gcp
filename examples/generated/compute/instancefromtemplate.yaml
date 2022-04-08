@@ -1,0 +1,15 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha2
+#kind: InstanceFromTemplate
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    canIpForward: false
+#    labels:
+#      my_key: my_value
+#    sourceInstanceTemplate: ${google_compute_instance_template.tpl.id}
+#    zone: us-central1-a
+#  providerConfigRef:
+#    name: example

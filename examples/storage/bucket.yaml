@@ -1,0 +1,18 @@
+apiVersion: storage.gcp.jet.crossplane.io/v1alpha2
+kind: Bucket
+metadata:
+  name: example
+  annotations:
+    # Note that this will be the actual bucket name, so it has to be globally
+    #  unique/available.
+    crossplane.io/external-name: crossplane-example-bucket
+    # This annotation is a workaround for the following bug which sets
+    #  create/read timeouts to 1 min:
+    # "https://github.com/crossplane-contrib/provider-jet-gcp/issues/12
+    # "e2bfb730-ecaa-11e6-8f88-34363bc7c4c0" is the TimeoutKey:
+    #  https://github.com/hashicorp/terraform-plugin-sdk/blob/112e2164c381d80e8ada3170dac9a8a5db01079a/helper/schema/resource_timeout.go#L14
+    terrajet.crossplane.io/provider-meta: '{"e2bfb730-ecaa-11e6-8f88-34363bc7c4c0":{"create":60000000000,"read":60000000000}}'
+spec:
+  forProvider:
+    location: US
+    storageClass: MULTI_REGIONAL

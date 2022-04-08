@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: datalossprevention.gcp.jet.crossplane.io/v1alpha1
+#kind: StoredInfoType
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    description: Description
+#    displayName: Displayname
+#    parent: projects/my-project-name
+#    regex:
+#    - groupIndexes:
+#      - 2
+#      pattern: patient
+#  providerConfigRef:
+#    name: example

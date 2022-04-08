@@ -1,0 +1,19 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: container.gcp.jet.crossplane.io/v1alpha2
+#kind: NodePool
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    clusterRef:
+#      name: example
+#    nodeConfig:
+#    - machineType: e2-medium
+#      oauthScopes:
+#      - https://www.googleapis.com/auth/cloud-platform
+#      preemptible: true
+#      serviceAccount: ${google_service_account.default.email}
+#    nodeCount: 1
+#  providerConfigRef:
+#    name: example

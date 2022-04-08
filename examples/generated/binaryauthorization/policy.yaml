@@ -1,0 +1,21 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: binaryauthorization.gcp.jet.crossplane.io/v1alpha1
+#kind: Policy
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    admissionWhitelistPatterns:
+#    - namePattern: gcr.io/google_containers/*
+#    clusterAdmissionRules:
+#    - cluster: us-central1-a.prod-cluster
+#      enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
+#      evaluationMode: REQUIRE_ATTESTATION
+#      requireAttestationsBy:
+#      - ${google_binary_authorization_attestor.attestor.name}
+#    defaultAdmissionRule:
+#    - enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
+#      evaluationMode: ALWAYS_ALLOW
+#  providerConfigRef:
+#    name: example

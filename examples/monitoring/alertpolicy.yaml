@@ -1,0 +1,20 @@
+apiVersion: monitoring.gcp.jet.crossplane.io/v1alpha2
+kind: AlertPolicy
+metadata:
+  name: example
+spec:
+  forProvider:
+    combiner: OR
+    conditions:
+      - conditionThreshold:
+          - aggregations:
+              - alignmentPeriod: 60s
+                perSeriesAligner: ALIGN_RATE
+            comparison: COMPARISON_GT
+            duration: 60s
+            filter: metric.type="compute.googleapis.com/instance/disk/write_bytes_count"
+              AND resource.type="gce_instance"
+        displayName: test condition
+    displayName: My Alert Policy
+    userLabels:
+      foo: bar

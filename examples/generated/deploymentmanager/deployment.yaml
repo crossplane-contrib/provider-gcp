@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: deploymentmanager.gcp.jet.crossplane.io/v1alpha1
+#kind: Deployment
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    labels:
+#    - key: foo
+#      value: bar
+#    name: my-deployment
+#    target:
+#    - config:
+#      - content: ${file("path/to/config.yml")}
+#  providerConfigRef:
+#    name: example

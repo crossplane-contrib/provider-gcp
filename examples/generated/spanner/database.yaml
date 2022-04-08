@@ -1,0 +1,16 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: spanner.gcp.jet.crossplane.io/v1alpha1
+#kind: Database
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    ddl:
+#    - CREATE TABLE t1 (t1 INT64 NOT NULL,) PRIMARY KEY(t1)
+#    - CREATE TABLE t2 (t2 INT64 NOT NULL,) PRIMARY KEY(t2)
+#    deletionProtection: false
+#    instance: ${google_spanner_instance.main.name}
+#    name: my-database
+#  providerConfigRef:
+#    name: example

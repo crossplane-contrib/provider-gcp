@@ -1,0 +1,13 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: appengine.gcp.jet.crossplane.io/v1alpha1
+#kind: ServiceNetworkSettings
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    networkSettings:
+#    - ingressTrafficAllowed: INGRESS_TRAFFIC_ALLOWED_INTERNAL_ONLY
+#    service: myapp
+#  providerConfigRef:
+#    name: example

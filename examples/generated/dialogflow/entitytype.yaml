@@ -1,0 +1,21 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dialogflow.gcp.jet.crossplane.io/v1alpha1
+#kind: EntityType
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    displayName: ""
+#    entities:
+#    - synonyms:
+#      - synonym1
+#      - synonym2
+#      value: value1
+#    - synonyms:
+#      - synonym3
+#      - synonym4
+#      value: value2
+#    kind: KIND_MAP
+#  providerConfigRef:
+#    name: example

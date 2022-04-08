@@ -1,0 +1,15 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: InterconnectAttachment
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    edgeAvailabilityDomain: AVAILABILITY_DOMAIN_1
+#    mtu: 1500
+#    name: on-prem-attachment
+#    router: ${google_compute_router.foobar.id}
+#    type: PARTNER
+#  providerConfigRef:
+#    name: example

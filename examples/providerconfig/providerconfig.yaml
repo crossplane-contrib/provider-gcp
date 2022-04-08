@@ -1,0 +1,12 @@
+apiVersion: gcp.jet.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  projectID: crossplane-playground
+  credentials:
+    source: Secret
+    secretRef:
+      name: example-creds
+      namespace: crossplane-system
+      key: credentials

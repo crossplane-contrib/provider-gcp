@@ -1,0 +1,14 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: NetworkPeeringRoutesConfig
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    exportCustomRoutes: true
+#    importCustomRoutes: true
+#    network: ${google_compute_network.network_primary.name}
+#    peering: peering1
+#  providerConfigRef:
+#    name: example

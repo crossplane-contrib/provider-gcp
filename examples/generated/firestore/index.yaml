@@ -1,0 +1,17 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: firestore.gcp.jet.crossplane.io/v1alpha1
+#kind: Index
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    collection: chatrooms
+#    fields:
+#    - fieldPath: name
+#      order: ASCENDING
+#    - fieldPath: description
+#      order: DESCENDING
+#    project: my-project-name
+#  providerConfigRef:
+#    name: example

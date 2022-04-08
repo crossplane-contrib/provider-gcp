@@ -1,0 +1,19 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: bigquery.gcp.jet.crossplane.io/v1alpha1
+#kind: DataTransferConfig
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    dataSourceId: scheduled_query
+#    destinationDatasetId: ${google_bigquery_dataset.my_dataset.dataset_id}
+#    displayName: my-query
+#    location: asia-northeast1
+#    params:
+#      destination_table_name_template: my_table
+#      query: SELECT name FROM tabl WHERE x = 'y'
+#      write_disposition: WRITE_APPEND
+#    schedule: first sunday of quarter 00:00
+#  providerConfigRef:
+#    name: example

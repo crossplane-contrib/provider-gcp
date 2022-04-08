@@ -1,0 +1,38 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: appengine.gcp.jet.crossplane.io/v1alpha1
+#kind: FlexibleAppVersion
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    automaticScaling:
+#    - coolDownPeriod: 120s
+#      cpuUtilization:
+#      - targetUtilization: 0.5
+#    deployment:
+#    - zip:
+#      - sourceUrl: https://storage.googleapis.com/${google_storage_bucket.bucket.name}/${google_storage_bucket_object.object.name}
+#    entrypoint:
+#    - shell: node ./app.js
+#    envVariables:
+#      port: "8080"
+#    handlers:
+#    - authFailAction: AUTH_FAIL_ACTION_REDIRECT
+#      login: LOGIN_REQUIRED
+#      securityLevel: SECURE_ALWAYS
+#      staticFiles:
+#      - path: my-other-path
+#        uploadPathRegex: .*\/my-path\/*
+#      urlRegex: .*\/my-path\/*
+#    livenessCheck:
+#    - path: /
+#    noopOnDestroy: true
+#    project: ${google_project_iam_member.gae_api.project}
+#    readinessCheck:
+#    - path: /
+#    runtime: nodejs
+#    service: default
+#    versionId: v1
+#  providerConfigRef:
+#    name: example

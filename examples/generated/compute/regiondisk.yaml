@@ -1,0 +1,18 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: compute.gcp.jet.crossplane.io/v1alpha1
+#kind: RegionDisk
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    name: my-region-disk
+#    physicalBlockSizeBytes: 4096
+#    region: us-central1
+#    replicaZones:
+#    - us-central1-a
+#    - us-central1-f
+#    snapshot: ${google_compute_snapshot.snapdisk.id}
+#    type: pd-ssd
+#  providerConfigRef:
+#    name: example

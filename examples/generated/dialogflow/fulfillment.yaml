@@ -1,0 +1,18 @@
+# This example manifest is auto-generated, and has not been tested.
+# Please make the necessary adjustments before using it.
+#apiVersion: dialogflow.gcp.jet.crossplane.io/v1alpha1
+#kind: Fulfillment
+#metadata:
+#  name: example
+#spec:
+#  forProvider:
+#    displayName: basic-fulfillment
+#    enabled: true
+#    genericWebService:
+#    - password: password
+#      requestHeaders:
+#        name: wrench
+#      uri: https://google.com
+#      username: admin
+#  providerConfigRef:
+#    name: example
