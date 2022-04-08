@@ -1,0 +1,609 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: databaseinstances.sql.gcp.jet.crossplane.io
+spec:
+  group: sql.gcp.jet.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcpjet
+    kind: DatabaseInstance
+    listKind: DatabaseInstanceList
+    plural: databaseinstances
+    singular: databaseinstance
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: DatabaseInstance is the Schema for the DatabaseInstances API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DatabaseInstanceSpec defines the desired state of DatabaseInstance
+            properties:
+              deletionPolicy:
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                properties:
+                  clone:
+                    description: Configuration for creating a new instance as a clone
+                      of another instance.
+                    items:
+                      properties:
+                        pointInTime:
+                          description: The timestamp of the point in time that should
+                            be restored.
+                          type: string
+                        sourceInstanceName:
+                          description: The name of the instance from which the point
+                            in time should be restored.
+                          type: string
+                      required:
+                      - sourceInstanceName
+                      type: object
+                    type: array
+                  databaseVersion:
+                    description: The MySQL, PostgreSQL or SQL Server (beta) version
+                      to use. Supported values include MYSQL_5_6, MYSQL_5_7, MYSQL_8_0,
+                      POSTGRES_9_6, POSTGRES_10, POSTGRES_11, POSTGRES_12, POSTGRES_13,
+                      SQLSERVER_2017_STANDARD, SQLSERVER_2017_ENTERPRISE, SQLSERVER_2017_EXPRESS,
+                      SQLSERVER_2017_WEB. Database Version Policies includes an up-to-date
+                      reference of supported versions.
+                    type: string
+                  deletionProtection:
+                    description: Used to block Terraform from deleting a SQL Instance.
+                    type: boolean
+                  masterInstanceName:
+                    description: The name of the instance that will act as the master
+                      in the replication setup. Note, this requires the master to
+                      have binary_log_enabled set, as well as existing backups.
+                    type: string
+                  project:
+                    description: The ID of the project in which the resource belongs.
+                      If it is not provided, the provider project is used.
+                    type: string
+                  region:
+                    description: The region the instance will sit in. Note, Cloud
+                      SQL is not available in all regions. A valid region must be
+                      provided to use this resource. If a region is not provided in
+                      the resource definition, the provider region will be used instead,
+                      but this will be an apply-time error for instances if the provider
+                      region is not supported with Cloud SQL. If you choose not to
+                      provide the region argument for this resource, make sure you
+                      understand this.
+                    type: string
+                  replicaConfiguration:
+                    description: The configuration for replication.
+                    items:
+                      properties:
+                        caCertificate:
+                          description: PEM representation of the trusted CA's x509
+                            certificate.
+                          type: string
+                        clientCertificate:
+                          description: PEM representation of the replica's x509 certificate.
+                          type: string
+                        clientKey:
+                          description: PEM representation of the replica's private
+                            key. The corresponding public key in encoded in the client_certificate.
+                          type: string
+                        connectRetryInterval:
+                          description: The number of seconds between connect retries.
+                          format: int64
+                          type: integer
+                        dumpFilePath:
+                          description: Path to a SQL file in Google Cloud Storage
+                            from which replica instances are created. Format is gs://bucket/filename.
+                          type: string
+                        failoverTarget:
+                          description: Specifies if the replica is the failover target.
+                            If the field is set to true the replica will be designated
+                            as a failover replica. If the master instance fails, the
+                            replica instance will be promoted as the new master instance.
+                          type: boolean
+                        masterHeartbeatPeriod:
+                          description: Time in ms between replication heartbeats.
+                          format: int64
+                          type: integer
+                        passwordSecretRef:
+                          description: Password for the replication connection.
+                          properties:
+                            key:
+                              description: The key to select.
+                              type: string
+                            name:
+                              description: Name of the secret.
+                              type: string
+                            namespace:
+                              description: Namespace of the secret.
+                              type: string
+                          required:
+                          - key
+                          - name
+                          - namespace
+                          type: object
+                        sslCipher:
+                          description: Permissible ciphers for use in SSL encryption.
+                          type: string
+                        username:
+                          description: Username for replication connection.
+                          type: string
+                        verifyServerCertificate:
+                          description: True if the master's common name value is checked
+                            during the SSL handshake.
+                          type: boolean
+                      type: object
+                    type: array
+                  restoreBackupContext:
+                    items:
+                      properties:
+                        backupRunId:
+                          description: The ID of the backup run to restore from.
+                          format: int64
+                          type: integer
+                        instanceId:
+                          description: The ID of the instance that the backup was
+                            taken from.
+                          type: string
+                        project:
+                          description: The full project ID of the source instance.
+                          type: string
+                      required:
+                      - backupRunId
+                      type: object
+                    type: array
+                  rootPasswordSecretRef:
+                    description: Initial root password. Required for MS SQL Server,
+                      ignored by MySQL and PostgreSQL.
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: Namespace of the secret.
+                        type: string
+                    required:
+                    - key
+                    - name
+                    - namespace
+                    type: object
+                  settings:
+                    description: The settings to use for the database. The configuration
+                      is detailed below.
+                    items:
+                      properties:
+                        activationPolicy:
+                          description: This specifies when the instance should be
+                            active. Can be either ALWAYS, NEVER or ON_DEMAND.
+                          type: string
+                        availabilityType:
+                          description: The availability type of the Cloud SQL instance,
+                            high availability (REGIONAL) or single zone (ZONAL). For
+                            MySQL instances, ensure that settings.backup_configuration.enabled
+                            and settings.backup_configuration.binary_log_enabled are
+                            both set to true.
+                          type: string
+                        backupConfiguration:
+                          items:
+                            properties:
+                              backupRetentionSettings:
+                                items:
+                                  properties:
+                                    retainedBackups:
+                                      description: Number of backups to retain.
+                                      format: int64
+                                      type: integer
+                                    retentionUnit:
+                                      description: The unit that 'retainedBackups'
+                                        represents. Defaults to COUNT
+                                      type: string
+                                  required:
+                                  - retainedBackups
+                                  type: object
+                                type: array
+                              binaryLogEnabled:
+                                description: True if binary logging is enabled. If
+                                  settings.backup_configuration.enabled is false,
+                                  this must be as well. Cannot be used with Postgres.
+                                type: boolean
+                              enabled:
+                                description: True if backup configuration is enabled.
+                                type: boolean
+                              location:
+                                description: Location of the backup configuration.
+                                type: string
+                              pointInTimeRecoveryEnabled:
+                                description: True if Point-in-time recovery is enabled.
+                                type: boolean
+                              startTime:
+                                description: HH:MM format time indicating when backup
+                                  configuration starts.
+                                type: string
+                              transactionLogRetentionDays:
+                                description: The number of days of transaction logs
+                                  we retain for point in time restore, from 1-7.
+                                format: int64
+                                type: integer
+                            type: object
+                          type: array
+                        collation:
+                          description: The name of server instance collation.
+                          type: string
+                        databaseFlags:
+                          items:
+                            properties:
+                              name:
+                                description: Name of the flag.
+                                type: string
+                              value:
+                                description: Value of the flag.
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          type: array
+                        diskAutoresize:
+                          description: Configuration to increase storage size automatically.  Note
+                            that future terraform apply calls will attempt to resize
+                            the disk to the value specified in disk_size - if this
+                            is set, do not set disk_size.
+                          type: boolean
+                        diskAutoresizeLimit:
+                          description: The maximum size, in GB, to which storage capacity
+                            can be automatically increased. The default value is 0,
+                            which specifies that there is no limit.
+                          format: int64
+                          type: integer
+                        diskSize:
+                          description: The size of data disk, in GB. Size of a running
+                            instance cannot be reduced but can be increased.
+                          format: int64
+                          type: integer
+                        diskType:
+                          description: 'The type of data disk: PD_SSD or PD_HDD.'
+                          type: string
+                        insightsConfig:
+                          description: Configuration of Query Insights.
+                          items:
+                            properties:
+                              queryInsightsEnabled:
+                                description: True if Query Insights feature is enabled.
+                                type: boolean
+                              queryStringLength:
+                                description: Maximum query length stored in bytes.
+                                  Between 256 and 4500. Default to 1024.
+                                format: int64
+                                type: integer
+                              recordApplicationTags:
+                                description: True if Query Insights will record application
+                                  tags from query when enabled.
+                                type: boolean
+                              recordClientAddress:
+                                description: True if Query Insights will record client
+                                  address when enabled.
+                                type: boolean
+                            type: object
+                          type: array
+                        ipConfiguration:
+                          items:
+                            properties:
+                              authorizedNetworks:
+                                items:
+                                  properties:
+                                    expirationTime:
+                                      type: string
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                                  required:
+                                  - value
+                                  type: object
+                                type: array
+                              ipv4Enabled:
+                                description: Whether this Cloud SQL instance should
+                                  be assigned a public IPV4 address. At least ipv4_enabled
+                                  must be enabled or a private_network must be configured.
+                                type: boolean
+                              privateNetwork:
+                                description: The VPC network from which the Cloud
+                                  SQL instance is accessible for private IP. For example,
+                                  projects/myProject/global/networks/default. Specifying
+                                  a network enables private IP. At least ipv4_enabled
+                                  must be enabled or a private_network must be configured.
+                                  This setting can be updated, but it cannot be removed
+                                  after it is set.
+                                type: string
+                              requireSsl:
+                                type: boolean
+                            type: object
+                          type: array
+                        locationPreference:
+                          items:
+                            properties:
+                              followGaeApplication:
+                                description: A Google App Engine application whose
+                                  zone to remain in. Must be in the same region as
+                                  this instance.
+                                type: string
+                              zone:
+                                description: The preferred compute engine zone.
+                                type: string
+                            type: object
+                          type: array
+                        maintenanceWindow:
+                          description: Declares a one-hour maintenance window when
+                            an Instance can automatically restart to apply updates.
+                            The maintenance window is specified in UTC time.
+                          items:
+                            properties:
+                              day:
+                                description: Day of week (1-7), starting on Monday
+                                format: int64
+                                type: integer
+                              hour:
+                                description: Hour of day (0-23), ignored if day not
+                                  set
+                                format: int64
+                                type: integer
+                              updateTrack:
+                                description: Receive updates earlier (canary) or later
+                                  (stable)
+                                type: string
+                            type: object
+                          type: array
+                        pricingPlan:
+                          description: Pricing plan for this instance, can only be
+                            PER_USE.
+                          type: string
+                        tier:
+                          description: The machine type to use. See tiers for more
+                            details and supported versions. Postgres supports only
+                            shared-core machine types, and custom machine types such
+                            as db-custom-2-13312. See the Custom Machine Type Documentation
+                            to learn about specifying custom machine types.
+                          type: string
+                        userLabels:
+                          additionalProperties:
+                            type: string
+                          description: A set of key/value user label pairs to assign
+                            to the instance.
+                          type: object
+                      required:
+                      - tier
+                      type: object
+                    type: array
+                required:
+                - databaseVersion
+                type: object
+              providerConfigRef:
+                default:
+                  name: default
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: DatabaseInstanceStatus defines the observed state of DatabaseInstance.
+            properties:
+              atProvider:
+                properties:
+                  connectionName:
+                    type: string
+                  firstIpAddress:
+                    type: string
+                  id:
+                    type: string
+                  ipAddress:
+                    items:
+                      properties:
+                        ipAddress:
+                          type: string
+                        timeToRetire:
+                          type: string
+                        type:
+                          type: string
+                      type: object
+                    type: array
+                  privateIpAddress:
+                    type: string
+                  publicIpAddress:
+                    type: string
+                  selfLink:
+                    type: string
+                  serverCaCert:
+                    items:
+                      properties:
+                        cert:
+                          type: string
+                        commonName:
+                          type: string
+                        createTime:
+                          type: string
+                        expirationTime:
+                          type: string
+                        sha1Fingerprint:
+                          type: string
+                      type: object
+                    type: array
+                  serviceAccountEmailAddress:
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2019 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ type NodePoolAutoscalingParameters struct {
 
 	// Maximum number of nodes in the NodePool. Must be >= min_node_count.
 	// +kubebuilder:validation:Required
-	MaxNodeCount *float64 `json:"maxNodeCount" tf:"max_node_count,omitempty"`
+	MaxNodeCount *int64 `json:"maxNodeCount" tf:"max_node_count,omitempty"`
 
 	// Minimum number of nodes in the NodePool. Must be >=0 and <= max_node_count.
 	// +kubebuilder:validation:Required
-	MinNodeCount *float64 `json:"minNodeCount" tf:"min_node_count,omitempty"`
+	MinNodeCount *int64 `json:"minNodeCount" tf:"min_node_count,omitempty"`
 }
 
 type NodePoolManagementObservation struct {
@@ -58,14 +58,17 @@ type NodePoolNodeConfigGuestAcceleratorObservation struct {
 
 type NodePoolNodeConfigGuestAcceleratorParameters struct {
 
-	// +kubebuilder:validation:Optional
-	Count *float64 `json:"count,omitempty" tf:"count"`
+	// The number of the accelerator cards exposed to an instance.
+	// +kubebuilder:validation:Required
+	Count *int64 `json:"count" tf:"count"`
 
+	// Size of partitions to create on the GPU. Valid values are described in the NVIDIA mig user guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
 	// +kubebuilder:validation:Optional
 	GpuPartitionSize *string `json:"gpuPartitionSize,omitempty" tf:"gpu_partition_size"`
 
-	// +kubebuilder:validation:Optional
-	Type *string `json:"type,omitempty" tf:"type"`
+	// The accelerator type resource name.
+	// +kubebuilder:validation:Required
+	Type *string `json:"type" tf:"type"`
 }
 
 type NodePoolNodeConfigObservation_2 struct {
@@ -75,7 +78,7 @@ type NodePoolNodeConfigParameters_2 struct {
 
 	// Size of the disk attached to each node, specified in GB. The smallest allowed disk size is 10GB.
 	// +kubebuilder:validation:Optional
-	DiskSizeGb *float64 `json:"diskSizeGb,omitempty" tf:"disk_size_gb,omitempty"`
+	DiskSizeGb *int64 `json:"diskSizeGb,omitempty" tf:"disk_size_gb,omitempty"`
 
 	// Type of the disk attached to each node.
 	// +kubebuilder:validation:Optional
@@ -95,7 +98,7 @@ type NodePoolNodeConfigParameters_2 struct {
 
 	// The number of local SSD disks to be attached to the node.
 	// +kubebuilder:validation:Optional
-	LocalSsdCount *float64 `json:"localSsdCount,omitempty" tf:"local_ssd_count,omitempty"`
+	LocalSsdCount *int64 `json:"localSsdCount,omitempty" tf:"local_ssd_count,omitempty"`
 
 	// The name of a Google Compute Engine machine type.
 	// +kubebuilder:validation:Optional
@@ -157,14 +160,17 @@ type NodePoolNodeConfigTaintObservation struct {
 
 type NodePoolNodeConfigTaintParameters struct {
 
-	// +kubebuilder:validation:Optional
-	Effect *string `json:"effect,omitempty" tf:"effect"`
+	// Effect for taint.
+	// +kubebuilder:validation:Required
+	Effect *string `json:"effect" tf:"effect"`
 
-	// +kubebuilder:validation:Optional
-	Key *string `json:"key,omitempty" tf:"key"`
+	// Key for taint.
+	// +kubebuilder:validation:Required
+	Key *string `json:"key" tf:"key"`
 
-	// +kubebuilder:validation:Optional
-	Value *string `json:"value,omitempty" tf:"value"`
+	// Value for taint.
+	// +kubebuilder:validation:Required
+	Value *string `json:"value" tf:"value"`
 }
 
 type NodePoolNodeConfigWorkloadMetadataConfigObservation struct {
@@ -207,7 +213,7 @@ type NodePoolParameters_2 struct {
 
 	// The initial number of nodes for the pool. In regional or multi-zonal clusters, this is the number of nodes per zone. Changing this will force recreation of the resource.
 	// +kubebuilder:validation:Optional
-	InitialNodeCount *float64 `json:"initialNodeCount,omitempty" tf:"initial_node_count,omitempty"`
+	InitialNodeCount *int64 `json:"initialNodeCount,omitempty" tf:"initial_node_count,omitempty"`
 
 	// The location (region or zone) of the cluster.
 	// +kubebuilder:validation:Optional
@@ -219,7 +225,7 @@ type NodePoolParameters_2 struct {
 
 	// The maximum number of pods per node in this node pool. Note that this does not work on node pools which are "route-based" - that is, node pools belonging to clusters that do not have IP Aliasing enabled.
 	// +kubebuilder:validation:Optional
-	MaxPodsPerNode *float64 `json:"maxPodsPerNode,omitempty" tf:"max_pods_per_node,omitempty"`
+	MaxPodsPerNode *int64 `json:"maxPodsPerNode,omitempty" tf:"max_pods_per_node,omitempty"`
 
 	// The configuration of the nodepool
 	// +kubebuilder:validation:Optional
@@ -227,7 +233,7 @@ type NodePoolParameters_2 struct {
 
 	// The number of nodes per instance group. This field can be used to update the number of nodes per instance group but should not be used alongside autoscaling.
 	// +kubebuilder:validation:Optional
-	NodeCount *float64 `json:"nodeCount,omitempty" tf:"node_count,omitempty"`
+	NodeCount *int64 `json:"nodeCount,omitempty" tf:"node_count,omitempty"`
 
 	// The list of zones in which the node pool's nodes should be located. Nodes must be in the region of their regional cluster or in the same region as their cluster's zone for zonal clusters. If unspecified, the cluster-level node_locations will be used.
 	// +kubebuilder:validation:Optional
@@ -253,11 +259,11 @@ type NodePoolUpgradeSettingsParameters struct {
 
 	// The number of additional nodes that can be added to the node pool during an upgrade. Increasing max_surge raises the number of nodes that can be upgraded simultaneously. Can be set to 0 or greater.
 	// +kubebuilder:validation:Required
-	MaxSurge *float64 `json:"maxSurge" tf:"max_surge,omitempty"`
+	MaxSurge *int64 `json:"maxSurge" tf:"max_surge,omitempty"`
 
 	// The number of nodes that can be simultaneously unavailable during an upgrade. Increasing max_unavailable raises the number of nodes that can be upgraded in parallel. Can be set to 0 or greater.
 	// +kubebuilder:validation:Required
-	MaxUnavailable *float64 `json:"maxUnavailable" tf:"max_unavailable,omitempty"`
+	MaxUnavailable *int64 `json:"maxUnavailable" tf:"max_unavailable,omitempty"`
 }
 
 // NodePoolSpec defines the desired state of NodePool

@@ -1,0 +1,732 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: instances.compute.gcp.jet.crossplane.io
+spec:
+  group: compute.gcp.jet.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcpjet
+    kind: Instance
+    listKind: InstanceList
+    plural: instances
+    singular: instance
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: Instance is the Schema for the Instances API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: InstanceSpec defines the desired state of Instance
+            properties:
+              deletionPolicy:
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                properties:
+                  advancedMachineFeatures:
+                    description: Controls for advanced machine-related behavior features.
+                    items:
+                      properties:
+                        enableNestedVirtualization:
+                          description: Whether to enable nested virtualization or
+                            not.
+                          type: boolean
+                        threadsPerCore:
+                          description: The number of threads per physical core. To
+                            disable simultaneous multithreading (SMT) set this to
+                            1. If unset, the maximum number of threads supported per
+                            core by the underlying processor is assumed.
+                          format: int64
+                          type: integer
+                      type: object
+                    type: array
+                  allowStoppingForUpdate:
+                    description: If true, allows Terraform to stop the instance to
+                      update its properties. If you try to update a property that
+                      requires stopping the instance without setting this field, the
+                      update will fail.
+                    type: boolean
+                  attachedDisk:
+                    description: List of disks attached to the instance
+                    items:
+                      properties:
+                        deviceName:
+                          description: Name with which the attached disk is accessible
+                            under /dev/disk/by-id/
+                          type: string
+                        diskEncryptionKeyRawSecretRef:
+                          description: A 256-bit customer-supplied encryption key,
+                            encoded in RFC 4648 base64 to encrypt this disk. Only
+                            one of kms_key_self_link and disk_encryption_key_raw may
+                            be set.
+                          properties:
+                            key:
+                              description: The key to select.
+                              type: string
+                            name:
+                              description: Name of the secret.
+                              type: string
+                            namespace:
+                              description: Namespace of the secret.
+                              type: string
+                          required:
+                          - key
+                          - name
+                          - namespace
+                          type: object
+                        kmsKeySelfLink:
+                          description: The self_link of the encryption key that is
+                            stored in Google Cloud KMS to encrypt this disk. Only
+                            one of kms_key_self_link and disk_encryption_key_raw may
+                            be set.
+                          type: string
+                        mode:
+                          description: Read/write mode for the disk. One of "READ_ONLY"
+                            or "READ_WRITE".
+                          type: string
+                        source:
+                          description: The name or self_link of the disk attached
+                            to this instance.
+                          type: string
+                      required:
+                      - source
+                      type: object
+                    type: array
+                  bootDisk:
+                    description: The boot disk for the instance.
+                    items:
+                      properties:
+                        autoDelete:
+                          description: Whether the disk will be auto-deleted when
+                            the instance is deleted.
+                          type: boolean
+                        deviceName:
+                          description: Name with which attached disk will be accessible
+                            under /dev/disk/by-id/
+                          type: string
+                        diskEncryptionKeyRawSecretRef:
+                          description: A 256-bit customer-supplied encryption key,
+                            encoded in RFC 4648 base64 to encrypt this disk. Only
+                            one of kms_key_self_link and disk_encryption_key_raw may
+                            be set.
+                          properties:
+                            key:
+                              description: The key to select.
+                              type: string
+                            name:
+                              description: Name of the secret.
+                              type: string
+                            namespace:
+                              description: Namespace of the secret.
+                              type: string
+                          required:
+                          - key
+                          - name
+                          - namespace
+                          type: object
+                        initializeParams:
+                          description: Parameters with which a disk was created alongside
+                            the instance.
+                          items:
+                            properties:
+                              image:
+                                description: The image from which this disk was initialised.
+                                type: string
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                description: A set of key/value label pairs assigned
+                                  to the disk.
+                                type: object
+                              size:
+                                description: The size of the image in gigabytes.
+                                format: int64
+                                type: integer
+                              type:
+                                description: The Google Compute Engine disk type.
+                                  One of pd-standard, pd-ssd or pd-balanced.
+                                type: string
+                            type: object
+                          type: array
+                        kmsKeySelfLink:
+                          description: The self_link of the encryption key that is
+                            stored in Google Cloud KMS to encrypt this disk. Only
+                            one of kms_key_self_link and disk_encryption_key_raw may
+                            be set.
+                          type: string
+                        mode:
+                          description: Read/write mode for the disk. One of "READ_ONLY"
+                            or "READ_WRITE".
+                          type: string
+                        source:
+                          description: The name or self_link of the disk attached
+                            to this instance.
+                          type: string
+                      type: object
+                    type: array
+                  canIpForward:
+                    description: Whether sending and receiving of packets with non-matching
+                      source or destination IPs is allowed.
+                    type: boolean
+                  confidentialInstanceConfig:
+                    description: The Confidential VM config being used by the instance.  on_host_maintenance
+                      has to be set to TERMINATE or this will fail to create.
+                    items:
+                      properties:
+                        enableConfidentialCompute:
+                          description: Defines whether the instance should have confidential
+                            compute enabled.
+                          type: boolean
+                      required:
+                      - enableConfidentialCompute
+                      type: object
+                    type: array
+                  deletionProtection:
+                    description: Whether deletion protection is enabled on this instance.
+                    type: boolean
+                  description:
+                    description: A brief description of the resource.
+                    type: string
+                  desiredStatus:
+                    description: Desired status of the instance. Either "RUNNING"
+                      or "TERMINATED".
+                    type: string
+                  enableDisplay:
+                    description: Whether the instance has virtual displays enabled.
+                    type: boolean
+                  guestAccelerator:
+                    description: List of the type and count of accelerator cards attached
+                      to the instance.
+                    items:
+                      properties:
+                        count:
+                          description: The number of the guest accelerator cards exposed
+                            to this instance.
+                          format: int64
+                          type: integer
+                        type:
+                          description: The accelerator type resource exposed to this
+                            instance. E.g. nvidia-tesla-k80.
+                          type: string
+                      required:
+                      - count
+                      - type
+                      type: object
+                    type: array
+                  hostname:
+                    description: A custom hostname for the instance. Must be a fully
+                      qualified DNS name and RFC-1035-valid. Valid format is a series
+                      of labels 1-63 characters long matching the regular expression
+                      [a-z]([-a-z0-9]*[a-z0-9]), concatenated with periods. The entire
+                      hostname must not exceed 253 characters. Changing this forces
+                      a new resource to be created.
+                    type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: A set of key/value label pairs assigned to the instance.
+                    type: object
+                  machineType:
+                    description: The machine type to create.
+                    type: string
+                  metadata:
+                    additionalProperties:
+                      type: string
+                    description: Metadata key/value pairs made available within the
+                      instance.
+                    type: object
+                  metadataStartupScript:
+                    description: Metadata startup scripts made available within the
+                      instance.
+                    type: string
+                  minCpuPlatform:
+                    description: The minimum CPU platform specified for the VM instance.
+                    type: string
+                  networkInterface:
+                    description: The networks attached to the instance.
+                    items:
+                      properties:
+                        accessConfig:
+                          description: Access configurations, i.e. IPs via which this
+                            instance can be accessed via the Internet.
+                          items:
+                            properties:
+                              natIp:
+                                description: The IP address that is be 1:1 mapped
+                                  to the instance's network ip.
+                                type: string
+                              networkTier:
+                                description: The networking tier used for configuring
+                                  this instance. One of PREMIUM or STANDARD.
+                                type: string
+                              publicPtrDomainName:
+                                description: The DNS domain name for the public PTR
+                                  record.
+                                type: string
+                            type: object
+                          type: array
+                        aliasIpRange:
+                          description: An array of alias IP ranges for this network
+                            interface.
+                          items:
+                            properties:
+                              ipCidrRange:
+                                description: The IP CIDR range represented by this
+                                  alias IP range.
+                                type: string
+                              subnetworkRangeName:
+                                description: The subnetwork secondary range name specifying
+                                  the secondary range from which to allocate the IP
+                                  CIDR range for this alias IP range.
+                                type: string
+                            required:
+                            - ipCidrRange
+                            type: object
+                          type: array
+                        ipv6AccessConfig:
+                          description: An array of IPv6 access configurations for
+                            this interface. Currently, only one IPv6 access config,
+                            DIRECT_IPV6, is supported. If there is no ipv6AccessConfig
+                            specified, then this instance will have no external IPv6
+                            Internet access.
+                          items:
+                            properties:
+                              networkTier:
+                                description: The service-level to be provided for
+                                  IPv6 traffic when the subnet has an external subnet.
+                                  Only PREMIUM tier is valid for IPv6
+                                type: string
+                              publicPtrDomainName:
+                                description: The domain name to be used when creating
+                                  DNSv6 records for the external IPv6 ranges.
+                                type: string
+                            required:
+                            - networkTier
+                            type: object
+                          type: array
+                        network:
+                          description: The name or self_link of the network attached
+                            to this interface.
+                          type: string
+                        networkIp:
+                          description: The private IP address assigned to the instance.
+                          type: string
+                        networkRef:
+                          description: A Reference to a named object.
+                          properties:
+                            name:
+                              description: Name of the referenced object.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        networkSelector:
+                          description: A Selector selects an object.
+                          properties:
+                            matchControllerRef:
+                              description: MatchControllerRef ensures an object with
+                                the same controller reference as the selecting object
+                                is selected.
+                              type: boolean
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: MatchLabels ensures an object with matching
+                                labels is selected.
+                              type: object
+                          type: object
+                        nicType:
+                          description: The type of vNIC to be used on this interface.
+                            Possible values:GVNIC, VIRTIO_NET
+                          type: string
+                        stackType:
+                          description: The stack type for this network interface to
+                            identify whether the IPv6 feature is enabled or not. If
+                            not specified, IPV4_ONLY will be used.
+                          type: string
+                        subnetwork:
+                          description: The name or self_link of the subnetwork attached
+                            to this interface.
+                          type: string
+                        subnetworkProject:
+                          description: The project in which the subnetwork belongs.
+                          type: string
+                        subnetworkRef:
+                          description: A Reference to a named object.
+                          properties:
+                            name:
+                              description: Name of the referenced object.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        subnetworkSelector:
+                          description: A Selector selects an object.
+                          properties:
+                            matchControllerRef:
+                              description: MatchControllerRef ensures an object with
+                                the same controller reference as the selecting object
+                                is selected.
+                              type: boolean
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: MatchLabels ensures an object with matching
+                                labels is selected.
+                              type: object
+                          type: object
+                      type: object
+                    type: array
+                  project:
+                    description: The ID of the project in which the resource belongs.
+                      If self_link is provided, this value is ignored. If neither
+                      self_link nor project are provided, the provider project is
+                      used.
+                    type: string
+                  reservationAffinity:
+                    description: Specifies the reservations that this instance can
+                      consume from.
+                    items:
+                      properties:
+                        specificReservation:
+                          description: Specifies the label selector for the reservation
+                            to use.
+                          items:
+                            properties:
+                              key:
+                                description: Corresponds to the label key of a reservation
+                                  resource. To target a SPECIFIC_RESERVATION by name,
+                                  specify compute.googleapis.com/reservation-name
+                                  as the key and specify the name of your reservation
+                                  as the only value.
+                                type: string
+                              values:
+                                description: Corresponds to the label values of a
+                                  reservation resource.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - key
+                            - values
+                            type: object
+                          type: array
+                        type:
+                          description: The type of reservation from which this instance
+                            can consume resources.
+                          type: string
+                      required:
+                      - type
+                      type: object
+                    type: array
+                  resourcePolicies:
+                    description: A list of short names or self_links of resource policies
+                      to attach to the instance. Currently a max of 1 resource policy
+                      is supported.
+                    items:
+                      type: string
+                    type: array
+                  scheduling:
+                    description: The scheduling strategy being used by the instance.
+                    items:
+                      properties:
+                        automaticRestart:
+                          description: Specifies if the instance should be restarted
+                            if it was terminated by Compute Engine (not a user).
+                          type: boolean
+                        minNodeCpus:
+                          format: int64
+                          type: integer
+                        nodeAffinities:
+                          description: Specifies node affinities or anti-affinities
+                            to determine which sole-tenant nodes your instances and
+                            managed instance groups will use as host systems.
+                          items:
+                            properties:
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                              values:
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - key
+                            - operator
+                            - values
+                            type: object
+                          type: array
+                        onHostMaintenance:
+                          description: Describes maintenance behavior for the instance.
+                            One of MIGRATE or TERMINATE,
+                          type: string
+                        preemptible:
+                          description: Whether the instance is preemptible.
+                          type: boolean
+                      type: object
+                    type: array
+                  scratchDisk:
+                    description: The scratch disks attached to the instance.
+                    items:
+                      properties:
+                        interface:
+                          description: The disk interface used for attaching this
+                            disk. One of SCSI or NVME.
+                          type: string
+                      required:
+                      - interface
+                      type: object
+                    type: array
+                  serviceAccount:
+                    description: The service account to attach to the instance.
+                    items:
+                      properties:
+                        email:
+                          description: The service account e-mail address.
+                          type: string
+                        scopes:
+                          description: A list of service scopes.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - scopes
+                      type: object
+                    type: array
+                  shieldedInstanceConfig:
+                    description: The shielded vm config being used by the instance.
+                    items:
+                      properties:
+                        enableIntegrityMonitoring:
+                          description: Whether integrity monitoring is enabled for
+                            the instance.
+                          type: boolean
+                        enableSecureBoot:
+                          description: Whether secure boot is enabled for the instance.
+                          type: boolean
+                        enableVtpm:
+                          description: Whether the instance uses vTPM.
+                          type: boolean
+                      type: object
+                    type: array
+                  tags:
+                    description: The list of tags attached to the instance.
+                    items:
+                      type: string
+                    type: array
+                  zone:
+                    description: The zone of the instance. If self_link is provided,
+                      this value is ignored. If neither self_link nor zone are provided,
+                      the provider zone is used.
+                    type: string
+                required:
+                - bootDisk
+                - machineType
+                - networkInterface
+                type: object
+              providerConfigRef:
+                default:
+                  name: default
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: InstanceStatus defines the observed state of Instance.
+            properties:
+              atProvider:
+                properties:
+                  cpuPlatform:
+                    type: string
+                  currentStatus:
+                    type: string
+                  id:
+                    type: string
+                  instanceId:
+                    type: string
+                  labelFingerprint:
+                    type: string
+                  metadataFingerprint:
+                    type: string
+                  selfLink:
+                    type: string
+                  tagsFingerprint:
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

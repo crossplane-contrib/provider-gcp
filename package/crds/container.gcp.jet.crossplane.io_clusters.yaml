@@ -1,0 +1,1251 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: clusters.container.gcp.jet.crossplane.io
+spec:
+  group: container.gcp.jet.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcpjet
+    kind: Cluster
+    listKind: ClusterList
+    plural: clusters
+    singular: cluster
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: Cluster is the Schema for the Clusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterSpec defines the desired state of Cluster
+            properties:
+              deletionPolicy:
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                properties:
+                  addonsConfig:
+                    description: The configuration for addons supported by GKE.
+                    items:
+                      properties:
+                        cloudrunConfig:
+                          description: The status of the CloudRun addon. It is disabled
+                            by default. Set disabled = false to enable.
+                          items:
+                            properties:
+                              disabled:
+                                type: boolean
+                              loadBalancerType:
+                                type: string
+                            required:
+                            - disabled
+                            type: object
+                          type: array
+                        horizontalPodAutoscaling:
+                          description: The status of the Horizontal Pod Autoscaling
+                            addon, which increases or decreases the number of replica
+                            pods a replication controller has based on the resource
+                            usage of the existing pods. It ensures that a Heapster
+                            pod is running in the cluster, which is also used by the
+                            Cloud Monitoring service. It is enabled by default; set
+                            disabled = true to disable.
+                          items:
+                            properties:
+                              disabled:
+                                type: boolean
+                            required:
+                            - disabled
+                            type: object
+                          type: array
+                        httpLoadBalancing:
+                          description: The status of the HTTP (L7) load balancing
+                            controller addon, which makes it easy to set up HTTP load
+                            balancers for services in a cluster. It is enabled by
+                            default; set disabled = true to disable.
+                          items:
+                            properties:
+                              disabled:
+                                type: boolean
+                            required:
+                            - disabled
+                            type: object
+                          type: array
+                        networkPolicyConfig:
+                          description: Whether we should enable the network policy
+                            addon for the master. This must be enabled in order to
+                            enable network policy for the nodes. To enable this, you
+                            must also define a network_policy block, otherwise nothing
+                            will happen. It can only be disabled if the nodes already
+                            do not have network policies enabled. Defaults to disabled;
+                            set disabled = false to enable.
+                          items:
+                            properties:
+                              disabled:
+                                type: boolean
+                            required:
+                            - disabled
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  authenticatorGroupsConfig:
+                    description: Configuration for the Google Groups for GKE feature.
+                    items:
+                      properties:
+                        securityGroup:
+                          description: The name of the RBAC security group for use
+                            with Google security groups in Kubernetes RBAC. Group
+                            name must be in format gke-security-groups@yourdomain.com.
+                          type: string
+                      required:
+                      - securityGroup
+                      type: object
+                    type: array
+                  clusterAutoscaling:
+                    description: Per-cluster configuration of Node Auto-Provisioning
+                      with Cluster Autoscaler to automatically adjust the size of
+                      the cluster and create/delete node pools based on the current
+                      needs of the cluster's workload. See the guide to using Node
+                      Auto-Provisioning for more details.
+                    items:
+                      properties:
+                        autoProvisioningDefaults:
+                          description: Contains defaults for a node pool created by
+                            NAP.
+                          items:
+                            properties:
+                              oauthScopes:
+                                description: Scopes that are used by NAP when creating
+                                  node pools.
+                                items:
+                                  type: string
+                                type: array
+                              serviceAccount:
+                                description: The Google Cloud Platform Service Account
+                                  to be used by the node VMs.
+                                type: string
+                            type: object
+                          type: array
+                        enabled:
+                          description: Whether node auto-provisioning is enabled.
+                            Resource limits for cpu and memory must be defined to
+                            enable node auto-provisioning.
+                          type: boolean
+                        resourceLimits:
+                          description: Global constraints for machine resources in
+                            the cluster. Configuring the cpu and memory types is required
+                            if node auto-provisioning is enabled. These limits will
+                            apply to node pool autoscaling in addition to node auto-provisioning.
+                          items:
+                            properties:
+                              maximum:
+                                description: Maximum amount of the resource in the
+                                  cluster.
+                                format: int64
+                                type: integer
+                              minimum:
+                                description: Minimum amount of the resource in the
+                                  cluster.
+                                format: int64
+                                type: integer
+                              resourceType:
+                                description: The type of the resource. For example,
+                                  cpu and memory. See the guide to using Node Auto-Provisioning
+                                  for a list of types.
+                                type: string
+                            required:
+                            - resourceType
+                            type: object
+                          type: array
+                      required:
+                      - enabled
+                      type: object
+                    type: array
+                  clusterIpv4Cidr:
+                    description: The IP address range of the Kubernetes pods in this
+                      cluster in CIDR notation (e.g. 10.96.0.0/14). Leave blank to
+                      have one automatically chosen or specify a /14 block in 10.0.0.0/8.
+                      This field will only work for routes-based clusters, where ip_allocation_policy
+                      is not defined.
+                    type: string
+                  databaseEncryption:
+                    description: 'Application-layer Secrets Encryption settings. The
+                      object format is {state = string, key_name = string}. Valid
+                      values of state are: "ENCRYPTED"; "DECRYPTED". key_name is the
+                      name of a CloudKMS key.'
+                    items:
+                      properties:
+                        keyName:
+                          description: The key to use to encrypt/decrypt secrets.
+                          type: string
+                        state:
+                          description: ENCRYPTED or DECRYPTED.
+                          type: string
+                      required:
+                      - state
+                      type: object
+                    type: array
+                  datapathProvider:
+                    description: The desired datapath provider for this cluster. By
+                      default, uses the IPTables-based kube-proxy implementation.
+                    type: string
+                  defaultMaxPodsPerNode:
+                    description: The default maximum number of pods per node in this
+                      cluster. This doesn't work on "routes-based" clusters, clusters
+                      that don't have IP Aliasing enabled.
+                    format: int64
+                    type: integer
+                  defaultSnatStatus:
+                    description: Whether the cluster disables default in-node sNAT
+                      rules. In-node sNAT rules will be disabled when defaultSnatStatus
+                      is disabled.
+                    items:
+                      properties:
+                        disabled:
+                          description: When disabled is set to false, default IP masquerade
+                            rules will be applied to the nodes to prevent sNAT on
+                            cluster internal traffic.
+                          type: boolean
+                      required:
+                      - disabled
+                      type: object
+                    type: array
+                  description:
+                    description: Description of the cluster.
+                    type: string
+                  enableAutopilot:
+                    description: Enable Autopilot for this cluster.
+                    type: boolean
+                  enableBinaryAuthorization:
+                    description: Enable Binary Authorization for this cluster. If
+                      enabled, all container images will be validated by Google Binary
+                      Authorization.
+                    type: boolean
+                  enableIntranodeVisibility:
+                    description: Whether Intra-node visibility is enabled for this
+                      cluster. This makes same node pod to pod traffic visible for
+                      VPC network.
+                    type: boolean
+                  enableKubernetesAlpha:
+                    description: Whether to enable Kubernetes Alpha features for this
+                      cluster. Note that when this option is enabled, the cluster
+                      cannot be upgraded and will be automatically deleted after 30
+                      days.
+                    type: boolean
+                  enableLegacyAbac:
+                    description: Whether the ABAC authorizer is enabled for this cluster.
+                      When enabled, identities in the system, including service accounts,
+                      nodes, and controllers, will have statically granted permissions
+                      beyond those provided by the RBAC configuration or IAM. Defaults
+                      to false.
+                    type: boolean
+                  enableShieldedNodes:
+                    description: Enable Shielded Nodes features on all nodes in this
+                      cluster. Defaults to true.
+                    type: boolean
+                  enableTpu:
+                    description: Whether to enable Cloud TPU resources in this cluster.
+                    type: boolean
+                  initialNodeCount:
+                    description: The number of nodes to create in this cluster's default
+                      node pool. In regional or multi-zonal clusters, this is the
+                      number of nodes per zone. Must be set if node_pool is not set.
+                      If you're using google_container_node_pool objects with no default
+                      node pool, you'll need to set this to a value of at least 1,
+                      alongside setting remove_default_node_pool to true.
+                    format: int64
+                    type: integer
+                  ipAllocationPolicy:
+                    description: Configuration of cluster IP allocation for VPC-native
+                      clusters. Adding this block enables IP aliasing, making the
+                      cluster VPC-native instead of routes-based.
+                    items:
+                      properties:
+                        clusterIpv4CidrBlock:
+                          description: The IP address range for the cluster pod IPs.
+                            Set to blank to have a range chosen with the default size.
+                            Set to /netmask (e.g. /14) to have a range chosen with
+                            a specific netmask. Set to a CIDR notation (e.g. 10.96.0.0/14)
+                            from the RFC-1918 private networks (e.g. 10.0.0.0/8, 172.16.0.0/12,
+                            192.168.0.0/16) to pick a specific range to use.
+                          type: string
+                        clusterSecondaryRangeName:
+                          description: The name of the existing secondary range in
+                            the cluster's subnetwork to use for pod IP addresses.
+                            Alternatively, cluster_ipv4_cidr_block can be used to
+                            automatically create a GKE-managed one.
+                          type: string
+                        servicesIpv4CidrBlock:
+                          description: The IP address range of the services IPs in
+                            this cluster. Set to blank to have a range chosen with
+                            the default size. Set to /netmask (e.g. /14) to have a
+                            range chosen with a specific netmask. Set to a CIDR notation
+                            (e.g. 10.96.0.0/14) from the RFC-1918 private networks
+                            (e.g. 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) to pick
+                            a specific range to use.
+                          type: string
+                        servicesSecondaryRangeName:
+                          description: The name of the existing secondary range in
+                            the cluster's subnetwork to use for service ClusterIPs.
+                            Alternatively, services_ipv4_cidr_block can be used to
+                            automatically create a GKE-managed one.
+                          type: string
+                      type: object
+                    type: array
+                  location:
+                    description: The location (region or zone) in which the cluster
+                      master will be created, as well as the default node location.
+                      If you specify a zone (such as us-central1-a), the cluster will
+                      be a zonal cluster with a single cluster master. If you specify
+                      a region (such as us-west1), the cluster will be a regional
+                      cluster with multiple masters spread across zones in the region,
+                      and with default node locations in those zones as well.
+                    type: string
+                  loggingConfig:
+                    description: Logging configuration for the cluster.
+                    items:
+                      properties:
+                        enableComponents:
+                          description: GKE components exposing logs. Valid values
+                            include SYSTEM_COMPONENTS and WORKLOADS.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - enableComponents
+                      type: object
+                    type: array
+                  loggingService:
+                    description: The logging service that the cluster should write
+                      logs to. Available options include logging.googleapis.com(Legacy
+                      Stackdriver), logging.googleapis.com/kubernetes(Stackdriver
+                      Kubernetes Engine Logging), and none. Defaults to logging.googleapis.com/kubernetes.
+                    type: string
+                  maintenancePolicy:
+                    description: The maintenance policy to use for the cluster.
+                    items:
+                      properties:
+                        dailyMaintenanceWindow:
+                          description: 'Time window specified for daily maintenance
+                            operations. Specify start_time in RFC3339 format "HH:MM”,
+                            where HH : [00-23] and MM : [00-59] GMT.'
+                          items:
+                            properties:
+                              startTime:
+                                type: string
+                            required:
+                            - startTime
+                            type: object
+                          type: array
+                        maintenanceExclusion:
+                          description: Exceptions to maintenance window. Non-emergency
+                            maintenance should not occur in these windows.
+                          items:
+                            properties:
+                              endTime:
+                                type: string
+                              exclusionName:
+                                type: string
+                              startTime:
+                                type: string
+                            required:
+                            - endTime
+                            - exclusionName
+                            - startTime
+                            type: object
+                          type: array
+                        recurringWindow:
+                          description: Time window for recurring maintenance operations.
+                          items:
+                            properties:
+                              endTime:
+                                type: string
+                              recurrence:
+                                type: string
+                              startTime:
+                                type: string
+                            required:
+                            - endTime
+                            - recurrence
+                            - startTime
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  masterAuth:
+                    description: The authentication information for accessing the
+                      Kubernetes master. Some values in this block are only returned
+                      by the API if your service account has permission to get credentials
+                      for your GKE cluster. If you see an unexpected diff unsetting
+                      your client cert, ensure you have the container.clusters.getCredentials
+                      permission.
+                    items:
+                      properties:
+                        clientCertificateConfig:
+                          description: Whether client certificate authorization is
+                            enabled for this cluster.
+                          items:
+                            properties:
+                              issueClientCertificate:
+                                description: Whether client certificate authorization
+                                  is enabled for this cluster.
+                                type: boolean
+                            required:
+                            - issueClientCertificate
+                            type: object
+                          type: array
+                      required:
+                      - clientCertificateConfig
+                      type: object
+                    type: array
+                  masterAuthorizedNetworksConfig:
+                    description: The desired configuration options for master authorized
+                      networks. Omit the nested cidr_blocks attribute to disallow
+                      external access (except the cluster node IPs, which GKE automatically
+                      whitelists).
+                    items:
+                      properties:
+                        cidrBlocks:
+                          description: External networks that can access the Kubernetes
+                            cluster master through HTTPS.
+                          items:
+                            properties:
+                              cidrBlock:
+                                description: External network that can access Kubernetes
+                                  master through HTTPS. Must be specified in CIDR
+                                  notation.
+                                type: string
+                              displayName:
+                                description: Field for users to identify CIDR blocks.
+                                type: string
+                            required:
+                            - cidrBlock
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  minMasterVersion:
+                    description: The minimum version of the master. GKE will auto-update
+                      the master to new versions, so this does not guarantee the current
+                      master version--use the read-only master_version field to obtain
+                      that. If unset, the cluster's version will be set by GKE to
+                      the version of the most recent official release (which is not
+                      necessarily the latest version).
+                    type: string
+                  monitoringConfig:
+                    description: Monitoring configuration for the cluster.
+                    items:
+                      properties:
+                        enableComponents:
+                          description: GKE components exposing metrics. Valid values
+                            include SYSTEM_COMPONENTS.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - enableComponents
+                      type: object
+                    type: array
+                  monitoringService:
+                    description: The monitoring service that the cluster should write
+                      metrics to. Automatically send metrics from pods in the cluster
+                      to the Google Cloud Monitoring API. VM metrics will be collected
+                      by Google Compute Engine regardless of this setting Available
+                      options include monitoring.googleapis.com(Legacy Stackdriver),
+                      monitoring.googleapis.com/kubernetes(Stackdriver Kubernetes
+                      Engine Monitoring), and none. Defaults to monitoring.googleapis.com/kubernetes.
+                    type: string
+                  network:
+                    description: The name or self_link of the Google Compute Engine
+                      network to which the cluster is connected. For Shared VPC, set
+                      this to the self link of the shared network.
+                    type: string
+                  networkPolicy:
+                    description: Configuration options for the NetworkPolicy feature.
+                    items:
+                      properties:
+                        enabled:
+                          description: Whether network policy is enabled on the cluster.
+                          type: boolean
+                        provider:
+                          description: The selected network policy provider. Defaults
+                            to PROVIDER_UNSPECIFIED.
+                          type: string
+                      required:
+                      - enabled
+                      type: object
+                    type: array
+                  networkingMode:
+                    description: Determines whether alias IPs or routes will be used
+                      for pod IPs in the cluster.
+                    type: string
+                  nodeConfig:
+                    description: The configuration of the nodepool
+                    items:
+                      properties:
+                        diskSizeGb:
+                          description: Size of the disk attached to each node, specified
+                            in GB. The smallest allowed disk size is 10GB.
+                          format: int64
+                          type: integer
+                        diskType:
+                          description: Type of the disk attached to each node.
+                          type: string
+                        guestAccelerator:
+                          description: List of the type and count of accelerator cards
+                            attached to the instance.
+                          items:
+                            properties:
+                              count:
+                                description: The number of the accelerator cards exposed
+                                  to an instance.
+                                format: int64
+                                type: integer
+                              gpuPartitionSize:
+                                description: Size of partitions to create on the GPU.
+                                  Valid values are described in the NVIDIA mig user
+                                  guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
+                                type: string
+                              type:
+                                description: The accelerator type resource name.
+                                type: string
+                            required:
+                            - count
+                            - type
+                            type: object
+                          type: array
+                        imageType:
+                          description: The image type to use for this node. Note that
+                            for a given image type, the latest version of it will
+                            be used.
+                          type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: The map of Kubernetes labels (key/value pairs)
+                            to be applied to each node. These will added in addition
+                            to any default label(s) that Kubernetes may apply to the
+                            node.
+                          type: object
+                        localSsdCount:
+                          description: The number of local SSD disks to be attached
+                            to the node.
+                          format: int64
+                          type: integer
+                        machineType:
+                          description: The name of a Google Compute Engine machine
+                            type.
+                          type: string
+                        metadata:
+                          additionalProperties:
+                            type: string
+                          description: The metadata key/value pairs assigned to instances
+                            in the cluster.
+                          type: object
+                        minCpuPlatform:
+                          description: Minimum CPU platform to be used by this instance.
+                            The instance may be scheduled on the specified or newer
+                            CPU platform.
+                          type: string
+                        oauthScopes:
+                          description: The set of Google API scopes to be made available
+                            on all of the node VMs.
+                          items:
+                            type: string
+                          type: array
+                        preemptible:
+                          description: Whether the nodes are created as preemptible
+                            VM instances.
+                          type: boolean
+                        serviceAccount:
+                          description: The Google Cloud Platform Service Account to
+                            be used by the node VMs.
+                          type: string
+                        shieldedInstanceConfig:
+                          description: Shielded Instance options.
+                          items:
+                            properties:
+                              enableIntegrityMonitoring:
+                                description: Defines whether the instance has integrity
+                                  monitoring enabled.
+                                type: boolean
+                              enableSecureBoot:
+                                description: Defines whether the instance has Secure
+                                  Boot enabled.
+                                type: boolean
+                            type: object
+                          type: array
+                        tags:
+                          description: The list of instance tags applied to all nodes.
+                          items:
+                            type: string
+                          type: array
+                        taint:
+                          description: List of Kubernetes taints to be applied to
+                            each node.
+                          items:
+                            properties:
+                              effect:
+                                description: Effect for taint.
+                                type: string
+                              key:
+                                description: Key for taint.
+                                type: string
+                              value:
+                                description: Value for taint.
+                                type: string
+                            required:
+                            - effect
+                            - key
+                            - value
+                            type: object
+                          type: array
+                        workloadMetadataConfig:
+                          description: The workload metadata configuration for this
+                            node.
+                          items:
+                            properties:
+                              mode:
+                                description: Mode is the configuration for how to
+                                  expose metadata to workloads running on the node.
+                                type: string
+                            required:
+                            - mode
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  nodeLocations:
+                    description: The list of zones in which the cluster's nodes are
+                      located. Nodes must be in the region of their regional cluster
+                      or in the same region as their cluster's zone for zonal clusters.
+                      If this is specified for a zonal cluster, omit the cluster's
+                      zone.
+                    items:
+                      type: string
+                    type: array
+                  nodePool:
+                    description: 'List of node pools associated with this cluster.
+                      See google_container_node_pool for schema. Warning: node pools
+                      defined inside a cluster can''t be changed (or added/removed)
+                      after cluster creation without deleting and recreating the entire
+                      cluster. Unless you absolutely need the ability to say "these
+                      are the only node pools associated with this cluster", use the
+                      google_container_node_pool resource instead of this property.'
+                    items:
+                      properties:
+                        autoscaling:
+                          description: Configuration required by cluster autoscaler
+                            to adjust the size of the node pool to the current cluster
+                            usage.
+                          items:
+                            properties:
+                              maxNodeCount:
+                                description: Maximum number of nodes in the NodePool.
+                                  Must be >= min_node_count.
+                                format: int64
+                                type: integer
+                              minNodeCount:
+                                description: Minimum number of nodes in the NodePool.
+                                  Must be >=0 and <= max_node_count.
+                                format: int64
+                                type: integer
+                            required:
+                            - maxNodeCount
+                            - minNodeCount
+                            type: object
+                          type: array
+                        initialNodeCount:
+                          description: The initial number of nodes for the pool. In
+                            regional or multi-zonal clusters, this is the number of
+                            nodes per zone. Changing this will force recreation of
+                            the resource.
+                          format: int64
+                          type: integer
+                        management:
+                          description: Node management configuration, wherein auto-repair
+                            and auto-upgrade is configured.
+                          items:
+                            properties:
+                              autoRepair:
+                                description: Whether the nodes will be automatically
+                                  repaired.
+                                type: boolean
+                              autoUpgrade:
+                                description: Whether the nodes will be automatically
+                                  upgraded.
+                                type: boolean
+                            type: object
+                          type: array
+                        maxPodsPerNode:
+                          description: The maximum number of pods per node in this
+                            node pool. Note that this does not work on node pools
+                            which are "route-based" - that is, node pools belonging
+                            to clusters that do not have IP Aliasing enabled.
+                          format: int64
+                          type: integer
+                        name:
+                          description: The name of the node pool. If left blank, Terraform
+                            will auto-generate a unique name.
+                          type: string
+                        namePrefix:
+                          description: Creates a unique name for the node pool beginning
+                            with the specified prefix. Conflicts with name.
+                          type: string
+                        nodeConfig:
+                          description: The configuration of the nodepool
+                          items:
+                            properties:
+                              diskSizeGb:
+                                description: Size of the disk attached to each node,
+                                  specified in GB. The smallest allowed disk size
+                                  is 10GB.
+                                format: int64
+                                type: integer
+                              diskType:
+                                description: Type of the disk attached to each node.
+                                type: string
+                              guestAccelerator:
+                                description: List of the type and count of accelerator
+                                  cards attached to the instance.
+                                items:
+                                  properties:
+                                    count:
+                                      description: The number of the accelerator cards
+                                        exposed to an instance.
+                                      format: int64
+                                      type: integer
+                                    gpuPartitionSize:
+                                      description: Size of partitions to create on
+                                        the GPU. Valid values are described in the
+                                        NVIDIA mig user guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
+                                      type: string
+                                    type:
+                                      description: The accelerator type resource name.
+                                      type: string
+                                  required:
+                                  - count
+                                  - type
+                                  type: object
+                                type: array
+                              imageType:
+                                description: The image type to use for this node.
+                                  Note that for a given image type, the latest version
+                                  of it will be used.
+                                type: string
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                description: The map of Kubernetes labels (key/value
+                                  pairs) to be applied to each node. These will added
+                                  in addition to any default label(s) that Kubernetes
+                                  may apply to the node.
+                                type: object
+                              localSsdCount:
+                                description: The number of local SSD disks to be attached
+                                  to the node.
+                                format: int64
+                                type: integer
+                              machineType:
+                                description: The name of a Google Compute Engine machine
+                                  type.
+                                type: string
+                              metadata:
+                                additionalProperties:
+                                  type: string
+                                description: The metadata key/value pairs assigned
+                                  to instances in the cluster.
+                                type: object
+                              minCpuPlatform:
+                                description: Minimum CPU platform to be used by this
+                                  instance. The instance may be scheduled on the specified
+                                  or newer CPU platform.
+                                type: string
+                              oauthScopes:
+                                description: The set of Google API scopes to be made
+                                  available on all of the node VMs.
+                                items:
+                                  type: string
+                                type: array
+                              preemptible:
+                                description: Whether the nodes are created as preemptible
+                                  VM instances.
+                                type: boolean
+                              serviceAccount:
+                                description: The Google Cloud Platform Service Account
+                                  to be used by the node VMs.
+                                type: string
+                              shieldedInstanceConfig:
+                                description: Shielded Instance options.
+                                items:
+                                  properties:
+                                    enableIntegrityMonitoring:
+                                      description: Defines whether the instance has
+                                        integrity monitoring enabled.
+                                      type: boolean
+                                    enableSecureBoot:
+                                      description: Defines whether the instance has
+                                        Secure Boot enabled.
+                                      type: boolean
+                                  type: object
+                                type: array
+                              tags:
+                                description: The list of instance tags applied to
+                                  all nodes.
+                                items:
+                                  type: string
+                                type: array
+                              taint:
+                                description: List of Kubernetes taints to be applied
+                                  to each node.
+                                items:
+                                  properties:
+                                    effect:
+                                      description: Effect for taint.
+                                      type: string
+                                    key:
+                                      description: Key for taint.
+                                      type: string
+                                    value:
+                                      description: Value for taint.
+                                      type: string
+                                  required:
+                                  - effect
+                                  - key
+                                  - value
+                                  type: object
+                                type: array
+                              workloadMetadataConfig:
+                                description: The workload metadata configuration for
+                                  this node.
+                                items:
+                                  properties:
+                                    mode:
+                                      description: Mode is the configuration for how
+                                        to expose metadata to workloads running on
+                                        the node.
+                                      type: string
+                                  required:
+                                  - mode
+                                  type: object
+                                type: array
+                            type: object
+                          type: array
+                        nodeCount:
+                          description: The number of nodes per instance group. This
+                            field can be used to update the number of nodes per instance
+                            group but should not be used alongside autoscaling.
+                          format: int64
+                          type: integer
+                        nodeLocations:
+                          description: The list of zones in which the node pool's
+                            nodes should be located. Nodes must be in the region of
+                            their regional cluster or in the same region as their
+                            cluster's zone for zonal clusters. If unspecified, the
+                            cluster-level node_locations will be used.
+                          items:
+                            type: string
+                          type: array
+                        upgradeSettings:
+                          description: Specify node upgrade settings to change how
+                            many nodes GKE attempts to upgrade at once. The number
+                            of nodes upgraded simultaneously is the sum of max_surge
+                            and max_unavailable. The maximum number of nodes upgraded
+                            simultaneously is limited to 20.
+                          items:
+                            properties:
+                              maxSurge:
+                                description: The number of additional nodes that can
+                                  be added to the node pool during an upgrade. Increasing
+                                  max_surge raises the number of nodes that can be
+                                  upgraded simultaneously. Can be set to 0 or greater.
+                                format: int64
+                                type: integer
+                              maxUnavailable:
+                                description: The number of nodes that can be simultaneously
+                                  unavailable during an upgrade. Increasing max_unavailable
+                                  raises the number of nodes that can be upgraded
+                                  in parallel. Can be set to 0 or greater.
+                                format: int64
+                                type: integer
+                            required:
+                            - maxSurge
+                            - maxUnavailable
+                            type: object
+                          type: array
+                        version:
+                          description: The Kubernetes version for the nodes in this
+                            pool. Note that if this field and auto_upgrade are both
+                            specified, they will fight each other for what the node
+                            version should be, so setting both is highly discouraged.
+                            While a fuzzy version can be specified, it's recommended
+                            that you specify explicit versions as Terraform will see
+                            spurious diffs when fuzzy versions are used. See the google_container_engine_versions
+                            data source's version_prefix field to approximate fuzzy
+                            versions in a Terraform-compatible way.
+                          type: string
+                      type: object
+                    type: array
+                  nodeVersion:
+                    description: The Kubernetes version on the nodes. Must either
+                      be unset or set to the same value as min_master_version on create.
+                      Defaults to the default version set by GKE which is not necessarily
+                      the latest version. This only affects nodes in the default node
+                      pool. While a fuzzy version can be specified, it's recommended
+                      that you specify explicit versions as Terraform will see spurious
+                      diffs when fuzzy versions are used. See the google_container_engine_versions
+                      data source's version_prefix field to approximate fuzzy versions
+                      in a Terraform-compatible way. To update nodes in other node
+                      pools, use the version attribute on the node pool.
+                    type: string
+                  privateClusterConfig:
+                    description: Configuration for private clusters, clusters with
+                      private nodes.
+                    items:
+                      properties:
+                        enablePrivateEndpoint:
+                          description: Enables the private cluster feature, creating
+                            a private endpoint on the cluster. In a private cluster,
+                            nodes only have RFC 1918 private addresses and communicate
+                            with the master's private endpoint via private networking.
+                          type: boolean
+                        enablePrivateNodes:
+                          description: When true, the cluster's private endpoint is
+                            used as the cluster endpoint and access through the public
+                            endpoint is disabled. When false, either endpoint can
+                            be used. This field only applies to private clusters,
+                            when enable_private_nodes is true.
+                          type: boolean
+                        masterGlobalAccessConfig:
+                          description: Controls cluster master global access settings.
+                          items:
+                            properties:
+                              enabled:
+                                description: Whether the cluster master is accessible
+                                  globally or not.
+                                type: boolean
+                            required:
+                            - enabled
+                            type: object
+                          type: array
+                        masterIpv4CidrBlock:
+                          description: The IP range in CIDR notation to use for the
+                            hosted master network. This range will be used for assigning
+                            private IP addresses to the cluster master(s) and the
+                            ILB VIP. This range must not overlap with any other ranges
+                            in use within the cluster's network, and it must be a
+                            /28 subnet. See Private Cluster Limitations for more details.
+                            This field only applies to private clusters, when enable_private_nodes
+                            is true.
+                          type: string
+                      required:
+                      - enablePrivateEndpoint
+                      type: object
+                    type: array
+                  privateIpv6GoogleAccess:
+                    description: The desired state of IPv6 connectivity to Google
+                      Services. By default, no private IPv6 access to or from Google
+                      Services (all access will be via IPv4).
+                    type: string
+                  project:
+                    description: The ID of the project in which the resource belongs.
+                      If it is not provided, the provider project is used.
+                    type: string
+                  releaseChannel:
+                    description: Configuration options for the Release channel feature,
+                      which provide more control over automatic upgrades of your GKE
+                      clusters. Note that removing this field from your config will
+                      not unenroll it. Instead, use the "UNSPECIFIED" channel.
+                    items:
+                      properties:
+                        channel:
+                          description: 'The selected release channel. Accepted values
+                            are: * UNSPECIFIED: Not set. * RAPID: Weekly upgrade cadence;
+                            Early testers and developers who requires new features.
+                            * REGULAR: Multiple per month upgrade cadence; Production
+                            users who need features not yet offered in the Stable
+                            channel. * STABLE: Every few months upgrade cadence; Production
+                            users who need stability above all else, and for whom
+                            frequent upgrades are too risky.'
+                          type: string
+                      required:
+                      - channel
+                      type: object
+                    type: array
+                  removeDefaultNodePool:
+                    description: If true, deletes the default node pool upon cluster
+                      creation. If you're using google_container_node_pool resources
+                      with no default node pool, this should be set to true, alongside
+                      setting initial_node_count to at least 1.
+                    type: boolean
+                  resourceLabels:
+                    additionalProperties:
+                      type: string
+                    description: The GCE resource labels (a map of key/value pairs)
+                      to be applied to the cluster.
+                    type: object
+                  resourceUsageExportConfig:
+                    description: Configuration for the ResourceUsageExportConfig feature.
+                    items:
+                      properties:
+                        bigqueryDestination:
+                          description: Parameters for using BigQuery as the destination
+                            of resource usage export.
+                          items:
+                            properties:
+                              datasetId:
+                                description: The ID of a BigQuery Dataset.
+                                type: string
+                            required:
+                            - datasetId
+                            type: object
+                          type: array
+                        enableNetworkEgressMetering:
+                          description: Whether to enable network egress metering for
+                            this cluster. If enabled, a daemonset will be created
+                            in the cluster to meter network egress traffic.
+                          type: boolean
+                        enableResourceConsumptionMetering:
+                          description: Whether to enable resource consumption metering
+                            on this cluster. When enabled, a table will be created
+                            in the resource export BigQuery dataset to store resource
+                            consumption data. The resulting table can be joined with
+                            the resource usage table or with BigQuery billing export.
+                            Defaults to true.
+                          type: boolean
+                      required:
+                      - bigqueryDestination
+                      type: object
+                    type: array
+                  subnetwork:
+                    description: The name or self_link of the Google Compute Engine
+                      subnetwork in which the cluster's instances are launched.
+                    type: string
+                  verticalPodAutoscaling:
+                    description: Vertical Pod Autoscaling automatically adjusts the
+                      resources of pods controlled by it.
+                    items:
+                      properties:
+                        enabled:
+                          description: Enables vertical pod autoscaling.
+                          type: boolean
+                      required:
+                      - enabled
+                      type: object
+                    type: array
+                  workloadIdentityConfig:
+                    description: Configuration for the use of Kubernetes Service Accounts
+                      in GCP IAM policies.
+                    items:
+                      properties:
+                        workloadPool:
+                          description: The workload pool to attach all Kubernetes
+                            service accounts to.
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              providerConfigRef:
+                default:
+                  name: default
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: ClusterStatus defines the observed state of Cluster.
+            properties:
+              atProvider:
+                properties:
+                  endpoint:
+                    type: string
+                  id:
+                    type: string
+                  labelFingerprint:
+                    type: string
+                  masterVersion:
+                    type: string
+                  operation:
+                    type: string
+                  selfLink:
+                    type: string
+                  servicesIpv4Cidr:
+                    type: string
+                  tpuIpv4CidrBlock:
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

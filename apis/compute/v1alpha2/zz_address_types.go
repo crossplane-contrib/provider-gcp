@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2019 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ type AddressParameters struct {
 
 	// The prefix length if the resource represents an IP range.
 	// +kubebuilder:validation:Optional
-	PrefixLength *float64 `json:"prefixLength,omitempty" tf:"prefix_length,omitempty"`
+	PrefixLength *int64 `json:"prefixLength,omitempty" tf:"prefix_length,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Project *string `json:"project,omitempty" tf:"project,omitempty"`

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2019 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ type BGPParameters struct {
 	// this router resource. All VPN tunnels that link to this router
 	// will have the same local ASN.
 	// +kubebuilder:validation:Required
-	Asn *float64 `json:"asn" tf:"asn,omitempty"`
+	Asn *int64 `json:"asn" tf:"asn,omitempty"`
 }
 
 type RouterObservation struct {

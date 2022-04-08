@@ -1,0 +1,423 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: firewalls.compute.gcp.jet.crossplane.io
+spec:
+  group: compute.gcp.jet.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcpjet
+    kind: Firewall
+    listKind: FirewallList
+    plural: firewalls
+    singular: firewall
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: Firewall is the Schema for the Firewalls API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: FirewallSpec defines the desired state of Firewall
+            properties:
+              deletionPolicy:
+                default: Delete
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                properties:
+                  allow:
+                    description: The list of ALLOW rules specified by this firewall.
+                      Each rule specifies a protocol and port-range tuple that describes
+                      a permitted connection.
+                    items:
+                      properties:
+                        ports:
+                          description: "An optional list of ports to which this rule
+                            applies. This field is only applicable for UDP or TCP
+                            protocol. Each entry must be either an integer or a range.
+                            If not specified, this rule applies to connections through
+                            any port. \n Example inputs include: [\"22\"], [\"80\",\"443\"],
+                            and [\"12345-12349\"]."
+                          items:
+                            type: string
+                          type: array
+                        protocol:
+                          description: The IP protocol to which this rule applies.
+                            The protocol type is required when creating a firewall
+                            rule. This value can either be one of the following well
+                            known protocol strings (tcp, udp, icmp, esp, ah, sctp,
+                            ipip, all), or the IP protocol number.
+                          type: string
+                      required:
+                      - protocol
+                      type: object
+                    type: array
+                  deny:
+                    description: The list of DENY rules specified by this firewall.
+                      Each rule specifies a protocol and port-range tuple that describes
+                      a denied connection.
+                    items:
+                      properties:
+                        ports:
+                          description: "An optional list of ports to which this rule
+                            applies. This field is only applicable for UDP or TCP
+                            protocol. Each entry must be either an integer or a range.
+                            If not specified, this rule applies to connections through
+                            any port. \n Example inputs include: [\"22\"], [\"80\",\"443\"],
+                            and [\"12345-12349\"]."
+                          items:
+                            type: string
+                          type: array
+                        protocol:
+                          description: The IP protocol to which this rule applies.
+                            The protocol type is required when creating a firewall
+                            rule. This value can either be one of the following well
+                            known protocol strings (tcp, udp, icmp, esp, ah, sctp,
+                            ipip, all), or the IP protocol number.
+                          type: string
+                      required:
+                      - protocol
+                      type: object
+                    type: array
+                  description:
+                    description: An optional description of this resource. Provide
+                      this property when you create the resource.
+                    type: string
+                  destinationRanges:
+                    description: If destination ranges are specified, the firewall
+                      will apply only to traffic that has destination IP address in
+                      these ranges. These ranges must be expressed in CIDR format.
+                      Only IPv4 is supported.
+                    items:
+                      type: string
+                    type: array
+                  direction:
+                    description: 'Direction of traffic to which this firewall applies;
+                      default is INGRESS. Note: For INGRESS traffic, it is NOT supported
+                      to specify destinationRanges; For EGRESS traffic, it is NOT
+                      supported to specify ''source_ranges'' OR ''source_tags''. For
+                      INGRESS traffic, one of ''source_ranges'', ''source_tags'' or
+                      ''source_service_accounts'' is required. Possible values: ["INGRESS",
+                      "EGRESS"]'
+                    type: string
+                  disabled:
+                    description: Denotes whether the firewall rule is disabled, i.e
+                      not applied to the network it is associated with. When set to
+                      true, the firewall rule is not enforced and the network behaves
+                      as if it did not exist. If this is unspecified, the firewall
+                      rule will be enabled.
+                    type: boolean
+                  enableLogging:
+                    description: This field denotes whether to enable logging for
+                      a particular firewall rule. If logging is enabled, logs will
+                      be exported to Stackdriver.
+                    type: boolean
+                  logConfig:
+                    description: This field denotes the logging options for a particular
+                      firewall rule. If defined, logging is enabled, and logs will
+                      be exported to Cloud Logging.
+                    items:
+                      properties:
+                        metadata:
+                          description: 'This field denotes whether to include or exclude
+                            metadata for firewall logs. Possible values: ["EXCLUDE_ALL_METADATA",
+                            "INCLUDE_ALL_METADATA"]'
+                          type: string
+                      required:
+                      - metadata
+                      type: object
+                    type: array
+                  network:
+                    description: The name or self_link of the network to attach this
+                      firewall to.
+                    type: string
+                  networkRef:
+                    description: A Reference to a named object.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  networkSelector:
+                    description: A Selector selects an object.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                  priority:
+                    description: Priority for this rule. This is an integer between
+                      0 and 65535, both inclusive. When not specified, the value assumed
+                      is 1000. Relative priorities determine precedence of conflicting
+                      rules. Lower value of priority implies higher precedence (eg,
+                      a rule with priority 0 has higher precedence than a rule with
+                      priority 1). DENY rules take precedence over ALLOW rules having
+                      equal priority.
+                    format: int64
+                    type: integer
+                  project:
+                    type: string
+                  sourceRanges:
+                    description: If source ranges are specified, the firewall will
+                      apply only to traffic that has source IP address in these ranges.
+                      These ranges must be expressed in CIDR format. One or both of
+                      sourceRanges and sourceTags may be set. If both properties are
+                      set, the firewall will apply to traffic that has source IP address
+                      within sourceRanges OR the source IP that belongs to a tag listed
+                      in the sourceTags property. The connection does not need to
+                      match both properties for the firewall to apply. Only IPv4 is
+                      supported.
+                    items:
+                      type: string
+                    type: array
+                  sourceServiceAccounts:
+                    description: If source service accounts are specified, the firewall
+                      will apply only to traffic originating from an instance with
+                      a service account in this list. Source service accounts cannot
+                      be used to control traffic to an instance's external IP address
+                      because service accounts are associated with an instance, not
+                      an IP address. sourceRanges can be set at the same time as sourceServiceAccounts.
+                      If both are set, the firewall will apply to traffic that has
+                      source IP address within sourceRanges OR the source IP belongs
+                      to an instance with service account listed in sourceServiceAccount.
+                      The connection does not need to match both properties for the
+                      firewall to apply. sourceServiceAccounts cannot be used at the
+                      same time as sourceTags or targetTags.
+                    items:
+                      type: string
+                    type: array
+                  sourceTags:
+                    description: If source tags are specified, the firewall will apply
+                      only to traffic with source IP that belongs to a tag listed
+                      in source tags. Source tags cannot be used to control traffic
+                      to an instance's external IP address. Because tags are associated
+                      with an instance, not an IP address. One or both of sourceRanges
+                      and sourceTags may be set. If both properties are set, the firewall
+                      will apply to traffic that has source IP address within sourceRanges
+                      OR the source IP that belongs to a tag listed in the sourceTags
+                      property. The connection does not need to match both properties
+                      for the firewall to apply.
+                    items:
+                      type: string
+                    type: array
+                  targetServiceAccounts:
+                    description: A list of service accounts indicating sets of instances
+                      located in the network that may make network connections as
+                      specified in allowed[]. targetServiceAccounts cannot be used
+                      at the same time as targetTags or sourceTags. If neither targetServiceAccounts
+                      nor targetTags are specified, the firewall rule applies to all
+                      instances on the specified network.
+                    items:
+                      type: string
+                    type: array
+                  targetTags:
+                    description: A list of instance tags indicating sets of instances
+                      located in the network that may make network connections as
+                      specified in allowed[]. If no targetTags are specified, the
+                      firewall rule applies to all instances on the specified network.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              providerConfigRef:
+                default:
+                  name: default
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              publishConnectionDetailsTo:
+                description: PublishConnectionDetailsTo specifies the connection secret
+                  config which contains a name, metadata and a reference to secret
+                  store config to which any connection details for this managed resource
+                  should be written. Connection details frequently include the endpoint,
+                  username, and password required to connect to the managed resource.
+                properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: SecretStoreConfigRef specifies which secret store
+                      config should be used for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are the annotations to be added to
+                          connection secret. - For Kubernetes secrets, this will be
+                          used as "metadata.annotations". - It is up to Secret Store
+                          implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are the labels/tags to be added to connection
+                          secret. - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store
+                          types.
+                        type: object
+                      type:
+                        description: Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
+                  name:
+                    description: Name is the name of the connection secret.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource. This field is planned to be replaced in a future
+                  release in favor of PublishConnectionDetailsTo. Currently, both
+                  could be set independently and connection details would be published
+                  to both without affecting each other.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: FirewallStatus defines the observed state of Firewall.
+            properties:
+              atProvider:
+                properties:
+                  creationTimestamp:
+                    type: string
+                  id:
+                    type: string
+                  selfLink:
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

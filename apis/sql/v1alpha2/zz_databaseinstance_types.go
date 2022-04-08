@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2019 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ type BackupConfigurationParameters struct {
 
 	// The number of days of transaction logs we retain for point in time restore, from 1-7.
 	// +kubebuilder:validation:Optional
-	TransactionLogRetentionDays *float64 `json:"transactionLogRetentionDays,omitempty" tf:"transaction_log_retention_days,omitempty"`
+	TransactionLogRetentionDays *int64 `json:"transactionLogRetentionDays,omitempty" tf:"transaction_log_retention_days,omitempty"`
 }
 
 type BackupRetentionSettingsObservation struct {
@@ -80,7 +80,7 @@ type BackupRetentionSettingsParameters struct {
 
 	// Number of backups to retain.
 	// +kubebuilder:validation:Required
-	RetainedBackups *float64 `json:"retainedBackups" tf:"retained_backups,omitempty"`
+	RetainedBackups *int64 `json:"retainedBackups" tf:"retained_backups,omitempty"`
 
 	// The unit that 'retainedBackups' represents. Defaults to COUNT
 	// +kubebuilder:validation:Optional
@@ -219,7 +219,7 @@ type InsightsConfigParameters struct {
 
 	// Maximum query length stored in bytes. Between 256 and 4500. Default to 1024.
 	// +kubebuilder:validation:Optional
-	QueryStringLength *float64 `json:"queryStringLength,omitempty" tf:"query_string_length,omitempty"`
+	QueryStringLength *int64 `json:"queryStringLength,omitempty" tf:"query_string_length,omitempty"`
 
 	// True if Query Insights will record application tags from query when enabled.
 	// +kubebuilder:validation:Optional
@@ -251,11 +251,11 @@ type MaintenanceWindowParameters struct {
 
 	// Day of week (1-7), starting on Monday
 	// +kubebuilder:validation:Optional
-	Day *float64 `json:"day,omitempty" tf:"day,omitempty"`
+	Day *int64 `json:"day,omitempty" tf:"day,omitempty"`
 
 	// Hour of day (0-23), ignored if day not set
 	// +kubebuilder:validation:Optional
-	Hour *float64 `json:"hour,omitempty" tf:"hour,omitempty"`
+	Hour *int64 `json:"hour,omitempty" tf:"hour,omitempty"`
 
 	// Receive updates earlier (canary) or later (stable)
 	// +kubebuilder:validation:Optional
@@ -281,7 +281,7 @@ type ReplicaConfigurationParameters struct {
 
 	// The number of seconds between connect retries.
 	// +kubebuilder:validation:Optional
-	ConnectRetryInterval *float64 `json:"connectRetryInterval,omitempty" tf:"connect_retry_interval,omitempty"`
+	ConnectRetryInterval *int64 `json:"connectRetryInterval,omitempty" tf:"connect_retry_interval,omitempty"`
 
 	// Path to a SQL file in Google Cloud Storage from which replica instances are created. Format is gs://bucket/filename.
 	// +kubebuilder:validation:Optional
@@ -293,7 +293,7 @@ type ReplicaConfigurationParameters struct {
 
 	// Time in ms between replication heartbeats.
 	// +kubebuilder:validation:Optional
-	MasterHeartbeatPeriod *float64 `json:"masterHeartbeatPeriod,omitempty" tf:"master_heartbeat_period,omitempty"`
+	MasterHeartbeatPeriod *int64 `json:"masterHeartbeatPeriod,omitempty" tf:"master_heartbeat_period,omitempty"`
 
 	// Password for the replication connection.
 	// +kubebuilder:validation:Optional
@@ -319,7 +319,7 @@ type RestoreBackupContextParameters struct {
 
 	// The ID of the backup run to restore from.
 	// +kubebuilder:validation:Required
-	BackupRunID *float64 `json:"backupRunId" tf:"backup_run_id,omitempty"`
+	BackupRunID *int64 `json:"backupRunId" tf:"backup_run_id,omitempty"`
 
 	// The ID of the instance that the backup was taken from.
 	// +kubebuilder:validation:Optional
@@ -346,7 +346,7 @@ type ServerCACertParameters struct {
 }
 
 type SettingsObservation struct {
-	Version *float64 `json:"version,omitempty" tf:"version,omitempty"`
+	Version *int64 `json:"version,omitempty" tf:"version,omitempty"`
 }
 
 type SettingsParameters struct {
@@ -378,11 +378,11 @@ type SettingsParameters struct {
 
 	// The maximum size, in GB, to which storage capacity can be automatically increased. The default value is 0, which specifies that there is no limit.
 	// +kubebuilder:validation:Optional
-	DiskAutoresizeLimit *float64 `json:"diskAutoresizeLimit,omitempty" tf:"disk_autoresize_limit,omitempty"`
+	DiskAutoresizeLimit *int64 `json:"diskAutoresizeLimit,omitempty" tf:"disk_autoresize_limit,omitempty"`
 
 	// The size of data disk, in GB. Size of a running instance cannot be reduced but can be increased.
 	// +kubebuilder:validation:Optional
-	DiskSize *float64 `json:"diskSize,omitempty" tf:"disk_size,omitempty"`
+	DiskSize *int64 `json:"diskSize,omitempty" tf:"disk_size,omitempty"`
 
 	// The type of data disk: PD_SSD or PD_HDD.
 	// +kubebuilder:validation:Optional

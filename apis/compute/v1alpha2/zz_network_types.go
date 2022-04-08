@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2019 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ type NetworkParameters struct {
 	// Maximum Transmission Unit in bytes. The minimum value for this field is 1460
 	// and the maximum value is 1500 bytes.
 	// +kubebuilder:validation:Optional
-	Mtu *float64 `json:"mtu,omitempty" tf:"mtu,omitempty"`
+	Mtu *int64 `json:"mtu,omitempty" tf:"mtu,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Project *string `json:"project,omitempty" tf:"project,omitempty"`

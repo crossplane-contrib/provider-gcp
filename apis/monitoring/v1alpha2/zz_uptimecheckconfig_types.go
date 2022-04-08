@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2019 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ type HTTPCheckParameters struct {
 
 	// The port to the page to run the check against. Will be combined with host (specified within the MonitoredResource) and path to construct the full URL. Optional (defaults to 80 without SSL, or 443 with SSL).
 	// +kubebuilder:validation:Optional
-	Port *float64 `json:"port,omitempty" tf:"port,omitempty"`
+	Port *int64 `json:"port,omitempty" tf:"port,omitempty"`
 
 	// The HTTP request method to use for the check. If set to METHOD_UNSPECIFIED then requestMethod defaults to GET. Default value: "GET" Possible values: ["METHOD_UNSPECIFIED", "GET", "POST"]
 	// +kubebuilder:validation:Optional
@@ -134,7 +134,7 @@ type TCPCheckParameters struct {
 
 	// The port to the page to run the check against. Will be combined with host (specified within the MonitoredResource) to construct the full URL.
 	// +kubebuilder:validation:Required
-	Port *float64 `json:"port" tf:"port,omitempty"`
+	Port *int64 `json:"port" tf:"port,omitempty"`
 }
 
 type UptimeCheckConfigObservation struct {

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2019 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ type ManagedSSLCertificateParameters struct {
 
 	// The unique identifier for the resource.
 	// +kubebuilder:validation:Optional
-	CertificateID *float64 `json:"certificateId,omitempty" tf:"certificate_id,omitempty"`
+	CertificateID *int64 `json:"certificateId,omitempty" tf:"certificate_id,omitempty"`
 
 	// An optional description of this resource.
 	// +kubebuilder:validation:Optional

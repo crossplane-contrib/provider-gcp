@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2019 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import (
 	"github.com/crossplane/terrajet/pkg/terraform"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	v1alpha2 "github.com/crossplane/provider-gcp/apis/compute/v1alpha2"
+	v1alpha2 "github.com/crossplane-contrib/provider-jet-gcp/apis/compute/v1alpha2"
 )
 
 // Setup adds a controller that reconciles ManagedSSLCertificate managed resources.
