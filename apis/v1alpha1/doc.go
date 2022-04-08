@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Crossplane Authors.
+Copyright 2021 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains the core resources of the Google Cloud Platform.
+// Package v1alpha1 contains the core resources of the gcp jet provider.
 // +kubebuilder:object:generate=true
-// +groupName=gcp.crossplane.io
+// +groupName=gcp.jet.crossplane.io
 // +versionName=v1alpha1
 package v1alpha1

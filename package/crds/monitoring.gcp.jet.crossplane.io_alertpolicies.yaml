@@ -197,8 +197,7 @@ spec:
                                       description: The absolute number of time series
                                         that must fail the predicate for the condition
                                         to be triggered.
-                                      format: int64
-                                      type: integer
+                                      type: number
                                     percent:
                                       description: The percentage of time series that
                                         must fail the predicate for the condition
@@ -247,8 +246,7 @@ spec:
                                       description: The absolute number of time series
                                         that must fail the predicate for the condition
                                         to be triggered.
-                                      format: int64
-                                      type: integer
+                                      type: number
                                     percent:
                                       description: The percentage of time series that
                                         must fail the predicate for the condition
@@ -517,8 +515,7 @@ spec:
                                       description: The absolute number of time series
                                         that must fail the predicate for the condition
                                         to be triggered.
-                                      format: int64
-                                      type: integer
+                                      type: number
                                     percent:
                                       description: The percentage of time series that
                                         must fail the predicate for the condition

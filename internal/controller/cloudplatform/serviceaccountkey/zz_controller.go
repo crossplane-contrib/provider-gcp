@@ -30,7 +30,7 @@ import (
 	"github.com/crossplane/terrajet/pkg/terraform"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	v1alpha2 "github.com/crossplane-contrib/provider-jet-gcp/apis/cloudplatform/v1alpha2"
+	v1alpha2 "github.com/crossplane/provider-gcp/apis/cloudplatform/v1alpha2"
 )
 
 // Setup adds a controller that reconciles ServiceAccountKey managed resources.

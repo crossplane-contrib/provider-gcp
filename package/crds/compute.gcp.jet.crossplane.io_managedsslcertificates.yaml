@@ -66,8 +66,7 @@ spec:
                 properties:
                   certificateId:
                     description: The unique identifier for the resource.
-                    format: int64
-                    type: integer
+                    type: number
                   description:
                     description: An optional description of this resource.
                     type: string

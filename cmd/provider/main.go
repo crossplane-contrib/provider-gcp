@@ -38,8 +38,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/terrajet/pkg/terraform"
 
+	"github.com/crossplane/provider-gcp/apis"
 	"github.com/crossplane/provider-gcp/apis/classic"
-	"github.com/crossplane/provider-gcp/apis/v1alpha1"
+	v1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 	"github.com/crossplane/provider-gcp/config"
 	gcpclassic "github.com/crossplane/provider-gcp/internal/classic/controller"
 	"github.com/crossplane/provider-gcp/internal/clients"
@@ -56,6 +57,10 @@ func main() {
 		syncInterval     = app.Flag("sync", "How often all resources will be double-checked for drift from the desired state.").Short('s').Default("1h").Duration()
 		pollInterval     = app.Flag("poll", "How often individual resources will be checked for drift from the desired state").Default("1m").Duration()
 		maxReconcileRate = app.Flag("max-reconcile-rate", "The global maximum rate per second at which resources may checked for drift from the desired state.").Default("10").Int()
+
+		terraformVersion = app.Flag("terraform-version", "Terraform version.").Required().Envar("TERRAFORM_VERSION").String()
+		providerSource   = app.Flag("terraform-provider-source", "Terraform provider source.").Required().Envar("TERRAFORM_PROVIDER_SOURCE").String()
+		providerVersion  = app.Flag("terraform-provider-version", "Terraform provider version.").Required().Envar("TERRAFORM_PROVIDER_VERSION").String()
 
 		namespace                  = app.Flag("namespace", "Namespace used to set as default scope in default secret store config.").Default("crossplane-system").Envar("POD_NAMESPACE").String()
 		enableExternalSecretStores = app.Flag("enable-external-secret-stores", "Enable support for ExternalSecretStores.").Default("false").Envar("ENABLE_EXTERNAL_SECRET_STORES").Bool()
@@ -91,7 +96,8 @@ func main() {
 		RenewDeadline:              func() *time.Duration { d := 50 * time.Second; return &d }(),
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
-	kingpin.FatalIfError(classic.AddToScheme(mgr.GetScheme()), "Cannot add GCP APIs to scheme")
+	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add GCP APIs to scheme")
+	kingpin.FatalIfError(classic.AddToScheme(mgr.GetScheme()), "Cannot add classic GCP APIs to scheme")
 
 	xpopts := xpcontroller.Options{
 		Logger:            log,

@@ -79,8 +79,7 @@ spec:
                   mtu:
                     description: Maximum Transmission Unit in bytes. The minimum value
                       for this field is 1460 and the maximum value is 1500 bytes.
-                    format: int64
-                    type: integer
+                    type: number
                   project:
                     type: string
                   routingMode:

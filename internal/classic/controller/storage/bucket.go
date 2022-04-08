@@ -19,6 +19,8 @@ package storage
 import (
 	"context"
 
+	scv1alpha1 "github.com/crossplane/provider-gcp/apis/classic/v1alpha1"
+
 	v1alpha32 "github.com/crossplane/provider-gcp/apis/classic/storage/v1alpha3"
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
@@ -39,8 +41,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 )
 
 // Error strings.

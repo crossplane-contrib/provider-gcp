@@ -185,12 +185,12 @@ func (in *AutoscalingParameters) DeepCopyInto(out *AutoscalingParameters) {
 	*out = *in
 	if in.MaxNodeCount != nil {
 		in, out := &in.MaxNodeCount, &out.MaxNodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.MinNodeCount != nil {
 		in, out := &in.MinNodeCount, &out.MinNodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 }
@@ -561,7 +561,7 @@ func (in *ClusterParameters) DeepCopyInto(out *ClusterParameters) {
 	}
 	if in.DefaultMaxPodsPerNode != nil {
 		in, out := &in.DefaultMaxPodsPerNode, &out.DefaultMaxPodsPerNode
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.DefaultSnatStatus != nil {
@@ -620,7 +620,7 @@ func (in *ClusterParameters) DeepCopyInto(out *ClusterParameters) {
 	}
 	if in.InitialNodeCount != nil {
 		in, out := &in.InitialNodeCount, &out.InitialNodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Location != nil {
@@ -976,7 +976,7 @@ func (in *GuestAcceleratorParameters) DeepCopyInto(out *GuestAcceleratorParamete
 	*out = *in
 	if in.Count != nil {
 		in, out := &in.Count, &out.Count
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.GpuPartitionSize != nil {
@@ -1553,7 +1553,7 @@ func (in *NodeConfigGuestAcceleratorParameters) DeepCopyInto(out *NodeConfigGues
 	*out = *in
 	if in.Count != nil {
 		in, out := &in.Count, &out.Count
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.GpuPartitionSize != nil {
@@ -1598,7 +1598,7 @@ func (in *NodeConfigParameters) DeepCopyInto(out *NodeConfigParameters) {
 	*out = *in
 	if in.DiskSizeGb != nil {
 		in, out := &in.DiskSizeGb, &out.DiskSizeGb
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.DiskType != nil {
@@ -1635,7 +1635,7 @@ func (in *NodeConfigParameters) DeepCopyInto(out *NodeConfigParameters) {
 	}
 	if in.LocalSsdCount != nil {
 		in, out := &in.LocalSsdCount, &out.LocalSsdCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.MachineType != nil {
@@ -1895,12 +1895,12 @@ func (in *NodePoolAutoscalingParameters) DeepCopyInto(out *NodePoolAutoscalingPa
 	*out = *in
 	if in.MaxNodeCount != nil {
 		in, out := &in.MaxNodeCount, &out.MaxNodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.MinNodeCount != nil {
 		in, out := &in.MinNodeCount, &out.MinNodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 }
@@ -2007,7 +2007,7 @@ func (in *NodePoolNodeConfigGuestAcceleratorParameters) DeepCopyInto(out *NodePo
 	*out = *in
 	if in.Count != nil {
 		in, out := &in.Count, &out.Count
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.GpuPartitionSize != nil {
@@ -2067,7 +2067,7 @@ func (in *NodePoolNodeConfigParameters) DeepCopyInto(out *NodePoolNodeConfigPara
 	*out = *in
 	if in.DiskSizeGb != nil {
 		in, out := &in.DiskSizeGb, &out.DiskSizeGb
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.DiskType != nil {
@@ -2104,7 +2104,7 @@ func (in *NodePoolNodeConfigParameters) DeepCopyInto(out *NodePoolNodeConfigPara
 	}
 	if in.LocalSsdCount != nil {
 		in, out := &in.LocalSsdCount, &out.LocalSsdCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.MachineType != nil {
@@ -2202,7 +2202,7 @@ func (in *NodePoolNodeConfigParameters_2) DeepCopyInto(out *NodePoolNodeConfigPa
 	*out = *in
 	if in.DiskSizeGb != nil {
 		in, out := &in.DiskSizeGb, &out.DiskSizeGb
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.DiskType != nil {
@@ -2239,7 +2239,7 @@ func (in *NodePoolNodeConfigParameters_2) DeepCopyInto(out *NodePoolNodeConfigPa
 	}
 	if in.LocalSsdCount != nil {
 		in, out := &in.LocalSsdCount, &out.LocalSsdCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.MachineType != nil {
@@ -2548,7 +2548,7 @@ func (in *NodePoolParameters) DeepCopyInto(out *NodePoolParameters) {
 	}
 	if in.InitialNodeCount != nil {
 		in, out := &in.InitialNodeCount, &out.InitialNodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Management != nil {
@@ -2560,7 +2560,7 @@ func (in *NodePoolParameters) DeepCopyInto(out *NodePoolParameters) {
 	}
 	if in.MaxPodsPerNode != nil {
 		in, out := &in.MaxPodsPerNode, &out.MaxPodsPerNode
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Name != nil {
@@ -2582,7 +2582,7 @@ func (in *NodePoolParameters) DeepCopyInto(out *NodePoolParameters) {
 	}
 	if in.NodeCount != nil {
 		in, out := &in.NodeCount, &out.NodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.NodeLocations != nil {
@@ -2647,7 +2647,7 @@ func (in *NodePoolParameters_2) DeepCopyInto(out *NodePoolParameters_2) {
 	}
 	if in.InitialNodeCount != nil {
 		in, out := &in.InitialNodeCount, &out.InitialNodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Location != nil {
@@ -2664,7 +2664,7 @@ func (in *NodePoolParameters_2) DeepCopyInto(out *NodePoolParameters_2) {
 	}
 	if in.MaxPodsPerNode != nil {
 		in, out := &in.MaxPodsPerNode, &out.MaxPodsPerNode
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.NodeConfig != nil {
@@ -2676,7 +2676,7 @@ func (in *NodePoolParameters_2) DeepCopyInto(out *NodePoolParameters_2) {
 	}
 	if in.NodeCount != nil {
 		in, out := &in.NodeCount, &out.NodeCount
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.NodeLocations != nil {
@@ -2773,12 +2773,12 @@ func (in *NodePoolUpgradeSettingsParameters) DeepCopyInto(out *NodePoolUpgradeSe
 	*out = *in
 	if in.MaxSurge != nil {
 		in, out := &in.MaxSurge, &out.MaxSurge
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.MaxUnavailable != nil {
 		in, out := &in.MaxUnavailable, &out.MaxUnavailable
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 }
@@ -2960,12 +2960,12 @@ func (in *ResourceLimitsParameters) DeepCopyInto(out *ResourceLimitsParameters) 
 	*out = *in
 	if in.Maximum != nil {
 		in, out := &in.Maximum, &out.Maximum
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Minimum != nil {
 		in, out := &in.Minimum, &out.Minimum
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.ResourceType != nil {
@@ -3137,12 +3137,12 @@ func (in *UpgradeSettingsParameters) DeepCopyInto(out *UpgradeSettingsParameters
 	*out = *in
 	if in.MaxSurge != nil {
 		in, out := &in.MaxSurge, &out.MaxSurge
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.MaxUnavailable != nil {
 		in, out := &in.MaxUnavailable, &out.MaxUnavailable
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 }

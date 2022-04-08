@@ -129,7 +129,7 @@ type FirewallParameters struct {
 
 	// The name or self_link of the network to attach this firewall to.
 	// +crossplane:generate:reference:type=Network
-	// +crossplane:generate:reference:extractor=github.com/crossplane-contrib/provider-jet-gcp/config/common.SelfLinkExtractor()
+	// +crossplane:generate:reference:extractor=github.com/crossplane/provider-gcp/config/common.SelfLinkExtractor()
 	// +kubebuilder:validation:Optional
 	Network *string `json:"network,omitempty" tf:"network,omitempty"`
 
@@ -146,7 +146,7 @@ type FirewallParameters struct {
 	// higher precedence than a rule with priority 1). DENY rules take
 	// precedence over ALLOW rules having equal priority.
 	// +kubebuilder:validation:Optional
-	Priority *int64 `json:"priority,omitempty" tf:"priority,omitempty"`
+	Priority *float64 `json:"priority,omitempty" tf:"priority,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Project *string `json:"project,omitempty" tf:"project,omitempty"`

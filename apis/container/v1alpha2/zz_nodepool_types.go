@@ -32,11 +32,11 @@ type NodePoolAutoscalingParameters struct {
 
 	// Maximum number of nodes in the NodePool. Must be >= min_node_count.
 	// +kubebuilder:validation:Required
-	MaxNodeCount *int64 `json:"maxNodeCount" tf:"max_node_count,omitempty"`
+	MaxNodeCount *float64 `json:"maxNodeCount" tf:"max_node_count,omitempty"`
 
 	// Minimum number of nodes in the NodePool. Must be >=0 and <= max_node_count.
 	// +kubebuilder:validation:Required
-	MinNodeCount *int64 `json:"minNodeCount" tf:"min_node_count,omitempty"`
+	MinNodeCount *float64 `json:"minNodeCount" tf:"min_node_count,omitempty"`
 }
 
 type NodePoolManagementObservation struct {
@@ -58,17 +58,14 @@ type NodePoolNodeConfigGuestAcceleratorObservation struct {
 
 type NodePoolNodeConfigGuestAcceleratorParameters struct {
 
-	// The number of the accelerator cards exposed to an instance.
-	// +kubebuilder:validation:Required
-	Count *int64 `json:"count" tf:"count"`
+	// +kubebuilder:validation:Optional
+	Count *float64 `json:"count,omitempty" tf:"count"`
 
-	// Size of partitions to create on the GPU. Valid values are described in the NVIDIA mig user guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
 	// +kubebuilder:validation:Optional
 	GpuPartitionSize *string `json:"gpuPartitionSize,omitempty" tf:"gpu_partition_size"`
 
-	// The accelerator type resource name.
-	// +kubebuilder:validation:Required
-	Type *string `json:"type" tf:"type"`
+	// +kubebuilder:validation:Optional
+	Type *string `json:"type,omitempty" tf:"type"`
 }
 
 type NodePoolNodeConfigObservation_2 struct {
@@ -78,7 +75,7 @@ type NodePoolNodeConfigParameters_2 struct {
 
 	// Size of the disk attached to each node, specified in GB. The smallest allowed disk size is 10GB.
 	// +kubebuilder:validation:Optional
-	DiskSizeGb *int64 `json:"diskSizeGb,omitempty" tf:"disk_size_gb,omitempty"`
+	DiskSizeGb *float64 `json:"diskSizeGb,omitempty" tf:"disk_size_gb,omitempty"`
 
 	// Type of the disk attached to each node.
 	// +kubebuilder:validation:Optional
@@ -98,7 +95,7 @@ type NodePoolNodeConfigParameters_2 struct {
 
 	// The number of local SSD disks to be attached to the node.
 	// +kubebuilder:validation:Optional
-	LocalSsdCount *int64 `json:"localSsdCount,omitempty" tf:"local_ssd_count,omitempty"`
+	LocalSsdCount *float64 `json:"localSsdCount,omitempty" tf:"local_ssd_count,omitempty"`
 
 	// The name of a Google Compute Engine machine type.
 	// +kubebuilder:validation:Optional
@@ -160,17 +157,14 @@ type NodePoolNodeConfigTaintObservation struct {
 
 type NodePoolNodeConfigTaintParameters struct {
 
-	// Effect for taint.
-	// +kubebuilder:validation:Required
-	Effect *string `json:"effect" tf:"effect"`
+	// +kubebuilder:validation:Optional
+	Effect *string `json:"effect,omitempty" tf:"effect"`
 
-	// Key for taint.
-	// +kubebuilder:validation:Required
-	Key *string `json:"key" tf:"key"`
+	// +kubebuilder:validation:Optional
+	Key *string `json:"key,omitempty" tf:"key"`
 
-	// Value for taint.
-	// +kubebuilder:validation:Required
-	Value *string `json:"value" tf:"value"`
+	// +kubebuilder:validation:Optional
+	Value *string `json:"value,omitempty" tf:"value"`
 }
 
 type NodePoolNodeConfigWorkloadMetadataConfigObservation struct {
@@ -213,7 +207,7 @@ type NodePoolParameters_2 struct {
 
 	// The initial number of nodes for the pool. In regional or multi-zonal clusters, this is the number of nodes per zone. Changing this will force recreation of the resource.
 	// +kubebuilder:validation:Optional
-	InitialNodeCount *int64 `json:"initialNodeCount,omitempty" tf:"initial_node_count,omitempty"`
+	InitialNodeCount *float64 `json:"initialNodeCount,omitempty" tf:"initial_node_count,omitempty"`
 
 	// The location (region or zone) of the cluster.
 	// +kubebuilder:validation:Optional
@@ -225,7 +219,7 @@ type NodePoolParameters_2 struct {
 
 	// The maximum number of pods per node in this node pool. Note that this does not work on node pools which are "route-based" - that is, node pools belonging to clusters that do not have IP Aliasing enabled.
 	// +kubebuilder:validation:Optional
-	MaxPodsPerNode *int64 `json:"maxPodsPerNode,omitempty" tf:"max_pods_per_node,omitempty"`
+	MaxPodsPerNode *float64 `json:"maxPodsPerNode,omitempty" tf:"max_pods_per_node,omitempty"`
 
 	// The configuration of the nodepool
 	// +kubebuilder:validation:Optional
@@ -233,7 +227,7 @@ type NodePoolParameters_2 struct {
 
 	// The number of nodes per instance group. This field can be used to update the number of nodes per instance group but should not be used alongside autoscaling.
 	// +kubebuilder:validation:Optional
-	NodeCount *int64 `json:"nodeCount,omitempty" tf:"node_count,omitempty"`
+	NodeCount *float64 `json:"nodeCount,omitempty" tf:"node_count,omitempty"`
 
 	// The list of zones in which the node pool's nodes should be located. Nodes must be in the region of their regional cluster or in the same region as their cluster's zone for zonal clusters. If unspecified, the cluster-level node_locations will be used.
 	// +kubebuilder:validation:Optional
@@ -259,11 +253,11 @@ type NodePoolUpgradeSettingsParameters struct {
 
 	// The number of additional nodes that can be added to the node pool during an upgrade. Increasing max_surge raises the number of nodes that can be upgraded simultaneously. Can be set to 0 or greater.
 	// +kubebuilder:validation:Required
-	MaxSurge *int64 `json:"maxSurge" tf:"max_surge,omitempty"`
+	MaxSurge *float64 `json:"maxSurge" tf:"max_surge,omitempty"`
 
 	// The number of nodes that can be simultaneously unavailable during an upgrade. Increasing max_unavailable raises the number of nodes that can be upgraded in parallel. Can be set to 0 or greater.
 	// +kubebuilder:validation:Required
-	MaxUnavailable *int64 `json:"maxUnavailable" tf:"max_unavailable,omitempty"`
+	MaxUnavailable *float64 `json:"maxUnavailable" tf:"max_unavailable,omitempty"`
 }
 
 // NodePoolSpec defines the desired state of NodePool

@@ -19,12 +19,6 @@ package pubsub
 import (
 	"context"
 
-	v1alpha12 "github.com/crossplane/provider-gcp/apis/classic/pubsub/v1alpha1"
-
-	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
-	"github.com/crossplane/provider-gcp/internal/classic/clients/subscription"
-	"github.com/crossplane/provider-gcp/internal/features"
-
 	"github.com/google/go-cmp/cmp"
 	pubsub "google.golang.org/api/pubsub/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,7 +34,11 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
+	v1alpha12 "github.com/crossplane/provider-gcp/apis/classic/pubsub/v1alpha1"
+	scv1alpha1 "github.com/crossplane/provider-gcp/apis/classic/v1alpha1"
+	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
+	"github.com/crossplane/provider-gcp/internal/classic/clients/subscription"
+	"github.com/crossplane/provider-gcp/internal/features"
 )
 
 const (

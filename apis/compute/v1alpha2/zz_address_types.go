@@ -72,7 +72,7 @@ type AddressParameters struct {
 
 	// The prefix length if the resource represents an IP range.
 	// +kubebuilder:validation:Optional
-	PrefixLength *int64 `json:"prefixLength,omitempty" tf:"prefix_length,omitempty"`
+	PrefixLength *float64 `json:"prefixLength,omitempty" tf:"prefix_length,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Project *string `json:"project,omitempty" tf:"project,omitempty"`

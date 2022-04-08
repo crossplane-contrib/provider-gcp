@@ -19,6 +19,8 @@ package kms
 import (
 	"context"
 
+	scv1alpha1 "github.com/crossplane/provider-gcp/apis/classic/v1alpha1"
+
 	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/classic/iam/v1alpha1"
 	v1alpha12 "github.com/crossplane/provider-gcp/apis/classic/kms/v1alpha1"
 
@@ -38,8 +40,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 )
 
 const (

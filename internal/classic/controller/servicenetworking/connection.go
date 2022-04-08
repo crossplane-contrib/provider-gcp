@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"path"
 
+	scv1alpha1 "github.com/crossplane/provider-gcp/apis/classic/v1alpha1"
+
 	compute "google.golang.org/api/compute/v1"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,7 +38,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	v1beta12 "github.com/crossplane/provider-gcp/apis/classic/servicenetworking/v1beta1"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/connection"
 	"github.com/crossplane/provider-gcp/internal/features"

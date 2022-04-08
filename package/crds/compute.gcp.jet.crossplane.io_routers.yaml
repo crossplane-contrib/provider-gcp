@@ -109,8 +109,7 @@ spec:
                             value will be fixed for this router resource. All VPN
                             tunnels that link to this router will have the same local
                             ASN.
-                          format: int64
-                          type: integer
+                          type: number
                       required:
                       - asn
                       type: object

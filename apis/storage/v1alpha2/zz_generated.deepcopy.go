@@ -322,7 +322,7 @@ func (in *ConditionParameters) DeepCopyInto(out *ConditionParameters) {
 	*out = *in
 	if in.Age != nil {
 		in, out := &in.Age, &out.Age
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.CreatedBefore != nil {
@@ -337,12 +337,12 @@ func (in *ConditionParameters) DeepCopyInto(out *ConditionParameters) {
 	}
 	if in.DaysSinceCustomTime != nil {
 		in, out := &in.DaysSinceCustomTime, &out.DaysSinceCustomTime
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.DaysSinceNoncurrentTime != nil {
 		in, out := &in.DaysSinceNoncurrentTime, &out.DaysSinceNoncurrentTime
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.MatchesStorageClass != nil {
@@ -363,7 +363,7 @@ func (in *ConditionParameters) DeepCopyInto(out *ConditionParameters) {
 	}
 	if in.NumNewerVersions != nil {
 		in, out := &in.NumNewerVersions, &out.NumNewerVersions
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.WithState != nil {
@@ -403,7 +403,7 @@ func (in *CorsParameters) DeepCopyInto(out *CorsParameters) {
 	*out = *in
 	if in.MaxAgeSeconds != nil {
 		in, out := &in.MaxAgeSeconds, &out.MaxAgeSeconds
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Method != nil {
@@ -595,7 +595,7 @@ func (in *RetentionPolicyParameters) DeepCopyInto(out *RetentionPolicyParameters
 	}
 	if in.RetentionPeriod != nil {
 		in, out := &in.RetentionPeriod, &out.RetentionPeriod
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 }

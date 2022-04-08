@@ -176,8 +176,7 @@ spec:
                             Will be combined with host (specified within the MonitoredResource)
                             and path to construct the full URL. Optional (defaults
                             to 80 without SSL, or 443 with SSL).
-                          format: int64
-                          type: integer
+                          type: number
                         requestMethod:
                           description: 'The HTTP request method to use for the check.
                             If set to METHOD_UNSPECIFIED then requestMethod defaults
@@ -265,8 +264,7 @@ spec:
                           description: The port to the page to run the check against.
                             Will be combined with host (specified within the MonitoredResource)
                             to construct the full URL.
-                          format: int64
-                          type: integer
+                          type: number
                       required:
                       - port
                       type: object

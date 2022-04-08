@@ -71,13 +71,11 @@ spec:
                         maxNodeCount:
                           description: Maximum number of nodes in the NodePool. Must
                             be >= min_node_count.
-                          format: int64
-                          type: integer
+                          type: number
                         minNodeCount:
                           description: Minimum number of nodes in the NodePool. Must
                             be >=0 and <= max_node_count.
-                          format: int64
-                          type: integer
+                          type: number
                       required:
                       - maxNodeCount
                       - minNodeCount
@@ -114,8 +112,7 @@ spec:
                     description: The initial number of nodes for the pool. In regional
                       or multi-zonal clusters, this is the number of nodes per zone.
                       Changing this will force recreation of the resource.
-                    format: int64
-                    type: integer
+                    type: number
                   location:
                     description: The location (region or zone) of the cluster.
                     type: string
@@ -137,8 +134,7 @@ spec:
                       pool. Note that this does not work on node pools which are "route-based"
                       - that is, node pools belonging to clusters that do not have
                       IP Aliasing enabled.
-                    format: int64
-                    type: integer
+                    type: number
                   nodeConfig:
                     description: The configuration of the nodepool
                     items:
@@ -146,8 +142,7 @@ spec:
                         diskSizeGb:
                           description: Size of the disk attached to each node, specified
                             in GB. The smallest allowed disk size is 10GB.
-                          format: int64
-                          type: integer
+                          type: number
                         diskType:
                           description: Type of the disk attached to each node.
                           type: string
@@ -157,21 +152,11 @@ spec:
                           items:
                             properties:
                               count:
-                                description: The number of the accelerator cards exposed
-                                  to an instance.
-                                format: int64
-                                type: integer
+                                type: number
                               gpuPartitionSize:
-                                description: Size of partitions to create on the GPU.
-                                  Valid values are described in the NVIDIA mig user
-                                  guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
                                 type: string
                               type:
-                                description: The accelerator type resource name.
                                 type: string
-                            required:
-                            - count
-                            - type
                             type: object
                           type: array
                         imageType:
@@ -190,8 +175,7 @@ spec:
                         localSsdCount:
                           description: The number of local SSD disks to be attached
                             to the node.
-                          format: int64
-                          type: integer
+                          type: number
                         machineType:
                           description: The name of a Google Compute Engine machine
                             type.
@@ -246,18 +230,11 @@ spec:
                           items:
                             properties:
                               effect:
-                                description: Effect for taint.
                                 type: string
                               key:
-                                description: Key for taint.
                                 type: string
                               value:
-                                description: Value for taint.
                                 type: string
-                            required:
-                            - effect
-                            - key
-                            - value
                             type: object
                           type: array
                         workloadMetadataConfig:
@@ -279,8 +256,7 @@ spec:
                     description: The number of nodes per instance group. This field
                       can be used to update the number of nodes per instance group
                       but should not be used alongside autoscaling.
-                    format: int64
-                    type: integer
+                    type: number
                   nodeLocations:
                     description: The list of zones in which the node pool's nodes
                       should be located. Nodes must be in the region of their regional
@@ -307,15 +283,13 @@ spec:
                             added to the node pool during an upgrade. Increasing max_surge
                             raises the number of nodes that can be upgraded simultaneously.
                             Can be set to 0 or greater.
-                          format: int64
-                          type: integer
+                          type: number
                         maxUnavailable:
                           description: The number of nodes that can be simultaneously
                             unavailable during an upgrade. Increasing max_unavailable
                             raises the number of nodes that can be upgraded in parallel.
                             Can be set to 0 or greater.
-                          format: int64
-                          type: integer
+                          type: number
                       required:
                       - maxSurge
                       - maxUnavailable

@@ -127,8 +127,7 @@ spec:
                           type: string
                         connectRetryInterval:
                           description: The number of seconds between connect retries.
-                          format: int64
-                          type: integer
+                          type: number
                         dumpFilePath:
                           description: Path to a SQL file in Google Cloud Storage
                             from which replica instances are created. Format is gs://bucket/filename.
@@ -141,8 +140,7 @@ spec:
                           type: boolean
                         masterHeartbeatPeriod:
                           description: Time in ms between replication heartbeats.
-                          format: int64
-                          type: integer
+                          type: number
                         passwordSecretRef:
                           description: Password for the replication connection.
                           properties:
@@ -177,8 +175,7 @@ spec:
                       properties:
                         backupRunId:
                           description: The ID of the backup run to restore from.
-                          format: int64
-                          type: integer
+                          type: number
                         instanceId:
                           description: The ID of the instance that the backup was
                             taken from.
@@ -232,8 +229,7 @@ spec:
                                   properties:
                                     retainedBackups:
                                       description: Number of backups to retain.
-                                      format: int64
-                                      type: integer
+                                      type: number
                                     retentionUnit:
                                       description: The unit that 'retainedBackups'
                                         represents. Defaults to COUNT
@@ -263,8 +259,7 @@ spec:
                               transactionLogRetentionDays:
                                 description: The number of days of transaction logs
                                   we retain for point in time restore, from 1-7.
-                                format: int64
-                                type: integer
+                                type: number
                             type: object
                           type: array
                         collation:
@@ -294,13 +289,11 @@ spec:
                           description: The maximum size, in GB, to which storage capacity
                             can be automatically increased. The default value is 0,
                             which specifies that there is no limit.
-                          format: int64
-                          type: integer
+                          type: number
                         diskSize:
                           description: The size of data disk, in GB. Size of a running
                             instance cannot be reduced but can be increased.
-                          format: int64
-                          type: integer
+                          type: number
                         diskType:
                           description: 'The type of data disk: PD_SSD or PD_HDD.'
                           type: string
@@ -314,8 +307,7 @@ spec:
                               queryStringLength:
                                 description: Maximum query length stored in bytes.
                                   Between 256 and 4500. Default to 1024.
-                                format: int64
-                                type: integer
+                                type: number
                               recordApplicationTags:
                                 description: True if Query Insights will record application
                                   tags from query when enabled.
@@ -381,13 +373,11 @@ spec:
                             properties:
                               day:
                                 description: Day of week (1-7), starting on Monday
-                                format: int64
-                                type: integer
+                                type: number
                               hour:
                                 description: Hour of day (0-23), ignored if day not
                                   set
-                                format: int64
-                                type: integer
+                                type: number
                               updateTrack:
                                 description: Receive updates earlier (canary) or later
                                   (stable)

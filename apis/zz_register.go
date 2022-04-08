@@ -22,13 +22,14 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
-	v1alpha2 "github.com/crossplane-contrib/provider-jet-gcp/apis/cloudplatform/v1alpha2"
-	v1alpha2compute "github.com/crossplane-contrib/provider-jet-gcp/apis/compute/v1alpha2"
-	v1alpha2container "github.com/crossplane-contrib/provider-jet-gcp/apis/container/v1alpha2"
-	v1alpha2monitoring "github.com/crossplane-contrib/provider-jet-gcp/apis/monitoring/v1alpha2"
-	v1alpha2sql "github.com/crossplane-contrib/provider-jet-gcp/apis/sql/v1alpha2"
-	v1alpha2storage "github.com/crossplane-contrib/provider-jet-gcp/apis/storage/v1alpha2"
-	v1alpha1 "github.com/crossplane-contrib/provider-jet-gcp/apis/v1alpha1"
+	v1alpha2 "github.com/crossplane/provider-gcp/apis/cloudplatform/v1alpha2"
+	v1alpha2compute "github.com/crossplane/provider-gcp/apis/compute/v1alpha2"
+	v1alpha2container "github.com/crossplane/provider-gcp/apis/container/v1alpha2"
+	v1alpha2monitoring "github.com/crossplane/provider-gcp/apis/monitoring/v1alpha2"
+	v1alpha2redis "github.com/crossplane/provider-gcp/apis/redis/v1alpha2"
+	v1alpha2sql "github.com/crossplane/provider-gcp/apis/sql/v1alpha2"
+	v1alpha2storage "github.com/crossplane/provider-gcp/apis/storage/v1alpha2"
+	v1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 )
 
 func init() {
@@ -38,6 +39,7 @@ func init() {
 		v1alpha2compute.SchemeBuilder.AddToScheme,
 		v1alpha2container.SchemeBuilder.AddToScheme,
 		v1alpha2monitoring.SchemeBuilder.AddToScheme,
+		v1alpha2redis.SchemeBuilder.AddToScheme,
 		v1alpha2sql.SchemeBuilder.AddToScheme,
 		v1alpha2storage.SchemeBuilder.AddToScheme,
 		v1alpha1.SchemeBuilder.AddToScheme,

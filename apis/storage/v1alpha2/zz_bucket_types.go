@@ -116,7 +116,7 @@ type ConditionParameters struct {
 
 	// Minimum age of an object in days to satisfy this condition.
 	// +kubebuilder:validation:Optional
-	Age *int64 `json:"age,omitempty" tf:"age,omitempty"`
+	Age *float64 `json:"age,omitempty" tf:"age,omitempty"`
 
 	// Creation date of an object in RFC 3339 (e.g. 2017-06-13) to satisfy this condition.
 	// +kubebuilder:validation:Optional
@@ -128,12 +128,12 @@ type ConditionParameters struct {
 
 	// Number of days elapsed since the user-specified timestamp set on an object.
 	// +kubebuilder:validation:Optional
-	DaysSinceCustomTime *int64 `json:"daysSinceCustomTime,omitempty" tf:"days_since_custom_time,omitempty"`
+	DaysSinceCustomTime *float64 `json:"daysSinceCustomTime,omitempty" tf:"days_since_custom_time,omitempty"`
 
 	// Number of days elapsed since the noncurrent timestamp of an object. This
 	// condition is relevant only for versioned objects.
 	// +kubebuilder:validation:Optional
-	DaysSinceNoncurrentTime *int64 `json:"daysSinceNoncurrentTime,omitempty" tf:"days_since_noncurrent_time,omitempty"`
+	DaysSinceNoncurrentTime *float64 `json:"daysSinceNoncurrentTime,omitempty" tf:"days_since_noncurrent_time,omitempty"`
 
 	// Storage Class of objects to satisfy this condition. Supported values include: MULTI_REGIONAL, REGIONAL, NEARLINE, COLDLINE, ARCHIVE, STANDARD, DURABLE_REDUCED_AVAILABILITY.
 	// +kubebuilder:validation:Optional
@@ -145,7 +145,7 @@ type ConditionParameters struct {
 
 	// Relevant only for versioned objects. The number of newer versions of an object to satisfy this condition.
 	// +kubebuilder:validation:Optional
-	NumNewerVersions *int64 `json:"numNewerVersions,omitempty" tf:"num_newer_versions,omitempty"`
+	NumNewerVersions *float64 `json:"numNewerVersions,omitempty" tf:"num_newer_versions,omitempty"`
 
 	// Match to live and/or archived objects. Unversioned buckets have only live objects. Supported values include: "LIVE", "ARCHIVED", "ANY".
 	// +kubebuilder:validation:Optional
@@ -159,7 +159,7 @@ type CorsParameters struct {
 
 	// The value, in seconds, to return in the Access-Control-Max-Age header used in preflight responses.
 	// +kubebuilder:validation:Optional
-	MaxAgeSeconds *int64 `json:"maxAgeSeconds,omitempty" tf:"max_age_seconds,omitempty"`
+	MaxAgeSeconds *float64 `json:"maxAgeSeconds,omitempty" tf:"max_age_seconds,omitempty"`
 
 	// The list of HTTP methods on which to include CORS response headers, (GET, OPTIONS, POST, etc) Note: "*" is permitted in the list of methods, and means "any method".
 	// +kubebuilder:validation:Optional
@@ -223,7 +223,7 @@ type RetentionPolicyParameters struct {
 
 	// The period of time, in seconds, that objects in the bucket must be retained and cannot be deleted, overwritten, or archived. The value must be less than 3,155,760,000 seconds.
 	// +kubebuilder:validation:Required
-	RetentionPeriod *int64 `json:"retentionPeriod" tf:"retention_period,omitempty"`
+	RetentionPeriod *float64 `json:"retentionPeriod" tf:"retention_period,omitempty"`
 }
 
 type VersioningObservation struct {

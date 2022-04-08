@@ -55,7 +55,7 @@ type NetworkParameters struct {
 	// Maximum Transmission Unit in bytes. The minimum value for this field is 1460
 	// and the maximum value is 1500 bytes.
 	// +kubebuilder:validation:Optional
-	Mtu *int64 `json:"mtu,omitempty" tf:"mtu,omitempty"`
+	Mtu *float64 `json:"mtu,omitempty" tf:"mtu,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Project *string `json:"project,omitempty" tf:"project,omitempty"`

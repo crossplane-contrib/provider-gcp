@@ -78,11 +78,11 @@ type AutoscalingParameters struct {
 
 	// Maximum number of nodes in the NodePool. Must be >= min_node_count.
 	// +kubebuilder:validation:Required
-	MaxNodeCount *int64 `json:"maxNodeCount" tf:"max_node_count,omitempty"`
+	MaxNodeCount *float64 `json:"maxNodeCount" tf:"max_node_count,omitempty"`
 
 	// Minimum number of nodes in the NodePool. Must be >=0 and <= max_node_count.
 	// +kubebuilder:validation:Required
-	MinNodeCount *int64 `json:"minNodeCount" tf:"min_node_count,omitempty"`
+	MinNodeCount *float64 `json:"minNodeCount" tf:"min_node_count,omitempty"`
 }
 
 type BigqueryDestinationObservation struct {
@@ -195,7 +195,7 @@ type ClusterParameters struct {
 
 	// The default maximum number of pods per node in this cluster. This doesn't work on "routes-based" clusters, clusters that don't have IP Aliasing enabled.
 	// +kubebuilder:validation:Optional
-	DefaultMaxPodsPerNode *int64 `json:"defaultMaxPodsPerNode,omitempty" tf:"default_max_pods_per_node,omitempty"`
+	DefaultMaxPodsPerNode *float64 `json:"defaultMaxPodsPerNode,omitempty" tf:"default_max_pods_per_node,omitempty"`
 
 	// Whether the cluster disables default in-node sNAT rules. In-node sNAT rules will be disabled when defaultSnatStatus is disabled.
 	// +kubebuilder:validation:Optional
@@ -239,7 +239,7 @@ type ClusterParameters struct {
 
 	// The number of nodes to create in this cluster's default node pool. In regional or multi-zonal clusters, this is the number of nodes per zone. Must be set if node_pool is not set. If you're using google_container_node_pool objects with no default node pool, you'll need to set this to a value of at least 1, alongside setting remove_default_node_pool to true.
 	// +kubebuilder:validation:Optional
-	InitialNodeCount *int64 `json:"initialNodeCount,omitempty" tf:"initial_node_count,omitempty"`
+	InitialNodeCount *float64 `json:"initialNodeCount,omitempty" tf:"initial_node_count,omitempty"`
 
 	// The location (region or zone) in which the cluster master will be created, as well as the default node location. If you specify a zone (such as us-central1-a), the cluster will be a zonal cluster with a single cluster master. If you specify a region (such as us-west1), the cluster will be a regional cluster with multiple masters spread across zones in the region, and with default node locations in those zones as well.
 	// +kubebuilder:validation:Optional
@@ -385,17 +385,14 @@ type GuestAcceleratorObservation struct {
 
 type GuestAcceleratorParameters struct {
 
-	// The number of the accelerator cards exposed to an instance.
-	// +kubebuilder:validation:Required
-	Count *int64 `json:"count" tf:"count"`
+	// +kubebuilder:validation:Optional
+	Count *float64 `json:"count,omitempty" tf:"count"`
 
-	// Size of partitions to create on the GPU. Valid values are described in the NVIDIA mig user guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
 	// +kubebuilder:validation:Optional
 	GpuPartitionSize *string `json:"gpuPartitionSize,omitempty" tf:"gpu_partition_size"`
 
-	// The accelerator type resource name.
-	// +kubebuilder:validation:Required
-	Type *string `json:"type" tf:"type"`
+	// +kubebuilder:validation:Optional
+	Type *string `json:"type,omitempty" tf:"type"`
 }
 
 type HTTPLoadBalancingObservation struct {
@@ -566,17 +563,14 @@ type NodeConfigGuestAcceleratorObservation struct {
 
 type NodeConfigGuestAcceleratorParameters struct {
 
-	// The number of the accelerator cards exposed to an instance.
-	// +kubebuilder:validation:Required
-	Count *int64 `json:"count" tf:"count"`
+	// +kubebuilder:validation:Optional
+	Count *float64 `json:"count,omitempty" tf:"count"`
 
-	// Size of partitions to create on the GPU. Valid values are described in the NVIDIA mig user guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
 	// +kubebuilder:validation:Optional
 	GpuPartitionSize *string `json:"gpuPartitionSize,omitempty" tf:"gpu_partition_size"`
 
-	// The accelerator type resource name.
-	// +kubebuilder:validation:Required
-	Type *string `json:"type" tf:"type"`
+	// +kubebuilder:validation:Optional
+	Type *string `json:"type,omitempty" tf:"type"`
 }
 
 type NodeConfigObservation struct {
@@ -586,7 +580,7 @@ type NodeConfigParameters struct {
 
 	// Size of the disk attached to each node, specified in GB. The smallest allowed disk size is 10GB.
 	// +kubebuilder:validation:Optional
-	DiskSizeGb *int64 `json:"diskSizeGb,omitempty" tf:"disk_size_gb,omitempty"`
+	DiskSizeGb *float64 `json:"diskSizeGb,omitempty" tf:"disk_size_gb,omitempty"`
 
 	// Type of the disk attached to each node.
 	// +kubebuilder:validation:Optional
@@ -606,7 +600,7 @@ type NodeConfigParameters struct {
 
 	// The number of local SSD disks to be attached to the node.
 	// +kubebuilder:validation:Optional
-	LocalSsdCount *int64 `json:"localSsdCount,omitempty" tf:"local_ssd_count,omitempty"`
+	LocalSsdCount *float64 `json:"localSsdCount,omitempty" tf:"local_ssd_count,omitempty"`
 
 	// The name of a Google Compute Engine machine type.
 	// +kubebuilder:validation:Optional
@@ -668,17 +662,14 @@ type NodeConfigTaintObservation struct {
 
 type NodeConfigTaintParameters struct {
 
-	// Effect for taint.
-	// +kubebuilder:validation:Required
-	Effect *string `json:"effect" tf:"effect"`
+	// +kubebuilder:validation:Optional
+	Effect *string `json:"effect,omitempty" tf:"effect"`
 
-	// Key for taint.
-	// +kubebuilder:validation:Required
-	Key *string `json:"key" tf:"key"`
+	// +kubebuilder:validation:Optional
+	Key *string `json:"key,omitempty" tf:"key"`
 
-	// Value for taint.
-	// +kubebuilder:validation:Required
-	Value *string `json:"value" tf:"value"`
+	// +kubebuilder:validation:Optional
+	Value *string `json:"value,omitempty" tf:"value"`
 }
 
 type NodeConfigWorkloadMetadataConfigObservation struct {
@@ -698,7 +689,7 @@ type NodePoolNodeConfigParameters struct {
 
 	// Size of the disk attached to each node, specified in GB. The smallest allowed disk size is 10GB.
 	// +kubebuilder:validation:Optional
-	DiskSizeGb *int64 `json:"diskSizeGb,omitempty" tf:"disk_size_gb,omitempty"`
+	DiskSizeGb *float64 `json:"diskSizeGb,omitempty" tf:"disk_size_gb,omitempty"`
 
 	// Type of the disk attached to each node.
 	// +kubebuilder:validation:Optional
@@ -718,7 +709,7 @@ type NodePoolNodeConfigParameters struct {
 
 	// The number of local SSD disks to be attached to the node.
 	// +kubebuilder:validation:Optional
-	LocalSsdCount *int64 `json:"localSsdCount,omitempty" tf:"local_ssd_count,omitempty"`
+	LocalSsdCount *float64 `json:"localSsdCount,omitempty" tf:"local_ssd_count,omitempty"`
 
 	// The name of a Google Compute Engine machine type.
 	// +kubebuilder:validation:Optional
@@ -775,7 +766,7 @@ type NodePoolParameters struct {
 
 	// The initial number of nodes for the pool. In regional or multi-zonal clusters, this is the number of nodes per zone. Changing this will force recreation of the resource.
 	// +kubebuilder:validation:Optional
-	InitialNodeCount *int64 `json:"initialNodeCount,omitempty" tf:"initial_node_count,omitempty"`
+	InitialNodeCount *float64 `json:"initialNodeCount,omitempty" tf:"initial_node_count,omitempty"`
 
 	// Node management configuration, wherein auto-repair and auto-upgrade is configured.
 	// +kubebuilder:validation:Optional
@@ -783,7 +774,7 @@ type NodePoolParameters struct {
 
 	// The maximum number of pods per node in this node pool. Note that this does not work on node pools which are "route-based" - that is, node pools belonging to clusters that do not have IP Aliasing enabled.
 	// +kubebuilder:validation:Optional
-	MaxPodsPerNode *int64 `json:"maxPodsPerNode,omitempty" tf:"max_pods_per_node,omitempty"`
+	MaxPodsPerNode *float64 `json:"maxPodsPerNode,omitempty" tf:"max_pods_per_node,omitempty"`
 
 	// The name of the node pool. If left blank, Terraform will auto-generate a unique name.
 	// +kubebuilder:validation:Optional
@@ -799,7 +790,7 @@ type NodePoolParameters struct {
 
 	// The number of nodes per instance group. This field can be used to update the number of nodes per instance group but should not be used alongside autoscaling.
 	// +kubebuilder:validation:Optional
-	NodeCount *int64 `json:"nodeCount,omitempty" tf:"node_count,omitempty"`
+	NodeCount *float64 `json:"nodeCount,omitempty" tf:"node_count,omitempty"`
 
 	// The list of zones in which the node pool's nodes should be located. Nodes must be in the region of their regional cluster or in the same region as their cluster's zone for zonal clusters. If unspecified, the cluster-level node_locations will be used.
 	// +kubebuilder:validation:Optional
@@ -877,11 +868,11 @@ type ResourceLimitsParameters struct {
 
 	// Maximum amount of the resource in the cluster.
 	// +kubebuilder:validation:Optional
-	Maximum *int64 `json:"maximum,omitempty" tf:"maximum,omitempty"`
+	Maximum *float64 `json:"maximum,omitempty" tf:"maximum,omitempty"`
 
 	// Minimum amount of the resource in the cluster.
 	// +kubebuilder:validation:Optional
-	Minimum *int64 `json:"minimum,omitempty" tf:"minimum,omitempty"`
+	Minimum *float64 `json:"minimum,omitempty" tf:"minimum,omitempty"`
 
 	// The type of the resource. For example, cpu and memory. See the guide to using Node Auto-Provisioning for a list of types.
 	// +kubebuilder:validation:Required
@@ -925,17 +916,14 @@ type TaintObservation struct {
 
 type TaintParameters struct {
 
-	// Effect for taint.
-	// +kubebuilder:validation:Required
-	Effect *string `json:"effect" tf:"effect"`
+	// +kubebuilder:validation:Optional
+	Effect *string `json:"effect,omitempty" tf:"effect"`
 
-	// Key for taint.
-	// +kubebuilder:validation:Required
-	Key *string `json:"key" tf:"key"`
+	// +kubebuilder:validation:Optional
+	Key *string `json:"key,omitempty" tf:"key"`
 
-	// Value for taint.
-	// +kubebuilder:validation:Required
-	Value *string `json:"value" tf:"value"`
+	// +kubebuilder:validation:Optional
+	Value *string `json:"value,omitempty" tf:"value"`
 }
 
 type UpgradeSettingsObservation struct {
@@ -945,11 +933,11 @@ type UpgradeSettingsParameters struct {
 
 	// The number of additional nodes that can be added to the node pool during an upgrade. Increasing max_surge raises the number of nodes that can be upgraded simultaneously. Can be set to 0 or greater.
 	// +kubebuilder:validation:Required
-	MaxSurge *int64 `json:"maxSurge" tf:"max_surge,omitempty"`
+	MaxSurge *float64 `json:"maxSurge" tf:"max_surge,omitempty"`
 
 	// The number of nodes that can be simultaneously unavailable during an upgrade. Increasing max_unavailable raises the number of nodes that can be upgraded in parallel. Can be set to 0 or greater.
 	// +kubebuilder:validation:Required
-	MaxUnavailable *int64 `json:"maxUnavailable" tf:"max_unavailable,omitempty"`
+	MaxUnavailable *float64 `json:"maxUnavailable" tf:"max_unavailable,omitempty"`
 }
 
 type VerticalPodAutoscalingObservation struct {

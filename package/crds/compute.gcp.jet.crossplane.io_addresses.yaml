@@ -112,8 +112,7 @@ spec:
                   prefixLength:
                     description: The prefix length if the resource represents an IP
                       range.
-                    format: int64
-                    type: integer
+                    type: number
                   project:
                     type: string
                   purpose:

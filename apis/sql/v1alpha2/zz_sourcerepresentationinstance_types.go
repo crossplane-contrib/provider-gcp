@@ -42,7 +42,7 @@ type SourceRepresentationInstanceParameters struct {
 	// The externally accessible port for the source database server.
 	// Defaults to 3306.
 	// +kubebuilder:validation:Optional
-	Port *int64 `json:"port,omitempty" tf:"port,omitempty"`
+	Port *float64 `json:"port,omitempty" tf:"port,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Project *string `json:"project,omitempty" tf:"project,omitempty"`

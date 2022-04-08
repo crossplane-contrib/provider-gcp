@@ -72,7 +72,7 @@ type BGPParameters struct {
 	// this router resource. All VPN tunnels that link to this router
 	// will have the same local ASN.
 	// +kubebuilder:validation:Required
-	Asn *int64 `json:"asn" tf:"asn,omitempty"`
+	Asn *float64 `json:"asn" tf:"asn,omitempty"`
 }
 
 type RouterObservation struct {
@@ -102,7 +102,7 @@ type RouterParameters struct {
 
 	// A reference to the network to which this router belongs.
 	// +crossplane:generate:reference:type=Network
-	// +crossplane:generate:reference:extractor=github.com/crossplane-contrib/provider-jet-gcp/config/common.SelfLinkExtractor()
+	// +crossplane:generate:reference:extractor=github.com/crossplane/provider-gcp/config/common.SelfLinkExtractor()
 	// +kubebuilder:validation:Optional
 	Network *string `json:"network,omitempty" tf:"network,omitempty"`
 

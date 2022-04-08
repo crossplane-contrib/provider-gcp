@@ -34,9 +34,9 @@ import (
 	servicenetworkingv1beta1 "github.com/crossplane/provider-gcp/apis/classic/servicenetworking/v1beta1"
 	storagev1alpha1 "github.com/crossplane/provider-gcp/apis/classic/storage/v1alpha1"
 	storagev1alpha3 "github.com/crossplane/provider-gcp/apis/classic/storage/v1alpha3"
-	gcpv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
-	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/v1alpha3"
-	gcpv1beta1 "github.com/crossplane/provider-gcp/apis/v1beta1"
+	gcpv1alpha1 "github.com/crossplane/provider-gcp/apis/classic/v1alpha1"
+	gcpv1alpha3 "github.com/crossplane/provider-gcp/apis/classic/v1alpha3"
+	gcpv1beta1 "github.com/crossplane/provider-gcp/apis/classic/v1beta1"
 )
 
 func init() {

@@ -71,8 +71,7 @@ spec:
                         maxAgeSeconds:
                           description: The value, in seconds, to return in the Access-Control-Max-Age
                             header used in preflight responses.
-                          format: int64
-                          type: integer
+                          type: number
                         method:
                           description: 'The list of HTTP methods on which to include
                             CORS response headers, (GET, OPTIONS, POST, etc) Note:
@@ -154,8 +153,7 @@ spec:
                               age:
                                 description: Minimum age of an object in days to satisfy
                                   this condition.
-                                format: int64
-                                type: integer
+                                type: number
                               createdBefore:
                                 description: Creation date of an object in RFC 3339
                                   (e.g. 2017-06-13) to satisfy this condition.
@@ -167,14 +165,12 @@ spec:
                               daysSinceCustomTime:
                                 description: Number of days elapsed since the user-specified
                                   timestamp set on an object.
-                                format: int64
-                                type: integer
+                                type: number
                               daysSinceNoncurrentTime:
                                 description: Number of days elapsed since the noncurrent
                                   timestamp of an object. This condition is relevant
                                   only for versioned objects.
-                                format: int64
-                                type: integer
+                                type: number
                               matchesStorageClass:
                                 description: 'Storage Class of objects to satisfy
                                   this condition. Supported values include: MULTI_REGIONAL,
@@ -191,8 +187,7 @@ spec:
                                 description: Relevant only for versioned objects.
                                   The number of newer versions of an object to satisfy
                                   this condition.
-                                format: int64
-                                type: integer
+                                type: number
                               withState:
                                 description: 'Match to live and/or archived objects.
                                   Unversioned buckets have only live objects. Supported
@@ -247,8 +242,7 @@ spec:
                             in the bucket must be retained and cannot be deleted,
                             overwritten, or archived. The value must be less than
                             3,155,760,000 seconds.
-                          format: int64
-                          type: integer
+                          type: number
                       required:
                       - retentionPeriod
                       type: object

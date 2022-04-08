@@ -52,7 +52,7 @@ type ManagedSSLCertificateParameters struct {
 
 	// The unique identifier for the resource.
 	// +kubebuilder:validation:Optional
-	CertificateID *int64 `json:"certificateId,omitempty" tf:"certificate_id,omitempty"`
+	CertificateID *float64 `json:"certificateId,omitempty" tf:"certificate_id,omitempty"`
 
 	// An optional description of this resource.
 	// +kubebuilder:validation:Optional

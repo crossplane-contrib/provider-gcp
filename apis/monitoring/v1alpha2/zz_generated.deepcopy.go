@@ -439,7 +439,7 @@ func (in *ConditionMonitoringQueryLanguageTriggerParameters) DeepCopyInto(out *C
 	*out = *in
 	if in.Count != nil {
 		in, out := &in.Count, &out.Count
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Percent != nil {
@@ -611,7 +611,7 @@ func (in *ConditionThresholdTriggerParameters) DeepCopyInto(out *ConditionThresh
 	*out = *in
 	if in.Count != nil {
 		in, out := &in.Count, &out.Count
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Percent != nil {
@@ -930,7 +930,7 @@ func (in *HTTPCheckParameters) DeepCopyInto(out *HTTPCheckParameters) {
 	}
 	if in.Port != nil {
 		in, out := &in.Port, &out.Port
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.RequestMethod != nil {
@@ -1315,7 +1315,7 @@ func (in *TCPCheckParameters) DeepCopyInto(out *TCPCheckParameters) {
 	*out = *in
 	if in.Port != nil {
 		in, out := &in.Port, &out.Port
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 }
@@ -1350,7 +1350,7 @@ func (in *TriggerParameters) DeepCopyInto(out *TriggerParameters) {
 	*out = *in
 	if in.Count != nil {
 		in, out := &in.Count, &out.Count
-		*out = new(int64)
+		*out = new(float64)
 		**out = **in
 	}
 	if in.Percent != nil {

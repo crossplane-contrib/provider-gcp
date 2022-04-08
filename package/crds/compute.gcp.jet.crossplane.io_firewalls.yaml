@@ -200,8 +200,7 @@ spec:
                       a rule with priority 0 has higher precedence than a rule with
                       priority 1). DENY rules take precedence over ALLOW rules having
                       equal priority.
-                    format: int64
-                    type: integer
+                    type: number
                   project:
                     type: string
                   sourceRanges:

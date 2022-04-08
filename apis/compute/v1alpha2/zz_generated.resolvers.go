@@ -20,8 +20,8 @@ package v1alpha2
 
 import (
 	"context"
-	common "github.com/crossplane-contrib/provider-jet-gcp/config/common"
 	reference "github.com/crossplane/crossplane-runtime/pkg/reference"
+	common "github.com/crossplane/provider-gcp/config/common"
 	errors "github.com/pkg/errors"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -21,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 
+	scv1alpha1 "github.com/crossplane/provider-gcp/apis/classic/v1alpha1"
+
 	"github.com/google/go-cmp/cmp"
 	redis "google.golang.org/api/redis/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,7 +39,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	v1beta12 "github.com/crossplane/provider-gcp/apis/classic/cache/v1beta1"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/cloudmemorystore"
 	"github.com/crossplane/provider-gcp/internal/features"

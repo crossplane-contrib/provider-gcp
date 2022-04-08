@@ -57,7 +57,7 @@ type RouterNATParameters struct {
 
 	// Timeout (in seconds) for ICMP connections. Defaults to 30s if not set.
 	// +kubebuilder:validation:Optional
-	IcmpIdleTimeoutSec *int64 `json:"icmpIdleTimeoutSec,omitempty" tf:"icmp_idle_timeout_sec,omitempty"`
+	IcmpIdleTimeoutSec *float64 `json:"icmpIdleTimeoutSec,omitempty" tf:"icmp_idle_timeout_sec,omitempty"`
 
 	// Configuration for logging on NAT
 	// +kubebuilder:validation:Optional
@@ -65,7 +65,7 @@ type RouterNATParameters struct {
 
 	// Minimum number of ports allocated to a VM from this NAT.
 	// +kubebuilder:validation:Optional
-	MinPortsPerVM *int64 `json:"minPortsPerVm,omitempty" tf:"min_ports_per_vm,omitempty"`
+	MinPortsPerVM *float64 `json:"minPortsPerVm,omitempty" tf:"min_ports_per_vm,omitempty"`
 
 	// How external IPs should be allocated for this NAT. Valid values are
 	// 'AUTO_ONLY' for only allowing NAT IPs allocated by Google Cloud
@@ -117,16 +117,16 @@ type RouterNATParameters struct {
 	// Timeout (in seconds) for TCP established connections.
 	// Defaults to 1200s if not set.
 	// +kubebuilder:validation:Optional
-	TCPEstablishedIdleTimeoutSec *int64 `json:"tcpEstablishedIdleTimeoutSec,omitempty" tf:"tcp_established_idle_timeout_sec,omitempty"`
+	TCPEstablishedIdleTimeoutSec *float64 `json:"tcpEstablishedIdleTimeoutSec,omitempty" tf:"tcp_established_idle_timeout_sec,omitempty"`
 
 	// Timeout (in seconds) for TCP transitory connections.
 	// Defaults to 30s if not set.
 	// +kubebuilder:validation:Optional
-	TCPTransitoryIdleTimeoutSec *int64 `json:"tcpTransitoryIdleTimeoutSec,omitempty" tf:"tcp_transitory_idle_timeout_sec,omitempty"`
+	TCPTransitoryIdleTimeoutSec *float64 `json:"tcpTransitoryIdleTimeoutSec,omitempty" tf:"tcp_transitory_idle_timeout_sec,omitempty"`
 
 	// Timeout (in seconds) for UDP connections. Defaults to 30s if not set.
 	// +kubebuilder:validation:Optional
-	UDPIdleTimeoutSec *int64 `json:"udpIdleTimeoutSec,omitempty" tf:"udp_idle_timeout_sec,omitempty"`
+	UDPIdleTimeoutSec *float64 `json:"udpIdleTimeoutSec,omitempty" tf:"udp_idle_timeout_sec,omitempty"`
 }
 
 type SubnetworkObservation struct {

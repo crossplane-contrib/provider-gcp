@@ -180,13 +180,11 @@ spec:
                               maximum:
                                 description: Maximum amount of the resource in the
                                   cluster.
-                                format: int64
-                                type: integer
+                                type: number
                               minimum:
                                 description: Minimum amount of the resource in the
                                   cluster.
-                                format: int64
-                                type: integer
+                                type: number
                               resourceType:
                                 description: The type of the resource. For example,
                                   cpu and memory. See the guide to using Node Auto-Provisioning
@@ -232,8 +230,7 @@ spec:
                     description: The default maximum number of pods per node in this
                       cluster. This doesn't work on "routes-based" clusters, clusters
                       that don't have IP Aliasing enabled.
-                    format: int64
-                    type: integer
+                    type: number
                   defaultSnatStatus:
                     description: Whether the cluster disables default in-node sNAT
                       rules. In-node sNAT rules will be disabled when defaultSnatStatus
@@ -292,8 +289,7 @@ spec:
                       If you're using google_container_node_pool objects with no default
                       node pool, you'll need to set this to a value of at least 1,
                       alongside setting remove_default_node_pool to true.
-                    format: int64
-                    type: integer
+                    type: number
                   ipAllocationPolicy:
                     description: Configuration of cluster IP allocation for VPC-native
                       clusters. Adding this block enables IP aliasing, making the
@@ -525,8 +521,7 @@ spec:
                         diskSizeGb:
                           description: Size of the disk attached to each node, specified
                             in GB. The smallest allowed disk size is 10GB.
-                          format: int64
-                          type: integer
+                          type: number
                         diskType:
                           description: Type of the disk attached to each node.
                           type: string
@@ -536,21 +531,11 @@ spec:
                           items:
                             properties:
                               count:
-                                description: The number of the accelerator cards exposed
-                                  to an instance.
-                                format: int64
-                                type: integer
+                                type: number
                               gpuPartitionSize:
-                                description: Size of partitions to create on the GPU.
-                                  Valid values are described in the NVIDIA mig user
-                                  guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
                                 type: string
                               type:
-                                description: The accelerator type resource name.
                                 type: string
-                            required:
-                            - count
-                            - type
                             type: object
                           type: array
                         imageType:
@@ -569,8 +554,7 @@ spec:
                         localSsdCount:
                           description: The number of local SSD disks to be attached
                             to the node.
-                          format: int64
-                          type: integer
+                          type: number
                         machineType:
                           description: The name of a Google Compute Engine machine
                             type.
@@ -625,18 +609,11 @@ spec:
                           items:
                             properties:
                               effect:
-                                description: Effect for taint.
                                 type: string
                               key:
-                                description: Key for taint.
                                 type: string
                               value:
-                                description: Value for taint.
                                 type: string
-                            required:
-                            - effect
-                            - key
-                            - value
                             type: object
                           type: array
                         workloadMetadataConfig:
@@ -682,13 +659,11 @@ spec:
                               maxNodeCount:
                                 description: Maximum number of nodes in the NodePool.
                                   Must be >= min_node_count.
-                                format: int64
-                                type: integer
+                                type: number
                               minNodeCount:
                                 description: Minimum number of nodes in the NodePool.
                                   Must be >=0 and <= max_node_count.
-                                format: int64
-                                type: integer
+                                type: number
                             required:
                             - maxNodeCount
                             - minNodeCount
@@ -699,8 +674,7 @@ spec:
                             regional or multi-zonal clusters, this is the number of
                             nodes per zone. Changing this will force recreation of
                             the resource.
-                          format: int64
-                          type: integer
+                          type: number
                         management:
                           description: Node management configuration, wherein auto-repair
                             and auto-upgrade is configured.
@@ -721,8 +695,7 @@ spec:
                             node pool. Note that this does not work on node pools
                             which are "route-based" - that is, node pools belonging
                             to clusters that do not have IP Aliasing enabled.
-                          format: int64
-                          type: integer
+                          type: number
                         name:
                           description: The name of the node pool. If left blank, Terraform
                             will auto-generate a unique name.
@@ -739,8 +712,7 @@ spec:
                                 description: Size of the disk attached to each node,
                                   specified in GB. The smallest allowed disk size
                                   is 10GB.
-                                format: int64
-                                type: integer
+                                type: number
                               diskType:
                                 description: Type of the disk attached to each node.
                                 type: string
@@ -750,21 +722,11 @@ spec:
                                 items:
                                   properties:
                                     count:
-                                      description: The number of the accelerator cards
-                                        exposed to an instance.
-                                      format: int64
-                                      type: integer
+                                      type: number
                                     gpuPartitionSize:
-                                      description: Size of partitions to create on
-                                        the GPU. Valid values are described in the
-                                        NVIDIA mig user guide (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning)
                                       type: string
                                     type:
-                                      description: The accelerator type resource name.
                                       type: string
-                                  required:
-                                  - count
-                                  - type
                                   type: object
                                 type: array
                               imageType:
@@ -783,8 +745,7 @@ spec:
                               localSsdCount:
                                 description: The number of local SSD disks to be attached
                                   to the node.
-                                format: int64
-                                type: integer
+                                type: number
                               machineType:
                                 description: The name of a Google Compute Engine machine
                                   type.
@@ -840,18 +801,11 @@ spec:
                                 items:
                                   properties:
                                     effect:
-                                      description: Effect for taint.
                                       type: string
                                     key:
-                                      description: Key for taint.
                                       type: string
                                     value:
-                                      description: Value for taint.
                                       type: string
-                                  required:
-                                  - effect
-                                  - key
-                                  - value
                                   type: object
                                 type: array
                               workloadMetadataConfig:
@@ -874,8 +828,7 @@ spec:
                           description: The number of nodes per instance group. This
                             field can be used to update the number of nodes per instance
                             group but should not be used alongside autoscaling.
-                          format: int64
-                          type: integer
+                          type: number
                         nodeLocations:
                           description: The list of zones in which the node pool's
                             nodes should be located. Nodes must be in the region of
@@ -898,15 +851,13 @@ spec:
                                   be added to the node pool during an upgrade. Increasing
                                   max_surge raises the number of nodes that can be
                                   upgraded simultaneously. Can be set to 0 or greater.
-                                format: int64
-                                type: integer
+                                type: number
                               maxUnavailable:
                                 description: The number of nodes that can be simultaneously
                                   unavailable during an upgrade. Increasing max_unavailable
                                   raises the number of nodes that can be upgraded
                                   in parallel. Can be set to 0 or greater.
-                                format: int64
-                                type: integer
+                                type: number
                             required:
                             - maxSurge
                             - maxUnavailable

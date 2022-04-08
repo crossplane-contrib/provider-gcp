@@ -22,6 +22,9 @@ import (
 	"path"
 	"strings"
 
+	"github.com/crossplane/provider-gcp/apis/classic/v1alpha3"
+	"github.com/crossplane/provider-gcp/apis/classic/v1beta1"
+
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
@@ -37,8 +40,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	cmpv1beta1 "github.com/crossplane/provider-gcp/apis/classic/compute/v1beta1"
-	"github.com/crossplane/provider-gcp/apis/v1alpha3"
-	"github.com/crossplane/provider-gcp/apis/v1beta1"
 )
 
 const scopeCloudPlatform = "https://www.googleapis.com/auth/cloud-platform"
