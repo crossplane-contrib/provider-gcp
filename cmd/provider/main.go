@@ -22,11 +22,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/crossplane/provider-gcp/apis/classic"
-
-	gcp "github.com/crossplane/provider-gcp/internal/classic/controller"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
-
 	tjcontroller "github.com/crossplane/terrajet/pkg/controller"
 	"gopkg.in/alecthomas/kingpin.v2"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,8 +38,12 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/terrajet/pkg/terraform"
 
+	"github.com/crossplane/provider-gcp/apis/classic"
 	"github.com/crossplane/provider-gcp/apis/v1alpha1"
 	"github.com/crossplane/provider-gcp/config"
+	gcp "github.com/crossplane/provider-gcp/internal/classic/controller"
+	"github.com/crossplane/provider-gcp/internal/clients"
+	"github.com/crossplane/provider-gcp/internal/features"
 )
 
 func main() {
@@ -103,7 +102,7 @@ func main() {
 		Options:        xpopts,
 		Provider:       config.GetProvider(),
 		WorkspaceStore: terraform.NewWorkspaceStore(log),
-		//SetupFn:        clients.TerraformSetupBuilder(*terraformVersion, *providerSource, *providerVersion),
+		SetupFn:        clients.TerraformSetupBuilder(*terraformVersion, *providerSource, *providerVersion),
 	}
 
 	if *enableExternalSecretStores {

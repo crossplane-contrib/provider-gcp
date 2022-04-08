@@ -23,7 +23,7 @@ import (
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	np "github.com/crossplane/provider-gcp/internal/classic/clients/nodepool"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	"github.com/google/go-cmp/cmp"
 	container "google.golang.org/api/container/v1"

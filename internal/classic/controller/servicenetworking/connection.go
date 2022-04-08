@@ -39,7 +39,7 @@ import (
 	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/connection"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 )
 
 // Error strings.

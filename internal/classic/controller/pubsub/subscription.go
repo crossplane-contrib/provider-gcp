@@ -23,7 +23,7 @@ import (
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/subscription"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	"github.com/google/go-cmp/cmp"
 	pubsub "google.golang.org/api/pubsub/v1"

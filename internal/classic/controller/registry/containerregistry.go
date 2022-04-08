@@ -25,7 +25,7 @@ import (
 	v1alpha12 "github.com/crossplane/provider-gcp/apis/classic/registry/v1alpha1"
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"

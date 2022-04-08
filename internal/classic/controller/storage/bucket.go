@@ -22,7 +22,7 @@ import (
 	v1alpha32 "github.com/crossplane/provider-gcp/apis/classic/storage/v1alpha3"
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"

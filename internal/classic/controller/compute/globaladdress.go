@@ -23,7 +23,7 @@ import (
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/globaladdress"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/compute/v1"

@@ -24,7 +24,7 @@ import (
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/cloudsql"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	"github.com/google/go-cmp/cmp"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"

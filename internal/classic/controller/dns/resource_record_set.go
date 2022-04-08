@@ -23,7 +23,7 @@ import (
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	rrsclient "github.com/crossplane/provider-gcp/internal/classic/clients/dns"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"

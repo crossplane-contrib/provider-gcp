@@ -24,7 +24,7 @@ import (
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/bucketpolicy"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	"google.golang.org/api/storage/v1"
 	ctrl "sigs.k8s.io/controller-runtime"

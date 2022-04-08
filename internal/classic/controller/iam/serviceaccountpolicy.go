@@ -23,7 +23,7 @@ import (
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/serviceaccountpolicy"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	iamv1 "google.golang.org/api/iam/v1"
 	ctrl "sigs.k8s.io/controller-runtime"

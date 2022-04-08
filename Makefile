@@ -4,6 +4,12 @@
 PROJECT_NAME := provider-gcp
 PROJECT_REPO := github.com/crossplane/$(PROJECT_NAME)
 
+export TERRAFORM_VERSION := 1.0.11
+export TERRAFORM_PROVIDER_SOURCE := hashicorp/google
+export TERRAFORM_PROVIDER_VERSION := 4.0.0
+export TERRAFORM_PROVIDER_DOWNLOAD_NAME := terraform-provider-google
+export TERRAFORM_PROVIDER_DOWNLOAD_URL_PREFIX := https://releases.hashicorp.com/terraform-provider-google/4.0.0
+
 PLATFORMS ?= linux_amd64 linux_arm64
 # -include will silently skip missing files, which allows us
 # to load those files with a target in the Makefile. If only
@@ -119,6 +125,33 @@ manifests:
 	@$(INFO) Deprecated. Run make generate instead.
 
 .PHONY: cobertura reviewable submodules fallthrough test-integration run crds.clean manifests dev dev-clean
+
+# ====================================================================================
+# Setup Terraform for fetching provider schema
+TERRAFORM := $(TOOLS_HOST_DIR)/terraform-$(TERRAFORM_VERSION)
+TERRAFORM_WORKDIR := $(WORK_DIR)/terraform
+TERRAFORM_PROVIDER_SCHEMA := config/schema.json
+
+$(TERRAFORM):
+	@$(INFO) installing terraform $(HOSTOS)-$(HOSTARCH)
+	@mkdir -p $(TOOLS_HOST_DIR)/tmp-terraform
+	@curl -fsSL https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_$(SAFEHOST_PLATFORM).zip -o $(TOOLS_HOST_DIR)/tmp-terraform/terraform.zip
+	@unzip $(TOOLS_HOST_DIR)/tmp-terraform/terraform.zip -d $(TOOLS_HOST_DIR)/tmp-terraform
+	@mv $(TOOLS_HOST_DIR)/tmp-terraform/terraform $(TERRAFORM)
+	@rm -fr $(TOOLS_HOST_DIR)/tmp-terraform
+	@$(OK) installing terraform $(HOSTOS)-$(HOSTARCH)
+
+$(TERRAFORM_PROVIDER_SCHEMA): $(TERRAFORM)
+	@$(INFO) generating provider schema for $(TERRAFORM_PROVIDER_SOURCE) $(TERRAFORM_PROVIDER_VERSION)
+	@mkdir -p $(TERRAFORM_WORKDIR)
+	@echo '{"terraform":[{"required_providers":[{"provider":{"source":"'"$(TERRAFORM_PROVIDER_SOURCE)"'","version":"'"$(TERRAFORM_PROVIDER_VERSION)"'"}}],"required_version":"'"$(TERRAFORM_VERSION)"'"}]}' > $(TERRAFORM_WORKDIR)/main.tf.json
+	@$(TERRAFORM) -chdir=$(TERRAFORM_WORKDIR) init > $(TERRAFORM_WORKDIR)/terraform-logs.txt 2>&1
+	@$(TERRAFORM) -chdir=$(TERRAFORM_WORKDIR) providers schema -json=true > $(TERRAFORM_PROVIDER_SCHEMA) 2>> $(TERRAFORM_WORKDIR)/terraform-logs.txt
+	@$(OK) generating provider schema for $(TERRAFORM_PROVIDER_SOURCE) $(TERRAFORM_PROVIDER_VERSION)
+
+generate.init: $(TERRAFORM_PROVIDER_SCHEMA)
+
+.PHONY: $(TERRAFORM_PROVIDER_SCHEMA)
 
 # ====================================================================================
 # Special Targets

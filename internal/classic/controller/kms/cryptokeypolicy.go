@@ -24,7 +24,7 @@ import (
 
 	gcp "github.com/crossplane/provider-gcp/internal/classic/clients"
 	"github.com/crossplane/provider-gcp/internal/classic/clients/cryptokeypolicy"
-	"github.com/crossplane/provider-gcp/internal/classic/features"
+	"github.com/crossplane/provider-gcp/internal/features"
 
 	kmsv1 "google.golang.org/api/cloudkms/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
