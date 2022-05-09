@@ -29,6 +29,10 @@ type ProviderConfigSpec struct {
 
 	// ProjectID is the project name (not numerical ID) of this GCP ProviderConfig.
 	ProjectID string `json:"projectID"`
+	// Endpoint overrides the default endpoint.
+	Endpoint string `json:"endpoint"`
+	// WithoutAuthentication - specifies that no authentication should be used. It is suitable only for testing and for accessing public resources.
+	WithoutAuthentication bool `json:"withoutAuthentication"`
 }
 
 // ProviderCredentials required to authenticate.

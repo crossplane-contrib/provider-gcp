@@ -77,11 +77,11 @@ type serviceAccountPolicyConnecter struct {
 
 // Connect sets up iam client using credentials from the provider
 func (c *serviceAccountPolicyConnecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	_, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	_, opts, err := gcp.GetConnectionInfo(ctx, c.client, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := iamv1.NewService(ctx, opts)
+	s, err := iamv1.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

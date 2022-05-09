@@ -43,10 +43,10 @@ import (
 
 const scopeCloudPlatform = "https://www.googleapis.com/auth/cloud-platform"
 
-// GetAuthInfo returns the necessary authentication information that is necessary
+// GetConnectionInfo returns the necessary connection information that is necessary
 // to use when the controller connects to GCP API in order to reconcile the managed
 // resource.
-func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts option.ClientOption, err error) {
+func GetConnectionInfo(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts []option.ClientOption, err error) {
 	switch {
 	case mg.GetProviderConfigReference() != nil:
 		return UseProviderConfig(ctx, c, mg)
@@ -59,10 +59,20 @@ func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (pro
 
 // UseProvider to return GCP authentication information.
 // Deprecated: Use UseProviderConfig
-func UseProvider(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts option.ClientOption, err error) {
+func UseProvider(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts []option.ClientOption, err error) {
+	opts = make([]option.ClientOption, 0)
+
 	p := &v1alpha3.Provider{}
 	if err := c.Get(ctx, types.NamespacedName{Name: mg.GetProviderReference().Name}, p); err != nil {
 		return "", nil, err
+	}
+
+	if len(p.Spec.Endpoint) > 0 {
+		opts = append(opts, option.WithEndpoint(p.Spec.Endpoint))
+	}
+
+	if p.Spec.WithoutAuthentication {
+		opts = append(opts, option.WithoutAuthentication())
 	}
 
 	ref := p.Spec.CredentialsSecretRef
@@ -70,11 +80,14 @@ func UseProvider(ctx context.Context, c client.Client, mg resource.Managed) (pro
 	if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
 		return "", nil, err
 	}
-	return p.Spec.ProjectID, option.WithCredentialsJSON(s.Data[ref.Key]), nil
+	opts = append(opts, option.WithCredentialsJSON(s.Data[ref.Key]))
+	return p.Spec.ProjectID, opts, nil
 }
 
 // UseProviderConfig to return GCP authentication information.
-func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts option.ClientOption, err error) {
+func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed) (projectID string, opts []option.ClientOption, err error) {
+	opts = make([]option.ClientOption, 0)
+
 	pc := &v1beta1.ProviderConfig{}
 	t := resource.NewProviderConfigUsageTracker(c, &v1beta1.ProviderConfigUsage{})
 	if err := t.Track(ctx, mg); err != nil {
@@ -83,20 +96,31 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 	if err := c.Get(ctx, types.NamespacedName{Name: mg.GetProviderConfigReference().Name}, pc); err != nil {
 		return "", nil, err
 	}
+
+	if len(pc.Spec.Endpoint) > 0 {
+		opts = append(opts, option.WithEndpoint(pc.Spec.Endpoint))
+	}
+
+	if pc.Spec.WithoutAuthentication {
+		opts = append(opts, option.WithoutAuthentication())
+	}
+
 	switch s := pc.Spec.Credentials.Source; s { //nolint:exhaustive
 	case xpv1.CredentialsSourceInjectedIdentity:
 		ts, err := google.DefaultTokenSource(ctx, scopeCloudPlatform)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "cannot get application default credentials token")
 		}
-		return pc.Spec.ProjectID, option.WithTokenSource(ts), nil
+		opts = append(opts, option.WithTokenSource(ts))
 	default:
 		data, err := resource.CommonCredentialExtractor(ctx, pc.Spec.Credentials.Source, c, pc.Spec.Credentials.CommonCredentialSelectors)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "cannot get credentials")
 		}
-		return pc.Spec.ProjectID, option.WithCredentialsJSON(data), nil
+		opts = append(opts, option.WithCredentialsJSON(data))
 	}
+
+	return pc.Spec.ProjectID, opts, nil
 }
 
 // IsErrorNotFoundGRPC gets a value indicating whether the given error represents
