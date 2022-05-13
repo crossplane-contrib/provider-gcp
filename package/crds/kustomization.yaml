@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- cache.gcp.crossplane.io_cloudmemorystoreinstances.yaml
+- dns.gcp.crossplane.io_resourcerecordsets.yaml
+- kms.gcp.crossplane.io_keyrings.yaml
+- compute.gcp.crossplane.io_addresses.yaml
+- gcp.crossplane.io_providerconfigs.yaml
+- compute.gcp.crossplane.io_firewalls.yaml
+- gcp.crossplane.io_providerconfigusages.yaml
+- pubsub.gcp.crossplane.io_subscriptions.yaml
+- compute.gcp.crossplane.io_globaladdresses.yaml
+- gcp.crossplane.io_providers.yaml
+- pubsub.gcp.crossplane.io_topics.yaml
+- compute.gcp.crossplane.io_networks.yaml
+- gcp.crossplane.io_storeconfigs.yaml
+- registry.gcp.crossplane.io_containerregistries.yaml
+- compute.gcp.crossplane.io_routers.yaml
+- iam.gcp.crossplane.io_serviceaccountkeys.yaml
+- servicenetworking.gcp.crossplane.io_connections.yaml
+- compute.gcp.crossplane.io_subnetworks.yaml
+- iam.gcp.crossplane.io_serviceaccountpolicies.yaml
+- storage.gcp.crossplane.io_bucketpolicies.yaml
+- container.gcp.crossplane.io_clusters.yaml
+- iam.gcp.crossplane.io_serviceaccounts.yaml
+- storage.gcp.crossplane.io_bucketpolicymembers.yaml
+- container.gcp.crossplane.io_nodepools.yaml
+- kms.gcp.crossplane.io_cryptokeypolicies.yaml
+- storage.gcp.crossplane.io_buckets.yaml
+- database.gcp.crossplane.io_cloudsqlinstances.yaml
+- kms.gcp.crossplane.io_cryptokeys.yaml
