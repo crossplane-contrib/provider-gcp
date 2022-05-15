@@ -341,6 +341,9 @@ func TestGenerateAddonsConfig(t *testing.T) {
 				cluster: &container.Cluster{},
 				params: params(func(p *v1beta2.ClusterParameters) {
 					p.AddonsConfig = &v1beta2.AddonsConfig{
+						CloudRunConfig: &v1beta2.CloudRunConfig{
+							Disabled: true,
+						},
 						HorizontalPodAutoscaling: &v1beta2.HorizontalPodAutoscaling{
 							Disabled: true,
 						},
@@ -349,6 +352,11 @@ func TestGenerateAddonsConfig(t *testing.T) {
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.AddonsConfig = &container.AddonsConfig{
+					CloudRunConfig: &container.CloudRunConfig{
+						Disabled:         true,
+						LoadBalancerType: "LOAD_BALANCER_TYPE_UNSPECIFIED",
+						ForceSendFields:  []string{"Disabled", "LoadBalancerType"},
+					},
 					HorizontalPodAutoscaling: &container.HorizontalPodAutoscaling{
 						Disabled:        true,
 						ForceSendFields: []string{"Disabled"},
