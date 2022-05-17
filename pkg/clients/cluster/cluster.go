@@ -112,8 +112,11 @@ func GenerateAddonsConfig(in *v1beta2.AddonsConfig, cluster *container.Cluster) 
 			if cluster.AddonsConfig.CloudRunConfig == nil {
 				cluster.AddonsConfig.CloudRunConfig = &container.CloudRunConfig{}
 			}
+			cluster.AddonsConfig.CloudRunConfig.LoadBalancerType = "LOAD_BALANCER_TYPE_UNSPECIFIED"
+			if in.CloudRunConfig.LoadBalancerType != nil {
+				cluster.AddonsConfig.CloudRunConfig.LoadBalancerType = gcp.StringValue(in.CloudRunConfig.LoadBalancerType)
+			}
 			cluster.AddonsConfig.CloudRunConfig.Disabled = in.CloudRunConfig.Disabled
-			cluster.AddonsConfig.CloudRunConfig.LoadBalancerType = gcp.StringValue(in.CloudRunConfig.LoadBalancerType)
 			cluster.AddonsConfig.CloudRunConfig.ForceSendFields = []string{"Disabled", "LoadBalancerType"}
 		}
 		if in.ConfigConnectorConfig != nil {
