@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"path"
 
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
-	"github.com/crossplane/provider-gcp/pkg/features"
+	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/pkg/features"
 
 	compute "google.golang.org/api/compute/v1"
 	servicenetworking "google.golang.org/api/servicenetworking/v1"
@@ -38,9 +38,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	"github.com/crossplane/provider-gcp/pkg/clients/connection"
+	"github.com/crossplane-contrib/provider-gcp/apis/servicenetworking/v1beta1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/connection"
 )
 
 // Error strings.

@@ -35,8 +35,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/provider-gcp/apis/dns/v1alpha1"
-	rrsClient "github.com/crossplane/provider-gcp/pkg/clients/dns"
+	"github.com/crossplane-contrib/provider-gcp/apis/dns/v1alpha1"
+	rrsClient "github.com/crossplane-contrib/provider-gcp/pkg/clients/dns"
 )
 
 const (

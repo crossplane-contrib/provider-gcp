@@ -21,7 +21,7 @@ import (
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
+	iamv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/iam/v1alpha1"
 )
 
 // BucketPolicyParameters defines parameters for a desired KMS BucketPolicy
@@ -44,7 +44,7 @@ type BucketPolicyParameters struct {
 	// below. It appears to have fields (e.g. AuditConfigs) that we never
 	// use. This will be misleading to users when they show up in the
 	// OpenAPI documentation for this resource.
-	// https://github.com/crossplane/provider-gcp/issues/367
+	// https://github.com/crossplane-contrib/provider-gcp/issues/367
 
 	// Policy: An Identity and Access Management (IAM) policy, which
 	// specifies access controls for Google Cloud resources.

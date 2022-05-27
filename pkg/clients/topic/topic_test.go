@@ -22,8 +22,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	pubsub "google.golang.org/api/pubsub/v1"
 
-	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/apis/pubsub/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 )
 
 const (

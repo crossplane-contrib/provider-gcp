@@ -27,7 +27,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	resource "github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane-contrib/provider-gcp/apis/compute/v1beta1"
 )
 
 // ClusterURL extracts the partially qualified URL of a Cluster.

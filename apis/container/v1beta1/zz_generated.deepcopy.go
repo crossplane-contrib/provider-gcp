@@ -22,8 +22,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"github.com/crossplane-contrib/provider-gcp/apis/container/v1beta2"
 	"github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 

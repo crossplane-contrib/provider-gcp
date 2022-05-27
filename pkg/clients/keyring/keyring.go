@@ -19,7 +19,7 @@ package keyring
 import (
 	"google.golang.org/api/cloudkms/v1"
 
-	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/kms/v1alpha1"
 )
 
 // Client should be satisfied to conduct SA operations.

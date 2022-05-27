@@ -21,8 +21,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
-	"github.com/crossplane/provider-gcp/pkg/clients/bucketpolicy"
+	"github.com/crossplane-contrib/provider-gcp/apis/storage/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/bucketpolicy"
 )
 
 const (

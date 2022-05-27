@@ -35,7 +35,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/provider-gcp/apis/pubsub/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/pubsub/v1alpha1"
 )
 
 const (
