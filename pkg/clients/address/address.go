@@ -19,8 +19,8 @@ package address
 import (
 	compute "google.golang.org/api/compute/v1"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/apis/compute/v1beta1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 )
 
 // GenerateAddress converts the supplied AddressParameters into an

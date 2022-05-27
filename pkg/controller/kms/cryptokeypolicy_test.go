@@ -21,9 +21,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
-	"github.com/crossplane/provider-gcp/pkg/clients/cryptokeypolicy"
+	iamv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/iam/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/kms/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/cryptokeypolicy"
 )
 
 const (

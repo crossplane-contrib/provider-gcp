@@ -29,7 +29,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/provider-gcp/apis/storage/v1alpha3"
+	"github.com/crossplane-contrib/provider-gcp/apis/storage/v1alpha3"
 )
 
 type MockBucketClient struct {

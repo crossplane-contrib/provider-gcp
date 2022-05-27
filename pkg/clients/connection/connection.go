@@ -24,8 +24,8 @@ import (
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-	"github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/apis/servicenetworking/v1beta1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 )
 
 // PeeringName of the peering created when a service networking connection is

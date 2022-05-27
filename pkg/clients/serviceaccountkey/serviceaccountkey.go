@@ -22,7 +22,7 @@ import (
 
 	"google.golang.org/api/iam/v1"
 
-	"github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/iam/v1alpha1"
 )
 
 // Client should be satisfied to conduct ServiceAccountKey operations.

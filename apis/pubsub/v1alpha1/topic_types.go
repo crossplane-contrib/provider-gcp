@@ -45,8 +45,8 @@ type TopicParameters struct {
 	// The expected format is `projects/*/locations/*/keyRings/*/cryptoKeys/*`.
 	// +optional
 	// +immutable
-	// +crossplane:generate:reference:type=github.com/crossplane/provider-gcp/apis/kms/v1alpha1.CryptoKey
-	// +crossplane:generate:reference:extractor=github.com/crossplane/provider-gcp/apis/kms/v1alpha1.CryptoKeyRRN()
+	// +crossplane:generate:reference:type=github.com/crossplane-contrib/provider-gcp/apis/kms/v1alpha1.CryptoKey
+	// +crossplane:generate:reference:extractor=github.com/crossplane-contrib/provider-gcp/apis/kms/v1alpha1.CryptoKeyRRN()
 	KmsKeyName *string `json:"kmsKeyName,omitempty"`
 
 	// KmsKeyNameRef allows you to specify custom resource name of the KMS Key

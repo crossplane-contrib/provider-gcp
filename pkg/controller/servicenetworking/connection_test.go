@@ -35,8 +35,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
-	"github.com/crossplane/provider-gcp/pkg/clients/connection"
+	"github.com/crossplane-contrib/provider-gcp/apis/servicenetworking/v1beta1"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/connection"
 )
 
 var (
