@@ -74,14 +74,6 @@ spec:
                 description: ProjectID is the project name (not numerical ID) of this
                   GCP Provider.
                 type: string
-              endpoint:
-                description: Endpoint overrides the default endpoint.
-                type: string
-              withoutAuthentication:
-                description: WithoutAuthentication - specifies that no authentication
-                  should be used. It is suitable only for testing and for accessing
-                  public resources.
-                type: boolean
             required:
             - credentialsSecretRef
             - projectID

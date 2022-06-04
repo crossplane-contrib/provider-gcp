@@ -67,19 +67,12 @@ func UseProvider(ctx context.Context, c client.Client, mg resource.Managed) (pro
 		return "", nil, err
 	}
 
-	if len(p.Spec.Endpoint) > 0 {
-		opts = append(opts, option.WithEndpoint(p.Spec.Endpoint))
-	}
-
-	if p.Spec.WithoutAuthentication {
-		opts = append(opts, option.WithoutAuthentication())
-	}
-
 	ref := p.Spec.CredentialsSecretRef
 	s := &v1.Secret{}
 	if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
 		return "", nil, err
 	}
+
 	opts = append(opts, option.WithCredentialsJSON(s.Data[ref.Key]))
 	return p.Spec.ProjectID, opts, nil
 }
@@ -97,12 +90,8 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 		return "", nil, err
 	}
 
-	if len(pc.Spec.Endpoint) > 0 {
-		opts = append(opts, option.WithEndpoint(pc.Spec.Endpoint))
-	}
-
-	if pc.Spec.WithoutAuthentication {
-		opts = append(opts, option.WithoutAuthentication())
+	if pc.Spec.ClientOptions != nil {
+		addClientOptions(pc.Spec.ClientOptions, &opts)
 	}
 
 	switch s := pc.Spec.Credentials.Source; s { //nolint:exhaustive
@@ -291,4 +280,14 @@ func EquateComputeURLs() cmp.Option {
 		// partial or fully qualified equivalents.
 		return path.Base(ta) == path.Base(tb)
 	})
+}
+
+func addClientOptions(clientOptions *v1beta1.ClientOptions, opts *[]option.ClientOption) {
+	if clientOptions.Endpoint != nil {
+		*opts = append(*opts, option.WithEndpoint(*clientOptions.Endpoint))
+	}
+
+	if *clientOptions.WithoutAuthentication {
+		*opts = append(*opts, option.WithoutAuthentication())
+	}
 }
