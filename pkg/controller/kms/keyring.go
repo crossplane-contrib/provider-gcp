@@ -85,11 +85,11 @@ func (c *keyRingConnecter) Connect(ctx context.Context, mg resource.Managed) (ma
 		return nil, errors.New(errNotKeyRing)
 	}
 
-	projectID, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.client, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := kmsv1.NewService(ctx, opts)
+	s, err := kmsv1.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

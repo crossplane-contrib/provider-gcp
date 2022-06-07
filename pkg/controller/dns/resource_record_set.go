@@ -82,11 +82,11 @@ type connector struct {
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	projectID, opts, err := gcp.GetAuthInfo(ctx, c.kube, mg)
+	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.kube, mg)
 	if err != nil {
 		return nil, err
 	}
-	d, err := dns.NewService(ctx, opts)
+	d, err := dns.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

@@ -29,6 +29,10 @@ type ProviderConfigSpec struct {
 
 	// ProjectID is the project name (not numerical ID) of this GCP ProviderConfig.
 	ProjectID string `json:"projectID"`
+
+	// ClientOptions can override default Google API client options
+	//+optional
+	ClientOptions *ClientOptions `json:"clientOptions,omitempty"`
 }
 
 // ProviderCredentials required to authenticate.
@@ -38,6 +42,16 @@ type ProviderCredentials struct {
 	Source xpv1.CredentialsSource `json:"source"`
 
 	xpv1.CommonCredentialSelectors `json:",inline"`
+}
+
+// ClientOptions are options for a Google API client.
+type ClientOptions struct {
+	// Endpoint overrides the default endpoint.
+	//+optional
+	Endpoint *string `json:"endpoint,omitempty"`
+	// WithoutAuthentication - specifies that no authentication should be used. It is suitable only for testing and for accessing public resources.
+	//+optional
+	WithoutAuthentication *bool `json:"withoutAuthentication,omitempty"`
 }
 
 // A ProviderConfigStatus represents the status of a ProviderConfig.

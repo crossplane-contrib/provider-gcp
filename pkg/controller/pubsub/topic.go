@@ -81,11 +81,11 @@ type connector struct {
 
 // Connect returns an ExternalClient with necessary information to talk to GCP API.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	projectID, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.client, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := pubsub.NewService(ctx, opts)
+	s, err := pubsub.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

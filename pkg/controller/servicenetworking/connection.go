@@ -105,17 +105,17 @@ type connector struct {
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	projectID, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.client, mg)
 	if err != nil {
 		return nil, err
 	}
 
-	cmp, err := compute.NewService(ctx, opts)
+	cmp, err := compute.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
 
-	sn, err := servicenetworking.NewService(ctx, opts)
+	sn, err := servicenetworking.NewService(ctx, opts...)
 	return &external{sn: sn, compute: cmp, projectID: projectID}, errors.Wrap(err, errNewClient)
 }
 

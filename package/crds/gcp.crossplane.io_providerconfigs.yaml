@@ -51,6 +51,19 @@ spec:
           spec:
             description: A ProviderConfigSpec defines the desired state of a ProviderConfig.
             properties:
+              clientOptions:
+                description: ClientOptions can override default Google API client
+                  options
+                properties:
+                  endpoint:
+                    description: Endpoint overrides the default endpoint.
+                    type: string
+                  withoutAuthentication:
+                    description: WithoutAuthentication - specifies that no authentication
+                      should be used. It is suitable only for testing and for accessing
+                      public resources.
+                    type: boolean
+                type: object
               credentials:
                 description: Credentials required to authenticate to this provider.
                 properties:

@@ -80,11 +80,11 @@ type addressConnector struct {
 }
 
 func (c *addressConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	projectID, opts, err := gcp.GetAuthInfo(ctx, c.kube, mg)
+	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.kube, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := compute.NewService(ctx, opts)
+	s, err := compute.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
