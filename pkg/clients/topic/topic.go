@@ -48,6 +48,9 @@ func GenerateTopic(name string, s v1alpha1.TopicParameters) *pubsub.Topic {
 			AllowedPersistenceRegions: s.MessageStoragePolicy.AllowedPersistenceRegions,
 		}
 	}
+	if s.MessageRetentionDuration != nil {
+		t.MessageRetentionDuration = gcp.StringValue(s.MessageRetentionDuration)
+	}
 	return t
 }
 
@@ -65,6 +68,9 @@ func LateInitialize(s *v1alpha1.TopicParameters, t pubsub.Topic) {
 	}
 	if s.MessageStoragePolicy == nil && t.MessageStoragePolicy != nil {
 		s.MessageStoragePolicy = &v1alpha1.MessageStoragePolicy{AllowedPersistenceRegions: t.MessageStoragePolicy.AllowedPersistenceRegions}
+	}
+	if s.MessageRetentionDuration == nil && len(t.MessageRetentionDuration) != 0 {
+		s.MessageRetentionDuration = gcp.StringPtr(t.MessageRetentionDuration)
 	}
 }
 
@@ -90,6 +96,12 @@ func GenerateUpdateRequest(name string, s v1alpha1.TopicParameters, t pubsub.Top
 			ut.Topic.MessageStoragePolicy = &pubsub.MessageStoragePolicy{
 				AllowedPersistenceRegions: s.MessageStoragePolicy.AllowedPersistenceRegions,
 			}
+		}
+	}
+	if !cmp.Equal(s.MessageRetentionDuration, observed.MessageRetentionDuration) {
+		mask = append(mask, "messageRetentionDuration")
+		if s.MessageRetentionDuration != nil {
+			ut.Topic.MessageRetentionDuration = gcp.StringValue(s.MessageRetentionDuration)
 		}
 	}
 	if !cmp.Equal(s.Labels, observed.Labels) {
