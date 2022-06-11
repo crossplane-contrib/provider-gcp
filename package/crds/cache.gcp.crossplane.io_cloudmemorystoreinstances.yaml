@@ -134,7 +134,8 @@ spec:
                       latest supported version will be used. Updating the version
                       will perform an upgrade/downgrade to the new version. Currently,
                       the supported values are: \n *   `REDIS_4_0` for Redis 4.0 compatibility
-                      (default) *   `REDIS_3_2` for Redis 3.2 compatibility"
+                      (default) *   `REDIS_3_2` for Redis 3.2 compatibility *   `REDIS_5_0`
+                      for Redis 5.0 compatibility *   `REDIS_6_X` for Redis 6.x compatibility"
                     type: string
                   region:
                     description: Region in which to create this Cloud Memorystore
