@@ -1,0 +1,10 @@
+apiVersion: dns.gcp.crossplane.io/v1alpha1
+kind: Policy
+metadata:
+  name: ruhikab-policy
+spec:
+  forProvider:
+    name: ruhikab-policy
+    description: ruhikab-policy
+  providerConfigRef:
+    name: default

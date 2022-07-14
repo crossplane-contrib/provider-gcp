@@ -1,0 +1,11 @@
+apiVersion: dns.gcp.crossplane.io/v1alpha1
+kind: Policy
+metadata:
+  name: ruhika0-policy
+spec:
+  forProvider:
+    name: ruhika0-policy
+    description: ruhika0-policy
+    enableInboundForwarding: true
+  providerConfigRef:
+    name: default
