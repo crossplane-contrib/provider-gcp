@@ -22,9 +22,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-	"github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
-	"github.com/crossplane/provider-gcp/pkg/clients/bucketpolicy"
+	iamv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/iam/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/storage/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/bucketpolicy"
 )
 
 const (

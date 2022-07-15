@@ -25,8 +25,8 @@ import (
 	"github.com/mitchellh/copystructure"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 
-	"github.com/crossplane/provider-gcp/apis/database/v1beta1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/apis/database/v1beta1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 )
 
 const errCheckUpToDate = "unable to determine if external resource is up to date"

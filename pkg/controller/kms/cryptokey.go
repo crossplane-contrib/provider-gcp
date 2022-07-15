@@ -35,11 +35,11 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	"github.com/crossplane/provider-gcp/pkg/clients/cryptokey"
-	"github.com/crossplane/provider-gcp/pkg/features"
+	"github.com/crossplane-contrib/provider-gcp/apis/kms/v1alpha1"
+	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/cryptokey"
+	"github.com/crossplane-contrib/provider-gcp/pkg/features"
 )
 
 const (
@@ -77,11 +77,11 @@ type cryptoKeyConnecter struct {
 
 // Connect sets up kms client using credentials from the provider
 func (c *cryptoKeyConnecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	_, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	_, opts, err := gcp.GetConnectionInfo(ctx, c.client, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := kmsv1.NewService(ctx, opts)
+	s, err := kmsv1.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

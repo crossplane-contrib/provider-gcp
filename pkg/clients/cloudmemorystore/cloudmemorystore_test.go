@@ -20,7 +20,7 @@ import (
 
 	redis "google.golang.org/api/redis/v1"
 
-	"github.com/crossplane/provider-gcp/apis/cache/v1beta1"
+	"github.com/crossplane-contrib/provider-gcp/apis/cache/v1beta1"
 )
 
 const (

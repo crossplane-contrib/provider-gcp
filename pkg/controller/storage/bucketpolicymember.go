@@ -32,12 +32,12 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-	"github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	"github.com/crossplane/provider-gcp/pkg/clients/bucketpolicy"
-	"github.com/crossplane/provider-gcp/pkg/features"
+	iamv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/iam/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/storage/v1alpha1"
+	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/bucketpolicy"
+	"github.com/crossplane-contrib/provider-gcp/pkg/features"
 )
 
 const (
@@ -74,11 +74,11 @@ type bucketPolicyMemberConnecter struct {
 
 // Connect sets up iam client using credentials from the provider
 func (c *bucketPolicyMemberConnecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	_, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	_, opts, err := gcp.GetConnectionInfo(ctx, c.client, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := storage.NewService(ctx, opts)
+	s, err := storage.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

@@ -31,11 +31,11 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	"github.com/crossplane/provider-gcp/pkg/clients/router"
-	"github.com/crossplane/provider-gcp/pkg/features"
+	"github.com/crossplane-contrib/provider-gcp/apis/compute/v1alpha1"
+	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/router"
+	"github.com/crossplane-contrib/provider-gcp/pkg/features"
 )
 
 const (
@@ -81,11 +81,11 @@ type routerConnector struct {
 }
 
 func (c *routerConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	projectID, opts, err := gcp.GetAuthInfo(ctx, c.kube, mg)
+	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.kube, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := compute.NewService(ctx, opts)
+	s, err := compute.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

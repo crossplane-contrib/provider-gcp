@@ -34,11 +34,11 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	"github.com/crossplane/provider-gcp/pkg/clients/keyring"
-	"github.com/crossplane/provider-gcp/pkg/features"
+	"github.com/crossplane-contrib/provider-gcp/apis/kms/v1alpha1"
+	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/keyring"
+	"github.com/crossplane-contrib/provider-gcp/pkg/features"
 )
 
 // Error strings.
@@ -85,11 +85,11 @@ func (c *keyRingConnecter) Connect(ctx context.Context, mg resource.Managed) (ma
 		return nil, errors.New(errNotKeyRing)
 	}
 
-	projectID, opts, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.client, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := kmsv1.NewService(ctx, opts)
+	s, err := kmsv1.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

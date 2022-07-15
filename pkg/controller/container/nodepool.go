@@ -34,11 +34,11 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1beta1"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	np "github.com/crossplane/provider-gcp/pkg/clients/nodepool"
-	"github.com/crossplane/provider-gcp/pkg/features"
+	"github.com/crossplane-contrib/provider-gcp/apis/container/v1beta1"
+	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+	np "github.com/crossplane-contrib/provider-gcp/pkg/clients/nodepool"
+	"github.com/crossplane-contrib/provider-gcp/pkg/features"
 )
 
 // Error strings.
@@ -82,11 +82,11 @@ type nodePoolConnector struct {
 }
 
 func (c *nodePoolConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	projectID, opts, err := gcp.GetAuthInfo(ctx, c.kube, mg)
+	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.kube, mg)
 	if err != nil {
 		return nil, err
 	}
-	s, err := container.NewService(ctx, opts)
+	s, err := container.NewService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}

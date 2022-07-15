@@ -29,8 +29,8 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/apis/container/v1beta2"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 )
 
 const (
@@ -112,8 +112,11 @@ func GenerateAddonsConfig(in *v1beta2.AddonsConfig, cluster *container.Cluster) 
 			if cluster.AddonsConfig.CloudRunConfig == nil {
 				cluster.AddonsConfig.CloudRunConfig = &container.CloudRunConfig{}
 			}
+			cluster.AddonsConfig.CloudRunConfig.LoadBalancerType = "LOAD_BALANCER_TYPE_UNSPECIFIED"
+			if in.CloudRunConfig.LoadBalancerType != nil {
+				cluster.AddonsConfig.CloudRunConfig.LoadBalancerType = gcp.StringValue(in.CloudRunConfig.LoadBalancerType)
+			}
 			cluster.AddonsConfig.CloudRunConfig.Disabled = in.CloudRunConfig.Disabled
-			cluster.AddonsConfig.CloudRunConfig.LoadBalancerType = gcp.StringValue(in.CloudRunConfig.LoadBalancerType)
 			cluster.AddonsConfig.CloudRunConfig.ForceSendFields = []string{"Disabled", "LoadBalancerType"}
 		}
 		if in.ConfigConnectorConfig != nil {

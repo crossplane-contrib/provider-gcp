@@ -6,8 +6,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/storage/v1"
 
-	iamv1alpha1 "github.com/crossplane/provider-gcp/apis/iam/v1alpha1"
-	"github.com/crossplane/provider-gcp/apis/storage/v1alpha1"
+	iamv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/iam/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/storage/v1alpha1"
 )
 
 var (

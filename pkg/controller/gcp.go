@@ -21,18 +21,18 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 
-	"github.com/crossplane/provider-gcp/pkg/controller/cache"
-	"github.com/crossplane/provider-gcp/pkg/controller/compute"
-	"github.com/crossplane/provider-gcp/pkg/controller/config"
-	"github.com/crossplane/provider-gcp/pkg/controller/container"
-	"github.com/crossplane/provider-gcp/pkg/controller/database"
-	"github.com/crossplane/provider-gcp/pkg/controller/dns"
-	"github.com/crossplane/provider-gcp/pkg/controller/iam"
-	"github.com/crossplane/provider-gcp/pkg/controller/kms"
-	"github.com/crossplane/provider-gcp/pkg/controller/pubsub"
-	"github.com/crossplane/provider-gcp/pkg/controller/registry"
-	"github.com/crossplane/provider-gcp/pkg/controller/servicenetworking"
-	"github.com/crossplane/provider-gcp/pkg/controller/storage"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/cache"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/compute"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/config"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/container"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/database"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/dns"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/iam"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/kms"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/pubsub"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/registry"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/servicenetworking"
+	"github.com/crossplane-contrib/provider-gcp/pkg/controller/storage"
 )
 
 // Setup creates all GCP controllers with the supplied logger and adds them to

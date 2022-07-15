@@ -34,9 +34,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/provider-gcp/apis/compute/v1alpha1"
-	"github.com/crossplane/provider-gcp/apis/compute/v1beta1"
-	"github.com/crossplane/provider-gcp/pkg/clients/router"
+	"github.com/crossplane-contrib/provider-gcp/apis/compute/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/compute/v1beta1"
+	"github.com/crossplane-contrib/provider-gcp/pkg/clients/router"
 )
 
 var _ managed.ExternalConnecter = &routerConnector{}

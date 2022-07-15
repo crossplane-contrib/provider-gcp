@@ -26,7 +26,7 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/crossplane/provider-gcp/apis/servicenetworking/v1beta1"
+	"github.com/crossplane-contrib/provider-gcp/apis/servicenetworking/v1beta1"
 )
 
 func TestFromParameters(t *testing.T) {

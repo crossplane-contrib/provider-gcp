@@ -39,10 +39,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-gcp/apis/registry/v1alpha1"
-	scv1alpha1 "github.com/crossplane/provider-gcp/apis/v1alpha1"
-	gcp "github.com/crossplane/provider-gcp/pkg/clients"
-	"github.com/crossplane/provider-gcp/pkg/features"
+	"github.com/crossplane-contrib/provider-gcp/apis/registry/v1alpha1"
+	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+	"github.com/crossplane-contrib/provider-gcp/pkg/features"
 )
 
 // Error strings.
@@ -88,7 +88,7 @@ type connecter struct {
 
 // Connect sets up iam client using credentials from the provider
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	projectID, _, err := gcp.GetAuthInfo(ctx, c.client, mg)
+	projectID, _, err := gcp.GetConnectionInfo(ctx, c.client, mg)
 	if err != nil {
 		return nil, err
 	}

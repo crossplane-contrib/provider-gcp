@@ -22,7 +22,7 @@ import (
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-	"github.com/crossplane/provider-gcp/apis/container/v1beta2"
+	"github.com/crossplane-contrib/provider-gcp/apis/container/v1beta2"
 )
 
 // NodePool states.

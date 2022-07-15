@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/cloudkms/v1"
 
-	"github.com/crossplane/provider-gcp/apis/kms/v1alpha1"
+	"github.com/crossplane-contrib/provider-gcp/apis/kms/v1alpha1"
 )
 
 func TestGenerateObservation(t *testing.T) {
