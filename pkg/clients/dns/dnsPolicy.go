@@ -37,7 +37,7 @@ const (
 func GenerateDNSPolicy(name string, spec v1alpha1.PolicyParameters, policy *dns.Policy) {
 	policy.Kind = "dns#policy"
 
-	policy.Name = spec.Name
+	policy.Name = name
 	policy.Description = spec.Description
 
 	if spec.EnableInboundForwarding != nil {

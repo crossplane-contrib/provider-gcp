@@ -121,9 +121,6 @@ spec:
                       for the networks bound to this policy. Defaults to no logging
                       if not set.'
                     type: boolean
-                  name:
-                    description: 'Name: User-assigned name for this policy.'
-                    type: string
                   networks:
                     description: 'Networks: List of network names specifying networks
                       to which this policy is applied.'
@@ -139,8 +136,6 @@ spec:
                       - networkUrl
                       type: object
                     type: array
-                required:
-                - name
                 type: object
               providerConfigRef:
                 default:
