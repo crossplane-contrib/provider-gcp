@@ -169,11 +169,6 @@ func (in *PolicyParameters) DeepCopyInto(out *PolicyParameters) {
 		*out = new(PolicyAlternativeNameServerConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Description != nil {
-		in, out := &in.Description, &out.Description
-		*out = new(string)
-		**out = **in
-	}
 	if in.EnableInboundForwarding != nil {
 		in, out := &in.EnableInboundForwarding, &out.EnableInboundForwarding
 		*out = new(bool)

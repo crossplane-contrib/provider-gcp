@@ -23,6 +23,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/connection"
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
@@ -32,6 +33,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	// "github.com/google/go-cmp/cmp"
+
 	"github.com/crossplane-contrib/provider-gcp/apis/dns/v1alpha1"
 	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
@@ -40,13 +43,13 @@ import (
 )
 
 const (
-	errorGetFailed  = "cannot get the DNSPolicy"
-	errNotDNSPolicy = "managed resource is not a DNSPolicy custom resource"
-	// err_NewClient           = "cannot create new DNS Service"
-	// err_CannotCreate        = "cannot create new DNSPolicy"
+	errorGetFailed    = "cannot get the DNSPolicy"
+	errorNotDNSPolicy = "managed resource is not a DNSPolicy custom resource"
 	errorCannotDelete = "cannot delete new DNSPolicy"
-	// err_ManagedUpdateFailed = "cannot update DNSPolicy custom resource"
-	// err_CheckUpToDate       = "cannot determine if DNSPolicy is up to date"
+	errorCreatePolicy = "cannot create DNSPolicy"
+	// errorManagedUpdateFailed = "cannot update DNSPolicy custom resource"
+	// err_CannotCreate        = "cannot create new DNSPolicy"
+	// errorCheckUpToDate       = "cannot determine if DNSPolicy is up to date"
 )
 
 // SetupPolicy adds a controller that reconciles
@@ -62,7 +65,7 @@ func SetupPolicy(mgr ctrl.Manager, o controller.Options) error {
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.PolicyGroupVersionKind),
 		managed.WithExternalConnecter(&Connector{kube: mgr.GetClient()}),
-		managed.WithInitializers(dnsclient.NewCustomNameAsExternalName(mgr.GetClient())),
+		managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
 		managed.WithPollInterval(o.PollInterval),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
@@ -91,28 +94,26 @@ func (c *Connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	return &External{
+	return &policyExternal{
 		kube:      c.kube,
 		dns:       d.Policies,
 		projectID: projectID,
 	}, nil
 }
 
-// External is ..
-type External struct {
+type policyExternal struct {
 	kube      client.Client
 	dns       *dns.PoliciesService
 	projectID string
 }
 
-// Observe is ..
-func (e *External) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
+func (e *policyExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.Policy)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errNotDNSPolicy)
+		return managed.ExternalObservation{}, errors.New(errorNotDNSPolicy)
 	}
 
-	_, err := e.dns.Get(
+	policy, err := e.dns.Get(
 		e.projectID,
 		meta.GetExternalName(cr),
 	).Context(ctx).Do()
@@ -123,18 +124,28 @@ func (e *External) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		)
 	}
 
+	cr.SetConditions(xpv1.Available())
+
+	UpToDate, err := dnsclient.IssUpToDate(
+		meta.GetExternalName(cr),
+		&cr.Spec.ForProvider,
+		policy)
+
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
-		//ResourceLateInitialized: false,
+		ResourceUpToDate: UpToDate,
 	}, nil
+
 }
 
-// Create is ..
-func (e *External) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+func (e *policyExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.Policy)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotDNSPolicy)
+		return managed.ExternalCreation{}, errors.New(errorNotDNSPolicy)
 	}
 
 	args := &dns.Policy{}
@@ -149,36 +160,45 @@ func (e *External) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		e.projectID,
 		args,
 	).Context(ctx).Do()
-	return managed.ExternalCreation{}, errors.Wrap(err, errCannotCreate)
+	return managed.ExternalCreation{}, errors.Wrap(err, errorCreatePolicy)
 }
 
-// Update is ..
-func (e *External) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	_, ok := mg.(*v1alpha1.Policy)
+func (e *policyExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+	cr, ok := mg.(*v1alpha1.Policy)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotDNSPolicy)
+		return managed.ExternalUpdate{}, errors.New(errorNotDNSPolicy)
 	}
 
+	args := &dns.Policy{}
+	dnsclient.GenerateDNSPolicy(
+		meta.GetExternalName(cr),
+		cr.Spec.ForProvider,
+		args,
+	)
+	_, err := e.dns.Patch(
+		e.projectID,
+		meta.GetExternalName(cr),
+		args,
+	).Context(ctx).Do()
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
 	return managed.ExternalUpdate{}, nil
 }
 
-// Delete is ...
-func (e *External) Delete(ctx context.Context, mg resource.Managed) error {
-	_, ok := mg.(*v1alpha1.Policy)
+func (e *policyExternal) Delete(ctx context.Context, mg resource.Managed) error {
+	cr, ok := mg.(*v1alpha1.Policy)
 	if !ok {
-		return errors.New(errNotDNSPolicy)
+		return errors.New(errorNotDNSPolicy)
 	}
 
-	// _, err := e.dns.Delete(
-	// 	e.projectID,
-
-	// ).Context(ctx).Do()
-
-	// if gcp.IsErrorNotFound(err) {
-	// 	return nil
-	// }
-
-	// return errors.Wrap(err, errorCannotDelete)
-	return nil
+	err := e.dns.Delete(
+		e.projectID,
+		meta.GetExternalName(cr),
+	).Context(ctx).Do()
+	if gcp.IsErrorNotFound(err) {
+		return nil
+	}
+	return errors.Wrap(err, errorCannotDelete)
 
 }

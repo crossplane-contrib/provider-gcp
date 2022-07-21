@@ -37,7 +37,7 @@ type PolicyParameters struct {
 	// Description: A mutable string of at most 1024 characters associated with this resource for the user's convenience.
 	// Has no effect on the policy's function.
 	// +optional
-	Description *string `json:"description,omitempty"`
+	Description string `json:"description"`
 
 	// EnableInboundForwarding: Allows networks bound to this policy to receive DNS queries sent by VMs or applications over VPN connections.
 	// When enabled, a virtual IP address is allocated from each of the subnetworks that are bound to this policy.
