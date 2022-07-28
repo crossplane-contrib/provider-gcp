@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2022 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ type PolicyAlternativeNameServerConfigTargetNameServer struct {
 type PolicyNetwork struct {
 
 	// NetworkUrl: The fully qualified URL of the VPC network to bind to.
-	// This should be formatted like https://www.googleapis.com/compute/v1/projects/{project}/global/networks/{network}
+	// +crossplane:generate:reference:extractor=github.com/crossplane-contrib/provider-gcp/apis/compute/v1beta1.NetworkURL()
 	NetworkURL string `json:"networkUrl"`
 }
 

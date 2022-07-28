@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2022 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	// "github.com/google/go-cmp/cmp"
-
 	"github.com/crossplane-contrib/provider-gcp/apis/dns/v1alpha1"
 	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
@@ -43,17 +41,13 @@ import (
 )
 
 const (
-	errorGetFailed    = "cannot get the DNSPolicy"
-	errorNotDNSPolicy = "managed resource is not a DNSPolicy custom resource"
-	errorCannotDelete = "cannot delete new DNSPolicy"
-	errorCreatePolicy = "cannot create DNSPolicy"
-	// errorManagedUpdateFailed = "cannot update DNSPolicy custom resource"
-	// err_CannotCreate        = "cannot create new DNSPolicy"
-	// errorCheckUpToDate       = "cannot determine if DNSPolicy is up to date"
+	errGetPolicyFailed    = "cannot get the DNSPolicy"
+	errNotDNSPolicy       = "managed resource is not a DNSPolicy custom resource"
+	errCannotDeletePolicy = "cannot delete new DNSPolicy"
+	errCreatePolicy       = "cannot create DNSPolicy"
+	errCannotUpdate       = "Cannot update DNSPolicy"
 )
 
-// SetupPolicy adds a controller that reconciles
-// DNSPolicy managed resources.
 func SetupPolicy(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1alpha1.PolicyGroupKind)
 
@@ -78,12 +72,10 @@ func SetupPolicy(mgr ctrl.Manager, o controller.Options) error {
 		Complete(ratelimiter.NewReconciler(name, r, o.GlobalRateLimiter))
 }
 
-// Connector is ..
 type Connector struct {
 	kube client.Client
 }
 
-// Connect is
 func (c *Connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.kube, mg)
 	if err != nil {
@@ -110,7 +102,7 @@ type policyExternal struct {
 func (e *policyExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.Policy)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errorNotDNSPolicy)
+		return managed.ExternalObservation{}, errors.New(errNotDNSPolicy)
 	}
 
 	policy, err := e.dns.Get(
@@ -120,13 +112,14 @@ func (e *policyExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(
 			resource.Ignore(gcp.IsErrorNotFound, err),
-			errorGetFailed,
+			errGetPolicyFailed,
 		)
 	}
 
 	cr.SetConditions(xpv1.Available())
+	cr.Status.AtProvider.ID = &policy.Id
 
-	UpToDate, err := dnsclient.IssUpToDate(
+	UpToDate, err := dnsclient.IsUptoDate(
 		meta.GetExternalName(cr),
 		&cr.Spec.ForProvider,
 		policy)
@@ -145,7 +138,7 @@ func (e *policyExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 func (e *policyExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.Policy)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errorNotDNSPolicy)
+		return managed.ExternalCreation{}, errors.New(errNotDNSPolicy)
 	}
 
 	args := &dns.Policy{}
@@ -160,13 +153,13 @@ func (e *policyExternal) Create(ctx context.Context, mg resource.Managed) (manag
 		e.projectID,
 		args,
 	).Context(ctx).Do()
-	return managed.ExternalCreation{}, errors.Wrap(err, errorCreatePolicy)
+	return managed.ExternalCreation{}, errors.Wrap(err, errCreatePolicy)
 }
 
 func (e *policyExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*v1alpha1.Policy)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errorNotDNSPolicy)
+		return managed.ExternalUpdate{}, errors.New(errNotDNSPolicy)
 	}
 
 	args := &dns.Policy{}
@@ -180,16 +173,13 @@ func (e *policyExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		meta.GetExternalName(cr),
 		args,
 	).Context(ctx).Do()
-	if err != nil {
-		return managed.ExternalUpdate{}, err
-	}
-	return managed.ExternalUpdate{}, nil
+	return managed.ExternalUpdate{}, errors.Wrap(err, errCannotUpdate)
 }
 
 func (e *policyExternal) Delete(ctx context.Context, mg resource.Managed) error {
 	cr, ok := mg.(*v1alpha1.Policy)
 	if !ok {
-		return errors.New(errorNotDNSPolicy)
+		return errors.New(errNotDNSPolicy)
 	}
 
 	err := e.dns.Delete(
@@ -199,6 +189,6 @@ func (e *policyExternal) Delete(ctx context.Context, mg resource.Managed) error 
 	if gcp.IsErrorNotFound(err) {
 		return nil
 	}
-	return errors.Wrap(err, errorCannotDelete)
+	return errors.Wrap(err, errCannotDelete)
 
 }

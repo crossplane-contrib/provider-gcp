@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2022 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ limitations under the License.
 package dns
 
 import (
-	// gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
-
 	dns "google.golang.org/api/dns/v1"
 
 	"github.com/crossplane-contrib/provider-gcp/apis/dns/v1alpha1"
@@ -49,9 +47,9 @@ func GenerateDNSPolicy(name string, spec v1alpha1.PolicyParameters, policy *dns.
 
 }
 
-// IssUpToDate checks whether current state is up-to-date compared to the given
+// IsUptoDate checks whether current state is up-to-date compared to the given
 // set of parameters.
-func IssUpToDate(name string, spec *v1alpha1.PolicyParameters, observed *dns.Policy) (bool, error) {
+func IsUptoDate(name string, spec *v1alpha1.PolicyParameters, observed *dns.Policy) (bool, error) {
 	generated, err := copystructure.Copy(observed)
 	if err != nil {
 		return true, errors.Wrap(err, errorCheckUpToDate)
