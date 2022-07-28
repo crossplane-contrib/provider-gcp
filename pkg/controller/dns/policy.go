@@ -48,6 +48,8 @@ const (
 	errCannotUpdate       = "Cannot update DNSPolicy"
 )
 
+// SetupPolicy adds a controller that reconciles the
+// DNS Policy managed resources.
 func SetupPolicy(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1alpha1.PolicyGroupKind)
 
@@ -58,7 +60,7 @@ func SetupPolicy(mgr ctrl.Manager, o controller.Options) error {
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.PolicyGroupVersionKind),
-		managed.WithExternalConnecter(&Connector{kube: mgr.GetClient()}),
+		managed.WithExternalConnecter(&policyConnector{kube: mgr.GetClient()}),
 		managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
 		managed.WithPollInterval(o.PollInterval),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
@@ -72,11 +74,11 @@ func SetupPolicy(mgr ctrl.Manager, o controller.Options) error {
 		Complete(ratelimiter.NewReconciler(name, r, o.GlobalRateLimiter))
 }
 
-type Connector struct {
+type policyConnector struct {
 	kube client.Client
 }
 
-func (c *Connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
+func (c *policyConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	projectID, opts, err := gcp.GetConnectionInfo(ctx, c.kube, mg)
 	if err != nil {
 		return nil, err
@@ -117,7 +119,7 @@ func (e *policyExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	}
 
 	cr.SetConditions(xpv1.Available())
-	cr.Status.AtProvider.ID = &policy.Id
+	// cr.Status.AtProvider.ID = &policy.Id
 
 	UpToDate, err := dnsclient.IsUptoDate(
 		meta.GetExternalName(cr),
@@ -189,6 +191,6 @@ func (e *policyExternal) Delete(ctx context.Context, mg resource.Managed) error 
 	if gcp.IsErrorNotFound(err) {
 		return nil
 	}
-	return errors.Wrap(err, errCannotDelete)
+	return errors.Wrap(err, errCannotDeletePolicy)
 
 }
