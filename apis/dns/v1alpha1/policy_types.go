@@ -87,7 +87,7 @@ type PolicyNetwork struct {
 type PolicyObservation struct {
 
 	// Id: Unique identifier for the resource; defined by the server (output only).
-	ID *uint64 `json:"id,omitempty,string"`
+	ID *uint64 `json:"id,omitempty"`
 }
 
 // The PolicySpec defines the desired state of a DNSPolicy.
