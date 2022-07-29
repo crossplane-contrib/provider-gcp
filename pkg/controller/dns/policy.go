@@ -119,7 +119,7 @@ func (e *policyExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	}
 
 	cr.SetConditions(xpv1.Available())
-	// cr.Status.AtProvider.ID = &policy.Id
+	cr.Status.AtProvider.ID = &policy.Id
 
 	UpToDate, err := dnsclient.IsUptoDate(
 		meta.GetExternalName(cr),
