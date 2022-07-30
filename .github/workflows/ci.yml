@@ -118,8 +118,8 @@ jobs:
 
       - name: Check Diff
         run: make check-diff
-        
-  check-diff:
+
+  testBreakingChanges:
     runs-on: ubuntu-18.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
