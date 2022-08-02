@@ -44,7 +44,7 @@ import (
 const (
 	errNewClient            = "cannot create new DNS Service"
 	errNotResourceRecordSet = "managed resource is not a ResourceRecordSet custom resource"
-	errCannotCreate         = "cannot create new ResourceRecordSet"
+	errCreateCluster        = "cannot create new ResourceRecordSet"
 	errCannotDelete         = "cannot delete new ResourceRecordSet"
 	errGetFailed            = "cannot get the ResourceRecordSet"
 	errManagedUpdateFailed  = "cannot update ResourceRecordSet custom resource"
@@ -163,7 +163,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		args,
 	).Context(ctx).Do()
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCannotCreate)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
 	}
 	cr.SetConditions(xpv1.Creating())
 	return managed.ExternalCreation{}, nil
