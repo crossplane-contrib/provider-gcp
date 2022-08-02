@@ -45,6 +45,15 @@ var (
 	ResourceRecordSetGroupVersionKind = SchemeGroupVersion.WithKind(ResourceRecordSetKind)
 )
 
+// Policy type metadata for DNS
+var (
+	PolicyKind             = reflect.TypeOf(Policy{}).Name()
+	PolicyGroupKind        = schema.GroupKind{Group: Group, Kind: PolicyKind}.String()
+	PolicyKindAPIVersion   = PolicyKind + "." + SchemeGroupVersion.String()
+	PolicyGroupVersionKind = SchemeGroupVersion.WithKind(PolicyKind)
+)
+
 func init() {
-	SchemeBuilder.Register(&ResourceRecordSet{}, &ResourceRecordSetList{})
+	SchemeBuilder.Register(&ResourceRecordSet{}, &ResourceRecordSetList{},
+		&Policy{}, &PolicyList{})
 }

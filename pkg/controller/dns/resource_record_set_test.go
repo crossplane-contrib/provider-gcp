@@ -303,7 +303,7 @@ func TestCreate(t *testing.T) {
 			},
 			want: want{
 				e:   managed.ExternalCreation{},
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCannotCreate),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateCluster),
 			},
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
