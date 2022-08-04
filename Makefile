@@ -80,7 +80,7 @@ CRD_DIR=package/crds
 
 # Run the main.go file and give the required output. 
 testBreakingChanges:
-	@$(GO) run cmd/provider/cmd/testBreakingChanges/main.go --debug
+	@$(GO) run cmd/testBreakingChanges/main.go --debug
 
 
 # integration tests
