@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -27,29 +28,45 @@ import (
 func main() {
 	fmt.Println("----Target successful,this file inside cmd/testBreakingChanges runs successfully----")
 
-	oldfile, _ := os.ReadFile("old.yaml")
-	newfile, _ := os.ReadFile("new.yaml")
+	oldfile, err1 := os.ReadFile("old.yaml")
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+	fmt.Println(err1)
+
+	newfile, err2 := os.ReadFile("new.yaml")
+	if err2 != nil {
+		log.Fatal(err2)
+	}
 
 	old := &v1.CustomResourceDefinition{}
-	err := yaml.Unmarshal(oldfile, old)
-	if err != nil {
-		fmt.Println(err)
+	err3 := yaml.Unmarshal(oldfile, old)
+	if err3 != nil {
+		fmt.Println(err3)
 	}
 
 	new := &v1.CustomResourceDefinition{}
-	err2 := yaml.Unmarshal(newfile, new)
-	if err != nil {
-		fmt.Println(err2)
+
+	err4 := yaml.Unmarshal(newfile, new)
+	if err4 != nil {
+		fmt.Println(err4)
 	}
 
-	PrintFields(old.Spec.Versions[0].Schema.OpenAPIV3Schema, "", new.Spec.Versions[0].Schema.OpenAPIV3Schema)
+	list := PrintFields(old.Spec.Versions[0].Schema.OpenAPIV3Schema, "", new.Spec.Versions[0].Schema.OpenAPIV3Schema)
+
+	for i := 0; i < len(list); i++ {
+		fmt.Sprintln(list[i])
+	}
 
 }
 
 // PrintFields function recursively traverses through the keys.
-func PrintFields(sch *v1.JSONSchemaProps, prefix string, newSchema *v1.JSONSchemaProps) {
+func PrintFields(sch *v1.JSONSchemaProps, prefix string, newSchema *v1.JSONSchemaProps) []string {
+
+	a := make([]string, 25, 35)
+
 	if len(sch.Properties) == 0 {
-		return
+		return []string{}
 	}
 
 	for key, val := range sch.Properties {
@@ -65,15 +82,17 @@ func PrintFields(sch *v1.JSONSchemaProps, prefix string, newSchema *v1.JSONSchem
 
 		prop, ok := newSchema.Properties[key]
 		if !ok {
-			fmt.Printf("%s: does not exist.\n", temp)
-
+			temp += ": does not exist"
+			// fmt.Printf("%s%s: does not exist.\n", prefix, key)
+			a = append(a, temp)
 		}
-		// to print every other key which exists:
 		// else {
-		// fmt.Printf("%s\n", temp)
+		// 	fmt.Printf("%s\n", temp)
 		// }
 
 		PrintFields(&val, temp, &prop)
-
 	}
+	// fmt.Println(a)
+	return a
+
 }
