@@ -63,15 +63,15 @@ func main() {
 // PrintFields function recursively traverses through the keys.
 func PrintFields(sch *v1.JSONSchemaProps, prefix string, newSchema *v1.JSONSchemaProps) []string {
 
-	a := make([]string, 25, 35)
+	var a []string
 
 	if len(sch.Properties) == 0 {
-		return []string{}
+		return nil
 	}
 
-	for key, val := range sch.Properties {
+	for key := range sch.Properties {
 
-		val := val
+		val := sch.Properties[key]
 		var temp string
 
 		if prefix == "" {
@@ -82,17 +82,18 @@ func PrintFields(sch *v1.JSONSchemaProps, prefix string, newSchema *v1.JSONSchem
 
 		prop, ok := newSchema.Properties[key]
 		if !ok {
-			temp += ": does not exist"
+
+			// temp += ": does not exist"
 			// fmt.Printf("%s%s: does not exist.\n", prefix, key)
 			a = append(a, temp)
+			continue
 		}
-		// else {
-		// 	fmt.Printf("%s\n", temp)
-		// }
 
-		PrintFields(&val, temp, &prop)
+		// PrintFields(&val, temp, &prop)
+		a = append(a, PrintFields(&val, temp, &prop)...)
+
 	}
-	// fmt.Println(a)
+
 	return a
 
 }
