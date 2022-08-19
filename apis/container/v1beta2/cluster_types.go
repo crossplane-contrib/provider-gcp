@@ -340,8 +340,7 @@ type ClusterObservation struct {
 
 	// CurrentNodeVersion: Deprecated,
 	// use
-	// [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/proj
-	// ects.zones.clusters.nodePools)
+	// [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/projects.zones.clusters.nodePools)
 	// instead. The current version of the node software components. If they
 	// are
 	// currently at multiple versions because they're in the process of
@@ -1224,8 +1223,7 @@ type NetworkConfigSpec struct {
 	// kube-proxy.
 	//   "ADVANCED_DATAPATH" - Use the eBPF based GKE Dataplane V2 with
 	// additional features. See the [GKE Dataplane V2
-	// documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/
-	// dataplane-v2) for more.
+	// documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/dataplane-v2) for more.
 	// +optional
 	DatapathProvider *string `json:"datapathProvider,omitempty"`
 
