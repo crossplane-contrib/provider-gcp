@@ -21,56 +21,53 @@ import (
 	"log"
 	"os"
 
+	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func main() {
 	fmt.Println("----Target successful,this file inside cmd/testBreakingChanges runs successfully----")
 
-	oldfile, err1 := os.ReadFile("old.yaml")
-	if err1 != nil {
-		log.Fatal(err1)
+	oldfile, err := os.ReadFile("old.yaml")
+	if err != nil {
+		log.Fatal(err)
 	}
-	fmt.Println(err1)
 
-	newfile, err2 := os.ReadFile("new.yaml")
-	if err2 != nil {
-		log.Fatal(err2)
+	newfile, err := os.ReadFile("new.yaml")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	old := &v1.CustomResourceDefinition{}
-	err3 := yaml.Unmarshal(oldfile, old)
-	if err3 != nil {
-		fmt.Println(err3)
+	err = yaml.Unmarshal(oldfile, old)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	new := &v1.CustomResourceDefinition{}
-
-	err4 := yaml.Unmarshal(newfile, new)
-	if err4 != nil {
-		fmt.Println(err4)
+	err = yaml.Unmarshal(newfile, new)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	list := PrintFields(old.Spec.Versions[0].Schema.OpenAPIV3Schema, "", new.Spec.Versions[0].Schema.OpenAPIV3Schema)
 
 	for i := 0; i < len(list); i++ {
-		fmt.Sprintln(list[i])
+		fmt.Println(list[i])
+		fmt.Printf("%T", list[i])
 	}
-
 }
 
 // PrintFields function recursively traverses through the keys.
 func PrintFields(sch *v1.JSONSchemaProps, prefix string, newSchema *v1.JSONSchemaProps) []string {
 
-	var a []string
+	a := make([]string, 10, 20)
 
 	if len(sch.Properties) == 0 {
 		return nil
 	}
 
 	for key := range sch.Properties {
-
 		val := sch.Properties[key]
 		var temp string
 
@@ -81,19 +78,12 @@ func PrintFields(sch *v1.JSONSchemaProps, prefix string, newSchema *v1.JSONSchem
 		}
 
 		prop, ok := newSchema.Properties[key]
-		if !ok {
 
-			// temp += ": does not exist"
-			// fmt.Printf("%s%s: does not exist.\n", prefix, key)
+		if !ok {
 			a = append(a, temp)
 			continue
 		}
-
-		// PrintFields(&val, temp, &prop)
 		a = append(a, PrintFields(&val, temp, &prop)...)
-
 	}
-
 	return a
-
 }
