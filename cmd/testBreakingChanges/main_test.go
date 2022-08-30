@@ -17,47 +17,18 @@ limitations under the License.
 package main
 
 import (
-	"log"
-	"os"
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func testInput(oldyaml, newyaml string) []string {
-
-	// Reading old yaml
-	oldfile, err := os.ReadFile(oldyaml)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Reading new yaml
-	newfile, err := os.ReadFile(newyaml)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	old := &v1.CustomResourceDefinition{}
-	err = yaml.Unmarshal(oldfile, old)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	new := &v1.CustomResourceDefinition{}
-	err = yaml.Unmarshal(newfile, new)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return PrintFields(old.Spec.Versions[0].Schema.OpenAPIV3Schema, "", new.Spec.Versions[0].Schema.OpenAPIV3Schema)
-}
-
 func TestBreakingChanges(t *testing.T) {
+
 	type args struct {
-		oldyaml string
-		newyaml string
+		oldyaml *v1.JSONSchemaProps
+		newyaml *v1.JSONSchemaProps
 	}
 	type want struct {
 		result []string
@@ -66,63 +37,261 @@ func TestBreakingChanges(t *testing.T) {
 		args
 		want
 	}{
-		"Nochange": {
+		"No changes": {
 			args: args{
-				oldyaml: "old.yaml",
-				newyaml: "new.yaml",
-			},
+				oldyaml: &v1.JSONSchemaProps{
+					Properties: map[string]v1.JSONSchemaProps{
+						"apiVersion": {},
+						"kind":       {},
+						"metadata":   {},
+						"status":     { 
+							Properties: map[string]v1.JSONSchemaProps{
+								conditions:{},	
+								atProvider: {
+									Properties: map[string]v1.JSONSchemaProps{
+										"id": {},
+									},
+					            },
+							},
+						},
+						"spec": {
+							Properties: map[string]v1.JSONSchemaProps{
+								"deletionPolicy": {},
+								"forProvider": {
+									Properties: map[string]v1.JSONSchemaProps{
+                                       "description": {},
+									   "enableInboundForwarding": {},
+									   "enableLogging": {},
+									   "networks": {},
+									   "alternativeNameServerConfig": {
+										Properties: map[string]v1.JSONSchemaProps{
+											"targetNameServers": {},
+									   },
+									},
+								},
+								"providerRef": {
+									Properties: map[string]v1.JSONSchemaProps{
+                                        "name": {},
+									},
+								},
+								"providerConfigRef": {
+									Properties: map[string]v1.JSONSchemaProps{
+										"name": {},
+									},
+								},	
+								"publishConnectionDetailsTo": {	
+									Properties: map[string]v1.JSONSchemaProps{
+										"name": {},
+										"configRef": {
+											Properties: map[string]v1.JSONSchemaProps{
+												"name": {},
+											},
+										},
+										"metadata": {
+											Properties: map[string]v1.JSONSchemaProps{
+												"type": {},
+												"annotations":{},
+												"labels": {},
+										},	
+									},
+								},
+								"writeConnectionSecretToRef": {
+									Properties: map[string]v1.JSONSchemaProps{
+                                     "name": {},
+									 "namespace":{},
+									},
+								},
+							},
+						},
+					},				
+				},
+				newyaml: &v1.JSONSchemaProps{
+					Properties: map[string]v1.JSONSchemaProps{
+						"apiVersion": {},
+						"kind":       {},
+						"metadata":   {},
+						"status":     { 
+							Properties: map[string]v1.JSONSchemaProps{
+								conditions:{},	
+								atProvider: {
+									Properties: map[string]v1.JSONSchemaProps{
+										"id": {},
+									},
+					            },
+							},
+						},		
+						"spec": {
+							Properties: map[string]v1.JSONSchemaProps{
+								"deletionPolicy":             {},
+								"forProvider":                {
+									Properties: map[string]v1.JSONSchemaProps{
+                                       "description": {},
+									   "enableInboundForwarding": {},
+									   "enableLogging": {},
+									   "networks": {},
+									   "alternativeNameServerConfig": {
+										Properties: map[string]v1.JSONSchemaProps{
+											"targetNameServers": {},
+									   },
+
+									},
+								},
+								"providerRef":          {
+									Properties: map[string]v1.JSONSchemaProps{
+                                        "name": {},
+									},
+								},
+								"providerConfigRef": {
+									Properties: map[string]v1.JSONSchemaProps{
+										"name": {},
+									},
+								},
+								"publishConnectionDetailsTo": {
+									Properties: map[string]v1.JSONSchemaProps{
+										"name": {},
+										"configRef": {
+											Properties: map[string]v1.JSONSchemaProps{
+												"name": {},
+											},
+										},
+										"metadata": {
+											Properties: map[string]v1.JSONSchemaProps{
+												"type": {},
+												"annotations":{},
+												"labels": {},
+										},	
+									},
+								},
+								"writeConnectionSecretToRef": {
+									Properties: map[string]v1.JSONSchemaProps{
+                                     "name": {},
+									 "namespace":{},
+									},
+								},
+							},
+						},
+					},
+				},	
+			},	
 			want: want{
-				result: []string{},
+					result: []string{ },
 			},
 		},
+			
 		"spec.forProvider.description": {
 			args: args{
-				oldyaml: "old.yaml",
-				newyaml: "new.yaml",
+				oldyaml: &v1.JSONSchemaProps{
+					Properties: map[string]v1.JSONSchemaProps{
+						"spec": {
+							Properties: map[string]v1.JSONSchemaProps{
+								"deletionPolicy":{},
+								 "forProvider": {
+									Properties: map[string]v1.JSONSchemaProps{
+                                       "description": {},
+									   "enableInboundForwarding": {},
+									   "enableLogging": {},
+									   "networks": {},
+									   "alternativeNameServerConfig": {
+										Properties: map[string]v1.JSONSchemaProps{
+											"targetNameServers": {},
+									    },
+									   },
+									},
+								},
+							},
+						},
+					},
+				},	
+				newyaml: &v1.JSONSchemaProps{
+					Properties: map[string]v1.JSONSchemaProps{
+						"spec": {
+							Properties: map[string]v1.JSONSchemaProps{
+								"deletionPolicy":             {},
+								 "forProvider":                {
+									Properties: map[string]v1.JSONSchemaProps{
+                                       // "description": {},
+									   "enableInboundForwarding": {},
+									   "enableLogging": {},
+									   "networks": {},
+									   "alternativeNameServerConfig": {
+										Properties: map[string]v1.JSONSchemaProps{
+											"targetNameServers": {},
+									   },
+									   },
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 			want: want{
 				result: []string{"spec.forProvider.description"},
-			},
+		    },
 		},
-		"spec.forProvider.enableLogging": {
+
+		"kind": {
 			args: args{
-				oldyaml: "old.yaml",
-				newyaml: "new.yaml",
+				oldyaml: &v1.JSONSchemaProps{
+					Properties: map[string]v1.JSONSchemaProps{
+						"apiVersion": {},
+						"kind":       {},
+						"metadata":   {},
+						"status":     { 
+							Properties: map[string]v1.JSONSchemaProps{
+								conditions:{},	
+								atProvider: {
+									Properties: map[string]v1.JSONSchemaProps{
+										"id": {},
+									},
+					            },
+							},
+						},
+						"spec": { 
+							Properties: map[string]v1.JSONSchemaProps{
+								"deletionPolicy":             {},
+						},
+					},
+				},
+				newyaml: &v1.JSONSchemaProps{
+					Properties: map[string]v1.JSONSchemaProps{
+						"apiVersion": {},
+						// "kind":    {},
+						"metadata":   {},
+						"status":     { 
+							Properties: map[string]v1.JSONSchemaProps{
+								conditions:{},	
+								atProvider: {
+									Properties: map[string]v1.JSONSchemaProps{
+										"id": {},
+									},
+					            },
+							},
+						},
+					    "spec": { 
+							Properties: map[string]v1.JSONSchemaProps{
+							"deletionPolicy":             {},
+						},
+					},
+				},
 			},
 			want: want{
-				result: []string{"spec.forProvider.enableLogging"},
-			},
-		},
-		"spec.forProvider.enableInboundForwarding": {
-			args: args{
-				oldyaml: "old.yaml",
-				newyaml: "new.yaml",
-			},
-			want: want{
-				result: []string{"spec.forProvider.enableInboundForwarding"},
-			},
-		},
-		"spec.providerConfigRef": {
-			args: args{
-				oldyaml: "old.yaml",
-				newyaml: "new.yaml",
-			},
-			want: want{
-				result: []string{"spec.providerConfigRef"},
+					result: []string{"kind"},
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := testInput(tc.oldyaml, tc.newyaml)
+			got := cmp.Diff(tc.oldyaml, tc.newyaml)
 			if len(tc.want.result) == 0 && len(got) == 0 {
 				t.Log("Both are same yaml file\n")
-			} else if reflect.DeepEqual(tc.want.result, got) {
-				t.Log("PrintFields(...): want: ", tc.want.result, "\ngot: ", got)
-			}
+			} else !reflect.DeepEqual(tc.want.result, got) {
+				t.Log("PrintFields(...): want \n:  got\n:", tc.want.result, got)
+			} 
 
 		})
 	}
-
 }
+
+

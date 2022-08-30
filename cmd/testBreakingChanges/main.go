@@ -21,13 +21,11 @@ import (
 	"log"
 	"os"
 
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func main() {
-	fmt.Println("----Target successful,this file inside cmd/testBreakingChanges runs successfully----")
-
 	oldfile, err := os.ReadFile("old.yaml")
 	if err != nil {
 		log.Fatal(err)
@@ -51,17 +49,15 @@ func main() {
 	}
 
 	list := PrintFields(old.Spec.Versions[0].Schema.OpenAPIV3Schema, "", new.Spec.Versions[0].Schema.OpenAPIV3Schema)
-
 	for i := 0; i < len(list); i++ {
 		fmt.Println(list[i])
-		fmt.Printf("%T", list[i])
 	}
 }
 
 // PrintFields function recursively traverses through the keys.
 func PrintFields(sch *v1.JSONSchemaProps, prefix string, newSchema *v1.JSONSchemaProps) []string {
 
-	a := make([]string, 10, 20)
+	var a []string
 
 	if len(sch.Properties) == 0 {
 		return nil
