@@ -43,7 +43,7 @@ GO111MODULE = on
 # Setup Images
 
 DOCKER_REGISTRY ?= crossplane
-IMAGES = provider-gcp provider-gcp-controller
+IMAGES = provider-gcp
 -include build/makelib/image.mk
 
 # ====================================================================================
