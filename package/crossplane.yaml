@@ -18,6 +18,3 @@ metadata:
       [slack.crossplane.io](https://slack.crossplane.io) and create an issue in
       the [crossplane/provider-gcp](https://github.com/crossplane/provider-gcp)
       repo.
-spec:
-  controller:
-    image: DOCKER_REGISTRY/provider-gcp-controller:VERSION
