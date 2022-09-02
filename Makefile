@@ -57,6 +57,10 @@ XPKG_REG_ORGS_NO_PROMOTE ?= xpkg.upbound.io/crossplane
 XPKGS = provider-gcp
 -include build/makelib/xpkg.mk
 
+# NOTE(hasheddan): we force image building to happen prior to xpkg build so that
+# we ensure image is present in daemon.
+xpkg.build.provider-gcp: do.build.images
+
 # ====================================================================================
 # Targets
 
