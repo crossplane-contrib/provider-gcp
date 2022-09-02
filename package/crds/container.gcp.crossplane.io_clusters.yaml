@@ -740,8 +740,8 @@ spec:
                           - Default value. \"LEGACY_DATAPATH\" - Use the IPTables
                           implementation based on kube-proxy. \"ADVANCED_DATAPATH\"
                           - Use the eBPF based GKE Dataplane V2 with additional features.
-                          See the [GKE Dataplane V2 documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/
-                          dataplane-v2) for more."
+                          See the [GKE Dataplane V2 documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/dataplane-v2)
+                          for more."
                         type: string
                       defaultSnatStatus:
                         description: 'DefaultSnatStatus: Whether the cluster disables
@@ -1122,11 +1122,11 @@ spec:
                     format: int64
                     type: integer
                   currentNodeVersion:
-                    description: 'CurrentNodeVersion: Deprecated, use [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/proj
-                      ects.zones.clusters.nodePools) instead. The current version
-                      of the node software components. If they are currently at multiple
-                      versions because they''re in the process of being upgraded,
-                      this reflects the minimum version of all nodes.'
+                    description: 'CurrentNodeVersion: Deprecated, use [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/projects.zones.clusters.nodePools)
+                      instead. The current version of the node software components.
+                      If they are currently at multiple versions because they''re
+                      in the process of being upgraded, this reflects the minimum
+                      version of all nodes.'
                     type: string
                   endpoint:
                     description: "Endpoint: The IP address of this cluster's master

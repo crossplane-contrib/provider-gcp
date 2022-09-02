@@ -215,7 +215,9 @@ func TestObserve(t *testing.T) {
 					Email:       accountEmail,
 					DisplayName: displayName,
 				}
-				_ = json.NewEncoder(w).Encode(sa)
+				if err := json.NewEncoder(w).Encode(sa); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -364,7 +366,9 @@ func TestCreate(t *testing.T) {
 					Disabled:    false,
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(sa)
+				if err := json.NewEncoder(w).Encode(sa); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -395,7 +399,9 @@ func TestCreate(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				defer r.Body.Close()
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&iamv1.Empty{})
+				if err := json.NewEncoder(w).Encode(&iamv1.Empty{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -483,7 +489,9 @@ func TestUpdate(t *testing.T) {
 						DisplayName: displayName,
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(sa)
+					if err := json.NewEncoder(w).Encode(sa); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPatch:
 					req := &updateRequest{}
 					b, err := ioutil.ReadAll(r.Body)
@@ -500,7 +508,9 @@ func TestUpdate(t *testing.T) {
 						respondWith(w, http.StatusInternalServerError, &iamv1.ServiceAccount{})
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&iamv1.Empty{})
+					if err := json.NewEncoder(w).Encode(&iamv1.Empty{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			args: args{
@@ -588,7 +598,9 @@ func TestDelete(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				defer r.Body.Close()
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&iamv1.Empty{})
+				if err := json.NewEncoder(w).Encode(&iamv1.Empty{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),

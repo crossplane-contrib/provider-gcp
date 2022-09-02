@@ -120,9 +120,11 @@ func TestObserve(t *testing.T) {
 						t.Errorf("r: -want, +got:\n%s", diff)
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+					if err := json.NewEncoder(w).Encode(&pubsub.Topic{
 						KmsKeyName: "cool-key",
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 				}),
 				kube: &test.MockClient{
 					MockUpdate: test.NewMockUpdateFn(errBoom),
@@ -142,7 +144,9 @@ func TestObserve(t *testing.T) {
 						t.Errorf("r: -want, +got:\n%s", diff)
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&pubsub.Topic{})
+					if err := json.NewEncoder(w).Encode(&pubsub.Topic{}); err != nil {
+						t.Error(err)
+					}
 				}),
 				mg: newTopic(),
 			},
@@ -219,9 +223,11 @@ func TestCreate(t *testing.T) {
 				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					_ = r.Body.Close()
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+					if err := json.NewEncoder(w).Encode(&pubsub.Topic{
 						KmsKeyName: "cool-key",
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 				}),
 				mg: newTopic(),
 			},
@@ -292,9 +298,11 @@ func TestUpdate(t *testing.T) {
 						return
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+					if err := json.NewEncoder(w).Encode(&pubsub.Topic{
 						KmsKeyName: "cool-key",
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 				}),
 				mg: newTopic(),
 			},
@@ -308,9 +316,11 @@ func TestUpdate(t *testing.T) {
 				handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					_ = r.Body.Close()
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+					if err := json.NewEncoder(w).Encode(&pubsub.Topic{
 						KmsKeyName: "cool-key",
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 				}),
 				mg: newTopic(),
 			},
@@ -393,9 +403,11 @@ func TestDelete(t *testing.T) {
 						t.Errorf("r: -want, +got:\n%s", diff)
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&pubsub.Topic{
+					if err := json.NewEncoder(w).Encode(&pubsub.Topic{
 						Name: "cool-name",
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 				}),
 				mg: newTopic(),
 			},

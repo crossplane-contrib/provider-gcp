@@ -123,7 +123,9 @@ func TestNetworkObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Network{})
+				if err := json.NewEncoder(w).Encode(&compute.Network{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: networkObj(),
@@ -140,7 +142,9 @@ func TestNetworkObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Network{})
+				if err := json.NewEncoder(w).Encode(&compute.Network{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: networkObj(),
@@ -161,7 +165,9 @@ func TestNetworkObserve(t *testing.T) {
 				gn := &compute.Network{}
 				network.GenerateNetwork(testNetworkName, c.Spec.ForProvider, gn)
 				gn.Description = "a very interesting description"
-				_ = json.NewEncoder(w).Encode(gn)
+				if err := json.NewEncoder(w).Encode(gn); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(errBoom),
@@ -183,7 +189,9 @@ func TestNetworkObserve(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				c := &compute.Network{}
 				network.GenerateNetwork(testNetworkName, networkObj().Spec.ForProvider, c)
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -268,7 +276,9 @@ func TestNetworkCreate(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: networkObj(),
@@ -286,7 +296,9 @@ func TestNetworkCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusConflict)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: networkObj(),
@@ -303,7 +315,9 @@ func TestNetworkCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: networkObj(),
@@ -368,7 +382,9 @@ func TestNetworkDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: networkObj(),
@@ -385,7 +401,9 @@ func TestNetworkDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: networkObj(),
@@ -402,7 +420,9 @@ func TestNetworkDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: networkObj(),
@@ -469,13 +489,19 @@ func TestNetworkUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Network{})
+					if err := json.NewEncoder(w).Encode(&compute.Network{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPatch:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -495,15 +521,21 @@ func TestNetworkUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Network{
+					if err := json.NewEncoder(w).Encode(&compute.Network{
 						AutoCreateSubnetworks: true,
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPost:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -527,13 +559,19 @@ func TestNetworkUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Subnetwork{})
+					if err := json.NewEncoder(w).Encode(&compute.Subnetwork{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPatch:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -554,15 +592,21 @@ func TestNetworkUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Network{
+					if err := json.NewEncoder(w).Encode(&compute.Network{
 						AutoCreateSubnetworks: true,
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPost:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{

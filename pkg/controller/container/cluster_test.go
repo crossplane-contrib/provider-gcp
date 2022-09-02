@@ -130,7 +130,9 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&container.Cluster{})
+				if err := json.NewEncoder(w).Encode(&container.Cluster{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -147,7 +149,9 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.Cluster{})
+				if err := json.NewEncoder(w).Encode(&container.Cluster{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -167,7 +171,9 @@ func TestObserve(t *testing.T) {
 				gc := &container.Cluster{}
 				gke.GenerateCluster(name, cluster().Spec.ForProvider, gc)
 				gc.Locations = []string{"loc-1"}
-				_ = json.NewEncoder(w).Encode(gc)
+				if err := json.NewEncoder(w).Encode(gc); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(errBoom),
@@ -194,7 +200,9 @@ func TestObserve(t *testing.T) {
 					Username: "admin",
 					Password: "admin",
 				}
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(withUsername("admin")),
@@ -224,7 +232,9 @@ func TestObserve(t *testing.T) {
 				c := &container.Cluster{}
 				gke.GenerateCluster(name, cluster().Spec.ForProvider, c)
 				c.Status = v1beta2.ClusterStateError
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -248,7 +258,9 @@ func TestObserve(t *testing.T) {
 				c := &container.Cluster{}
 				gke.GenerateCluster(name, cluster().Spec.ForProvider, c)
 				c.Status = v1beta2.ClusterStateRunning
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -277,7 +289,9 @@ func TestObserve(t *testing.T) {
 				c := &container.Cluster{}
 				gke.GenerateCluster(name, cluster().Spec.ForProvider, c)
 				c.Status = v1beta2.ClusterStateError
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -367,7 +381,9 @@ func TestCreate(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -398,7 +414,9 @@ func TestCreate(t *testing.T) {
 				// http call is never made.
 				w.WriteHeader(http.StatusBadRequest)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(withProviderStatus(v1beta2.ClusterStateProvisioning)),
@@ -419,7 +437,9 @@ func TestCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusConflict)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -436,7 +456,9 @@ func TestCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -498,7 +520,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -517,7 +541,9 @@ func TestDelete(t *testing.T) {
 				// Return bad request for delete to demonstrate that
 				// http call is never made.
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(withProviderStatus(v1beta2.ClusterStateStopping)),
@@ -537,7 +563,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -554,7 +582,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: cluster(),
@@ -616,13 +646,19 @@ func TestUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+					if err := json.NewEncoder(w).Encode(&container.Cluster{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -644,15 +680,21 @@ func TestUpdate(t *testing.T) {
 					// Return bad request for get to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					// Return bad request for put to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -680,15 +722,21 @@ func TestUpdate(t *testing.T) {
 					// Return bad request for get to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					// Return bad request for put to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -714,15 +762,21 @@ func TestUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+					if err := json.NewEncoder(w).Encode(&container.Cluster{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					// Return bad request for update to demonstrate that
 					// underlying update is not making any http call.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -742,13 +796,19 @@ func TestUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+					if err := json.NewEncoder(w).Encode(&container.Cluster{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -770,13 +830,19 @@ func TestUpdate(t *testing.T) {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
 					// Must return successful get of cluster that does not match spec.
-					_ = json.NewEncoder(w).Encode(&container.Cluster{})
+					if err := json.NewEncoder(w).Encode(&container.Cluster{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{

@@ -134,7 +134,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	// NOTE(negz): The storage client appears to intercept the typical GCP API
 	// error that we check for with gcp.IsErrorNotFound and return this error
 	// instead, but only when getting bucket attributes.
-	if err == storage.ErrBucketNotExist {
+	if errors.Is(err, storage.ErrBucketNotExist) {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 	if err != nil {
