@@ -120,7 +120,9 @@ func TestGlobalAddressObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Address{})
+				if err := json.NewEncoder(w).Encode(&compute.Address{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: globalAddressObj(),
@@ -137,7 +139,9 @@ func TestGlobalAddressObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Address{})
+				if err := json.NewEncoder(w).Encode(&compute.Address{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: globalAddressObj(),
@@ -158,7 +162,9 @@ func TestGlobalAddressObserve(t *testing.T) {
 				gn := &compute.Address{}
 				globaladdress.GenerateGlobalAddress(testGAName, c.Spec.ForProvider, gn)
 				gn.Description = "a very interesting testDescription"
-				_ = json.NewEncoder(w).Encode(gn)
+				if err := json.NewEncoder(w).Encode(gn); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(errBoom),
@@ -185,7 +191,9 @@ func TestGlobalAddressObserve(t *testing.T) {
 				c := &compute.Address{}
 				globaladdress.GenerateGlobalAddress(testGAName, globalAddressObj().Spec.ForProvider, c)
 				c.Status = v1beta1.StatusReserving
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -214,7 +222,9 @@ func TestGlobalAddressObserve(t *testing.T) {
 				c := &compute.Address{}
 				globaladdress.GenerateGlobalAddress(testGAName, globalAddressObj().Spec.ForProvider, c)
 				c.Status = v1beta1.StatusReserved
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -302,7 +312,9 @@ func TestGlobalAddressCreate(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: globalAddressObj(),
@@ -320,7 +332,9 @@ func TestGlobalAddressCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusConflict)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: globalAddressObj(),
@@ -337,7 +351,9 @@ func TestGlobalAddressCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: globalAddressObj(),
@@ -402,7 +418,9 @@ func TestGlobalAddressDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: globalAddressObj(),
@@ -419,7 +437,9 @@ func TestGlobalAddressDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: globalAddressObj(),
@@ -436,7 +456,9 @@ func TestGlobalAddressDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: globalAddressObj(),

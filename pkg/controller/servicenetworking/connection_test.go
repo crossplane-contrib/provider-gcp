@@ -384,11 +384,14 @@ func (s FakeComputeService) Serve(t *testing.T) *compute.Service {
 			return
 		}
 
-		if gae, ok := s.ReturnError.(*googleapi.Error); ok {
-			w.WriteHeader(gae.Code)
-			_ = json.NewEncoder(w).Encode(struct {
+		var gErr *googleapi.Error
+		if errors.As(s.ReturnError, &gErr) {
+			w.WriteHeader(gErr.Code)
+			if err := json.NewEncoder(w).Encode(struct {
 				Error *googleapi.Error `json:"error"`
-			}{Error: gae})
+			}{Error: gErr}); err != nil {
+				t.Error(err)
+			}
 			return
 		}
 
@@ -398,7 +401,9 @@ func (s FakeComputeService) Serve(t *testing.T) *compute.Service {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(&compute.Operation{})
+		if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+			t.Error(err)
+		}
 	}))
 
 	c, err := compute.NewService(context.Background(),
@@ -430,11 +435,14 @@ func (s FakeServiceNetworkingService) Serve(t *testing.T) *servicenetworking.API
 			return
 		}
 
-		if gae, ok := s.ReturnError.(*googleapi.Error); ok {
-			w.WriteHeader(gae.Code)
-			_ = json.NewEncoder(w).Encode(struct {
+		var gErr *googleapi.Error
+		if errors.As(s.ReturnError, &gErr) {
+			w.WriteHeader(gErr.Code)
+			if err := json.NewEncoder(w).Encode(struct {
 				Error *googleapi.Error `json:"error"`
-			}{Error: gae})
+			}{Error: gErr}); err != nil {
+				t.Error(err)
+			}
 			return
 		}
 
@@ -444,7 +452,9 @@ func (s FakeServiceNetworkingService) Serve(t *testing.T) *servicenetworking.API
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(s.Return)
+		if err := json.NewEncoder(w).Encode(s.Return); err != nil {
+			t.Error(err)
+		}
 	}))
 
 	c, err := servicenetworking.NewService(context.Background(),

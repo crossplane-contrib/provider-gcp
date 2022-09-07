@@ -118,7 +118,9 @@ func TestCryptoKeyPolicyObserve(t *testing.T) {
 		"FailedToObserve": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&kmsv1.Policy{})
+				if err := json.NewEncoder(w).Encode(&kmsv1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -137,7 +139,9 @@ func TestCryptoKeyPolicyObserve(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				ckp := &kmsv1.Policy{}
-				_ = json.NewEncoder(w).Encode(ckp)
+				if err := json.NewEncoder(w).Encode(ckp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -162,7 +166,9 @@ func TestCryptoKeyPolicyObserve(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(ckp)
+				if err := json.NewEncoder(w).Encode(ckp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -198,7 +204,9 @@ func TestCryptoKeyPolicyObserve(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(ckp)
+				if err := json.NewEncoder(w).Encode(ckp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -310,7 +318,9 @@ func TestCryptoKeyPolicyCreate(t *testing.T) {
 					t.Errorf("policy in setIamPolicyRequest not equal to expected, diff: %s", cmp.Diff(exp, i.Policy, cmpopts.IgnoreFields(kmsv1.Policy{}, "Version")))
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(exp)
+				if err := json.NewEncoder(w).Encode(exp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -328,7 +338,9 @@ func TestCryptoKeyPolicyCreate(t *testing.T) {
 		"CreateFailed": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&kmsv1.Policy{})
+				if err := json.NewEncoder(w).Encode(&kmsv1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -447,7 +459,9 @@ func TestCryptoKeyPolicyUpdate(t *testing.T) {
 					w.WriteHeader(http.StatusBadRequest)
 				}
 
-				_ = json.NewEncoder(w).Encode(ckp)
+				if err := json.NewEncoder(w).Encode(ckp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -474,7 +488,9 @@ func TestCryptoKeyPolicyUpdate(t *testing.T) {
 		"FailedToGet": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&kmsv1.Policy{})
+				if err := json.NewEncoder(w).Encode(&kmsv1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -500,7 +516,9 @@ func TestCryptoKeyPolicyUpdate(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(ckp)
+				if err := json.NewEncoder(w).Encode(ckp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -538,7 +556,9 @@ func TestCryptoKeyPolicyUpdate(t *testing.T) {
 					w.WriteHeader(http.StatusBadRequest)
 				}
 
-				_ = json.NewEncoder(w).Encode(ckp)
+				if err := json.NewEncoder(w).Encode(ckp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -646,7 +666,9 @@ func TestCryptoKeyPolicyDelete(t *testing.T) {
 					t.Errorf("policy in setIamPolicyRequest not equal to expected, diff: %s", cmp.Diff(exp, i.Policy, cmpopts.IgnoreFields(kmsv1.Policy{}, "Version")))
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(exp)
+				if err := json.NewEncoder(w).Encode(exp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -663,7 +685,9 @@ func TestCryptoKeyPolicyDelete(t *testing.T) {
 		"CreateFailed": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&kmsv1.Policy{})
+				if err := json.NewEncoder(w).Encode(&kmsv1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),

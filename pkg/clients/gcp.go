@@ -119,8 +119,8 @@ func IsErrorNotFoundGRPC(err error) bool {
 	if err == nil {
 		return false
 	}
-	grpcErr, ok := err.(interface{ GRPCStatus() *status.Status })
-	return ok && grpcErr.GRPCStatus().Code() == codes.NotFound
+	var gErr interface{ GRPCStatus() *status.Status }
+	return errors.As(err, &gErr) && gErr.GRPCStatus().Code() == codes.NotFound
 }
 
 // IsErrorNotFound gets a value indicating whether the given error represents a "not found" response from the Google API
@@ -128,8 +128,8 @@ func IsErrorNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
-	googleapiErr, ok := err.(*googleapi.Error)
-	return ok && googleapiErr.Code == http.StatusNotFound
+	var gErr *googleapi.Error
+	return errors.As(err, &gErr) && gErr.Code == http.StatusNotFound
 }
 
 // IsErrorAlreadyExists gets a value indicating whether the given error
@@ -138,8 +138,8 @@ func IsErrorAlreadyExists(err error) bool {
 	if err == nil {
 		return false
 	}
-	googleapiErr, ok := err.(*googleapi.Error)
-	return ok && googleapiErr.Code == http.StatusConflict
+	var gErr *googleapi.Error
+	return errors.As(err, &gErr) && gErr.Code == http.StatusConflict
 }
 
 // IsErrorBadRequest gets a value indicating whether the given error represents
@@ -148,8 +148,8 @@ func IsErrorBadRequest(err error) bool {
 	if err == nil {
 		return false
 	}
-	googleapiErr, ok := err.(*googleapi.Error)
-	return ok && googleapiErr.Code == http.StatusBadRequest
+	var gErr *googleapi.Error
+	return errors.As(err, &gErr) && gErr.Code == http.StatusBadRequest
 }
 
 // IsErrorForbidden gets a value indicating whether the given error represents a
@@ -158,8 +158,8 @@ func IsErrorForbidden(err error) bool {
 	if err == nil {
 		return false
 	}
-	googleapiErr, ok := err.(*googleapi.Error)
-	return ok && googleapiErr.Code == http.StatusForbidden
+	var gErr *googleapi.Error
+	return errors.As(err, &gErr) && gErr.Code == http.StatusForbidden
 }
 
 // StringValue converts the supplied string pointer to a string, returning the

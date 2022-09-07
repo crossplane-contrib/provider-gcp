@@ -129,7 +129,9 @@ func TestServiceAccountPolicyObserve(t *testing.T) {
 		"FailedToObserve": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&iamv1.Policy{})
+				if err := json.NewEncoder(w).Encode(&iamv1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -148,7 +150,9 @@ func TestServiceAccountPolicyObserve(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				sap := &iamv1.Policy{}
-				_ = json.NewEncoder(w).Encode(sap)
+				if err := json.NewEncoder(w).Encode(sap); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -173,7 +177,9 @@ func TestServiceAccountPolicyObserve(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(sap)
+				if err := json.NewEncoder(w).Encode(sap); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -209,7 +215,9 @@ func TestServiceAccountPolicyObserve(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(sap)
+				if err := json.NewEncoder(w).Encode(sap); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -321,7 +329,9 @@ func TestServiceAccountPolicyCreate(t *testing.T) {
 					t.Errorf("policy in setIamPolicyRequest not equal to expected, diff: %s", cmp.Diff(exp, i.Policy, cmpopts.IgnoreFields(iamv1.Policy{}, "Version")))
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(exp)
+				if err := json.NewEncoder(w).Encode(exp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -339,7 +349,9 @@ func TestServiceAccountPolicyCreate(t *testing.T) {
 		"CreateFailed": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&iamv1.Policy{})
+				if err := json.NewEncoder(w).Encode(&iamv1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -458,7 +470,9 @@ func TestServiceAccountPolicyUpdate(t *testing.T) {
 					w.WriteHeader(http.StatusBadRequest)
 				}
 
-				_ = json.NewEncoder(w).Encode(sap)
+				if err := json.NewEncoder(w).Encode(sap); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -485,7 +499,9 @@ func TestServiceAccountPolicyUpdate(t *testing.T) {
 		"FailedToGet": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&iamv1.Policy{})
+				if err := json.NewEncoder(w).Encode(&iamv1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -511,7 +527,9 @@ func TestServiceAccountPolicyUpdate(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(sap)
+				if err := json.NewEncoder(w).Encode(sap); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -549,7 +567,9 @@ func TestServiceAccountPolicyUpdate(t *testing.T) {
 					w.WriteHeader(http.StatusBadRequest)
 				}
 
-				_ = json.NewEncoder(w).Encode(sap)
+				if err := json.NewEncoder(w).Encode(sap); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -657,7 +677,9 @@ func TestServiceAccountPolicyDelete(t *testing.T) {
 					t.Errorf("policy in setIamPolicyRequest not equal to expected, diff: %s", cmp.Diff(exp, i.Policy, cmpopts.IgnoreFields(iamv1.Policy{}, "Version")))
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(exp)
+				if err := json.NewEncoder(w).Encode(exp); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -674,7 +696,9 @@ func TestServiceAccountPolicyDelete(t *testing.T) {
 		"CreateFailed": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&iamv1.Policy{})
+				if err := json.NewEncoder(w).Encode(&iamv1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),

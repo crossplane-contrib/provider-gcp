@@ -157,13 +157,15 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&redis.Instance{
+				if err := json.NewEncoder(w).Encode(&redis.Instance{
 					State:       cloudmemorystore.StateReady,
 					Host:        host,
 					Port:        port,
 					Name:        qualifiedName,
 					AuthEnabled: authEnabled,
-				})
+				}); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
@@ -196,10 +198,12 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&redis.Instance{
+				if err := json.NewEncoder(w).Encode(&redis.Instance{
 					State: cloudmemorystore.StateCreating,
 					Name:  qualifiedName,
-				})
+				}); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
@@ -226,10 +230,12 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&redis.Instance{
+				if err := json.NewEncoder(w).Encode(&redis.Instance{
 					State: cloudmemorystore.StateDeleting,
 					Name:  qualifiedName,
-				})
+				}); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
@@ -352,9 +358,11 @@ func TestCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&redis.Instance{
+				if err := json.NewEncoder(w).Encode(&redis.Instance{
 					Name: qualifiedName,
-				})
+				}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -451,9 +459,11 @@ func TestUpdate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&redis.Instance{
+				if err := json.NewEncoder(w).Encode(&redis.Instance{
 					Name: qualifiedName,
-				})
+				}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -548,9 +558,11 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&redis.Instance{
+				if err := json.NewEncoder(w).Encode(&redis.Instance{
 					Name: qualifiedName,
-				})
+				}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),

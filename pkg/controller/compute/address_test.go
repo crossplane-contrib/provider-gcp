@@ -112,7 +112,9 @@ func TestAddressObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Address{})
+				if err := json.NewEncoder(w).Encode(&compute.Address{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: addressObj(),
@@ -129,7 +131,9 @@ func TestAddressObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Address{})
+				if err := json.NewEncoder(w).Encode(&compute.Address{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: addressObj(),
@@ -149,7 +153,9 @@ func TestAddressObserve(t *testing.T) {
 				c := &compute.Address{}
 				address.GenerateAddress(testName, addressObj().Spec.ForProvider, c)
 				c.Status = v1beta1.StatusReserving
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -178,7 +184,9 @@ func TestAddressObserve(t *testing.T) {
 				c := &compute.Address{}
 				address.GenerateAddress(testName, addressObj().Spec.ForProvider, c)
 				c.Status = v1beta1.StatusReserved
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -266,7 +274,9 @@ func TestAddressCreate(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: addressObj(),
@@ -284,7 +294,9 @@ func TestAddressCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusConflict)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: addressObj(),
@@ -301,7 +313,9 @@ func TestAddressCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: addressObj(),
@@ -366,7 +380,9 @@ func TestAddressDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: addressObj(),
@@ -383,7 +399,9 @@ func TestAddressDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: addressObj(),
@@ -400,7 +418,9 @@ func TestAddressDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: addressObj(),

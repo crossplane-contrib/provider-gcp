@@ -185,7 +185,9 @@ func TestObserve(t *testing.T) {
 				sa := &kmsv1.KeyRing{
 					Name: fqName,
 				}
-				_ = json.NewEncoder(w).Encode(sa)
+				if err := json.NewEncoder(w).Encode(sa); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -218,7 +220,9 @@ func TestObserve(t *testing.T) {
 				sa := &kmsv1.KeyRing{
 					Name: fqName,
 				}
-				_ = json.NewEncoder(w).Encode(sa)
+				if err := json.NewEncoder(w).Encode(sa); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -325,7 +329,9 @@ func TestCreate(t *testing.T) {
 					Name: fqName,
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(kr)
+				if err := json.NewEncoder(w).Encode(kr); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -356,7 +362,9 @@ func TestCreate(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				defer r.Body.Close()
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&iamv1.Empty{})
+				if err := json.NewEncoder(w).Encode(&iamv1.Empty{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
