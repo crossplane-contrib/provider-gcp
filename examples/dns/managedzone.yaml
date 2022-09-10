@@ -1,0 +1,11 @@
+apiVersion: dns.gcp.crossplane.io/v1alpha1
+kind: ManagedZone
+metadata:
+  name: example
+spec:
+  forProvider:
+    description: example
+    dnsName: example.com.
+    visibility: private
+  providerConfigRef:
+    name: example
