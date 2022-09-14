@@ -304,6 +304,10 @@ type MaintenanceWindow struct {
 
 // BackupConfiguration is database instance backup configuration.
 type BackupConfiguration struct {
+	// BackupRetentionSettings: Backup retention settings.
+	// +optional
+	BackupRetentionSettings *BackupRetentionSettings `json:"backupRetentionSettings,omitempty"`
+
 	// BinaryLogEnabled: Whether binary log is enabled. If backup
 	// configuration is disabled, binary log must be disabled as well.
 	// +optional
@@ -330,6 +334,26 @@ type BackupConfiguration struct {
 	// Will restart database if enabled after instance creation.
 	// +optional
 	PointInTimeRecoveryEnabled *bool `json:"pointInTimeRecoveryEnabled,omitempty"`
+}
+
+// BackupRetentionSettings configures the number of backups to retain.
+type BackupRetentionSettings struct {
+	// RetainedBackups: Depending on the value of retention_unit, this is
+	// used to determine if a backup needs to be deleted. If retention_unit
+	// is 'COUNT', we will retain this many backups.
+	// +optional
+	RetainedBackups *int64 `json:"retainedBackups,omitempty"`
+
+	// RetentionUnit: The unit that 'retained_backups' represents.
+	//
+	// Possible values:
+	//   "RETENTION_UNIT_UNSPECIFIED" - Backup retention unit is
+	// unspecified, will be treated as COUNT.
+	//   "COUNT" - Retention will be by count, eg. "retain the most recent 7
+	// backups".
+	// +kubebuilder:validation:Enum=RETENTION_UNIT_UNSPECIFIED;COUNT
+	// +optional
+	RetentionUnit *string `json:"retentionUnit,omitempty"`
 }
 
 // DatabaseFlags are database flags for Cloud SQL instances.

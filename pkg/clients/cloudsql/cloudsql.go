@@ -92,6 +92,14 @@ func GenerateDatabaseInstance(name string, in v1beta1.CloudSQLInstanceParameters
 		db.Settings.BackupConfiguration.ReplicationLogArchivingEnabled = gcp.BoolValue(in.Settings.BackupConfiguration.ReplicationLogArchivingEnabled)
 		db.Settings.BackupConfiguration.StartTime = gcp.StringValue(in.Settings.BackupConfiguration.StartTime)
 		db.Settings.BackupConfiguration.PointInTimeRecoveryEnabled = gcp.BoolValue(in.Settings.BackupConfiguration.PointInTimeRecoveryEnabled)
+
+		if in.Settings.BackupConfiguration.BackupRetentionSettings != nil {
+			if db.Settings.BackupConfiguration.BackupRetentionSettings == nil {
+				db.Settings.BackupConfiguration.BackupRetentionSettings = &sqladmin.BackupRetentionSettings{}
+			}
+			db.Settings.BackupConfiguration.BackupRetentionSettings.RetainedBackups = gcp.Int64Value(in.Settings.BackupConfiguration.BackupRetentionSettings.RetainedBackups)
+			db.Settings.BackupConfiguration.BackupRetentionSettings.RetentionUnit = gcp.StringValue(in.Settings.BackupConfiguration.BackupRetentionSettings.RetentionUnit)
+		}
 	}
 	if in.Settings.IPConfiguration != nil {
 		if db.Settings.IpConfiguration == nil {
@@ -247,6 +255,17 @@ func LateInitializeSpec(spec *v1beta1.CloudSQLInstanceParameters, in sqladmin.Da
 			spec.Settings.BackupConfiguration.PointInTimeRecoveryEnabled = gcp.LateInitializeBool(
 				spec.Settings.BackupConfiguration.PointInTimeRecoveryEnabled,
 				in.Settings.BackupConfiguration.PointInTimeRecoveryEnabled)
+			if in.Settings.BackupConfiguration.BackupRetentionSettings != nil {
+				if spec.Settings.BackupConfiguration.BackupRetentionSettings == nil {
+					spec.Settings.BackupConfiguration.BackupRetentionSettings = &v1beta1.BackupRetentionSettings{}
+				}
+				spec.Settings.BackupConfiguration.BackupRetentionSettings.RetainedBackups = gcp.LateInitializeInt64(
+					spec.Settings.BackupConfiguration.BackupRetentionSettings.RetainedBackups,
+					in.Settings.BackupConfiguration.BackupRetentionSettings.RetainedBackups)
+				spec.Settings.BackupConfiguration.BackupRetentionSettings.RetentionUnit = gcp.LateInitializeString(
+					spec.Settings.BackupConfiguration.BackupRetentionSettings.RetentionUnit,
+					in.Settings.BackupConfiguration.BackupRetentionSettings.RetentionUnit)
+			}
 		}
 		if in.Settings.IpConfiguration != nil {
 			if spec.Settings.IPConfiguration == nil {
