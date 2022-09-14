@@ -70,8 +70,6 @@ func GenerateManagedZone(name string, spec v1alpha1.ManagedZoneParameters, mz *d
 // supplied ManagedZoneParameters that are set (i.e. non-zero) on the supplied
 // ManagedZone.
 func LateInitializeSpec(spec *v1alpha1.ManagedZoneParameters, observed dns.ManagedZone) {
-	spec.Description = gcp.LateInitializeString(spec.Description, observed.Description)
-	spec.Visibility = gcp.LateInitializeString(spec.Visibility, observed.Visibility)
 	spec.Labels = gcp.LateInitializeStringMap(spec.Labels, observed.Labels)
 }
 

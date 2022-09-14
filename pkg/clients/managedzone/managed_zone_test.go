@@ -34,7 +34,7 @@ const (
 var (
 	testDescription = "test description"
 	testVisibility  = "private"
-	fakeVisibility  = "public"
+	fakeLabels      = map[string]string{"label": "one"}
 )
 
 func params(m ...func(*v1alpha1.ManagedZoneParameters)) *v1alpha1.ManagedZoneParameters {
@@ -127,15 +127,15 @@ func TestLateInitializeSpec(t *testing.T) {
 		"SomeFields": {
 			args: args{
 				spec: params(func(p *v1alpha1.ManagedZoneParameters) {
-					p.Visibility = nil
+					p.Labels = nil
 				}),
 				external: managedZone(func(mz *dns.ManagedZone) {
-					mz.Visibility = fakeVisibility
+					mz.Labels = fakeLabels
 				}),
 			},
 			want: want{
 				params: params(func(p *v1alpha1.ManagedZoneParameters) {
-					p.Visibility = &fakeVisibility
+					p.Labels = fakeLabels
 				}),
 			},
 		},
