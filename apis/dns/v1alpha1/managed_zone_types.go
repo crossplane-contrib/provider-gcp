@@ -55,6 +55,14 @@ type ManagedZoneParameters struct {
 	// +immutable
 	// +kubebuilder:validation:Enum=public;private
 	Visibility *string `json:"visibility,omitempty"`
+
+	// TODO(danielinclouds): support CloudLoggingConfig parameters
+	// TODO(danielinclouds): support DnssecConfig parameters
+	// TODO(danielinclouds): support ForwardingConfig parameters
+	// TODO(danielinclouds): support NameServerSet parameters
+	// TODO(danielinclouds): support PeeringConfig parameters
+	// TODO(danielinclouds): support ReverseLookupConfig parameters
+	// TODO(danielinclouds): support ServiceDirectoryConfig parameters
 }
 
 // ManagedZonePrivateVisibilityConfig the set of Virtual Private Cloud resources
