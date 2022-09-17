@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Crossplane Authors.
+Copyright 2022 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,6 +43,12 @@ const (
 	managedZoneProjectID = "myproject-id-1234"
 )
 
+var (
+	nonManagedZone     resource.Managed
+	errManagedZoneBoom = errors.New("boom")
+	managedZoneLabels  = map[string]string{"foo": "bar"}
+)
+
 type ManagedZoneOption func(*v1alpha1.ManagedZone)
 
 func newManagedZone(opts ...ManagedZoneOption) *v1alpha1.ManagedZone {
@@ -53,6 +59,12 @@ func newManagedZone(opts ...ManagedZoneOption) *v1alpha1.ManagedZone {
 	}
 
 	return mz
+}
+
+func withLabels(l map[string]string) ManagedZoneOption {
+	return func(mz *v1alpha1.ManagedZone) {
+		mz.Spec.ForProvider.Labels = l
+	}
 }
 
 func managedZoneGError(code int, message string) *googleapi.Error {
@@ -82,7 +94,7 @@ func TestManagedZoneObserve(t *testing.T) {
 		"NotManagedZone": {
 			reason: "Should return an error if the resource is not ManagedZone",
 			args: args{
-				mg: unexpectedObject,
+				mg: nonManagedZone,
 			},
 			want: want{
 				e:   managed.ExternalObservation{},
@@ -136,7 +148,7 @@ func TestManagedZoneObserve(t *testing.T) {
 			},
 			want: want{
 				e:   managed.ExternalObservation{},
-				err: errors.Wrap(errBoom, errUpdateManagedZone),
+				err: errors.Wrap(errManagedZoneBoom, errUpdateManagedZone),
 			},
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
@@ -144,7 +156,7 @@ func TestManagedZoneObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				cr := newManagedZone()
+				cr := newManagedZone(withLabels(managedZoneLabels))
 				mz := &dns.ManagedZone{}
 				mzclient.GenerateManagedZone(meta.GetExternalName(cr), cr.Spec.ForProvider, mz)
 				if err := json.NewEncoder(w).Encode(mz); err != nil {
@@ -152,7 +164,37 @@ func TestManagedZoneObserve(t *testing.T) {
 				}
 			}),
 			kube: &test.MockClient{
-				MockUpdate: test.NewMockUpdateFn(errBoom),
+				MockUpdate: test.NewMockUpdateFn(errManagedZoneBoom),
+			},
+		},
+		"UpdateResourceSpecSuccess": {
+			reason: "Should not return an error if the internal update succeeds",
+			args: args{
+				mg: newManagedZone(),
+			},
+			want: want{
+				e: managed.ExternalObservation{
+					ResourceLateInitialized: true,
+					ResourceExists:          true,
+					ResourceUpToDate:        true,
+				},
+				err: nil,
+			},
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.Body.Close()
+				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+					t.Errorf("r: -want, +got:\n%s", diff)
+				}
+				w.WriteHeader(http.StatusOK)
+				cr := newManagedZone(withLabels(managedZoneLabels))
+				mz := &dns.ManagedZone{}
+				mzclient.GenerateManagedZone(meta.GetExternalName(cr), cr.Spec.ForProvider, mz)
+				if err := json.NewEncoder(w).Encode(mz); err != nil {
+					t.Error(err)
+				}
+			}),
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 		},
 		"ResourceNotUpToDate": {
@@ -191,6 +233,7 @@ func TestManagedZoneObserve(t *testing.T) {
 				dns:       s.ManagedZones,
 			}
 			got, err := e.Observe(context.Background(), tc.args.mg)
+
 			if diff := cmp.Diff(tc.want.e, got); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
@@ -219,7 +262,7 @@ func TestManagedZoneCreate(t *testing.T) {
 		"NotManagedZone": {
 			reason: "Should return an error if the resource is not ManagedZone",
 			args: args{
-				mg: unexpectedObject,
+				mg: nonManagedZone,
 			},
 			want: want{
 				e:   managed.ExternalCreation{},
@@ -306,7 +349,7 @@ func TestManagedZoneUpdate(t *testing.T) {
 		"NotManagedZone": {
 			reason: "Should return an error if the resource is not ManagedZone",
 			args: args{
-				mg: unexpectedObject,
+				mg: nonManagedZone,
 			},
 			want: want{
 				e:   managed.ExternalUpdate{},
@@ -392,7 +435,7 @@ func TestManagedZoneDelete(t *testing.T) {
 		"NotManagedZone": {
 			reason: "Should return an error if the resource is not ManagedZone",
 			args: args{
-				mg: unexpectedObject,
+				mg: nonManagedZone,
 			},
 			want: want{
 				err: errors.New(errNotManagedZone),
