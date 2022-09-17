@@ -92,8 +92,8 @@ func IsUpToDate(name string, spec *v1alpha1.ManagedZoneParameters, observed *dns
 // *ManagedZoneObservation.
 func GenerateManagedZoneObservation(observed *dns.ManagedZone) v1alpha1.ManagedZoneObservation {
 	return v1alpha1.ManagedZoneObservation{
-		CreationTime: &observed.CreationTime,
-		ID:           &observed.Id,
+		CreationTime: observed.CreationTime,
+		ID:           observed.Id,
 		NameServers:  observed.NameServers,
 	}
 }

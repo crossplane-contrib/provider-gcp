@@ -79,10 +79,10 @@ type ManagedZoneObservation struct {
 
 	// CreationTime: The time that this resource was created on the server.
 	// This is in RFC3339 text format. Output only.
-	CreationTime *string `json:"creationTime,omitempty"`
+	CreationTime string `json:"creationTime,omitempty"`
 
 	// Id: Unique identifier for the resource; defined by the server (output only)
-	ID *uint64 `json:"id,omitempty"`
+	ID uint64 `json:"id,omitempty"`
 
 	// NameServers: Delegate your managed_zone to these virtual name
 	// servers; defined by the server (output only)
