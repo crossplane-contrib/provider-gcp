@@ -18,11 +18,13 @@ package gcp
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"path"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
@@ -106,10 +108,24 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 		if err != nil {
 			return "", nil, errors.Wrap(err, "cannot get credentials")
 		}
-		opts = append(opts, option.WithCredentialsJSON(data))
+		if isJSON(data) {
+			return pc.Spec.ProjectID, option.WithCredentialsJSON(data), nil
+		} else {
+			t := oauth2.Token{
+				AccessToken: string(data),
+			}
+			if ok := t.Valid(); !ok {
+				return pc.Spec.ProjectID, opts, errors.New("Access token invalid")
+			}
+			ts := oauth2.StaticTokenSource(&t)
+			return pc.Spec.ProjectID, option.WithTokenSource(ts), nil
+		}
 	}
+}
 
-	return pc.Spec.ProjectID, opts, nil
+func isJSON(b []byte) bool {
+	var js json.RawMessage
+	return json.Unmarshal(b, &js) == nil
 }
 
 // IsErrorNotFoundGRPC gets a value indicating whether the given error represents
