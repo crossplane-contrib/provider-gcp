@@ -109,17 +109,19 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 			return "", nil, errors.Wrap(err, "cannot get credentials")
 		}
 		if isJSON(data) {
-			return pc.Spec.ProjectID, option.WithCredentialsJSON(data), nil
+			opts = append(opts, option.WithCredentialsJSON(data))
+		} else {
+			t := oauth2.Token{
+				AccessToken: string(data),
+			}
+			if ok := t.Valid(); !ok {
+				return pc.Spec.ProjectID, opts, errors.New("Access token invalid")
+			}
+			ts := oauth2.StaticTokenSource(&t)
+			opts = append(opts, option.WithTokenSource(ts))
 		}
-		t := oauth2.Token{
-			AccessToken: string(data),
-		}
-		if ok := t.Valid(); !ok {
-			return pc.Spec.ProjectID, opts, errors.New("Access token invalid")
-		}
-		ts := oauth2.StaticTokenSource(&t)
-		return pc.Spec.ProjectID, option.WithTokenSource(ts), nil
 	}
+	return pc.Spec.ProjectID, opts, nil
 }
 
 func isJSON(b []byte) bool {
