@@ -194,9 +194,9 @@ can smoothly set it up:
 ```console
 $ PROJECT_ID=<YOUR_GCP_PROJECT_ID>                               # e.g.) acme-prod
 $ GCP_SERVICE_ACCOUNT=<YOUR_CROSSPLANE_GCP_SERVICE_ACCOUNT_NAME> # e.g.) crossplane
-$ ROLE=<YOUR_ROLE_FOR_CROSSPLANE_GCP_SERVICE_ACCOUNT>            # e.g.) roles/cloudsql.admin
+$ ROLE=<YOUR_ROLE_FOR_CROSSPLANE_GCP_SERVICE_ACCOUNT>            # e.g.) roles/editor
 $ KUBERNETES_SERVICE_ACCOUNT=<YOUR_KUBERNETES_SERVICE_ACCOUNT>   # e.g.) token-generator
-$ NAMESPACE=<YOUR_KUBERNETES_NAMESPACE>                          # e.g.) mynamespace
+$ NAMESPACE=<YOUR_KUBERNETES_NAMESPACE>                          # e.g.) default
 $ SECRET_NAME=<YOUR_CREDENTIALS_SECRET_NAME>                     # e.g.) gcp-credentials
 $ SECRET_KEY=<NAME_OF_KEY_IN_SECRET>                             # e.g.) token
 ```
