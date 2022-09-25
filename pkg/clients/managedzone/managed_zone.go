@@ -70,7 +70,21 @@ func GenerateManagedZone(name string, spec v1alpha1.ManagedZoneParameters, mz *d
 // supplied ManagedZoneParameters that are set (i.e. non-zero) on the supplied
 // ManagedZone.
 func LateInitializeSpec(spec *v1alpha1.ManagedZoneParameters, observed dns.ManagedZone) {
+	spec.Description = gcp.LateInitializeString(spec.Description, observed.Description)
+	spec.Visibility = gcp.LateInitializeString(spec.Visibility, observed.Visibility)
 	spec.Labels = gcp.LateInitializeStringMap(spec.Labels, observed.Labels)
+
+	if observed.PrivateVisibilityConfig != nil && spec.PrivateVisibilityConfig == nil {
+		spec.PrivateVisibilityConfig = &v1alpha1.ManagedZonePrivateVisibilityConfig{}
+		if len(observed.PrivateVisibilityConfig.Networks) != 0 {
+			spec.PrivateVisibilityConfig.Networks = make([]*v1alpha1.ManagedZonePrivateVisibilityConfigNetwork, len(observed.PrivateVisibilityConfig.Networks))
+			for i, network := range observed.PrivateVisibilityConfig.Networks {
+				spec.PrivateVisibilityConfig.Networks[i] = &v1alpha1.ManagedZonePrivateVisibilityConfigNetwork{
+					NetworkURL: &network.NetworkUrl,
+				}
+			}
+		}
+	}
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given
