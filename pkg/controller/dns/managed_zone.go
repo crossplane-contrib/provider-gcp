@@ -168,11 +168,8 @@ func (e *managedZoneExternal) Create(ctx context.Context, mg resource.Managed) (
 		e.projectID,
 		args,
 	).Context(ctx).Do()
-	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateManagedZone)
-	}
 
-	return managed.ExternalCreation{}, nil
+	return managed.ExternalCreation{}, errors.Wrap(err, errCreateManagedZone)
 }
 
 func (e *managedZoneExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -193,11 +190,8 @@ func (e *managedZoneExternal) Update(ctx context.Context, mg resource.Managed) (
 		meta.GetExternalName(cr),
 		args,
 	).Context(ctx).Do()
-	if err != nil {
-		return managed.ExternalUpdate{}, err
-	}
 
-	return managed.ExternalUpdate{}, nil
+	return managed.ExternalUpdate{}, err
 }
 
 func (e *managedZoneExternal) Delete(ctx context.Context, mg resource.Managed) error {
