@@ -46,7 +46,7 @@ const (
 	errGetManagedZone      = "cannot get the DNS ManagedZone"
 	errCreateManagedZone   = "cannot create DNS ManagedZone"
 	errDeleteManagedZone   = "cannot delete DNS ManagedZone"
-	errUpdateManagedZone   = "Cannot update DNS ManagedZone custom resource"
+	errUpdateManagedZone   = "cannot update DNS ManagedZone custom resource"
 	errUpToDateManagedZone = "cannot determine if ManagedZone is up to date"
 )
 
