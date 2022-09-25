@@ -163,7 +163,6 @@ func (e *managedZoneExternal) Create(ctx context.Context, mg resource.Managed) (
 		args,
 	)
 
-	cr.SetConditions(xpv1.Creating())
 	_, err := e.dns.Create(
 		e.projectID,
 		args,
