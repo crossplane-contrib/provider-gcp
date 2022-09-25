@@ -32,9 +32,6 @@ spec:
     - jsonPath: .spec.forProvider.visibility
       name: VISIBILITY
       type: string
-    - jsonPath: .spec.forProvider.description
-      name: DESCRIPTION
-      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:

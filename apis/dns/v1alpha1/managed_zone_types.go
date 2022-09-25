@@ -117,7 +117,6 @@ type ManagedZoneStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="DNS NAME",type="string",JSONPath=".spec.forProvider.dnsName"
 // +kubebuilder:printcolumn:name="VISIBILITY",type="string",JSONPath=".spec.forProvider.visibility"
-// +kubebuilder:printcolumn:name="DESCRIPTION",type="string",JSONPath=".spec.forProvider.description"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 type ManagedZone struct {
 	metav1.TypeMeta   `json:",inline"`
