@@ -211,8 +211,6 @@ func (e *managedZoneExternal) Delete(ctx context.Context, mg resource.Managed) e
 		e.projectID,
 		meta.GetExternalName(cr),
 	).Context(ctx).Do()
-	if gcp.IsErrorNotFound(err) {
-		return nil
-	}
+
 	return errors.Wrap(resource.Ignore(gcp.IsErrorNotFound, err), errDeleteManagedZone)
 }
