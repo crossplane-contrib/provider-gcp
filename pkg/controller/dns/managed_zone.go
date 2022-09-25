@@ -134,7 +134,7 @@ func (e *managedZoneExternal) Observe(ctx context.Context, mg resource.Managed) 
 
 	cr.SetConditions(xpv1.Available())
 
-	UpToDate, err := mzclient.IsUpToDate(
+	upToDate, err := mzclient.IsUpToDate(
 		meta.GetExternalName(cr),
 		&cr.Spec.ForProvider,
 		mz)
@@ -144,7 +144,7 @@ func (e *managedZoneExternal) Observe(ctx context.Context, mg resource.Managed) 
 
 	return managed.ExternalObservation{
 		ResourceExists:          true,
-		ResourceUpToDate:        UpToDate,
+		ResourceUpToDate:        upToDate,
 		ResourceLateInitialized: lateInit,
 	}, nil
 }
