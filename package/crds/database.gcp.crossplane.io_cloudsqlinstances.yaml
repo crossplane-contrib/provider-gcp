@@ -183,6 +183,28 @@ spec:
                         description: BackupConfiguration is the daily backup configuration
                           for the instance.
                         properties:
+                          backupRetentionSettings:
+                            description: 'BackupRetentionSettings: Backup retention
+                              settings.'
+                            properties:
+                              retainedBackups:
+                                description: 'RetainedBackups: Depending on the value
+                                  of retention_unit, this is used to determine if
+                                  a backup needs to be deleted. If retention_unit
+                                  is ''COUNT'', we will retain this many backups.'
+                                format: int64
+                                type: integer
+                              retentionUnit:
+                                description: "RetentionUnit: The unit that 'retained_backups'
+                                  represents. \n Possible values: \"RETENTION_UNIT_UNSPECIFIED\"
+                                  - Backup retention unit is unspecified, will be
+                                  treated as COUNT. \"COUNT\" - Retention will be
+                                  by count, eg. \"retain the most recent 7 backups\"."
+                                enum:
+                                - RETENTION_UNIT_UNSPECIFIED
+                                - COUNT
+                                type: string
+                            type: object
                           binaryLogEnabled:
                             description: 'BinaryLogEnabled: Whether binary log is
                               enabled. If backup configuration is disabled, binary
