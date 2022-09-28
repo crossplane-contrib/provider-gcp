@@ -110,16 +110,17 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 		}
 		if isJSON(data) {
 			opts = append(opts, option.WithCredentialsJSON(data))
-		} else {
-			t := oauth2.Token{
-				AccessToken: string(data),
-			}
-			if ok := t.Valid(); !ok {
-				return pc.Spec.ProjectID, opts, errors.New("Access token invalid")
-			}
-			ts := oauth2.StaticTokenSource(&t)
-			opts = append(opts, option.WithTokenSource(ts))
+			return pc.Spec.ProjectID, opts, nil
 		}
+		t := oauth2.Token{
+			AccessToken: string(data),
+		}
+		if ok := t.Valid(); !ok {
+			return pc.Spec.ProjectID, opts, errors.New("Access token invalid")
+		}
+		ts := oauth2.StaticTokenSource(&t)
+		opts = append(opts, option.WithTokenSource(ts))
+
 	}
 	return pc.Spec.ProjectID, opts, nil
 }
