@@ -40,6 +40,7 @@ import (
 	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane-contrib/provider-gcp/pkg/controller"
 	"github.com/crossplane-contrib/provider-gcp/pkg/features"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 func main() {
