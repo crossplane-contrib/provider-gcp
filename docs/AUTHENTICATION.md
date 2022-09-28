@@ -229,6 +229,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: ${KUBERNETES_SERVICE_ACCOUNT}-sync
+  namespace: ${NAMESPACE}
 rules:
 - apiGroups: [""]
   resources:
@@ -242,6 +243,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: ${KUBERNETES_SERVICE_ACCOUNT}-sync-rb
+  namespace: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
   name: ${KUBERNETES_SERVICE_ACCOUNT}
@@ -254,6 +256,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: ${KUBERNETES_SERVICE_ACCOUNT}-credentials-sync
+  namespace: ${NAMESPACE}
 spec:
   suspend: false
   schedule: "*/45 * * * *"
@@ -292,7 +295,7 @@ spec:
                 - |-
                   kubectl create secret generic $SECRET_NAME \
                     --dry-run=client \
-                    --from-literal=$SECRET_KEY=$(gcloud auth print-access-token) \
+                    --from-literal=$SECRET_KEY=\$(gcloud auth print-access-token) \
                     -o yaml | kubectl apply -f -
               resources:
                 requests:
@@ -323,7 +326,7 @@ $ kubectl annotate serviceaccount ${KUBERNETES_SERVICE_ACCOUNT} \
 
 #### 3. Create initial Access Token
 ```console
-kubectl create job --from=cronjob/${KUBERNETES_SERVICE_ACCOUNT}-credentials-sync cred-sync-001
+kubectl -n ${NAMESPACE} create job --from=cronjob/${KUBERNETES_SERVICE_ACCOUNT}-credentials-sync cred-sync-001
 ```
 
 #### 4. Create ProviderConfig
@@ -332,7 +335,7 @@ $ cat <<EOF | kubectl apply -f -
 apiVersion: gcp.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
-  name: default
+  name: gcp-provider
 spec:
   projectID: ${PROJECT_ID}
   credentials:
