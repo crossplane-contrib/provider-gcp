@@ -155,7 +155,7 @@ func (in *BucketPolicyMemberParameters) DeepCopyInto(out *BucketPolicyMemberPara
 	if in.BucketRef != nil {
 		in, out := &in.BucketRef, &out.BucketRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.BucketSelector != nil {
 		in, out := &in.BucketSelector, &out.BucketSelector
@@ -170,7 +170,7 @@ func (in *BucketPolicyMemberParameters) DeepCopyInto(out *BucketPolicyMemberPara
 	if in.ServiceAccountMemberRef != nil {
 		in, out := &in.ServiceAccountMemberRef, &out.ServiceAccountMemberRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ServiceAccountMemberSelector != nil {
 		in, out := &in.ServiceAccountMemberSelector, &out.ServiceAccountMemberSelector
@@ -248,7 +248,7 @@ func (in *BucketPolicyParameters) DeepCopyInto(out *BucketPolicyParameters) {
 	if in.BucketRef != nil {
 		in, out := &in.BucketRef, &out.BucketRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.BucketSelector != nil {
 		in, out := &in.BucketSelector, &out.BucketSelector

@@ -116,7 +116,7 @@ func (in *CryptoKeyParameters) DeepCopyInto(out *CryptoKeyParameters) {
 	if in.KeyRingRef != nil {
 		in, out := &in.KeyRingRef, &out.KeyRingRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.KeyRingSelector != nil {
 		in, out := &in.KeyRingSelector, &out.KeyRingSelector
@@ -227,7 +227,7 @@ func (in *CryptoKeyPolicyParameters) DeepCopyInto(out *CryptoKeyPolicyParameters
 	if in.CryptoKeyRef != nil {
 		in, out := &in.CryptoKeyRef, &out.CryptoKeyRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.CryptoKeySelector != nil {
 		in, out := &in.CryptoKeySelector, &out.CryptoKeySelector

@@ -431,7 +431,7 @@ func (in *NodePoolParameters) DeepCopyInto(out *NodePoolParameters) {
 	if in.ClusterRef != nil {
 		in, out := &in.ClusterRef, &out.ClusterRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ClusterSelector != nil {
 		in, out := &in.ClusterSelector, &out.ClusterSelector

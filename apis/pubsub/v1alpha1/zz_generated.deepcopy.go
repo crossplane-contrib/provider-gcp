@@ -349,7 +349,7 @@ func (in *TopicParameters) DeepCopyInto(out *TopicParameters) {
 	if in.KmsKeyNameRef != nil {
 		in, out := &in.KmsKeyNameRef, &out.KmsKeyNameRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.KmsKeyNameSelector != nil {
 		in, out := &in.KmsKeyNameSelector, &out.KmsKeyNameSelector
