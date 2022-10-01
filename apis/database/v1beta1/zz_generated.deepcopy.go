@@ -428,7 +428,7 @@ func (in *IPConfiguration) DeepCopyInto(out *IPConfiguration) {
 	if in.PrivateNetworkRef != nil {
 		in, out := &in.PrivateNetworkRef, &out.PrivateNetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.PrivateNetworkSelector != nil {
 		in, out := &in.PrivateNetworkSelector, &out.PrivateNetworkSelector

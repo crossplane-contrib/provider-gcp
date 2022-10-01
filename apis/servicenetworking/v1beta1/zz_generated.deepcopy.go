@@ -111,7 +111,7 @@ func (in *ConnectionParameters) DeepCopyInto(out *ConnectionParameters) {
 	if in.NetworkRef != nil {
 		in, out := &in.NetworkRef, &out.NetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.NetworkSelector != nil {
 		in, out := &in.NetworkSelector, &out.NetworkSelector
@@ -126,7 +126,9 @@ func (in *ConnectionParameters) DeepCopyInto(out *ConnectionParameters) {
 	if in.ReservedPeeringRangeRefs != nil {
 		in, out := &in.ReservedPeeringRangeRefs, &out.ReservedPeeringRangeRefs
 		*out = make([]v1.Reference, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	in.ReservedPeeringRangeSelector.DeepCopyInto(&out.ReservedPeeringRangeSelector)
 }
