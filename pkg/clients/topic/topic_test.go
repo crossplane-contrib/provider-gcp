@@ -123,6 +123,10 @@ func TestIsUpToDate(t *testing.T) {
 		obs   pubsub.Topic
 		param v1alpha1.TopicParameters
 	}
+
+	upToDateTopic := topic()
+	upToDateTopic.MessageRetentionDuration = "600.00s"
+
 	cases := map[string]struct {
 		args
 		result bool
@@ -138,7 +142,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"UpToDate": {
 			args: args{
-				obs:   *topic(),
+				obs:   *upToDateTopic,
 				param: *params(),
 			},
 			result: true,
