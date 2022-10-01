@@ -319,7 +319,7 @@ spec:
                   for BucketAttrs returned from the service. See https://cloud.google.com/storage/docs/json_api/v1/buckets/insert
                   for valid values.
                 type: string
-              predefinedCefaultObjectAcl:
+              predefinedDefaultObjectAcl:
                 description: If not empty, applies a predefined set of default object
                   access controls. It should be set only when creating a bucket. It
                   is always empty for BucketAttrs returned from the service. See https://cloud.google.com/storage/docs/json_api/v1/buckets/insert

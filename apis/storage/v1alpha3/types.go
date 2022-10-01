@@ -595,7 +595,7 @@ type BucketUpdatableAttrs struct {
 	// It is always empty for BucketAttrs returned from the service.
 	// See https://cloud.google.com/storage/docs/json_api/v1/buckets/insert
 	// for valid values.
-	PredefinedDefaultObjectACL string `json:"predefinedCefaultObjectAcl,omitempty"`
+	PredefinedDefaultObjectACL string `json:"predefinedDefaultObjectAcl,omitempty"`
 
 	// RequesterPays reports whether the bucket is a Requester Pays bucket.
 	// Clients performing operations on Requester Pays buckets must provide
