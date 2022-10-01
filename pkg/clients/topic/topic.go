@@ -19,8 +19,10 @@ package topic
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	pubsub "google.golang.org/api/pubsub/v1"
 
 	"github.com/crossplane-contrib/provider-gcp/apis/pubsub/v1alpha1"
@@ -78,7 +80,26 @@ func LateInitialize(s *v1alpha1.TopicParameters, t pubsub.Topic) {
 func IsUpToDate(s v1alpha1.TopicParameters, t pubsub.Topic) bool {
 	observed := &v1alpha1.TopicParameters{}
 	LateInitialize(observed, t)
-	return cmp.Equal(observed, &s)
+
+	observedDuration := convertDuration(observed.MessageRetentionDuration)
+	sDuration := convertDuration(s.MessageRetentionDuration)
+	if observedDuration != sDuration {
+		return false
+	}
+
+	return cmp.Equal(observed, &s, cmpopts.IgnoreFields(v1alpha1.TopicParameters{}, "MessageRetentionDuration"))
+}
+
+func convertDuration(duration *string) time.Duration {
+	if duration == nil {
+		return 0
+	}
+
+	// From here we know that "duration" has a valid duration string
+	// format because of the kubebuilder Pattern validator, so we can
+	// ignore time.ParseDuration errors
+	d, _ := time.ParseDuration(*duration)
+	return d
 }
 
 // GenerateUpdateRequest produces an UpdateTopicRequest with the difference
