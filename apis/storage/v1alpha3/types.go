@@ -597,6 +597,17 @@ type BucketUpdatableAttrs struct {
 	// for valid values.
 	PredefinedDefaultObjectACL string `json:"predefinedDefaultObjectAcl,omitempty"`
 
+	// PublicAccessPrevention is the setting for the bucket's
+	// PublicAccessPrevention policy, which can be used to prevent public access
+	// of data in the bucket. See
+	// https://cloud.google.com/storage/docs/public-access-prevention for more
+	// information.
+	//
+	// +optional
+	// +kubebuilder:validation:Enum="";unspecified;inherited;enforced
+	// +kubebuilder:default:=""
+	PublicAccessPrevention string `json:"publicAccessPrevention,omitempty"`
+
 	// RequesterPays reports whether the bucket is a Requester Pays bucket.
 	// Clients performing operations on Requester Pays buckets must provide
 	// a user project (see BucketHandle.UserProject), which will be billed
@@ -635,10 +646,24 @@ func NewBucketUpdatableAttrs(ba *storage.BucketAttrs) *BucketUpdatableAttrs {
 		Logging:                    NewBucketLogging(ba.Logging),
 		PredefinedACL:              ba.PredefinedACL,
 		PredefinedDefaultObjectACL: ba.PredefinedDefaultObjectACL,
+		PublicAccessPrevention:     ba.PublicAccessPrevention.String(),
 		RequesterPays:              ba.RequesterPays,
 		RetentionPolicy:            NewRetentionPolicy(ba.RetentionPolicy),
 		VersioningEnabled:          ba.VersioningEnabled,
 		Website:                    NewBucketWebsite(ba.Website),
+	}
+}
+
+// convertPublicAccessPreventionStringToEnum converts a string representation of storage.PublicAccessPrevention to its
+// enum value.
+func convertPublicAccessPreventionStringToEnum(pap string) storage.PublicAccessPrevention {
+	switch pap {
+	case "unspecified", "inherited":
+		return storage.PublicAccessPreventionInherited
+	case "enforced":
+		return storage.PublicAccessPreventionEnforced
+	default:
+		return storage.PublicAccessPreventionUnknown
 	}
 }
 
@@ -658,6 +683,7 @@ func CopyToBucketAttrs(ba *BucketUpdatableAttrs) *storage.BucketAttrs {
 		Logging:                    CopyToBucketLogging(ba.Logging),
 		PredefinedACL:              ba.PredefinedACL,
 		PredefinedDefaultObjectACL: ba.PredefinedDefaultObjectACL,
+		PublicAccessPrevention:     convertPublicAccessPreventionStringToEnum(ba.PublicAccessPrevention),
 		RequesterPays:              ba.RequesterPays,
 		RetentionPolicy:            CopyToRetentionPolicy(ba.RetentionPolicy),
 		VersioningEnabled:          ba.VersioningEnabled,
@@ -679,6 +705,7 @@ func CopyToBucketUpdateAttrs(ba BucketUpdatableAttrs, labels map[string]string) 
 		Logging:                    CopyToBucketLogging(ba.Logging),
 		PredefinedACL:              ba.PredefinedACL,
 		PredefinedDefaultObjectACL: ba.PredefinedDefaultObjectACL,
+		PublicAccessPrevention:     convertPublicAccessPreventionStringToEnum(ba.PublicAccessPrevention),
 		RequesterPays:              ba.RequesterPays,
 		RetentionPolicy:            CopyToRetentionPolicy(ba.RetentionPolicy),
 		VersioningEnabled:          ba.VersioningEnabled,
