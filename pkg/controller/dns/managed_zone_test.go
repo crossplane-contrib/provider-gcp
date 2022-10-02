@@ -44,9 +44,8 @@ const (
 )
 
 var (
-	nonManagedZone     resource.Managed
-	errManagedZoneBoom = errors.New("boom")
-	managedZoneLabels  = map[string]string{"foo": "bar"}
+	nonManagedZone    resource.Managed
+	managedZoneLabels = map[string]string{"foo": "bar"}
 )
 
 type ManagedZoneOption func(*v1alpha1.ManagedZone)
@@ -140,32 +139,6 @@ func TestManagedZoneObserve(t *testing.T) {
 					t.Error(err)
 				}
 			}),
-		},
-		"UpdateResourceSpecFail": {
-			reason: "Should return an error if the internal update fails",
-			args: args{
-				mg: newManagedZone(),
-			},
-			want: want{
-				e:   managed.ExternalObservation{},
-				err: errors.Wrap(errManagedZoneBoom, errUpdateManagedZone),
-			},
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_ = r.Body.Close()
-				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-					t.Errorf("r: -want, +got:\n%s", diff)
-				}
-				w.WriteHeader(http.StatusOK)
-				cr := newManagedZone(withLabels(managedZoneLabels))
-				mz := &dns.ManagedZone{}
-				mzclient.GenerateManagedZone(meta.GetExternalName(cr), cr.Spec.ForProvider, mz)
-				if err := json.NewEncoder(w).Encode(mz); err != nil {
-					t.Error(err)
-				}
-			}),
-			kube: &test.MockClient{
-				MockUpdate: test.NewMockUpdateFn(errManagedZoneBoom),
-			},
 		},
 		"UpdateResourceSpecSuccess": {
 			reason: "Should not return an error if the internal update succeeds",

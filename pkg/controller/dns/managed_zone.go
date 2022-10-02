@@ -46,7 +46,6 @@ const (
 	errGetManagedZone      = "cannot get the DNS ManagedZone"
 	errCreateManagedZone   = "cannot create DNS ManagedZone"
 	errDeleteManagedZone   = "cannot delete DNS ManagedZone"
-	errUpdateManagedZone   = "cannot update DNS ManagedZone custom resource"
 	errUpToDateManagedZone = "cannot determine if ManagedZone is up to date"
 )
 
@@ -109,7 +108,7 @@ func (e *managedZoneExternal) Observe(ctx context.Context, mg resource.Managed) 
 		return managed.ExternalObservation{}, errors.New(errNotManagedZone)
 	}
 
-	mz, err := e.dns.Get(
+	observed, err := e.dns.Get(
 		e.projectID,
 		meta.GetExternalName(cr),
 	).Context(ctx).Do()
@@ -122,22 +121,19 @@ func (e *managedZoneExternal) Observe(ctx context.Context, mg resource.Managed) 
 
 	lateInit := false
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
-	mzclient.LateInitializeSpec(&cr.Spec.ForProvider, *mz)
+	mzclient.LateInitializeSpec(&cr.Spec.ForProvider, *observed)
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
-		if err := e.kube.Update(ctx, cr); err != nil {
-			return managed.ExternalObservation{}, errors.Wrap(err, errUpdateManagedZone)
-		}
 		lateInit = true
 	}
 
-	cr.Status.AtProvider = mzclient.GenerateManagedZoneObservation(mz)
+	cr.Status.AtProvider = mzclient.GenerateManagedZoneObservation(*observed)
 
 	cr.SetConditions(xpv1.Available())
 
 	upToDate, err := mzclient.IsUpToDate(
 		meta.GetExternalName(cr),
 		&cr.Spec.ForProvider,
-		mz)
+		observed)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errUpToDateManagedZone)
 	}
