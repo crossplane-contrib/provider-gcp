@@ -413,6 +413,14 @@ func GenerateNetworkConfig(in *v1beta2.NetworkConfigSpec, cluster *container.Clu
 			}
 			cluster.NetworkConfig.DefaultSnatStatus.Disabled = in.DefaultSnatStatus.Disabled
 		}
+		if in.DnsConfig != nil {
+			if cluster.NetworkConfig.DnsConfig == nil {
+				cluster.NetworkConfig.DnsConfig = &container.DNSConfig{}
+			}
+			cluster.NetworkConfig.DnsConfig.ClusterDns = in.DnsConfig.ClusterDns
+			cluster.NetworkConfig.DnsConfig.ClusterDnsScope = in.DnsConfig.ClusterDnsScope
+			cluster.NetworkConfig.DnsConfig.ClusterDnsDomain = in.DnsConfig.ClusterDnsDomain
+		}
 	}
 }
 
@@ -1099,6 +1107,20 @@ func newDatapathProviderUpdateFn(in *string) UpdateFn {
 	}
 }
 
+// newDNSConfigUpdateFn returns a function that updates the DnsConfig of a cluster
+func newDNSConfigUpdateFn(in *v1beta2.NetworkConfigSpec) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateNetworkConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredDnsConfig: out.NetworkConfig.DnsConfig,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
 // newIntraNodeVisibilityConfigUpdateFn returns a function that updates the
 // IntraNodeVisibility of a cluster.
 func newIntraNodeVisibilityConfigUpdateFn(in *bool) UpdateFn {
@@ -1311,6 +1333,9 @@ func IsUpToDate(name string, in *v1beta2.ClusterParameters, observed *container.
 		}
 		if !cmp.Equal(desired.NetworkConfig.DatapathProvider, observed.NetworkConfig.DatapathProvider, cmpopts.EquateEmpty()) {
 			return false, newDatapathProviderUpdateFn(in.NetworkConfig.DatapathProvider), nil
+		}
+		if !cmp.Equal(desired.NetworkConfig.DnsConfig, observed.NetworkConfig.DnsConfig, cmpopts.EquateEmpty()) {
+			return false, newDNSConfigUpdateFn(in.NetworkConfig), nil
 		}
 	}
 

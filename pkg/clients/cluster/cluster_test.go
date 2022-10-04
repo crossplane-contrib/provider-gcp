@@ -1028,12 +1028,22 @@ func TestGenerateNetworkConfig(t *testing.T) {
 				params: params(func(p *v1beta2.ClusterParameters) {
 					p.NetworkConfig = &v1beta2.NetworkConfigSpec{
 						EnableIntraNodeVisibility: gcp.BoolPtr(true),
+						DnsConfig: &v1beta2.DnsConfig{
+							ClusterDns:       "CLOUD_DNS",
+							ClusterDnsDomain: "crossplane.io",
+							ClusterDnsScope:  "VPC_SCOPE",
+						},
 					}
 				}),
 			},
 			want: cluster(func(c *container.Cluster) {
 				c.NetworkConfig = &container.NetworkConfig{
 					EnableIntraNodeVisibility: true,
+					DnsConfig: &container.DNSConfig{
+						ClusterDns:       "CLOUD_DNS",
+						ClusterDnsDomain: "crossplane.io",
+						ClusterDnsScope:  "VPC_SCOPE",
+					},
 				}
 			}),
 		},
