@@ -53,6 +53,7 @@ func GenerateSubscription(projectID, name string, p v1alpha1.SubscriptionParamet
 	setDeadLetterPolicy(projectID, p, s)
 	setExpirationPolicy(p, s)
 	setPushConfig(p, s)
+	setBigQueryConfig(p, s)
 	setRetryPolicy(p, s)
 
 	return s
@@ -81,6 +82,18 @@ func setPushConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
 				Audience:            p.PushConfig.OidcToken.Audience,
 				ServiceAccountEmail: p.PushConfig.OidcToken.ServiceAccountEmail,
 			}
+		}
+	}
+}
+
+// setBigQueryConfig sets BigQueryConfig of subscription based on SubscriptionParameters.
+func setBigQueryConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
+	if p.BigQueryConfig != nil {
+		s.BigqueryConfig = &pubsub.BigQueryConfig{
+			Table:             p.BigQueryConfig.Table,
+			UseTopicSchema:    p.BigQueryConfig.UseTopicSchema,
+			WriteMetadata:     p.BigQueryConfig.WriteMetadata,
+			DropUnknownFields: p.BigQueryConfig.DropUnknownFields,
 		}
 	}
 }
@@ -169,6 +182,15 @@ func LateInitialize(p *v1alpha1.SubscriptionParameters, s pubsub.Subscription) {
 		}
 	}
 
+	if p.BigQueryConfig == nil && s.BigqueryConfig != nil {
+		p.BigQueryConfig = &v1alpha1.BigQueryConfig{
+			Table:             s.BigqueryConfig.Table,
+			DropUnknownFields: s.BigqueryConfig.DropUnknownFields,
+			UseTopicSchema:    s.BigqueryConfig.UseTopicSchema,
+			WriteMetadata:     s.BigqueryConfig.WriteMetadata,
+		}
+	}
+
 	if p.RetryPolicy == nil && s.RetryPolicy != nil {
 		p.RetryPolicy = &v1alpha1.RetryPolicy{
 			MaximumBackoff: s.RetryPolicy.MaximumBackoff,
@@ -195,7 +217,7 @@ func IsUpToDate(projectID string, p v1alpha1.SubscriptionParameters, s pubsub.Su
 // GenerateUpdateRequest produces an UpdateSubscriptionRequest with the difference
 // between SubscriptionParameters and Subscription.
 // enableMessageOrdering, deadLetterPolicy, topic are not mutable
-func GenerateUpdateRequest(name string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) *pubsub.UpdateSubscriptionRequest {
+func GenerateUpdateRequest(name string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) *pubsub.UpdateSubscriptionRequest { // nolint:gocyclo
 	observed := &v1alpha1.SubscriptionParameters{}
 	LateInitialize(observed, s)
 
@@ -243,6 +265,11 @@ func GenerateUpdateRequest(name string, p v1alpha1.SubscriptionParameters, s pub
 	if !cmp.Equal(p.PushConfig, observed.PushConfig) {
 		mask = append(mask, "pushConfig")
 		setPushConfig(p, us.Subscription)
+	}
+
+	if !cmp.Equal(p.BigQueryConfig, observed.BigQueryConfig) {
+		mask = append(mask, "bigQueryConfig")
+		setBigQueryConfig(p, us.Subscription)
 	}
 
 	if !cmp.Equal(p.RetryPolicy, observed.RetryPolicy) {

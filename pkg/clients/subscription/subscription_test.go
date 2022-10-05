@@ -95,6 +95,67 @@ func subscription() *pubsub.Subscription {
 	}
 }
 
+func bigqueryParams() *v1alpha1.SubscriptionParameters {
+	return &v1alpha1.SubscriptionParameters{
+		AckDeadlineSeconds: 15,
+		DeadLetterPolicy: &v1alpha1.DeadLetterPolicy{
+			DeadLetterTopic:     topicName,
+			MaxDeliveryAttempts: 5,
+		},
+		Detached:                 true,
+		EnableMessageOrdering:    true,
+		ExpirationPolicy:         &v1alpha1.ExpirationPolicy{TTL: "1296000s"},
+		Filter:                   "foo",
+		Labels:                   map[string]string{"example": "true"},
+		MessageRetentionDuration: "864000s",
+		PushConfig:               nil,
+		BigQueryConfig: &v1alpha1.BigQueryConfig{
+			Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+			UseTopicSchema:    true,
+			WriteMetadata:     true,
+			DropUnknownFields: true,
+		},
+		RetryPolicy: &v1alpha1.RetryPolicy{
+			MaximumBackoff: "100s",
+			MinimumBackoff: "15s",
+		},
+		RetainAckedMessages: true,
+		Topic:               topicName,
+	}
+}
+
+func bigquerySubscription() *pubsub.Subscription {
+	return &pubsub.Subscription{
+		Name:               name,
+		AckDeadlineSeconds: 15,
+		DeadLetterPolicy: &pubsub.DeadLetterPolicy{
+			DeadLetterTopic:     topicNameExternal,
+			MaxDeliveryAttempts: 5,
+		},
+		Detached:              true,
+		EnableMessageOrdering: true,
+		ExpirationPolicy:      &pubsub.ExpirationPolicy{Ttl: "1296000s"},
+		Filter:                "foo",
+		Labels: map[string]string{
+			"example": "true",
+		},
+		MessageRetentionDuration: "864000s",
+		PushConfig:               nil,
+		BigqueryConfig: &pubsub.BigQueryConfig{
+			Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+			UseTopicSchema:    true,
+			WriteMetadata:     true,
+			DropUnknownFields: true,
+		},
+		RetryPolicy: &pubsub.RetryPolicy{
+			MaximumBackoff: "100s",
+			MinimumBackoff: "15s",
+		},
+		RetainAckedMessages: true,
+		Topic:               topicNameExternal,
+	}
+}
+
 func TestGenerateSubscription(t *testing.T) {
 	type args struct {
 		projectID string
@@ -112,6 +173,36 @@ func TestGenerateSubscription(t *testing.T) {
 				s:         *params(),
 			},
 			out: subscription(),
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := GenerateSubscription(tc.projectID, tc.name, tc.s)
+			if diff := cmp.Diff(tc.out, got); diff != "" {
+				t.Errorf("GenerateSubscription(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGenerateBigquerySubscription(t *testing.T) {
+	type args struct {
+		projectID string
+		name      string
+		s         v1alpha1.SubscriptionParameters
+	}
+	cases := map[string]struct {
+		args
+		out *pubsub.Subscription
+	}{
+		"Full": {
+			args: args{
+				projectID: projectID,
+				name:      name,
+				s:         *bigqueryParams(),
+			},
+			out: bigquerySubscription(),
 		},
 	}
 
@@ -179,6 +270,59 @@ func TestLateInitialize(t *testing.T) {
 	}
 }
 
+func TestLateInitializeBigquery(t *testing.T) {
+	type args struct {
+		obs   pubsub.Subscription
+		param *v1alpha1.SubscriptionParameters
+	}
+	cases := map[string]struct {
+		args
+		out *v1alpha1.SubscriptionParameters
+	}{
+		"Full": {
+			args: args{
+				obs: *bigquerySubscription(),
+				param: &v1alpha1.SubscriptionParameters{
+					AckDeadlineSeconds: 15,
+					DeadLetterPolicy: &v1alpha1.DeadLetterPolicy{
+						DeadLetterTopic:     topicName,
+						MaxDeliveryAttempts: 5,
+					},
+					Detached:                 true,
+					EnableMessageOrdering:    true,
+					ExpirationPolicy:         &v1alpha1.ExpirationPolicy{TTL: "1296000s"},
+					Filter:                   "foo",
+					Labels:                   map[string]string{"example": "true"},
+					MessageRetentionDuration: "864000s",
+					PushConfig:               nil,
+					BigQueryConfig: &v1alpha1.BigQueryConfig{
+						Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+						UseTopicSchema:    true,
+						WriteMetadata:     true,
+						DropUnknownFields: true,
+					},
+					RetryPolicy: &v1alpha1.RetryPolicy{
+						MaximumBackoff: "100s",
+						MinimumBackoff: "15s",
+					},
+					RetainAckedMessages: true,
+					Topic:               topicName,
+				},
+			},
+			out: bigqueryParams(),
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			LateInitialize(tc.args.param, tc.args.obs)
+			if diff := cmp.Diff(tc.args.param, tc.out); diff != "" {
+				t.Errorf("LateInitialize(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestIsUpToDate(t *testing.T) {
 	type args struct {
 		obs   pubsub.Subscription
@@ -217,6 +361,44 @@ func TestIsUpToDate(t *testing.T) {
 	}
 }
 
+func TestIsUpToDateBigquery(t *testing.T) {
+	type args struct {
+		obs   pubsub.Subscription
+		param v1alpha1.SubscriptionParameters
+	}
+	cases := map[string]struct {
+		args
+		result bool
+	}{
+		"NotUpToDate": {
+			args: args{
+				obs: *bigquerySubscription(),
+				param: v1alpha1.SubscriptionParameters{
+					RetryPolicy: nil,
+				},
+			},
+			result: false,
+		},
+		"UpToDate": {
+			args: args{
+				obs:   *bigquerySubscription(),
+				param: *bigqueryParams(),
+			},
+			result: true,
+		},
+	}
+
+	IsUpToDate(projectID, *bigqueryParams(), *bigquerySubscription())
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := IsUpToDate(projectID, tc.args.param, tc.args.obs)
+			if diff := cmp.Diff(tc.result, got); diff != "" {
+				t.Errorf("IsUpToDate(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestGenerateUpdateRequest(t *testing.T) {
 	mutableSubscription := subscription()
 	mutableSubscription.Topic = ""
@@ -244,6 +426,47 @@ func TestGenerateUpdateRequest(t *testing.T) {
 			result: &pubsub.UpdateSubscriptionRequest{
 				Subscription: mutableSubscription,
 				UpdateMask:   "ackDeadlineSeconds,detached,filter,labels,messageRetentionDuration,retainAckedMessages,expirationPolicy,pushConfig,retryPolicy",
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := GenerateUpdateRequest(tc.args.name, tc.args.param, tc.args.obs)
+			if diff := cmp.Diff(tc.result, got); diff != "" {
+				t.Errorf("GenerateUpdateRequest(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGenerateUpdateRequestBigquery(t *testing.T) {
+	mutableSubscription := bigquerySubscription()
+	mutableSubscription.Topic = ""
+	mutableSubscription.EnableMessageOrdering = false
+	mutableSubscription.DeadLetterPolicy = nil
+
+	type args struct {
+		projectID string
+		name      string
+		obs       pubsub.Subscription
+		param     v1alpha1.SubscriptionParameters
+	}
+
+	cases := map[string]struct {
+		args
+		result *pubsub.UpdateSubscriptionRequest
+	}{
+		"Full": {
+			args: args{
+				projectID: projectID,
+				name:      name,
+				obs:       pubsub.Subscription{},
+				param:     *bigqueryParams(),
+			},
+			result: &pubsub.UpdateSubscriptionRequest{
+				Subscription: mutableSubscription,
+				UpdateMask:   "ackDeadlineSeconds,detached,filter,labels,messageRetentionDuration,retainAckedMessages,expirationPolicy,bigQueryConfig,retryPolicy",
 			},
 		},
 	}

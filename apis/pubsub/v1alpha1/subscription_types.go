@@ -87,6 +87,10 @@ type SubscriptionParameters struct {
 	// +optional
 	PushConfig *PushConfig `json:"pushConfig,omitempty"`
 
+	// BigQueryConfig is a parameter which configures bigquery delivery.
+	// +optional
+	BigQueryConfig *BigQueryConfig `json:"bigQueryConfig,omitempty"`
+
 	// RetainAckedMessages is a message which indicates whether to retain acknowledged
 	// messages. If true, then messages are not expunged from the
 	// subscription's backlog, even if they are acknowledged, until they
@@ -141,6 +145,26 @@ type PushConfig struct {
 	// PushEndpoint is a URL locating the endpoint to which messages should be
 	// pushed.
 	PushEndpoint string `json:"pushEndpoint,omitempty"`
+}
+
+// BigQueryConfig contains configuration for a bigquery delivery endpoint.
+type BigQueryConfig struct {
+	// Bigquery table to deliver messages to.
+	Table string `json:"table,omitempty"`
+
+	// When enabled, the topic schema will be used when writing to BigQuery. Else,
+	// tes the message bytes to a column called data in BigQuery.
+	UseTopicSchema bool `json:"useTopicSchema,omitempty"`
+
+	// When enabled, the metadata of each message is written to additional columns in
+	// the BigQuery table. Else, the metadata is not written to the BigQuery table.
+	// https://cloud.google.com/pubsub/docs/bigquery?hl=ru#write-metadata
+	WriteMetadata bool `json:"writeMetadata,omitempty"`
+
+	// When enabled along with the "Use topic schema" option, any field that is present in
+	// the topic schema but not in the BigQuery schema will be dropped. Else, messages with extra fields are not written
+	// and remain in the subscription backlog.
+	DropUnknownFields bool `json:"dropUnknownFields,omitempty"`
 }
 
 // OidcToken contains information needed for generating an OpenID Connect token
