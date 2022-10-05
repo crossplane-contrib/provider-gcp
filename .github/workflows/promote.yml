@@ -36,7 +36,7 @@ jobs:
         if: env.CONTRIB_DOCKER_USR != ''
         with:
           username: ${{ secrets.CONTRIB_DOCKER_USR }}
-          password: ${{ secrets.DOCKER_PSW }}
+          password: ${{ secrets.CONTRIB_DOCKER_PSW }}
 
       - name: Promote Artifacts in S3 and Docker Hub
         if: env.AWS_USR != '' && env.CONTRIB_DOCKER_USR != ''
