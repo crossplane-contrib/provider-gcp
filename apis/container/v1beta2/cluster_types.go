@@ -1256,6 +1256,10 @@ type NetworkConfigSpec struct {
 	// access to and from Google Services
 	// +optional
 	PrivateIpv6GoogleAccess *string `json:"privateIpv6GoogleAccess,omitempty"`
+
+	// DNSConfig contains the desired set of options for configuring clusterDNS.
+	// +optional
+	DnsConfig *DnsConfig `json:"dnsConfig,omitempty"`
 }
 
 // DefaultSnatStatus contains the desired state of whether default sNAT should
@@ -1263,6 +1267,32 @@ type NetworkConfigSpec struct {
 type DefaultSnatStatus struct {
 	// Disabled: Disables cluster default sNAT rules.
 	Disabled bool `json:"disabled"`
+}
+
+// DnsConfig contains the desired set of options for configuring clusterDNS.
+type DnsConfig struct {
+	// ClusterDns indicates which in-cluster DNS provider should be used.
+	// Possible values:
+	//   "PROVIDER_UNSPECIFIED" - indicates the default value.
+	//   "PLATFORM_DEFAULT" - indicates using the GKE default DNS
+	//  provider(kube-dns) for DNS resolution.
+	//   "CLOUD_DNS" - indicates using CloudDNS for DNS resolution.
+	// +kubebuilder:validation:Enum=PROVIDER_UNSPECIFIED;PLATFORM_DEFAULT;CLOUD_DNS
+	// +optional
+	ClusterDns *string `json:"clusterDns,omitempty"`
+
+	// ClusterDnsScope indicates the scope of access to cluster DNS records.
+	// Possible Values:
+	//   "DNS_SCOPE_UNSPECIFIED" - indicates the default value,
+	//  will be inferred as cluster scope.
+	//   "VPC_SCOPE" - indicates that DNS records are accessible from within the VPC.
+	// +kubebuilder:validation:Enum=DNS_SCOPE_UNSPECIFIED;VPC_SCOPE
+	// +optional
+	ClusterDnsScope *string `json:"clusterDnsScope,omitempty"`
+
+	// ClusterDnsDomain is the suffix used for all cluster service records.
+	// +optional
+	ClusterDnsDomain *string `json:"clusterDnsDomain,omitempty"`
 }
 
 // NetworkConfigStatus reports the relative names of network &
