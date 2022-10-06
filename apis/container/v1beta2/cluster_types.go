@@ -1258,6 +1258,7 @@ type NetworkConfigSpec struct {
 	PrivateIpv6GoogleAccess *string `json:"privateIpv6GoogleAccess,omitempty"`
 
 	// DNSConfig contains the desired set of options for configuring clusterDNS.
+	// +optional
 	DnsConfig *DnsConfig `json:"dnsConfig,omitempty"`
 }
 
@@ -1276,17 +1277,22 @@ type DnsConfig struct {
 	//   "PLATFORM_DEFAULT" - indicates using the GKE default DNS
 	//  provider(kube-dns) for DNS resolution.
 	//   "CLOUD_DNS" - indicates using CloudDNS for DNS resolution.
-	ClusterDns string `json:"clusterDns,omitempty"`
+	// +kubebuilder:validation:Enum=PROVIDER_UNSPECIFIED;PLATFORM_DEFAULT;CLOUD_DNS
+	// +optional
+	ClusterDns *string `json:"clusterDns,omitempty"`
 
 	// ClusterDnsScope indicates the scope of access to cluster DNS records.
 	// Possible Values:
 	//   "DNS_SCOPE_UNSPECIFIED" - indicates the default value,
 	//  will be inferred as cluster scope.
 	//   "VPC_SCOPE" - indicates that DNS records are accessible from within the VPC.
-	ClusterDnsScope string `json:"clusterDnsScope,omitempty"`
+	// +kubebuilder:validation:Enum=DNS_SCOPE_UNSPECIFIED;VPC_SCOPE
+	// +optional
+	ClusterDnsScope *string `json:"clusterDnsScope,omitempty"`
 
 	// ClusterDnsDomain is the suffix used for all cluster service records.
-	ClusterDnsDomain string `json:"clusterDnsDomain,omitempty"`
+	// +optional
+	ClusterDnsDomain *string `json:"clusterDnsDomain,omitempty"`
 }
 
 // NetworkConfigStatus reports the relative names of network &

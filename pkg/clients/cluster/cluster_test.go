@@ -1013,6 +1013,10 @@ func TestGenerateMasterAuthorizedNetworksConfig(t *testing.T) {
 }
 
 func TestGenerateNetworkConfig(t *testing.T) {
+	var clusterDNS = "CLOUD_DNS"
+	var clusterDNSDomain = "crossplane.io"
+	var clusterDNSScope = "VPC_SCOPE"
+
 	type args struct {
 		cluster *container.Cluster
 		params  *v1beta2.ClusterParameters
@@ -1029,9 +1033,9 @@ func TestGenerateNetworkConfig(t *testing.T) {
 					p.NetworkConfig = &v1beta2.NetworkConfigSpec{
 						EnableIntraNodeVisibility: gcp.BoolPtr(true),
 						DnsConfig: &v1beta2.DnsConfig{
-							ClusterDns:       "CLOUD_DNS",
-							ClusterDnsDomain: "crossplane.io",
-							ClusterDnsScope:  "VPC_SCOPE",
+							ClusterDns:       &clusterDNS,
+							ClusterDnsDomain: &clusterDNSDomain,
+							ClusterDnsScope:  &clusterDNSScope,
 						},
 					}
 				}),
@@ -1040,9 +1044,9 @@ func TestGenerateNetworkConfig(t *testing.T) {
 				c.NetworkConfig = &container.NetworkConfig{
 					EnableIntraNodeVisibility: true,
 					DnsConfig: &container.DNSConfig{
-						ClusterDns:       "CLOUD_DNS",
-						ClusterDnsDomain: "crossplane.io",
-						ClusterDnsScope:  "VPC_SCOPE",
+						ClusterDns:       clusterDNS,
+						ClusterDnsDomain: clusterDNSDomain,
+						ClusterDnsScope:  clusterDNSScope,
 					},
 				}
 			}),
@@ -1410,6 +1414,10 @@ func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 func TestLateInitializeSpec(t *testing.T) {
 	var adminUser = "admin"
 
+	var clusterDNS = "CLOUD_DNS"
+	var clusterDNSDomain = "crossplane.io"
+	var clusterDNSScope = "VPC_SCOPE"
+
 	type args struct {
 		cluster *container.Cluster
 		params  *v1beta2.ClusterParameters
@@ -1432,6 +1440,13 @@ func TestLateInitializeSpec(t *testing.T) {
 					c.IpAllocationPolicy = &container.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: "0.0.0.0/0",
 					}
+					c.NetworkConfig = &container.NetworkConfig{
+						DnsConfig: &container.DNSConfig{
+							ClusterDns:       "CLOUD_DNS",
+							ClusterDnsDomain: "crossplane.io",
+							ClusterDnsScope:  "VPC_SCOPE",
+						},
+					}
 				}),
 				params: params(),
 			},
@@ -1444,6 +1459,13 @@ func TestLateInitializeSpec(t *testing.T) {
 					}
 					p.IPAllocationPolicy = &v1beta2.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
+					}
+					p.NetworkConfig = &v1beta2.NetworkConfigSpec{
+						DnsConfig: &v1beta2.DnsConfig{
+							ClusterDns:       &clusterDNS,
+							ClusterDnsDomain: &clusterDNSDomain,
+							ClusterDnsScope:  &clusterDNSScope,
+						},
 					}
 				}),
 			},
@@ -1626,6 +1648,28 @@ func TestIsUpToDate(t *testing.T) {
 					c.NodePools = []*container.NodePool{np}
 				}),
 				params: params(),
+			},
+			want: want{
+				upToDate: false,
+				isErr:    false,
+			},
+		},
+		"NeedsUpdateDnsConfig": {
+			args: args{
+				name:    name,
+				cluster: cluster(),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					var clusterDNS = "CLOUD_DNS"
+					var clusterDNSDomain = "crossplane.io"
+					var clusterDNSScope = "VPC_SCOPE"
+					p.NetworkConfig = &v1beta2.NetworkConfigSpec{
+						DnsConfig: &v1beta2.DnsConfig{
+							ClusterDns:       &clusterDNS,
+							ClusterDnsDomain: &clusterDNSDomain,
+							ClusterDnsScope:  &clusterDNSScope,
+						},
+					}
+				}),
 			},
 			want: want{
 				upToDate: false,

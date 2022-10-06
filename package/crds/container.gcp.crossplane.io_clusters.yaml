@@ -768,6 +768,10 @@ spec:
                               indicates using the GKE default DNS provider(kube-dns)
                               for DNS resolution. "CLOUD_DNS" - indicates using CloudDNS
                               for DNS resolution.'
+                            enum:
+                            - PROVIDER_UNSPECIFIED
+                            - PLATFORM_DEFAULT
+                            - CLOUD_DNS
                             type: string
                           clusterDnsDomain:
                             description: ClusterDnsDomain is the suffix used for all
@@ -779,6 +783,9 @@ spec:
                               - indicates the default value, will be inferred as cluster
                               scope. "VPC_SCOPE" - indicates that DNS records are
                               accessible from within the VPC.'
+                            enum:
+                            - DNS_SCOPE_UNSPECIFIED
+                            - VPC_SCOPE
                             type: string
                         type: object
                       enableIntraNodeVisibility:

@@ -417,9 +417,9 @@ func GenerateNetworkConfig(in *v1beta2.NetworkConfigSpec, cluster *container.Clu
 			if cluster.NetworkConfig.DnsConfig == nil {
 				cluster.NetworkConfig.DnsConfig = &container.DNSConfig{}
 			}
-			cluster.NetworkConfig.DnsConfig.ClusterDns = in.DnsConfig.ClusterDns
-			cluster.NetworkConfig.DnsConfig.ClusterDnsScope = in.DnsConfig.ClusterDnsScope
-			cluster.NetworkConfig.DnsConfig.ClusterDnsDomain = in.DnsConfig.ClusterDnsDomain
+			cluster.NetworkConfig.DnsConfig.ClusterDns = gcp.StringValue(in.DnsConfig.ClusterDns)
+			cluster.NetworkConfig.DnsConfig.ClusterDnsScope = gcp.StringValue(in.DnsConfig.ClusterDnsScope)
+			cluster.NetworkConfig.DnsConfig.ClusterDnsDomain = gcp.StringValue(in.DnsConfig.ClusterDnsDomain)
 		}
 	}
 }
@@ -888,6 +888,14 @@ func LateInitializeSpec(spec *v1beta2.ClusterParameters, in container.Cluster) {
 			spec.NetworkConfig.DefaultSnatStatus = &v1beta2.DefaultSnatStatus{
 				Disabled: in.NetworkConfig.DefaultSnatStatus.Disabled,
 			}
+		}
+		if in.NetworkConfig.DnsConfig != nil {
+			if spec.NetworkConfig.DnsConfig == nil {
+				spec.NetworkConfig.DnsConfig = &v1beta2.DnsConfig{}
+			}
+			spec.NetworkConfig.DnsConfig.ClusterDns = gcp.LateInitializeString(spec.NetworkConfig.DnsConfig.ClusterDns, in.NetworkConfig.DnsConfig.ClusterDns)
+			spec.NetworkConfig.DnsConfig.ClusterDnsScope = gcp.LateInitializeString(spec.NetworkConfig.DnsConfig.ClusterDnsScope, in.NetworkConfig.DnsConfig.ClusterDnsScope)
+			spec.NetworkConfig.DnsConfig.ClusterDnsDomain = gcp.LateInitializeString(spec.NetworkConfig.DnsConfig.ClusterDnsDomain, in.NetworkConfig.DnsConfig.ClusterDnsDomain)
 		}
 	}
 
