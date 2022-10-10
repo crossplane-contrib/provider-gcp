@@ -341,6 +341,11 @@ func (in *TopicParameters) DeepCopyInto(out *TopicParameters) {
 		*out = new(MessageStoragePolicy)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.MessageRetentionDuration != nil {
+		in, out := &in.MessageRetentionDuration, &out.MessageRetentionDuration
+		*out = new(string)
+		**out = **in
+	}
 	if in.KmsKeyName != nil {
 		in, out := &in.KmsKeyName, &out.KmsKeyName
 		*out = new(string)

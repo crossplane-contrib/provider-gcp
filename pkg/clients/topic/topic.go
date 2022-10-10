@@ -19,8 +19,10 @@ package topic
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	pubsub "google.golang.org/api/pubsub/v1"
 
 	"github.com/crossplane-contrib/provider-gcp/apis/pubsub/v1alpha1"
@@ -48,6 +50,9 @@ func GenerateTopic(name string, s v1alpha1.TopicParameters) *pubsub.Topic {
 			AllowedPersistenceRegions: s.MessageStoragePolicy.AllowedPersistenceRegions,
 		}
 	}
+	if s.MessageRetentionDuration != nil {
+		t.MessageRetentionDuration = gcp.StringValue(s.MessageRetentionDuration)
+	}
 	return t
 }
 
@@ -66,13 +71,35 @@ func LateInitialize(s *v1alpha1.TopicParameters, t pubsub.Topic) {
 	if s.MessageStoragePolicy == nil && t.MessageStoragePolicy != nil {
 		s.MessageStoragePolicy = &v1alpha1.MessageStoragePolicy{AllowedPersistenceRegions: t.MessageStoragePolicy.AllowedPersistenceRegions}
 	}
+	if s.MessageRetentionDuration == nil && len(t.MessageRetentionDuration) != 0 {
+		s.MessageRetentionDuration = gcp.StringPtr(t.MessageRetentionDuration)
+	}
 }
 
 // IsUpToDate checks whether Topic is configured with given TopicParameters.
 func IsUpToDate(s v1alpha1.TopicParameters, t pubsub.Topic) bool {
 	observed := &v1alpha1.TopicParameters{}
 	LateInitialize(observed, t)
-	return cmp.Equal(observed, &s)
+
+	observedDuration := convertDuration(observed.MessageRetentionDuration)
+	sDuration := convertDuration(s.MessageRetentionDuration)
+	if observedDuration != sDuration {
+		return false
+	}
+
+	return cmp.Equal(observed, &s, cmpopts.IgnoreFields(v1alpha1.TopicParameters{}, "MessageRetentionDuration"))
+}
+
+func convertDuration(duration *string) time.Duration {
+	if duration == nil {
+		return 0
+	}
+
+	// From here we know that "duration" has a valid duration string
+	// format because of the kubebuilder Pattern validator, so we can
+	// ignore time.ParseDuration errors
+	d, _ := time.ParseDuration(*duration)
+	return d
 }
 
 // GenerateUpdateRequest produces an UpdateTopicRequest with the difference
@@ -90,6 +117,12 @@ func GenerateUpdateRequest(name string, s v1alpha1.TopicParameters, t pubsub.Top
 			ut.Topic.MessageStoragePolicy = &pubsub.MessageStoragePolicy{
 				AllowedPersistenceRegions: s.MessageStoragePolicy.AllowedPersistenceRegions,
 			}
+		}
+	}
+	if !cmp.Equal(s.MessageRetentionDuration, observed.MessageRetentionDuration) {
+		mask = append(mask, "messageRetentionDuration")
+		if s.MessageRetentionDuration != nil {
+			ut.Topic.MessageRetentionDuration = gcp.StringValue(s.MessageRetentionDuration)
 		}
 	}
 	if !cmp.Equal(s.Labels, observed.Labels) {
