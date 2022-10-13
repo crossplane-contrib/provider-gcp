@@ -454,6 +454,25 @@ func TestGenerateAutoscaling(t *testing.T) {
 				}
 			}),
 		},
+		"SuccessfulWithAutoscalingProfile": {
+			args: args{
+				cluster: cluster(),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.Autoscaling = &v1beta2.ClusterAutoscaling{
+						AutoprovisioningLocations:  []string{"here", "there"},
+						AutoscalingProfile:         gcp.StringPtr("OPTIMIZE_UTILIZATION"),
+						EnableNodeAutoprovisioning: gcp.BoolPtr(true),
+					}
+				}),
+			},
+			want: cluster(func(c *container.Cluster) {
+				c.Autoscaling = &container.ClusterAutoscaling{
+					AutoprovisioningLocations:  []string{"here", "there"},
+					AutoscalingProfile:         "OPTIMIZE_UTILIZATION",
+					EnableNodeAutoprovisioning: true,
+				}
+			}),
+		},
 		"SuccessfulWithResourceLimits": {
 			args: args{
 				cluster: cluster(),
@@ -1417,6 +1436,7 @@ func TestLateInitializeSpec(t *testing.T) {
 	var clusterDNS = "CLOUD_DNS"
 	var clusterDNSDomain = "crossplane.io"
 	var clusterDNSScope = "VPC_SCOPE"
+	var autoScalingProfile = "BALANCED"
 
 	type args struct {
 		cluster *container.Cluster
@@ -1437,6 +1457,9 @@ func TestLateInitializeSpec(t *testing.T) {
 							Disabled: true,
 						},
 					}
+					c.Autoscaling = &container.ClusterAutoscaling{
+						AutoscalingProfile: "BALANCED",
+					}
 					c.IpAllocationPolicy = &container.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: "0.0.0.0/0",
 					}
@@ -1456,6 +1479,9 @@ func TestLateInitializeSpec(t *testing.T) {
 						HTTPLoadBalancing: &v1beta2.HTTPLoadBalancing{
 							Disabled: true,
 						},
+					}
+					p.Autoscaling = &v1beta2.ClusterAutoscaling{
+						AutoscalingProfile: &autoScalingProfile,
 					}
 					p.IPAllocationPolicy = &v1beta2.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),
@@ -1478,6 +1504,9 @@ func TestLateInitializeSpec(t *testing.T) {
 							Disabled: true,
 						},
 					}
+					c.Autoscaling = &container.ClusterAutoscaling{
+						AutoscalingProfile: "OPTIMIZE_UTILIZATION",
+					}
 					c.IpAllocationPolicy = &container.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: "0.0.0.0/0",
 					}
@@ -1486,6 +1515,9 @@ func TestLateInitializeSpec(t *testing.T) {
 					}
 				}),
 				params: params(func(p *v1beta2.ClusterParameters) {
+					p.Autoscaling = &v1beta2.ClusterAutoscaling{
+						AutoscalingProfile: &autoScalingProfile,
+					}
 					p.MasterAuth = &v1beta2.MasterAuth{
 						Username: &adminUser,
 					}
@@ -1497,6 +1529,9 @@ func TestLateInitializeSpec(t *testing.T) {
 						HTTPLoadBalancing: &v1beta2.HTTPLoadBalancing{
 							Disabled: true,
 						},
+					}
+					p.Autoscaling = &v1beta2.ClusterAutoscaling{
+						AutoscalingProfile: &autoScalingProfile,
 					}
 					p.IPAllocationPolicy = &v1beta2.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: gcp.StringPtr("0.0.0.0/0"),

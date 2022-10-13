@@ -233,6 +233,10 @@ func GenerateAutoscaling(in *v1beta2.ClusterAutoscaling, cluster *container.Clus
 			}
 		}
 
+		if in.AutoscalingProfile != nil {
+			cluster.Autoscaling.AutoscalingProfile = gcp.StringValue(in.AutoscalingProfile)
+		}
+
 		if len(in.ResourceLimits) > 0 {
 			cluster.Autoscaling.ResourceLimits = make([]*container.ResourceLimit, len(in.ResourceLimits))
 		}
@@ -749,6 +753,7 @@ func LateInitializeSpec(spec *v1beta2.ClusterParameters, in container.Cluster) {
 				spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable = gcp.LateInitializeInt64(spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable, in.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable)
 			}
 		}
+		spec.Autoscaling.AutoscalingProfile = gcp.LateInitializeString(spec.Autoscaling.AutoscalingProfile, in.Autoscaling.AutoscalingProfile)
 		spec.Autoscaling.EnableNodeAutoprovisioning = gcp.LateInitializeBool(spec.Autoscaling.EnableNodeAutoprovisioning, in.Autoscaling.EnableNodeAutoprovisioning)
 		if len(in.Autoscaling.ResourceLimits) != 0 && len(spec.Autoscaling.ResourceLimits) == 0 {
 			spec.Autoscaling.ResourceLimits = make([]*v1beta2.ResourceLimit, len(in.Autoscaling.ResourceLimits))
