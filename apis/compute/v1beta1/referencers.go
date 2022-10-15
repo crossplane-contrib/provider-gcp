@@ -39,6 +39,17 @@ func NetworkURL() reference.ExtractValueFn {
 	}
 }
 
+// NetworkSelfLink extracts the SelfLink of a Network.
+func NetworkSelfLink() reference.ExtractValueFn {
+	return func(mg resource.Managed) string {
+		n, ok := mg.(*Network)
+		if !ok {
+			return ""
+		}
+		return n.Status.AtProvider.SelfLink
+	}
+}
+
 // SubnetworkURL extracts the partially qualified URL of a Subnetwork.
 func SubnetworkURL() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {

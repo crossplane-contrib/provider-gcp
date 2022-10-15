@@ -79,7 +79,19 @@ type ManagedZonePrivateVisibilityConfigNetwork struct {
 	// NetworkUrl: The fully qualified URL of the VPC network to bind to.
 	// Format this URL like
 	// https://www.googleapis.com/compute/v1/projects/{project}/global/networks/{network}
-	NetworkURL *string `json:"networkUrl"`
+	// +optional
+	// +immutable
+	NetworkURL *string `json:"networkUrl,omitempty"`
+
+	// NetworkRef references to a Network and retrieves its URI
+	// +optional
+	// +immutable
+	NetworkRef *xpv1.Reference `json:"networkRef,omitempty"`
+
+	// NetworkSelector selects a reference to a Network and retrieves its URI
+	// +optional
+	// +immutable
+	NetworkSelector *xpv1.Selector `json:"networkSelector,omitempty"`
 }
 
 // ManagedZoneObservation is used to show the observed state of the ManagedZone
