@@ -39,7 +39,8 @@ func params() *v1alpha1.TopicParameters {
 		MessageStoragePolicy: &v1alpha1.MessageStoragePolicy{
 			AllowedPersistenceRegions: []string{"bar", "foo"},
 		},
-		KmsKeyName: gcp.StringPtr("mykms"),
+		KmsKeyName:               gcp.StringPtr("mykms"),
+		MessageRetentionDuration: gcp.StringPtr("600s"),
 	}
 }
 
@@ -52,7 +53,8 @@ func topic() *pubsub.Topic {
 		MessageStoragePolicy: &pubsub.MessageStoragePolicy{
 			AllowedPersistenceRegions: []string{"bar", "foo"},
 		},
-		KmsKeyName: "mykms",
+		KmsKeyName:               "mykms",
+		MessageRetentionDuration: "600s",
 	}
 }
 
@@ -121,6 +123,10 @@ func TestIsUpToDate(t *testing.T) {
 		obs   pubsub.Topic
 		param v1alpha1.TopicParameters
 	}
+
+	upToDateTopic := topic()
+	upToDateTopic.MessageRetentionDuration = "600.00s"
+
 	cases := map[string]struct {
 		args
 		result bool
@@ -136,7 +142,7 @@ func TestIsUpToDate(t *testing.T) {
 		},
 		"UpToDate": {
 			args: args{
-				obs:   *topic(),
+				obs:   *upToDateTopic,
 				param: *params(),
 			},
 			result: true,
@@ -175,7 +181,7 @@ func TestGenerateUpdateRequest(t *testing.T) {
 			},
 			result: &pubsub.UpdateTopicRequest{
 				Topic:      withoutKMS,
-				UpdateMask: "messageStoragePolicy,labels",
+				UpdateMask: "messageStoragePolicy,messageRetentionDuration,labels",
 			},
 		},
 	}

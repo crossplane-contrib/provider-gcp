@@ -4,7 +4,7 @@ metadata:
   name: provider-gcp
   annotations:
     meta.crossplane.io/maintainer: Crossplane Maintainers <info@crossplane.io>
-    meta.crossplane.io/source: github.com/crossplane/provider-gcp
+    meta.crossplane.io/source: github.com/crossplane-contrib/provider-gcp
     meta.crossplane.io/license: Apache-2.0
     meta.crossplane.io/description: |
       The Google Cloud Platform (GCP) Crossplane provider adds support for

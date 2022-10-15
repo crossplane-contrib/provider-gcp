@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: clusters.container.gcp.crossplane.io
 spec:
@@ -756,6 +756,37 @@ spec:
                             type: boolean
                         required:
                         - disabled
+                        type: object
+                      dnsConfig:
+                        description: DNSConfig contains the desired set of options
+                          for configuring clusterDNS.
+                        properties:
+                          clusterDns:
+                            description: 'ClusterDns indicates which in-cluster DNS
+                              provider should be used. Possible values: "PROVIDER_UNSPECIFIED"
+                              - indicates the default value. "PLATFORM_DEFAULT" -
+                              indicates using the GKE default DNS provider(kube-dns)
+                              for DNS resolution. "CLOUD_DNS" - indicates using CloudDNS
+                              for DNS resolution.'
+                            enum:
+                            - PROVIDER_UNSPECIFIED
+                            - PLATFORM_DEFAULT
+                            - CLOUD_DNS
+                            type: string
+                          clusterDnsDomain:
+                            description: ClusterDnsDomain is the suffix used for all
+                              cluster service records.
+                            type: string
+                          clusterDnsScope:
+                            description: 'ClusterDnsScope indicates the scope of access
+                              to cluster DNS records. Possible Values: "DNS_SCOPE_UNSPECIFIED"
+                              - indicates the default value, will be inferred as cluster
+                              scope. "VPC_SCOPE" - indicates that DNS records are
+                              accessible from within the VPC.'
+                            enum:
+                            - DNS_SCOPE_UNSPECIFIED
+                            - VPC_SCOPE
+                            type: string
                         type: object
                       enableIntraNodeVisibility:
                         description: 'EnableIntraNodeVisibility: Whether Intra-node
@@ -1816,9 +1847,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
