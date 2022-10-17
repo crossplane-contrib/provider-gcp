@@ -65,8 +65,8 @@ spec:
                       value of 10 seconds is used.
                     format: int64
                     type: integer
-                  bigQueryConfig:
-                    description: BigQueryConfig is a parameter which configures bigquery
+                  bigqueryConfig:
+                    description: BigqueryConfig is a parameter which configures bigquery
                       delivery.
                     properties:
                       dropUnknownFields:

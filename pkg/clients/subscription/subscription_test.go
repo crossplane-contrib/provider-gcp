@@ -109,7 +109,7 @@ func bigqueryParams() *v1alpha1.SubscriptionParameters {
 		Labels:                   map[string]string{"example": "true"},
 		MessageRetentionDuration: "864000s",
 		PushConfig:               nil,
-		BigQueryConfig: &v1alpha1.BigQueryConfig{
+		BigqueryConfig: &v1alpha1.BigqueryConfig{
 			Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
 			UseTopicSchema:    true,
 			WriteMetadata:     true,
@@ -295,7 +295,7 @@ func TestLateInitializeBigquery(t *testing.T) {
 					Labels:                   map[string]string{"example": "true"},
 					MessageRetentionDuration: "864000s",
 					PushConfig:               nil,
-					BigQueryConfig: &v1alpha1.BigQueryConfig{
+					BigqueryConfig: &v1alpha1.BigqueryConfig{
 						Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
 						UseTopicSchema:    true,
 						WriteMetadata:     true,
@@ -466,7 +466,7 @@ func TestGenerateUpdateRequestBigquery(t *testing.T) {
 			},
 			result: &pubsub.UpdateSubscriptionRequest{
 				Subscription: mutableSubscription,
-				UpdateMask:   "ackDeadlineSeconds,detached,filter,labels,messageRetentionDuration,retainAckedMessages,expirationPolicy,bigQueryConfig,retryPolicy",
+				UpdateMask:   "ackDeadlineSeconds,detached,filter,labels,messageRetentionDuration,retainAckedMessages,expirationPolicy,bigqueryConfig,retryPolicy",
 			},
 		},
 	}

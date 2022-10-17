@@ -87,9 +87,9 @@ type SubscriptionParameters struct {
 	// +optional
 	PushConfig *PushConfig `json:"pushConfig,omitempty"`
 
-	// BigQueryConfig is a parameter which configures bigquery delivery.
+	// BigqueryConfig is a parameter which configures bigquery delivery.
 	// +optional
-	BigQueryConfig *BigQueryConfig `json:"bigQueryConfig,omitempty"`
+	BigqueryConfig *BigqueryConfig `json:"bigqueryConfig,omitempty"`
 
 	// RetainAckedMessages is a message which indicates whether to retain acknowledged
 	// messages. If true, then messages are not expunged from the
@@ -147,8 +147,8 @@ type PushConfig struct {
 	PushEndpoint string `json:"pushEndpoint,omitempty"`
 }
 
-// BigQueryConfig contains configuration for a bigquery delivery endpoint.
-type BigQueryConfig struct {
+// BigqueryConfig contains configuration for a bigquery delivery endpoint.
+type BigqueryConfig struct {
 	// Bigquery table to deliver messages to.
 	Table string `json:"table,omitempty"`
 

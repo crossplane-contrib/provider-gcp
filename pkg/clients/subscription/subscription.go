@@ -53,7 +53,7 @@ func GenerateSubscription(projectID, name string, p v1alpha1.SubscriptionParamet
 	setDeadLetterPolicy(projectID, p, s)
 	setExpirationPolicy(p, s)
 	setPushConfig(p, s)
-	setBigQueryConfig(p, s)
+	setBigqueryConfig(p, s)
 	setRetryPolicy(p, s)
 
 	return s
@@ -86,14 +86,14 @@ func setPushConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
 	}
 }
 
-// setBigQueryConfig sets BigQueryConfig of subscription based on SubscriptionParameters.
-func setBigQueryConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
-	if p.BigQueryConfig != nil {
+// setBigqueryConfig sets BigqueryConfig of subscription based on SubscriptionParameters.
+func setBigqueryConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
+	if p.BigqueryConfig != nil {
 		s.BigqueryConfig = &pubsub.BigQueryConfig{
-			Table:             p.BigQueryConfig.Table,
-			UseTopicSchema:    p.BigQueryConfig.UseTopicSchema,
-			WriteMetadata:     p.BigQueryConfig.WriteMetadata,
-			DropUnknownFields: p.BigQueryConfig.DropUnknownFields,
+			Table:             p.BigqueryConfig.Table,
+			UseTopicSchema:    p.BigqueryConfig.UseTopicSchema,
+			WriteMetadata:     p.BigqueryConfig.WriteMetadata,
+			DropUnknownFields: p.BigqueryConfig.DropUnknownFields,
 		}
 	}
 }
@@ -182,8 +182,8 @@ func LateInitialize(p *v1alpha1.SubscriptionParameters, s pubsub.Subscription) {
 		}
 	}
 
-	if p.BigQueryConfig == nil && s.BigqueryConfig != nil {
-		p.BigQueryConfig = &v1alpha1.BigQueryConfig{
+	if p.BigqueryConfig == nil && s.BigqueryConfig != nil {
+		p.BigqueryConfig = &v1alpha1.BigqueryConfig{
 			Table:             s.BigqueryConfig.Table,
 			DropUnknownFields: s.BigqueryConfig.DropUnknownFields,
 			UseTopicSchema:    s.BigqueryConfig.UseTopicSchema,
@@ -267,9 +267,9 @@ func GenerateUpdateRequest(name string, p v1alpha1.SubscriptionParameters, s pub
 		setPushConfig(p, us.Subscription)
 	}
 
-	if !cmp.Equal(p.BigQueryConfig, observed.BigQueryConfig) {
-		mask = append(mask, "bigQueryConfig")
-		setBigQueryConfig(p, us.Subscription)
+	if !cmp.Equal(p.BigqueryConfig, observed.BigqueryConfig) {
+		mask = append(mask, "bigqueryConfig")
+		setBigqueryConfig(p, us.Subscription)
 	}
 
 	if !cmp.Equal(p.RetryPolicy, observed.RetryPolicy) {
