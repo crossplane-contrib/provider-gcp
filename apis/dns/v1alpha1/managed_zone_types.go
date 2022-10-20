@@ -125,10 +125,10 @@ type ManagedZoneStatus struct {
 
 // ManagedZone is a managed resource that represents a Managed Zone in Cloud DNS
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
-// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="DNS NAME",type="string",JSONPath=".spec.forProvider.dnsName"
 // +kubebuilder:printcolumn:name="VISIBILITY",type="string",JSONPath=".spec.forProvider.visibility"
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,gcp}
 type ManagedZone struct {
 	metav1.TypeMeta   `json:",inline"`
