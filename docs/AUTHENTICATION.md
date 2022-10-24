@@ -183,6 +183,10 @@ you can [provision infrastructure](https://crossplane.io/docs/v1.6/getting-start
 
 Using temporary Access Tokens will require a process to regenerate an access token before it expires. Luckily we can use a Kubernetes CronJob to fulfill that.
 
+**DISCLAIMER**
+
+*The following method will only work if running the provider in a GKE cluster on GCP. This is because the creation of access tokens requires a service account with Workload Identity enabled.*
+
 ### Steps
 
 #### 0. Prepare your variables
