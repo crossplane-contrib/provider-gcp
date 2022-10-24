@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/crossplane-contrib/provider-gcp/apis/pubsub/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 	"github.com/crossplane-contrib/provider-gcp/pkg/clients/topic"
 
 	"github.com/google/go-cmp/cmp"
@@ -91,9 +92,9 @@ func setBigqueryConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription
 	if p.BigqueryConfig != nil {
 		s.BigqueryConfig = &pubsub.BigQueryConfig{
 			Table:             p.BigqueryConfig.Table,
-			UseTopicSchema:    p.BigqueryConfig.UseTopicSchema,
-			WriteMetadata:     p.BigqueryConfig.WriteMetadata,
-			DropUnknownFields: p.BigqueryConfig.DropUnknownFields,
+			UseTopicSchema:    gcp.BoolValue(p.BigqueryConfig.UseTopicSchema),
+			WriteMetadata:     gcp.BoolValue(p.BigqueryConfig.WriteMetadata),
+			DropUnknownFields: gcp.BoolValue(p.BigqueryConfig.DropUnknownFields),
 		}
 	}
 }
@@ -185,9 +186,9 @@ func LateInitialize(p *v1alpha1.SubscriptionParameters, s pubsub.Subscription) {
 	if p.BigqueryConfig == nil && s.BigqueryConfig != nil {
 		p.BigqueryConfig = &v1alpha1.BigqueryConfig{
 			Table:             s.BigqueryConfig.Table,
-			DropUnknownFields: s.BigqueryConfig.DropUnknownFields,
-			UseTopicSchema:    s.BigqueryConfig.UseTopicSchema,
-			WriteMetadata:     s.BigqueryConfig.WriteMetadata,
+			DropUnknownFields: gcp.BoolPtr(s.BigqueryConfig.DropUnknownFields),
+			UseTopicSchema:    gcp.BoolPtr(s.BigqueryConfig.UseTopicSchema),
+			WriteMetadata:     gcp.BoolPtr(s.BigqueryConfig.WriteMetadata),
 		}
 	}
 

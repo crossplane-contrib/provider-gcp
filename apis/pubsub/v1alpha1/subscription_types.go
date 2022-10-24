@@ -155,19 +155,19 @@ type BigqueryConfig struct {
 	// When enabled, the topic schema will be used when writing to BigQuery. Else,
 	// tes the message bytes to a column called data in BigQuery.
 	// +optional
-	UseTopicSchema bool `json:"useTopicSchema,omitempty"`
+	UseTopicSchema *bool `json:"useTopicSchema,omitempty"`
 
 	// When enabled, the metadata of each message is written to additional columns in
 	// the BigQuery table. Else, the metadata is not written to the BigQuery table.
 	// https://cloud.google.com/pubsub/docs/bigquery?hl=ru#write-metadata
 	// +optional
-	WriteMetadata bool `json:"writeMetadata,omitempty"`
+	WriteMetadata *bool `json:"writeMetadata,omitempty"`
 
 	// When enabled along with the "Use topic schema" option, any field that is present in
 	// the topic schema but not in the BigQuery schema will be dropped. Else, messages with extra fields are not written
 	// and remain in the subscription backlog.
 	// +optional
-	DropUnknownFields bool `json:"dropUnknownFields,omitempty"`
+	DropUnknownFields *bool `json:"dropUnknownFields,omitempty"`
 }
 
 // OidcToken contains information needed for generating an OpenID Connect token

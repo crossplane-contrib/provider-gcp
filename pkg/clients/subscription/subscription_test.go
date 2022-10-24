@@ -23,6 +23,7 @@ import (
 	pubsub "google.golang.org/api/pubsub/v1"
 
 	"github.com/crossplane-contrib/provider-gcp/apis/pubsub/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 )
 
 const (
@@ -55,9 +56,9 @@ func params() *v1alpha1.SubscriptionParameters {
 		},
 		BigqueryConfig: &v1alpha1.BigqueryConfig{
 			Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
-			UseTopicSchema:    true,
-			WriteMetadata:     true,
-			DropUnknownFields: true,
+			UseTopicSchema:    gcp.BoolPtr(true),
+			WriteMetadata:     gcp.BoolPtr(true),
+			DropUnknownFields: gcp.BoolPtr(true),
 		},
 		RetryPolicy: &v1alpha1.RetryPolicy{
 			MaximumBackoff: "100s",
