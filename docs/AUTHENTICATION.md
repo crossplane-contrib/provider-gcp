@@ -205,6 +205,8 @@ $ KUBERNETES_SERVICE_ACCOUNT=<YOUR_KUBERNETES_SERVICE_ACCOUNT>   # e.g.) token-g
 $ NAMESPACE=<YOUR_KUBERNETES_NAMESPACE>                          # e.g.) default
 $ SECRET_NAME=<YOUR_CREDENTIALS_SECRET_NAME>                     # e.g.) gcp-credentials
 $ SECRET_KEY=<NAME_OF_KEY_IN_SECRET>                             # e.g.) token
+$ PROVIDER_GCP=<YOUR_PROVIDER_GCP_NAME>                          # e.g.) provider-gcp
+$ VERSION=<YOUR_PROVIDER_GCP_VERSION>                            # e.g.) 0.20.0
 ```
 
 #### 1. Create a GKE cluster with Workload Identity Enabled
@@ -382,7 +384,30 @@ $ kubectl annotate serviceaccount ${KUBERNETES_SERVICE_ACCOUNT} \
 $ kubectl -n ${NAMESPACE} create job --from=cronjob/${KUBERNETES_SERVICE_ACCOUNT}-credentials-sync cred-sync-001
 ```
 
-#### 5. Create ProviderConfig
+#### 5. Install Crossplane
+
+Install Crossplane from `stable` channel:
+
+```bash
+$ helm repo add crossplane-stable https://charts.crossplane.io/stable
+$ helm install crossplane --create-namespace --namespace crossplane-system crossplane-stable/crossplane
+```
+
+`provider-gcp` can be installed with either the [Crossplane CLI](https://crossplane.io/docs/v1.6/getting-started/install-configure.html#install-crossplane-cli)
+or a `Provider` resource as below:
+
+```console
+$ cat <<EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: ${PROVIDER_GCP}
+spec:
+  package: crossplane/provider-gcp:v${VERSION} # v0.20.0 or later
+EOF
+```
+
+#### 6. Create ProviderConfig
 ```console
 $ cat <<EOF | kubectl apply -f -
 apiVersion: gcp.crossplane.io/v1beta1
@@ -400,7 +425,12 @@ spec:
 EOF
 ```
 
-#### 6. Clean up
+### 7. Next steps
+
+Now that you have configured `provider-gcp` with Access Tokens supported,
+you can [provision infrastructure](https://crossplane.io/docs/v1.6/getting-started/provision-infrastructure).
+
+#### 8. Clean up
 Delete GKE cluster
 ```console
 $ gcloud container clusters delete ${CLUSTER_NAME} \
