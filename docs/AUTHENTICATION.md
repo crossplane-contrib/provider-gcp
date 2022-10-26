@@ -197,6 +197,8 @@ can smoothly set it up:
 
 ```console
 $ PROJECT_ID=<YOUR_GCP_PROJECT_ID>                               # e.g.) acme-prod
+$ REGION=<YOUR_GCP_REGION>                                       # e.g.) us-central1
+$ CLUSTER_NAME=<YOUR_CLUSTER_NAME>                               # e.g.) demo
 $ GCP_SERVICE_ACCOUNT=<YOUR_CROSSPLANE_GCP_SERVICE_ACCOUNT_NAME> # e.g.) crossplane
 $ ROLE=<YOUR_ROLE_FOR_CROSSPLANE_GCP_SERVICE_ACCOUNT>            # e.g.) roles/editor
 $ KUBERNETES_SERVICE_ACCOUNT=<YOUR_KUBERNETES_SERVICE_ACCOUNT>   # e.g.) token-generator
@@ -205,22 +207,69 @@ $ SECRET_NAME=<YOUR_CREDENTIALS_SECRET_NAME>                     # e.g.) gcp-cre
 $ SECRET_KEY=<NAME_OF_KEY_IN_SECRET>                             # e.g.) token
 ```
 
-#### 1. Configure service accounts to use Workload Identity
+#### 1. Create a GKE cluster with Workload Identity Enabled
+Create a default vpc if one does not already exist
+```console
+$ gcloud compute networks create default \
+    --subnet-mode=auto \
+    --bgp-routing-mode=global \
+    --project=${PROJECT_ID}
+```
+Create a cloud router
+```console
+$ gcloud compute routers create ${CLUSTER_NAME} \
+    --project=${PROJECT_ID} \
+    --network=default \
+    --region=${REGION}
+```
+Create a cloud nat
+```console
+$ gcloud compute routers nats create ${CLUSTER_NAME} \
+   --router=${CLUSTER_NAME} \
+   --region=${REGION} \
+   --auto-allocate-nat-external-ips \
+   --nat-all-subnet-ip-ranges \
+   --project=${PROJECT_ID}
+```
+Create the cluster
+```console
+$ gcloud container clusters create ${CLUSTER_NAME} \
+  --region=${REGION} \
+  --workload-pool=${PROJECT_ID}.svc.id.goog \
+  --create-subnetwork name=gke \
+  --enable-ip-alias \
+  --enable-private-nodes \
+  --no-enable-master-authorized-networks \
+  --enable-master-global-access \
+  --master-ipv4-cidr=172.16.0.32/28 \
+  --project=${PROJECT_ID}
+```
+Get the cluster credentials
+```console
+$ gcloud container clusters get-credentials ${CLUSTER_NAME} --region=${REGION} --project=${PROJECT_ID}
+```
+
+#### 2. Configure service accounts to use Workload Identity
 
 Create a GCP service account, which will be used for provisioning actual
 infrastructure in GCP, and grant IAM roles you need for accessing the Google
 Cloud APIs:
 
 ```console
-$ gcloud iam service-accounts create ${GCP_SERVICE_ACCOUNT} --project ${PROJECT_ID}
+$ gcloud iam service-accounts create ${GCP_SERVICE_ACCOUNT} \
+  --project=${PROJECT_ID}
+```
+```console
 $ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --member "serviceAccount:${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" \
-    --role ${ROLE} \
-    --project ${PROJECT_ID}
+  --member="serviceAccount:${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role=${ROLE} \
+  --project=${PROJECT_ID}
 ```
 
-#### 2. Create resources to generate an access-token
+#### 3. Create resources to generate an access-token
 Create the Kubernetes service account, RBAC, and CronJob to generate the temporary access-token
+
+**NOTE:** Ensure your kube context is pointing to the cluster created above
 ```console
 $ cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -315,9 +364,9 @@ Grant `roles/iam.workloadIdentityUser` to the GCP service account:
 ```console
 $ gcloud iam service-accounts add-iam-policy-binding \
     ${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
-    --role roles/iam.workloadIdentityUser \
-    --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KUBERNETES_SERVICE_ACCOUNT}]" \
-    --project ${PROJECT_ID}
+    --role=roles/iam.workloadIdentityUser \
+    --member="serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KUBERNETES_SERVICE_ACCOUNT}]" \
+    --project=${PROJECT_ID}
 ```
 
 Annotate the `ServiceAccount` with the email address of the GCP service account:
@@ -328,12 +377,12 @@ $ kubectl annotate serviceaccount ${KUBERNETES_SERVICE_ACCOUNT} \
     -n ${NAMESPACE}
 ```
 
-#### 3. Create initial Access Token
+#### 4. Create initial Access Token
 ```console
-kubectl -n ${NAMESPACE} create job --from=cronjob/${KUBERNETES_SERVICE_ACCOUNT}-credentials-sync cred-sync-001
+$ kubectl -n ${NAMESPACE} create job --from=cronjob/${KUBERNETES_SERVICE_ACCOUNT}-credentials-sync cred-sync-001
 ```
 
-#### 4. Create ProviderConfig
+#### 5. Create ProviderConfig
 ```console
 $ cat <<EOF | kubectl apply -f -
 apiVersion: gcp.crossplane.io/v1beta1
@@ -349,3 +398,40 @@ spec:
       namespace: ${NAMESPACE}
       key: ${SECRET_KEY}
 EOF
+```
+
+#### 6. Clean up
+Delete GKE cluster
+```console
+$ gcloud container clusters delete ${CLUSTER_NAME} \
+  --region=${REGION} \
+  --project=${PROJECT_ID}
+```
+Delete cloud nat
+```console
+$ gcloud compute routers nats delete ${CLUSTER_NAME} \
+  --router=${CLUSTER_NAME} \
+  --region=${REGION} \
+  --project=${PROJECT_ID}
+```
+Delete cloud router
+```console
+$ gcloud compute routers delete ${CLUSTER_NAME} \
+  --region=${REGION} \
+  --project=${PROJECT_ID}
+```
+Delete VPC
+```console
+$ gcloud compute networks delete default \
+  --project=${PROJECT_ID}
+```
+Delete project IAM bindings
+```console
+$ gcloud projects remove-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role=${ROLE}
+```
+Delete service account
+```console
+$ gcloud iam service-accounts delete ${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com
+```
