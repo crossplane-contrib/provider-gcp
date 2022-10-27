@@ -36,6 +36,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+
 	"github.com/crossplane-contrib/provider-gcp/apis"
 	scv1alpha1 "github.com/crossplane-contrib/provider-gcp/apis/v1alpha1"
 	gcp "github.com/crossplane-contrib/provider-gcp/pkg/controller"
