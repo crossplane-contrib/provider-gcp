@@ -30,6 +30,11 @@ import (
 
 // ResolveReferences of ManagedZone
 func (mg *ManagedZone) ResolveReferences(ctx context.Context, c client.Reader) error {
+
+	if mg.Spec.ForProvider.PrivateVisibilityConfig == nil {
+		return nil
+	}
+
 	r := reference.NewAPIResolver(c, mg)
 
 	// Resolve spec.forProvider.privateVisibilityConfig.networks[*].NetworkURL

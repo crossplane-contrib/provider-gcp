@@ -20,17 +20,17 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.conditions[?(@.type=='Ready')].status
-      name: READY
-      type: string
-    - jsonPath: .status.conditions[?(@.type=='Synced')].status
-      name: SYNCED
-      type: string
     - jsonPath: .spec.forProvider.dnsName
       name: DNS NAME
       type: string
     - jsonPath: .spec.forProvider.visibility
       name: VISIBILITY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
       type: string
     name: v1alpha1
     schema:
@@ -178,8 +178,6 @@ spec:
                               type: string
                           type: object
                         type: array
-                    required:
-                    - networks
                     type: object
                   visibility:
                     description: "Visibility: The zone's visibility: public zones
