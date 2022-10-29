@@ -70,7 +70,8 @@ type ManagedZoneParameters struct {
 type ManagedZonePrivateVisibilityConfig struct {
 
 	// Networks: The list of VPC networks that can see this zone.
-	Networks []*ManagedZonePrivateVisibilityConfigNetwork `json:"networks"`
+	// +optional
+	Networks []*ManagedZonePrivateVisibilityConfigNetwork `json:"networks,omitempty"`
 }
 
 // ManagedZonePrivateVisibilityConfigNetwork is a list of VPC networks
