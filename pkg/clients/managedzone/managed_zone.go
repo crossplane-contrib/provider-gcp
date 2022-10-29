@@ -54,11 +54,13 @@ func GenerateManagedZone(name string, spec v1alpha1.ManagedZoneParameters, mz *d
 
 	if spec.PrivateVisibilityConfig != nil {
 		mz.PrivateVisibilityConfig = &dns.ManagedZonePrivateVisibilityConfig{
+			Kind:     "dns#managedZonePrivateVisibilityConfig", // This is the only valid value for this field
 			Networks: make([]*dns.ManagedZonePrivateVisibilityConfigNetwork, len(spec.PrivateVisibilityConfig.Networks)),
 		}
 
 		for i, v := range spec.PrivateVisibilityConfig.Networks {
 			mz.PrivateVisibilityConfig.Networks[i] = &dns.ManagedZonePrivateVisibilityConfigNetwork{
+				Kind:       "dns#managedZonePrivateVisibilityConfigNetwork", // This is the only valid value for this field
 				NetworkUrl: *v.NetworkURL,
 			}
 		}
