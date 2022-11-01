@@ -180,6 +180,98 @@ func TestLateInitialize(t *testing.T) {
 			},
 			out: params(),
 		},
+		"Minimal": {
+			args: args{
+				obs: pubsub.Subscription{
+					Name:  name,
+					Topic: topicNameExternal,
+				},
+				param: &v1alpha1.SubscriptionParameters{
+					AckDeadlineSeconds: 15,
+					DeadLetterPolicy: &v1alpha1.DeadLetterPolicy{
+						DeadLetterTopic:     topicName,
+						MaxDeliveryAttempts: 5,
+					},
+					Detached:              true,
+					EnableMessageOrdering: true,
+					ExpirationPolicy:      &v1alpha1.ExpirationPolicy{TTL: "1296000s"},
+					Topic:                 topicName,
+				},
+			},
+			out: &v1alpha1.SubscriptionParameters{
+				AckDeadlineSeconds: 15,
+				DeadLetterPolicy: &v1alpha1.DeadLetterPolicy{
+					DeadLetterTopic:     topicName,
+					MaxDeliveryAttempts: 5,
+				},
+				Detached:              true,
+				EnableMessageOrdering: true,
+				ExpirationPolicy:      &v1alpha1.ExpirationPolicy{TTL: "1296000s"},
+				Topic:                 topicName,
+				BigqueryConfig:        nil,
+				PushConfig:            nil,
+			},
+		},
+		"PushConfig": {
+			args: args{
+				obs: pubsub.Subscription{
+					Name:  name,
+					Topic: topicNameExternal,
+					PushConfig: &pubsub.PushConfig{
+						PushEndpoint: "example.com",
+					},
+				},
+				param: &v1alpha1.SubscriptionParameters{
+					PushConfig: &v1alpha1.PushConfig{
+						Attributes: map[string]string{"attribute": "my-attribute"},
+						OidcToken: &v1alpha1.OidcToken{
+							Audience: "my-audience",
+						},
+						PushEndpoint: "example.com",
+					},
+				},
+			},
+			out: &v1alpha1.SubscriptionParameters{
+				PushConfig: &v1alpha1.PushConfig{
+					Attributes: map[string]string{"attribute": "my-attribute"},
+					OidcToken: &v1alpha1.OidcToken{
+						Audience:            "my-audience",
+						ServiceAccountEmail: "",
+					},
+					PushEndpoint: "example.com",
+				},
+				Topic:          topicNameExternal,
+				BigqueryConfig: nil,
+			},
+		},
+		"BigqueryConfig": {
+			args: args{
+				obs: pubsub.Subscription{
+					Name:  name,
+					Topic: topicNameExternal,
+					BigqueryConfig: &pubsub.BigQueryConfig{
+						Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+						DropUnknownFields: true,
+					},
+				},
+				param: &v1alpha1.SubscriptionParameters{
+					BigqueryConfig: &v1alpha1.BigqueryConfig{
+						Table:          "projects/my-project/subscriptions/my-bigquery-subscription",
+						UseTopicSchema: gcp.BoolPtr(true),
+					},
+				},
+			},
+			out: &v1alpha1.SubscriptionParameters{
+				BigqueryConfig: &v1alpha1.BigqueryConfig{
+					Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+					UseTopicSchema:    gcp.BoolPtr(true),
+					WriteMetadata:     nil,
+					DropUnknownFields: nil,
+				},
+				Topic:      topicNameExternal,
+				PushConfig: nil,
+			},
+		},
 	}
 
 	for name, tc := range cases {
