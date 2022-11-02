@@ -436,7 +436,7 @@ spec:
                       providers configuration.'
                     properties:
                       enabled:
-                        description: 'Enabled: Enables IdentityServiceConfig.'
+                        description: 'Enabled: Enables external identity providers.'
                         type: boolean
                     required:
                     - enabled
