@@ -317,6 +317,11 @@ type ClusterParameters struct {
 	// policies.
 	// +optional
 	WorkloadIdentityConfig *WorkloadIdentityConfig `json:"workloadIdentityConfig,omitempty"`
+
+	// IdentityServiceConfig: Cluster-level external identity providers
+	// configuration.
+	// +optional
+	IdentityServiceConfig *IdentityServiceConfig `json:"identityServiceConfig,omitempty"`
 }
 
 // ClusterObservation is used to show the observed state of the GKE cluster resource on GCP.
@@ -1435,6 +1440,13 @@ type WorkloadIdentityConfig struct {
 	// WorkloadPool: The workload pool to attach all Kubernetes service
 	// accounts to.
 	WorkloadPool string `json:"workloadPool,omitempty"`
+}
+
+// IdentityServiceConfig is the configuration to external identity providers
+// with the K8S API
+type IdentityServiceConfig struct {
+	// Enabled: Enables external identity providers.
+	Enabled bool `json:"enabled"`
 }
 
 // NOTE(hasheddan): the following structs are meant to be utilized to model Node
