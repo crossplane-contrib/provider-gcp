@@ -431,6 +431,16 @@ spec:
                     description: 'EnableTpu: Enable the ability to use Cloud TPUs
                       in this cluster.'
                     type: boolean
+                  identityServiceConfig:
+                    description: 'IdentityServiceConfig: Cluster-level external identity
+                      providers configuration.'
+                    properties:
+                      enabled:
+                        description: 'Enabled: Enables IdentityServiceConfig.'
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
                   initialClusterVersion:
                     description: "InitialClusterVersion: The initial Kubernetes version
                       for this cluster.  Valid versions are those found in validMasterVersions

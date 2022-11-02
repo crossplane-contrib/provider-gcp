@@ -100,6 +100,7 @@ func GenerateCluster(name string, in v1beta2.ClusterParameters, cluster *contain
 	GenerateResourceUsageExportConfig(in.ResourceUsageExportConfig, cluster)
 	GenerateVerticalPodAutoscaling(in.VerticalPodAutoscaling, cluster)
 	GenerateWorkloadIdentityConfig(in.WorkloadIdentityConfig, cluster)
+	GenerateIdentityServiceConfig(in.IdentityServiceConfig, cluster)
 }
 
 // GenerateAddonsConfig generates *container.AddonsConfig from *AddonsConfig.
@@ -518,6 +519,16 @@ func GenerateWorkloadIdentityConfig(in *v1beta2.WorkloadIdentityConfig, cluster 
 			cluster.WorkloadIdentityConfig = &container.WorkloadIdentityConfig{}
 		}
 		cluster.WorkloadIdentityConfig.WorkloadPool = in.WorkloadPool
+	}
+}
+
+// GenerateIdentityServiceConfig generates *container.IdentityServiceConfig from *IdentityServiceConfig.
+func GenerateIdentityServiceConfig(in *v1beta2.IdentityServiceConfig, cluster *container.Cluster) {
+	if in != nil {
+		if cluster.IdentityServiceConfig == nil {
+			cluster.IdentityServiceConfig = &container.IdentityServiceConfig{}
+		}
+		cluster.IdentityServiceConfig.Enabled = in.Enabled
 	}
 }
 
@@ -970,6 +981,12 @@ func LateInitializeSpec(spec *v1beta2.ClusterParameters, in container.Cluster) {
 			WorkloadPool: in.WorkloadIdentityConfig.WorkloadPool,
 		}
 	}
+
+	if spec.IdentityServiceConfig == nil && in.IdentityServiceConfig != nil {
+		spec.IdentityServiceConfig = &v1beta2.IdentityServiceConfig{
+			Enabled: in.IdentityServiceConfig.Enabled,
+		}
+	}
 }
 
 // newAddonsConfigUpdateFn returns a function that updates the AddonsConfig of a cluster.
@@ -1250,6 +1267,20 @@ func newWorkloadIdentityConfigUpdateFn(in *v1beta2.WorkloadIdentityConfig) Updat
 	}
 }
 
+// newIdentityServiceConfigUpdateFn returns a function that updates the IdentityServiceConfig of a cluster.
+func newIdentityServiceConfigUpdateFn(in *v1beta2.IdentityServiceConfig) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateIdentityServiceConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredIdentityServiceConfig: out.IdentityServiceConfig,
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
 // deleteBootstrapNodePoolFn returns a function to delete the bootstrap node pool.
 func deleteBootstrapNodePoolFn() UpdateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
@@ -1370,6 +1401,9 @@ func IsUpToDate(name string, in *v1beta2.ClusterParameters, observed *container.
 	}
 	if !cmp.Equal(desired.WorkloadIdentityConfig, observed.WorkloadIdentityConfig, cmpopts.EquateEmpty()) {
 		return false, newWorkloadIdentityConfigUpdateFn(in.WorkloadIdentityConfig), nil
+	}
+	if !cmp.Equal(desired.IdentityServiceConfig, observed.IdentityServiceConfig, cmpopts.EquateEmpty()) {
+		return false, newIdentityServiceConfigUpdateFn(in.IdentityServiceConfig), nil
 	}
 	return true, noOpUpdate, nil
 }
