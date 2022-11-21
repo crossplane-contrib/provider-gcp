@@ -400,7 +400,6 @@ spec:
                 - name
                 type: object
               publicAccessPrevention:
-                default: ""
                 description: PublicAccessPrevention is the setting for the bucket's
                   PublicAccessPrevention policy, which can be used to prevent public
                   access of data in the bucket. See https://cloud.google.com/storage/docs/public-access-prevention

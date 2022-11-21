@@ -22,6 +22,8 @@ import (
 	"cloud.google.com/go/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
@@ -605,8 +607,7 @@ type BucketUpdatableAttrs struct {
 	//
 	// +optional
 	// +kubebuilder:validation:Enum="";unspecified;inherited;enforced
-	// +kubebuilder:default:=""
-	PublicAccessPrevention string `json:"publicAccessPrevention,omitempty"`
+	PublicAccessPrevention *string `json:"publicAccessPrevention,omitempty"`
 
 	// RequesterPays reports whether the bucket is a Requester Pays bucket.
 	// Clients performing operations on Requester Pays buckets must provide
@@ -646,7 +647,7 @@ func NewBucketUpdatableAttrs(ba *storage.BucketAttrs) *BucketUpdatableAttrs {
 		Logging:                    NewBucketLogging(ba.Logging),
 		PredefinedACL:              ba.PredefinedACL,
 		PredefinedDefaultObjectACL: ba.PredefinedDefaultObjectACL,
-		PublicAccessPrevention:     ba.PublicAccessPrevention.String(),
+		PublicAccessPrevention:     convertPublicAccessPreventionEnumToStringPtr(ba.PublicAccessPrevention),
 		RequesterPays:              ba.RequesterPays,
 		RetentionPolicy:            NewRetentionPolicy(ba.RetentionPolicy),
 		VersioningEnabled:          ba.VersioningEnabled,
@@ -656,8 +657,13 @@ func NewBucketUpdatableAttrs(ba *storage.BucketAttrs) *BucketUpdatableAttrs {
 
 // convertPublicAccessPreventionStringToEnum converts a string representation of storage.PublicAccessPrevention to its
 // enum value.
-func convertPublicAccessPreventionStringToEnum(pap string) storage.PublicAccessPrevention {
-	switch pap {
+func convertPublicAccessPreventionStringToEnum(pap *string) storage.PublicAccessPrevention {
+	// if the field is not set, treat it as unknown
+	if pap == nil {
+		return storage.PublicAccessPreventionUnknown
+	}
+
+	switch *pap {
 	case "unspecified", "inherited":
 		return storage.PublicAccessPreventionInherited
 	case "enforced":
@@ -665,6 +671,16 @@ func convertPublicAccessPreventionStringToEnum(pap string) storage.PublicAccessP
 	default:
 		return storage.PublicAccessPreventionUnknown
 	}
+}
+
+// convertPublicAccessPreventionEnumToStringPtr converts an enum value of storage.PublicAccessPrevention to its
+// string pointer value used in BucketUpdatableAttrs.
+func convertPublicAccessPreventionEnumToStringPtr(pap storage.PublicAccessPrevention) *string {
+	if pap == storage.PublicAccessPreventionUnknown {
+		return nil
+	}
+
+	return gcp.StringPtr(pap.String())
 }
 
 // CopyToBucketAttrs create a copy in storage format
@@ -750,7 +766,7 @@ type BucketSpecAttrs struct {
 	StorageClass string `json:"storageClass,omitempty"`
 }
 
-// NewBucketSpecAttrs create new instance from storage BuckateAttrs
+// NewBucketSpecAttrs create new instance from storage.BucketAttrs
 func NewBucketSpecAttrs(ba *storage.BucketAttrs) BucketSpecAttrs {
 	if ba == nil {
 		return BucketSpecAttrs{}

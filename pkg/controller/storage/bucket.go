@@ -142,7 +142,16 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	proposed := cr.Spec.BucketSpecAttrs.DeepCopy()
-	if err := mergo.Merge(proposed, v1alpha3.NewBucketSpecAttrs(a)); err != nil {
+	bsa := v1alpha3.NewBucketSpecAttrs(a)
+
+	// If the spec has no value set for the PublicAccessPrevention field, ignore the one stored in GCP API for the
+	// purposes of comparison. This allows public access prevention to be managed in the GCP console independently of
+	// the Bucket CR if the field is not set.
+	if proposed.PublicAccessPrevention == nil {
+		bsa.PublicAccessPrevention = nil
+	}
+
+	if err := mergo.Merge(proposed, bsa); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errLateInit)
 	}
 	if !cmp.Equal(*proposed, cr.Spec.BucketSpecAttrs) {
