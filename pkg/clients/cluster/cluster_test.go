@@ -1436,7 +1436,7 @@ func TestLateInitializeSpec(t *testing.T) {
 	var clusterDNS = "CLOUD_DNS"
 	var clusterDNSDomain = "crossplane.io"
 	var clusterDNSScope = "VPC_SCOPE"
-	var autoScalingProfile = "BALANCED"
+	var autoScalingProfile = "OPTIMIZE_UTILIZATION"
 
 	type args struct {
 		cluster *container.Cluster
@@ -1458,7 +1458,7 @@ func TestLateInitializeSpec(t *testing.T) {
 						},
 					}
 					c.Autoscaling = &container.ClusterAutoscaling{
-						AutoscalingProfile: "BALANCED",
+						AutoscalingProfile: "OPTIMIZE_UTILIZATION",
 					}
 					c.IpAllocationPolicy = &container.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: "0.0.0.0/0",
@@ -1505,7 +1505,7 @@ func TestLateInitializeSpec(t *testing.T) {
 						},
 					}
 					c.Autoscaling = &container.ClusterAutoscaling{
-						AutoscalingProfile: "OPTIMIZE_UTILIZATION",
+						AutoscalingProfile: "BALANCED",
 					}
 					c.IpAllocationPolicy = &container.IPAllocationPolicy{
 						ClusterIpv4CidrBlock: "0.0.0.0/0",
