@@ -327,6 +327,16 @@ spec:
                                 type: integer
                             type: object
                         type: object
+                      autoscalingProfile:
+                        description: "AutoscalingProfile: Defines which profile the
+                          cluster autoscaler uses to decide when to remove a node.
+                          \n Possible values: \"BALANCED\" - the default profile which
+                          prioritizes availability of resources. \"OPTIMIZE_UTILIZATION\"
+                          - prioritizes optimizing the utilization of resources."
+                        enum:
+                        - BALANCED
+                        - OPTIMIZE_UTILIZATION
+                        type: string
                       enableNodeAutoprovisioning:
                         description: 'EnableNodeAutoprovisioning: Enables automatic
                           node pool creation and deletion.'

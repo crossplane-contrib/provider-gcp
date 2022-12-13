@@ -641,6 +641,18 @@ type ClusterAutoscaling struct {
 	// created by NAP.
 	AutoprovisioningNodePoolDefaults *AutoprovisioningNodePoolDefaults `json:"autoprovisioningNodePoolDefaults,omitempty"`
 
+	// AutoscalingProfile: Defines which profile the cluster autoscaler
+	// uses to decide when to remove a node.
+	//
+	// Possible values:
+	//   "BALANCED" - the default profile which prioritizes availability
+	// of resources.
+	//    "OPTIMIZE_UTILIZATION" - prioritizes optimizing the
+	// utilization of resources.
+	// +kubebuilder:validation:Enum=BALANCED;OPTIMIZE_UTILIZATION
+	// +optional
+	AutoscalingProfile *string `json:"autoscalingProfile,omitempty"`
+
 	// EnableNodeAutoprovisioning: Enables automatic node pool creation and
 	// deletion.
 	// +optional

@@ -336,6 +336,11 @@ func (in *ClusterAutoscaling) DeepCopyInto(out *ClusterAutoscaling) {
 		*out = new(AutoprovisioningNodePoolDefaults)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.AutoscalingProfile != nil {
+		in, out := &in.AutoscalingProfile, &out.AutoscalingProfile
+		*out = new(string)
+		**out = **in
+	}
 	if in.EnableNodeAutoprovisioning != nil {
 		in, out := &in.EnableNodeAutoprovisioning, &out.EnableNodeAutoprovisioning
 		*out = new(bool)
