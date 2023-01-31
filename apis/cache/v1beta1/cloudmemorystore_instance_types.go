@@ -38,6 +38,14 @@ type CloudMemorystoreInstanceParameters struct {
 	// +immutable
 	Tier string `json:"tier"`
 
+	// TransitEncryptionMode specifies tls encription mode for redis service.
+	// For TRANSIT_ENCRYPTION_MODE_UNSPECIFIED the tls in transit encription is not set.
+	// If set to SERVER_AUTHENTICATION the client to server traffic encription is enabled.
+	// Encription is disabled if the value is DISABLED
+	// https://cloud.google.com/memorystore/docs/redis/about-in-transit-encryption
+	// +optional
+	TransitEncryptionMode string `json:"transitEncryptionMode,omitempty"`
+
 	// Redis memory size in GiB.
 	MemorySizeGB int64 `json:"memorySizeGb"`
 
@@ -195,6 +203,9 @@ type CloudMemorystoreInstanceObservation struct {
 	// for a given instance so should be checked before each import/export
 	// operation.
 	PersistenceIAMIdentity string `json:"persistenceIamIdentity,omitempty"`
+
+	// Status of in tranit encyption mode the redis service is configured with
+	TransitEncryptionMode string `json:"transitEncryptionMode,omitempty"`
 }
 
 // A CloudMemorystoreInstanceSpec defines the desired state of a

@@ -157,6 +157,13 @@ spec:
                     - BASIC
                     - STANDARD_HA
                     type: string
+                  transitEncryptionMode:
+                    description: TransitEncryptionMode specifies tls encription mode
+                      for redis service. For TRANSIT_ENCRYPTION_MODE_UNSPECIFIED the
+                      tls in transit encription is not set. If set to SERVER_AUTHENTICATION
+                      the client to server traffic encription is enabled. Encription
+                      is disabled if the value is DISABLED https://cloud.google.com/memorystore/docs/redis/about-in-transit-encryption
+                    type: string
                 required:
                 - memorySizeGb
                 - region
@@ -392,6 +399,10 @@ spec:
                   statusMessage:
                     description: Additional information about the current status of
                       this instance, if available.
+                    type: string
+                  transitEncryptionMode:
+                    description: Status of in tranit encyption mode the redis service
+                      is configured with
                     type: string
                 type: object
               conditions:
