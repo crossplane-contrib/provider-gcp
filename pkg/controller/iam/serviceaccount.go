@@ -57,7 +57,7 @@ func SetupServiceAccount(mgr ctrl.Manager, o controller.Options) error {
 
 	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
 	if o.Features.Enabled(features.EnableAlphaExternalSecretStores) {
-		cps = append(cps, connection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind))
+		cps = append(cps, connection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind, connection.WithTLSConfig(o.ESSOptions.TLSConfig)))
 	}
 
 	r := managed.NewReconciler(mgr,
@@ -190,8 +190,9 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 }
 
 // isUpToDate returns true if the supplied Kubernetes resource does not differ
-//  from the supplied GCP resource. It considers only fields that can be
-//  modified in place without deleting and recreating the Service Account.
+//
+//	from the supplied GCP resource. It considers only fields that can be
+//	modified in place without deleting and recreating the Service Account.
 func isUpToDate(in *v1alpha1.ServiceAccountParameters, observed *iamv1.ServiceAccount) bool {
 	// see comment in serviceaccount_types.go
 	if in.DisplayName != nil && *in.DisplayName != observed.DisplayName {
