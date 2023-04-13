@@ -84,14 +84,19 @@ func SetupConnection(mgr ctrl.Manager, o controller.Options) error {
 		cps = append(cps, xpconnection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind, xpconnection.WithTLSConfig(o.ESSOptions.TLSConfig)))
 	}
 
-	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1beta1.ConnectionGroupVersionKind),
+	opts := []managed.ReconcilerOption{
 		managed.WithExternalConnecter(&connector{client: mgr.GetClient()}),
-		managed.WithConnectionPublishers(),
 		managed.WithPollInterval(o.PollInterval),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
-		managed.WithConnectionPublishers(cps...))
+		managed.WithConnectionPublishers(cps...),
+	}
+
+	if o.Features.Enabled(features.EnableAlphaManagementPolicies) {
+		opts = append(opts, managed.WithManagementPolicies())
+	}
+
+	r := managed.NewReconciler(mgr, resource.ManagedKind(v1beta1.ConnectionGroupVersionKind), opts...)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
