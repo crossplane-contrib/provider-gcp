@@ -59,6 +59,10 @@ func params(m ...func(*v1beta1.CloudSQLInstanceParameters)) *v1beta1.CloudSQLIns
 				ReplicationLogArchivingEnabled: gcp.BoolPtr(true),
 				StartTime:                      gcp.StringPtr("20191018"),
 				PointInTimeRecoveryEnabled:     gcp.BoolPtr(false),
+				BackupRetentionSettings: &v1beta1.BackupRetentionSettings{
+					RetainedBackups: gcp.Int64Ptr(7),
+					RetentionUnit:   gcp.StringPtr("COUNT"),
+				},
 			},
 			IPConfiguration: &v1beta1.IPConfiguration{
 				AuthorizedNetworks: []*v1beta1.ACLEntry{
@@ -167,6 +171,10 @@ func db(m ...func(*sqladmin.DatabaseInstance)) *sqladmin.DatabaseInstance {
 				ReplicationLogArchivingEnabled: true,
 				StartTime:                      "20191018",
 				PointInTimeRecoveryEnabled:     false,
+				BackupRetentionSettings: &sqladmin.BackupRetentionSettings{
+					RetainedBackups: 7,
+					RetentionUnit:   "COUNT",
+				},
 			},
 			IpConfiguration: &sqladmin.IpConfiguration{
 				AuthorizedNetworks: []*sqladmin.AclEntry{

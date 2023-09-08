@@ -58,7 +58,7 @@ func SetupBucket(mgr ctrl.Manager, o controller.Options) error {
 
 	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
 	if o.Features.Enabled(features.EnableAlphaExternalSecretStores) {
-		cps = append(cps, connection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind))
+		cps = append(cps, connection.NewDetailsManager(mgr.GetClient(), scv1alpha1.StoreConfigGroupVersionKind, connection.WithTLSConfig(o.ESSOptions.TLSConfig)))
 	}
 
 	r := managed.NewReconciler(mgr,
@@ -134,7 +134,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	// NOTE(negz): The storage client appears to intercept the typical GCP API
 	// error that we check for with gcp.IsErrorNotFound and return this error
 	// instead, but only when getting bucket attributes.
-	if err == storage.ErrBucketNotExist {
+	if errors.Is(err, storage.ErrBucketNotExist) {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 	if err != nil {

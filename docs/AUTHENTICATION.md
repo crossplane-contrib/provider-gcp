@@ -177,3 +177,291 @@ EOF
 
 Now that you have configured `provider-gcp` with Workload Identity supported,
 you can [provision infrastructure](https://crossplane.io/docs/v1.6/getting-started/provision-infrastructure).
+
+
+## Authenticating with Access Tokens
+
+Using temporary Access Tokens will require a process to regenerate an access token before it expires. Luckily we can use a Kubernetes CronJob to fulfill that.
+
+**DISCLAIMER**
+
+*The following method will only work if running the provider in a GKE cluster on GCP. This is because the creation of access tokens requires a service account with Workload Identity enabled.*
+
+### Steps
+
+#### 0. Prepare your variables
+
+In the following sections, you'll need to name your resources.
+Define the variables below with any names valid in Kubernetes or GCP so that you
+can smoothly set it up:
+
+```console
+$ PROJECT_ID=<YOUR_GCP_PROJECT_ID>                               # e.g.) acme-prod
+$ REGION=<YOUR_GCP_REGION>                                       # e.g.) us-central1
+$ CLUSTER_NAME=<YOUR_CLUSTER_NAME>                               # e.g.) demo
+$ GCP_SERVICE_ACCOUNT=<YOUR_CROSSPLANE_GCP_SERVICE_ACCOUNT_NAME> # e.g.) crossplane
+$ ROLE=<YOUR_ROLE_FOR_CROSSPLANE_GCP_SERVICE_ACCOUNT>            # e.g.) roles/editor
+$ KUBERNETES_SERVICE_ACCOUNT=<YOUR_KUBERNETES_SERVICE_ACCOUNT>   # e.g.) token-generator
+$ NAMESPACE=<YOUR_KUBERNETES_NAMESPACE>                          # e.g.) default
+$ SECRET_NAME=<YOUR_CREDENTIALS_SECRET_NAME>                     # e.g.) gcp-credentials
+$ SECRET_KEY=<NAME_OF_KEY_IN_SECRET>                             # e.g.) token
+$ PROVIDER_GCP=<YOUR_PROVIDER_GCP_NAME>                          # e.g.) provider-gcp
+$ VERSION=<YOUR_PROVIDER_GCP_VERSION>                            # e.g.) 0.20.0
+```
+
+#### 1. Create a GKE cluster with Workload Identity Enabled
+Create a default vpc if one does not already exist
+```console
+$ gcloud compute networks create default \
+    --subnet-mode=auto \
+    --bgp-routing-mode=global \
+    --project=${PROJECT_ID}
+```
+Create a cloud router
+```console
+$ gcloud compute routers create ${CLUSTER_NAME} \
+    --project=${PROJECT_ID} \
+    --network=default \
+    --region=${REGION}
+```
+Create a cloud nat
+```console
+$ gcloud compute routers nats create ${CLUSTER_NAME} \
+   --router=${CLUSTER_NAME} \
+   --region=${REGION} \
+   --auto-allocate-nat-external-ips \
+   --nat-all-subnet-ip-ranges \
+   --project=${PROJECT_ID}
+```
+Create the cluster
+```console
+$ gcloud container clusters create ${CLUSTER_NAME} \
+  --region=${REGION} \
+  --workload-pool=${PROJECT_ID}.svc.id.goog \
+  --create-subnetwork name=gke \
+  --enable-ip-alias \
+  --enable-private-nodes \
+  --no-enable-master-authorized-networks \
+  --enable-master-global-access \
+  --master-ipv4-cidr=172.16.0.32/28 \
+  --project=${PROJECT_ID}
+```
+Get the cluster credentials
+```console
+$ gcloud container clusters get-credentials ${CLUSTER_NAME} --region=${REGION} --project=${PROJECT_ID}
+```
+
+#### 2. Configure service accounts to use Workload Identity
+
+Create a GCP service account, which will be used for provisioning actual
+infrastructure in GCP, and grant IAM roles you need for accessing the Google
+Cloud APIs:
+
+```console
+$ gcloud iam service-accounts create ${GCP_SERVICE_ACCOUNT} \
+  --project=${PROJECT_ID}
+```
+```console
+$ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role=${ROLE} \
+  --project=${PROJECT_ID}
+```
+
+#### 3. Create resources to generate an access-token
+Create the Kubernetes service account, RBAC, and CronJob to generate the temporary access-token
+
+**NOTE:** Ensure your kube context is pointing to the cluster created above
+```console
+$ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name:  ${KUBERNETES_SERVICE_ACCOUNT}
+  namespace: ${NAMESPACE}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ${KUBERNETES_SERVICE_ACCOUNT}-sync
+  namespace: ${NAMESPACE}
+rules:
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs:
+  - get
+  - create
+  - patch
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ${KUBERNETES_SERVICE_ACCOUNT}-sync-rb
+  namespace: ${NAMESPACE}
+subjects:
+- kind: ServiceAccount
+  name: ${KUBERNETES_SERVICE_ACCOUNT}
+roleRef:
+  kind: Role
+  name: ${KUBERNETES_SERVICE_ACCOUNT}-sync
+  apiGroup: ""
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ${KUBERNETES_SERVICE_ACCOUNT}-credentials-sync
+  namespace: ${NAMESPACE}
+spec:
+  suspend: false
+  schedule: "*/45 * * * *"
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 1800
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName:  ${KUBERNETES_SERVICE_ACCOUNT}
+          restartPolicy: Never
+          containers:
+            - image: google/cloud-sdk:debian_component_based
+              name: create-access-token
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                exec:
+                  command:
+                  - gcloud
+                  - version
+              readinessProbe:
+                exec:
+                  command:
+                  - gcloud
+                  - version
+              env:
+                - name: SECRET_NAME
+                  value: ${SECRET_NAME}
+                - name: SECRET_KEY
+                  value: ${SECRET_KEY}
+              command:
+                - /bin/bash
+                - -ce
+                - |-
+                  kubectl create secret generic $SECRET_NAME \
+                    --dry-run=client \
+                    --from-literal=$SECRET_KEY=\$(gcloud auth print-access-token) \
+                    -o yaml | kubectl apply -f -
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+EOF
+```
+Grant `roles/iam.workloadIdentityUser` to the GCP service account:
+
+```console
+$ gcloud iam service-accounts add-iam-policy-binding \
+    ${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+    --role=roles/iam.workloadIdentityUser \
+    --member="serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KUBERNETES_SERVICE_ACCOUNT}]" \
+    --project=${PROJECT_ID}
+```
+
+Annotate the `ServiceAccount` with the email address of the GCP service account:
+
+```console
+$ kubectl annotate serviceaccount ${KUBERNETES_SERVICE_ACCOUNT} \
+    iam.gke.io/gcp-service-account=${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+    -n ${NAMESPACE}
+```
+
+#### 4. Create initial Access Token
+```console
+$ kubectl -n ${NAMESPACE} create job --from=cronjob/${KUBERNETES_SERVICE_ACCOUNT}-credentials-sync cred-sync-001
+```
+
+#### 5. Install Crossplane
+
+Install Crossplane from `stable` channel:
+
+```bash
+$ helm repo add crossplane-stable https://charts.crossplane.io/stable
+$ helm install crossplane --create-namespace --namespace crossplane-system crossplane-stable/crossplane
+```
+
+`provider-gcp` can be installed with either the [Crossplane CLI](https://crossplane.io/docs/v1.6/getting-started/install-configure.html#install-crossplane-cli)
+or a `Provider` resource as below:
+
+```console
+$ cat <<EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: ${PROVIDER_GCP}
+spec:
+  package: crossplane/provider-gcp:v${VERSION} # v0.20.0 or later
+EOF
+```
+
+#### 6. Create ProviderConfig
+```console
+$ cat <<EOF | kubectl apply -f -
+apiVersion: gcp.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: gcp-provider
+spec:
+  projectID: ${PROJECT_ID}
+  credentials:
+    source: Secret
+    secretRef:
+      name: ${SECRET_NAME}
+      namespace: ${NAMESPACE}
+      key: ${SECRET_KEY}
+EOF
+```
+
+### 7. Next steps
+
+Now that you have configured `provider-gcp` with Access Tokens supported,
+you can [provision infrastructure](https://crossplane.io/docs/v1.6/getting-started/provision-infrastructure).
+
+#### 8. Clean up
+Delete GKE cluster
+```console
+$ gcloud container clusters delete ${CLUSTER_NAME} \
+  --region=${REGION} \
+  --project=${PROJECT_ID}
+```
+Delete cloud nat
+```console
+$ gcloud compute routers nats delete ${CLUSTER_NAME} \
+  --router=${CLUSTER_NAME} \
+  --region=${REGION} \
+  --project=${PROJECT_ID}
+```
+Delete cloud router
+```console
+$ gcloud compute routers delete ${CLUSTER_NAME} \
+  --region=${REGION} \
+  --project=${PROJECT_ID}
+```
+Delete VPC
+```console
+$ gcloud compute networks delete default \
+  --project=${PROJECT_ID}
+```
+Delete project IAM bindings
+```console
+$ gcloud projects remove-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role=${ROLE}
+```
+Delete service account
+```console
+$ gcloud iam service-accounts delete ${GCP_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com
+```

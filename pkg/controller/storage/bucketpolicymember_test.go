@@ -98,7 +98,9 @@ func TestBucketPolicyMemberObserve(t *testing.T) {
 		"FailedToObserve": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&storagev1.Policy{})
+				if err := json.NewEncoder(w).Encode(&storagev1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -134,7 +136,9 @@ func TestBucketPolicyMemberObserve(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				bpm := &storagev1.Policy{}
-				_ = json.NewEncoder(w).Encode(bpm)
+				if err := json.NewEncoder(w).Encode(bpm); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -159,7 +163,9 @@ func TestBucketPolicyMemberObserve(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(bpm)
+				if err := json.NewEncoder(w).Encode(bpm); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -193,7 +199,9 @@ func TestBucketPolicyMemberObserve(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(bpm)
+				if err := json.NewEncoder(w).Encode(bpm); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -317,7 +325,9 @@ func TestBucketPolicyMemberUpdate(t *testing.T) {
 					w.WriteHeader(http.StatusBadRequest)
 				}
 
-				_ = json.NewEncoder(w).Encode(bpm)
+				if err := json.NewEncoder(w).Encode(bpm); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -336,7 +346,9 @@ func TestBucketPolicyMemberUpdate(t *testing.T) {
 		"FailedToGet": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&storagev1.Policy{})
+				if err := json.NewEncoder(w).Encode(&storagev1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -362,7 +374,9 @@ func TestBucketPolicyMemberUpdate(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(bpm)
+				if err := json.NewEncoder(w).Encode(bpm); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -400,7 +414,9 @@ func TestBucketPolicyMemberUpdate(t *testing.T) {
 					w.WriteHeader(http.StatusBadRequest)
 				}
 
-				_ = json.NewEncoder(w).Encode(bpm)
+				if err := json.NewEncoder(w).Encode(bpm); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -488,7 +504,9 @@ func TestBucketPolicyMemberDelete(t *testing.T) {
 						},
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(i)
+					if err := json.NewEncoder(w).Encode(i); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					i := &storagev1.Policy{}
 					b, err := ioutil.ReadAll(r.Body)
@@ -511,10 +529,14 @@ func TestBucketPolicyMemberDelete(t *testing.T) {
 						t.Errorf("policy in setIamPolicyRequest not equal to expected, diff: %s", cmp.Diff(exp, i, cmpopts.IgnoreFields(storagev1.Policy{}, "Version")))
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(exp)
+					if err := json.NewEncoder(w).Encode(exp); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&storagev1.Policy{})
+					if err := json.NewEncoder(w).Encode(&storagev1.Policy{}); err != nil {
+						t.Error(err)
+					}
 				}
 
 			}),
@@ -533,7 +555,9 @@ func TestBucketPolicyMemberDelete(t *testing.T) {
 		"DeleteFailedWhileGetting": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&storagev1.Policy{})
+				if err := json.NewEncoder(w).Encode(&storagev1.Policy{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -561,13 +585,19 @@ func TestBucketPolicyMemberDelete(t *testing.T) {
 						},
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(p)
+					if err := json.NewEncoder(w).Encode(p); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					w.WriteHeader(http.StatusInternalServerError)
-					_ = json.NewEncoder(w).Encode(&storagev1.Policy{})
+					if err := json.NewEncoder(w).Encode(&storagev1.Policy{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&storagev1.Policy{})
+					if err := json.NewEncoder(w).Encode(&storagev1.Policy{}); err != nil {
+						t.Error(err)
+					}
 				}
 
 			}),
@@ -597,10 +627,14 @@ func TestBucketPolicyMemberDelete(t *testing.T) {
 						},
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(p)
+					if err := json.NewEncoder(w).Encode(p); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&storagev1.Policy{})
+					if err := json.NewEncoder(w).Encode(&storagev1.Policy{}); err != nil {
+						t.Error(err)
+					}
 				}
 
 			}),
@@ -622,10 +656,14 @@ func TestBucketPolicyMemberDelete(t *testing.T) {
 				case http.MethodGet:
 					p := &storagev1.Policy{}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(p)
+					if err := json.NewEncoder(w).Encode(p); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&storagev1.Policy{})
+					if err := json.NewEncoder(w).Encode(&storagev1.Policy{}); err != nil {
+						t.Error(err)
+					}
 				}
 
 			}),

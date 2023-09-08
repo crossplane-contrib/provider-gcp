@@ -39,6 +39,23 @@ type TopicParameters struct {
 	// +optional
 	MessageStoragePolicy *MessageStoragePolicy `json:"messageStoragePolicy,omitempty"`
 
+	// MessageRetentionDuration: Indicates the minimum duration to retain a
+	// message after it is published to the topic. If this field is set,
+	// messages published to the topic in the last
+	// `message_retention_duration` are always available to subscribers. For
+	// instance, it allows any attached subscription to seek to a timestamp
+	// (https://cloud.google.com/pubsub/docs/replay-overview#seek_to_a_time)
+	// that is up to `message_retention_duration` in the past. If this field
+	// is not set, message retention is controlled by settings on individual
+	// subscriptions. Cannot be more than 31 days or less than 10 minutes.
+	//
+	// The duration must be in seconds, terminated by 's'. Example: "1200s".
+	// Avoid using fractional digits.
+	//
+	// +kubebuilder:validation:Pattern=[0-9]+s$
+	// +optional
+	MessageRetentionDuration *string `json:"messageRetentionDuration,omitempty"`
+
 	// KmsKeyName is the resource name of the Cloud KMS CryptoKey to be used to
 	// protect access to messages published on this topic.
 	//

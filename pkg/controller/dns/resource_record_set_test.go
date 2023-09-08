@@ -115,7 +115,9 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 		"InternalError": {
@@ -133,7 +135,9 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 		"UpdateResourceSpecFail": {
@@ -154,7 +158,9 @@ func TestObserve(t *testing.T) {
 				cr := newRrs(withSignature("test"))
 				rrs := &dns.ResourceRecordSet{}
 				rrsClient.GenerateResourceRecordSet(meta.GetExternalName(cr), cr.Spec.ForProvider, rrs)
-				_ = json.NewEncoder(w).Encode(rrs)
+				if err := json.NewEncoder(w).Encode(rrs); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(errBoom),
@@ -182,7 +188,9 @@ func TestObserve(t *testing.T) {
 				cr := newRrs(withSignature("test"))
 				rrs := &dns.ResourceRecordSet{}
 				rrsClient.GenerateResourceRecordSet(meta.GetExternalName(cr), cr.Spec.ForProvider, rrs)
-				_ = json.NewEncoder(w).Encode(rrs)
+				if err := json.NewEncoder(w).Encode(rrs); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
@@ -206,7 +214,9 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{Kind: "dns#resourceRecordSet"})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{Kind: "dns#resourceRecordSet"}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 		"ResourceNotUpToDate": {
@@ -227,7 +237,9 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 	}
@@ -293,7 +305,9 @@ func TestCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 		"Failed": {
@@ -303,7 +317,7 @@ func TestCreate(t *testing.T) {
 			},
 			want: want{
 				e:   managed.ExternalCreation{},
-				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCannotCreate),
+				err: errors.Wrap(gError(http.StatusBadRequest, ""), errCreateCluster),
 			},
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.Body.Close()
@@ -311,7 +325,9 @@ func TestCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 	}
@@ -376,7 +392,9 @@ func TestUpdate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 		"Failed": {
@@ -394,7 +412,9 @@ func TestUpdate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 	}
@@ -456,7 +476,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 		"Failed": {
@@ -473,7 +495,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 		"NotFound": {
@@ -490,7 +514,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&dns.ResourceRecordSet{})
+				if err := json.NewEncoder(w).Encode(&dns.ResourceRecordSet{}); err != nil {
+					t.Error(err)
+				}
 			}),
 		},
 	}

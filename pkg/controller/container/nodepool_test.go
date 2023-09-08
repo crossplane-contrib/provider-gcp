@@ -102,7 +102,9 @@ func TestNodePoolObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&container.NodePool{})
+				if err := json.NewEncoder(w).Encode(&container.NodePool{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -119,7 +121,9 @@ func TestNodePoolObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.NodePool{})
+				if err := json.NewEncoder(w).Encode(&container.NodePool{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -140,7 +144,9 @@ func TestNodePoolObserve(t *testing.T) {
 				gn := &container.NodePool{}
 				np.GenerateNodePool(name, n.Spec.ForProvider, gn)
 				gn.Locations = []string{"loc-1"}
-				_ = json.NewEncoder(w).Encode(gn)
+				if err := json.NewEncoder(w).Encode(gn); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(errBoom),
@@ -163,7 +169,9 @@ func TestNodePoolObserve(t *testing.T) {
 				n := &container.NodePool{}
 				np.GenerateNodePool(name, nodePool().Spec.ForProvider, n)
 				n.Status = v1beta1.NodePoolStateProvisioning
-				_ = json.NewEncoder(w).Encode(n)
+				if err := json.NewEncoder(w).Encode(n); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -186,7 +194,9 @@ func TestNodePoolObserve(t *testing.T) {
 				c := &container.NodePool{}
 				np.GenerateNodePool(name, nodePool().Spec.ForProvider, c)
 				c.Status = v1beta1.NodePoolStateError
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -209,7 +219,9 @@ func TestNodePoolObserve(t *testing.T) {
 				c := &container.NodePool{}
 				np.GenerateNodePool(name, nodePool().Spec.ForProvider, c)
 				c.Status = v1beta1.NodePoolStateRunning
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -237,7 +249,9 @@ func TestNodePoolObserve(t *testing.T) {
 				n := &container.NodePool{}
 				np.GenerateNodePool(name, nodePool().Spec.ForProvider, n)
 				n.Status = v1beta1.NodePoolStateError
-				_ = json.NewEncoder(w).Encode(n)
+				if err := json.NewEncoder(w).Encode(n); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -324,7 +338,9 @@ func TestNodePoolCreate(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -353,7 +369,9 @@ func TestNodePoolCreate(t *testing.T) {
 				// http call is never made.
 				w.WriteHeader(http.StatusBadRequest)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(npWithProviderStatus(v1beta1.NodePoolStateProvisioning)),
@@ -374,7 +392,9 @@ func TestNodePoolCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusConflict)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -391,7 +411,9 @@ func TestNodePoolCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -453,7 +475,9 @@ func TestNodePoolDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -472,7 +496,9 @@ func TestNodePoolDelete(t *testing.T) {
 				// Return bad request for delete to demonstrate that
 				// http call is never made.
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(npWithProviderStatus(v1beta1.NodePoolStateStopping)),
@@ -492,7 +518,9 @@ func TestNodePoolDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -509,7 +537,9 @@ func TestNodePoolDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&container.Operation{})
+				if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: nodePool(),
@@ -571,13 +601,19 @@ func TestNodePoolUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.NodePool{})
+					if err := json.NewEncoder(w).Encode(&container.NodePool{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -599,15 +635,21 @@ func TestNodePoolUpdate(t *testing.T) {
 					// Return bad request for get to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.NodePool{})
+					if err := json.NewEncoder(w).Encode(&container.NodePool{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					// Return bad request for put to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -635,15 +677,21 @@ func TestNodePoolUpdate(t *testing.T) {
 					// Return bad request for get to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.NodePool{})
+					if err := json.NewEncoder(w).Encode(&container.NodePool{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					// Return bad request for put to demonstrate that
 					// http call is never made.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -669,17 +717,23 @@ func TestNodePoolUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.NodePool{
+					if err := json.NewEncoder(w).Encode(&container.NodePool{
 						Name: name,
-					})
+					}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					// Return bad request for update to demonstrate that
 					// underlying update is not making any http call.
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -699,13 +753,19 @@ func TestNodePoolUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.NodePool{})
+					if err := json.NewEncoder(w).Encode(&container.NodePool{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -727,13 +787,19 @@ func TestNodePoolUpdate(t *testing.T) {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
 					// Must return successful get of node pool that does not match spec.
-					_ = json.NewEncoder(w).Encode(&container.NodePool{})
+					if err := json.NewEncoder(w).Encode(&container.NodePool{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPut:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&container.Operation{})
+					if err := json.NewEncoder(w).Encode(&container.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{

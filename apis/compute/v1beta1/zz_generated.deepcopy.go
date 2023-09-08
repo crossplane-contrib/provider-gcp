@@ -136,7 +136,7 @@ func (in *AddressParameters) DeepCopyInto(out *AddressParameters) {
 	if in.NetworkRef != nil {
 		in, out := &in.NetworkRef, &out.NetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.NetworkSelector != nil {
 		in, out := &in.NetworkSelector, &out.NetworkSelector
@@ -161,7 +161,7 @@ func (in *AddressParameters) DeepCopyInto(out *AddressParameters) {
 	if in.SubnetworkRef != nil {
 		in, out := &in.SubnetworkRef, &out.SubnetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.SubnetworkSelector != nil {
 		in, out := &in.SubnetworkSelector, &out.SubnetworkSelector
@@ -324,7 +324,7 @@ func (in *GlobalAddressParameters) DeepCopyInto(out *GlobalAddressParameters) {
 	if in.NetworkRef != nil {
 		in, out := &in.NetworkRef, &out.NetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.NetworkSelector != nil {
 		in, out := &in.NetworkSelector, &out.NetworkSelector
@@ -349,7 +349,7 @@ func (in *GlobalAddressParameters) DeepCopyInto(out *GlobalAddressParameters) {
 	if in.SubnetworkRef != nil {
 		in, out := &in.SubnetworkRef, &out.SubnetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.SubnetworkSelector != nil {
 		in, out := &in.SubnetworkSelector, &out.SubnetworkSelector
@@ -671,7 +671,7 @@ func (in *SubnetworkParameters) DeepCopyInto(out *SubnetworkParameters) {
 	if in.NetworkRef != nil {
 		in, out := &in.NetworkRef, &out.NetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.NetworkSelector != nil {
 		in, out := &in.NetworkSelector, &out.NetworkSelector

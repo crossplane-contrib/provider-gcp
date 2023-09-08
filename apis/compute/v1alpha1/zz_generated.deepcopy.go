@@ -171,7 +171,7 @@ func (in *FirewallParameters) DeepCopyInto(out *FirewallParameters) {
 	if in.NetworkRef != nil {
 		in, out := &in.NetworkRef, &out.NetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.NetworkSelector != nil {
 		in, out := &in.NetworkSelector, &out.NetworkSelector
@@ -664,7 +664,7 @@ func (in *RouterParameters) DeepCopyInto(out *RouterParameters) {
 	if in.NetworkRef != nil {
 		in, out := &in.NetworkRef, &out.NetworkRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.NetworkSelector != nil {
 		in, out := &in.NetworkSelector, &out.NetworkSelector

@@ -233,6 +233,10 @@ func GenerateAutoscaling(in *v1beta2.ClusterAutoscaling, cluster *container.Clus
 			}
 		}
 
+		if in.AutoscalingProfile != nil {
+			cluster.Autoscaling.AutoscalingProfile = gcp.StringValue(in.AutoscalingProfile)
+		}
+
 		if len(in.ResourceLimits) > 0 {
 			cluster.Autoscaling.ResourceLimits = make([]*container.ResourceLimit, len(in.ResourceLimits))
 		}
@@ -412,6 +416,14 @@ func GenerateNetworkConfig(in *v1beta2.NetworkConfigSpec, cluster *container.Clu
 				cluster.NetworkConfig.DefaultSnatStatus = &container.DefaultSnatStatus{}
 			}
 			cluster.NetworkConfig.DefaultSnatStatus.Disabled = in.DefaultSnatStatus.Disabled
+		}
+		if in.DnsConfig != nil {
+			if cluster.NetworkConfig.DnsConfig == nil {
+				cluster.NetworkConfig.DnsConfig = &container.DNSConfig{}
+			}
+			cluster.NetworkConfig.DnsConfig.ClusterDns = gcp.StringValue(in.DnsConfig.ClusterDns)
+			cluster.NetworkConfig.DnsConfig.ClusterDnsScope = gcp.StringValue(in.DnsConfig.ClusterDnsScope)
+			cluster.NetworkConfig.DnsConfig.ClusterDnsDomain = gcp.StringValue(in.DnsConfig.ClusterDnsDomain)
 		}
 	}
 }
@@ -741,6 +753,7 @@ func LateInitializeSpec(spec *v1beta2.ClusterParameters, in container.Cluster) {
 				spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable = gcp.LateInitializeInt64(spec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable, in.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable)
 			}
 		}
+		spec.Autoscaling.AutoscalingProfile = gcp.LateInitializeString(spec.Autoscaling.AutoscalingProfile, in.Autoscaling.AutoscalingProfile)
 		spec.Autoscaling.EnableNodeAutoprovisioning = gcp.LateInitializeBool(spec.Autoscaling.EnableNodeAutoprovisioning, in.Autoscaling.EnableNodeAutoprovisioning)
 		if len(in.Autoscaling.ResourceLimits) != 0 && len(spec.Autoscaling.ResourceLimits) == 0 {
 			spec.Autoscaling.ResourceLimits = make([]*v1beta2.ResourceLimit, len(in.Autoscaling.ResourceLimits))
@@ -881,6 +894,14 @@ func LateInitializeSpec(spec *v1beta2.ClusterParameters, in container.Cluster) {
 				Disabled: in.NetworkConfig.DefaultSnatStatus.Disabled,
 			}
 		}
+		if in.NetworkConfig.DnsConfig != nil {
+			if spec.NetworkConfig.DnsConfig == nil {
+				spec.NetworkConfig.DnsConfig = &v1beta2.DnsConfig{}
+			}
+			spec.NetworkConfig.DnsConfig.ClusterDns = gcp.LateInitializeString(spec.NetworkConfig.DnsConfig.ClusterDns, in.NetworkConfig.DnsConfig.ClusterDns)
+			spec.NetworkConfig.DnsConfig.ClusterDnsScope = gcp.LateInitializeString(spec.NetworkConfig.DnsConfig.ClusterDnsScope, in.NetworkConfig.DnsConfig.ClusterDnsScope)
+			spec.NetworkConfig.DnsConfig.ClusterDnsDomain = gcp.LateInitializeString(spec.NetworkConfig.DnsConfig.ClusterDnsDomain, in.NetworkConfig.DnsConfig.ClusterDnsDomain)
+		}
 	}
 
 	if in.NetworkPolicy != nil {
@@ -998,20 +1019,6 @@ func newBinaryAuthorizationUpdateFn(in *v1beta2.BinaryAuthorization) UpdateFn {
 	}
 }
 
-// newAutopilotUpdateFn returns a function that updates the Autopilot of a cluster.
-func newAutopilotUpdateFn(in *v1beta2.Autopilot) UpdateFn {
-	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
-		out := &container.Cluster{}
-		GenerateAutopilot(in, out)
-		update := &container.UpdateClusterRequest{
-			Update: &container.ClusterUpdate{
-				DesiredAutopilot: out.Autopilot,
-			},
-		}
-		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
-	}
-}
-
 // newDatabaseEncryptionUpdateFn returns a function that updates the DatabaseEncryption of a cluster.
 func newDatabaseEncryptionUpdateFn(in *v1beta2.DatabaseEncryption) UpdateFn {
 	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
@@ -1107,6 +1114,20 @@ func newDatapathProviderUpdateFn(in *string) UpdateFn {
 		update := &container.UpdateClusterRequest{
 			Update: &container.ClusterUpdate{
 				DesiredDatapathProvider: gcp.StringValue(in),
+			},
+		}
+		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
+	}
+}
+
+// newDNSConfigUpdateFn returns a function that updates the DnsConfig of a cluster
+func newDNSConfigUpdateFn(in *v1beta2.NetworkConfigSpec) UpdateFn {
+	return func(ctx context.Context, s *container.Service, name string) (*container.Operation, error) {
+		out := &container.Cluster{}
+		GenerateNetworkConfig(in, out)
+		update := &container.UpdateClusterRequest{
+			Update: &container.ClusterUpdate{
+				DesiredDnsConfig: out.NetworkConfig.DnsConfig,
 			},
 		}
 		return s.Projects.Locations.Clusters.Update(name, update).Context(ctx).Do()
@@ -1289,9 +1310,6 @@ func IsUpToDate(name string, in *v1beta2.ClusterParameters, observed *container.
 		cmpopts.IgnoreFields(container.AddonsConfig{}, "NetworkPolicyConfig.ForceSendFields")) {
 		return false, newAddonsConfigUpdateFn(in.AddonsConfig), nil
 	}
-	if !cmp.Equal(desired.Autopilot, observed.Autopilot, cmpopts.EquateEmpty()) {
-		return false, newAutopilotUpdateFn(in.Autopilot), nil
-	}
 	if !cmp.Equal(desired.Autoscaling, observed.Autoscaling, cmpopts.EquateEmpty()) {
 		return false, newAutoscalingUpdateFn(in.Autoscaling), nil
 	}
@@ -1328,6 +1346,9 @@ func IsUpToDate(name string, in *v1beta2.ClusterParameters, observed *container.
 		}
 		if !cmp.Equal(desired.NetworkConfig.DatapathProvider, observed.NetworkConfig.DatapathProvider, cmpopts.EquateEmpty()) {
 			return false, newDatapathProviderUpdateFn(in.NetworkConfig.DatapathProvider), nil
+		}
+		if !cmp.Equal(desired.NetworkConfig.DnsConfig, observed.NetworkConfig.DnsConfig, cmpopts.EquateEmpty()) {
+			return false, newDNSConfigUpdateFn(in.NetworkConfig), nil
 		}
 	}
 

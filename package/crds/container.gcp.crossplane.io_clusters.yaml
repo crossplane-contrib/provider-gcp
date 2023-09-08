@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: clusters.container.gcp.crossplane.io
 spec:
@@ -216,8 +216,8 @@ spec:
                     properties:
                       autoprovisioningLocations:
                         description: 'AutoprovisioningLocations: The list of Google
-                          Compute Engine [zones](/compute/docs/zones#available) in
-                          which the NodePool''s nodes can be created by NAP.'
+                          Compute Engine [zones](https://cloud.google.com/compute/docs/zones#available)
+                          in which the NodePool''s nodes can be created by NAP.'
                         items:
                           type: string
                         type: array
@@ -327,6 +327,16 @@ spec:
                                 type: integer
                             type: object
                         type: object
+                      autoscalingProfile:
+                        description: "AutoscalingProfile: Defines which profile the
+                          cluster autoscaler uses to decide when to remove a node.
+                          \n Possible values: \"BALANCED\" - the default profile which
+                          prioritizes availability of resources. \"OPTIMIZE_UTILIZATION\"
+                          - prioritizes optimizing the utilization of resources."
+                        enum:
+                        - BALANCED
+                        - OPTIMIZE_UTILIZATION
+                        type: string
                       enableNodeAutoprovisioning:
                         description: 'EnableNodeAutoprovisioning: Enables automatic
                           node pool creation and deletion.'
@@ -555,12 +565,12 @@ spec:
                     type: object
                   location:
                     description: 'Location: The name of the Google Compute Engine
-                      [zone](/compute/docs/regions-zones/regions-zones#available)
-                      or [region](/compute/docs/regions-zones/regions-zones#available)
+                      [zone](https://cloud.google.com/compute/docs/regions-zones/regions-zones#available)
+                      or [region](https://cloud.google.com/compute/docs/regions-zones/regions-zones#available)
                       in which the cluster resides.'
                     type: string
                   locations:
-                    description: 'Locations: The list of Google Compute Engine [zones](/compute/docs/zones#available)
+                    description: 'Locations: The list of Google Compute Engine [zones](https://cloud.google.com/compute/docs/zones#available)
                       in which the cluster''s nodes should be located.'
                     items:
                       type: string
@@ -726,7 +736,7 @@ spec:
                       be used."
                     type: string
                   network:
-                    description: 'Network: The name of the Google Compute Engine [network](/compute/docs/networks-and-firewalls#networks)
+                    description: 'Network: The name of the Google Compute Engine [network](https://cloud.google.com/vpc/docs/vpc#vpc_networks_and_subnets)
                       to which the cluster is connected. If left unspecified, the
                       `default` network will be used.'
                     type: string
@@ -740,8 +750,8 @@ spec:
                           - Default value. \"LEGACY_DATAPATH\" - Use the IPTables
                           implementation based on kube-proxy. \"ADVANCED_DATAPATH\"
                           - Use the eBPF based GKE Dataplane V2 with additional features.
-                          See the [GKE Dataplane V2 documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/
-                          dataplane-v2) for more."
+                          See the [GKE Dataplane V2 documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/dataplane-v2)
+                          for more."
                         type: string
                       defaultSnatStatus:
                         description: 'DefaultSnatStatus: Whether the cluster disables
@@ -756,6 +766,37 @@ spec:
                             type: boolean
                         required:
                         - disabled
+                        type: object
+                      dnsConfig:
+                        description: DNSConfig contains the desired set of options
+                          for configuring clusterDNS.
+                        properties:
+                          clusterDns:
+                            description: 'ClusterDns indicates which in-cluster DNS
+                              provider should be used. Possible values: "PROVIDER_UNSPECIFIED"
+                              - indicates the default value. "PLATFORM_DEFAULT" -
+                              indicates using the GKE default DNS provider(kube-dns)
+                              for DNS resolution. "CLOUD_DNS" - indicates using CloudDNS
+                              for DNS resolution.'
+                            enum:
+                            - PROVIDER_UNSPECIFIED
+                            - PLATFORM_DEFAULT
+                            - CLOUD_DNS
+                            type: string
+                          clusterDnsDomain:
+                            description: ClusterDnsDomain is the suffix used for all
+                              cluster service records.
+                            type: string
+                          clusterDnsScope:
+                            description: 'ClusterDnsScope indicates the scope of access
+                              to cluster DNS records. Possible Values: "DNS_SCOPE_UNSPECIFIED"
+                              - indicates the default value, will be inferred as cluster
+                              scope. "VPC_SCOPE" - indicates that DNS records are
+                              accessible from within the VPC.'
+                            enum:
+                            - DNS_SCOPE_UNSPECIFIED
+                            - VPC_SCOPE
+                            type: string
                         type: object
                       enableIntraNodeVisibility:
                         description: 'EnableIntraNodeVisibility: Whether Intra-node
@@ -795,6 +836,31 @@ spec:
                       name:
                         description: Name of the referenced object.
                         type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: Resolution specifies whether resolution of
+                              this reference is required. The default is 'Required',
+                              which means the reconcile will fail if the reference
+                              cannot be resolved. 'Optional' means this reference
+                              will be a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: Resolve specifies when this reference should
+                              be resolved. The default is 'IfNotPresent', which will
+                              attempt to resolve the reference only when the corresponding
+                              field is not present. Use 'Always' to resolve the reference
+                              on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
                     required:
                     - name
                     type: object
@@ -811,6 +877,31 @@ spec:
                           type: string
                         description: MatchLabels ensures an object with matching labels
                           is selected.
+                        type: object
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: Resolution specifies whether resolution of
+                              this reference is required. The default is 'Required',
+                              which means the reconcile will fail if the reference
+                              cannot be resolved. 'Optional' means this reference
+                              will be a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: Resolve specifies when this reference should
+                              be resolved. The default is 'IfNotPresent', which will
+                              attempt to resolve the reference only when the corresponding
+                              field is not present. Use 'Always' to resolve the reference
+                              on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
                         type: object
                     type: object
                   notificationConfig:
@@ -930,8 +1021,8 @@ spec:
                     type: object
                   subnetwork:
                     description: 'Subnetwork: The name of the Google Compute Engine
-                      [subnetwork](/compute/docs/subnetworks) to which the cluster
-                      is connected.'
+                      [subnetwork](https://cloud.google.com/vpc/docs/subnets) to which
+                      the cluster is connected.'
                     type: string
                   subnetworkRef:
                     description: SubnetworkRef references to a Subnetwork and retrieves
@@ -940,6 +1031,31 @@ spec:
                       name:
                         description: Name of the referenced object.
                         type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: Resolution specifies whether resolution of
+                              this reference is required. The default is 'Required',
+                              which means the reconcile will fail if the reference
+                              cannot be resolved. 'Optional' means this reference
+                              will be a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: Resolve specifies when this reference should
+                              be resolved. The default is 'IfNotPresent', which will
+                              attempt to resolve the reference only when the corresponding
+                              field is not present. Use 'Always' to resolve the reference
+                              on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
                     required:
                     - name
                     type: object
@@ -956,6 +1072,31 @@ spec:
                           type: string
                         description: MatchLabels ensures an object with matching labels
                           is selected.
+                        type: object
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: Resolution specifies whether resolution of
+                              this reference is required. The default is 'Required',
+                              which means the reconcile will fail if the reference
+                              cannot be resolved. 'Optional' means this reference
+                              will be a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: Resolve specifies when this reference should
+                              be resolved. The default is 'IfNotPresent', which will
+                              attempt to resolve the reference only when the corresponding
+                              field is not present. Use 'Always' to resolve the reference
+                              on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
                         type: object
                     type: object
                   verticalPodAutoscaling:
@@ -990,6 +1131,31 @@ spec:
                   name:
                     description: Name of the referenced object.
                     type: string
+                  policy:
+                    description: Policies for referencing.
+                    properties:
+                      resolution:
+                        default: Required
+                        description: Resolution specifies whether resolution of this
+                          reference is required. The default is 'Required', which
+                          means the reconcile will fail if the reference cannot be
+                          resolved. 'Optional' means this reference will be a no-op
+                          if it cannot be resolved.
+                        enum:
+                        - Required
+                        - Optional
+                        type: string
+                      resolve:
+                        description: Resolve specifies when this reference should
+                          be resolved. The default is 'IfNotPresent', which will attempt
+                          to resolve the reference only when the corresponding field
+                          is not present. Use 'Always' to resolve the reference on
+                          every reconcile.
+                        enum:
+                        - Always
+                        - IfNotPresent
+                        type: string
+                    type: object
                 required:
                 - name
                 type: object
@@ -1001,6 +1167,31 @@ spec:
                   name:
                     description: Name of the referenced object.
                     type: string
+                  policy:
+                    description: Policies for referencing.
+                    properties:
+                      resolution:
+                        default: Required
+                        description: Resolution specifies whether resolution of this
+                          reference is required. The default is 'Required', which
+                          means the reconcile will fail if the reference cannot be
+                          resolved. 'Optional' means this reference will be a no-op
+                          if it cannot be resolved.
+                        enum:
+                        - Required
+                        - Optional
+                        type: string
+                      resolve:
+                        description: Resolve specifies when this reference should
+                          be resolved. The default is 'IfNotPresent', which will attempt
+                          to resolve the reference only when the corresponding field
+                          is not present. Use 'Always' to resolve the reference on
+                          every reconcile.
+                        enum:
+                        - Always
+                        - IfNotPresent
+                        type: string
+                    type: object
                 required:
                 - name
                 type: object
@@ -1020,6 +1211,31 @@ spec:
                       name:
                         description: Name of the referenced object.
                         type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: Resolution specifies whether resolution of
+                              this reference is required. The default is 'Required',
+                              which means the reconcile will fail if the reference
+                              cannot be resolved. 'Optional' means this reference
+                              will be a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: Resolve specifies when this reference should
+                              be resolved. The default is 'IfNotPresent', which will
+                              attempt to resolve the reference only when the corresponding
+                              field is not present. Use 'Always' to resolve the reference
+                              on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
                     required:
                     - name
                     type: object
@@ -1122,11 +1338,11 @@ spec:
                     format: int64
                     type: integer
                   currentNodeVersion:
-                    description: 'CurrentNodeVersion: Deprecated, use [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/proj
-                      ects.zones.clusters.nodePools) instead. The current version
-                      of the node software components. If they are currently at multiple
-                      versions because they''re in the process of being upgraded,
-                      this reflects the minimum version of all nodes.'
+                    description: 'CurrentNodeVersion: Deprecated, use [NodePools.version](/kubernetes-engine/docs/reference/rest/v1/projects.zones.clusters.nodePools)
+                      instead. The current version of the node software components.
+                      If they are currently at multiple versions because they''re
+                      in the process of being upgraded, this reflects the minimum
+                      version of all nodes.'
                     type: string
                   endpoint:
                     description: "Endpoint: The IP address of this cluster's master
@@ -1141,8 +1357,8 @@ spec:
                     type: string
                   location:
                     description: 'Location: The name of the Google Compute Engine
-                      [zone](/compute/docs/regions-zones/regions-zones#available)
-                      or [region](/compute/docs/regions-zones/regions-zones#available)
+                      [zone](https://cloud.google.com/compute/docs/regions-zones/regions-zones#available)
+                      or [region](https://cloud.google.com/compute/docs/regions-zones/regions-zones#available)
                       in which the cluster resides.'
                     type: string
                   maintenancePolicy:
@@ -1171,13 +1387,13 @@ spec:
                     properties:
                       network:
                         description: 'Network: The relative name of the Google Compute
-                          Engine network(/compute/docs/networks-and-firewalls#networks)
+                          Engine network(https://cloud.google.com/vpc/docs/vpc#vpc_networks_and_subnets)
                           to which the cluster is connected. Example: projects/my-project/global/networks/my-network'
                         type: string
                       subnetwork:
                         description: 'Subnetwork: The relative name of the Google
-                          Compute Engine [subnetwork](/compute/docs/vpc) to which
-                          the cluster is connected. Example: projects/my-project/regions/us-central1/subnetworks/my-subnet'
+                          Compute Engine [subnetwork](https://cloud.google.com/vpc/docs/vpc)
+                          to which the cluster is connected. Example: projects/my-project/regions/us-central1/subnetworks/my-subnet'
                         type: string
                     type: object
                   nodeIpv4CidrSize:
@@ -1264,7 +1480,7 @@ spec:
                                   acceleratorType:
                                     description: 'AcceleratorType: The accelerator
                                       type resource name. List of supported accelerators
-                                      [here](/compute/docs/gpus/#Introduction)'
+                                      [here](https://cloud.google.com/compute/docs/gpus/#Introduction)'
                                     type: string
                                 type: object
                               type: array
@@ -1309,7 +1525,7 @@ spec:
                               type: integer
                             machineType:
                               description: "MachineType: The name of a Google Compute
-                                Engine [machine type](/compute/docs/machine-types)
+                                Engine [machine type](https://cloud.google.com/compute/docs/machine-types)
                                 (e.g. `n1-standard-1`). \n If unspecified, the default
                                 machine type is `n1-standard-1`."
                               type: string
@@ -1444,22 +1660,22 @@ spec:
                         initialNodeCount:
                           description: 'InitialNodeCount: The initial node count for
                             the pool. You must ensure that your Compute Engine <a
-                            href="/compute/docs/resource-quotas">resource quota</a>
-                            is sufficient for this number of instances. You must also
-                            have available firewall and routes quota.'
+                            href="https://cloud.google.com/compute/quotas">resource
+                            quota</a> is sufficient for this number of instances.
+                            You must also have available firewall and routes quota.'
                           format: int64
                           type: integer
                         instanceGroupUrls:
                           description: 'InstanceGroupUrls: The resource URLs of the
-                            [managed instance groups](/compute/docs/instance-groups/creating-groups-of-mana
-                            ged-instances) associated with this node pool.'
+                            [managed instance groups](https://cloud.google.com/compute/docs/instance-groups/creating-groups-of-managed-instances)
+                            associated with this node pool.'
                           items:
                             type: string
                           type: array
                         locations:
                           description: 'Locations: The list of Google Compute Engine
-                            [zones](/compute/docs/zones#available) in which the NodePool''s
-                            nodes should be located.'
+                            [zones](https://cloud.google.com/compute/docs/regions-zones#available)
+                            in which the NodePool''s nodes should be located.'
                           items:
                             type: string
                           type: array
@@ -1593,7 +1809,7 @@ spec:
                       \n notation (e.g. `1.2.3.4/29`)."
                     type: string
                   zone:
-                    description: 'Zone: The name of the Google Compute Engine [zone](/compute/docs/zones#available)
+                    description: 'Zone: The name of the Google Compute Engine [zone](https://cloud.google.com/compute/docs/zones#available)
                       in which the cluster resides. This field is deprecated, use
                       location instead.'
                     type: string
@@ -1641,9 +1857,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

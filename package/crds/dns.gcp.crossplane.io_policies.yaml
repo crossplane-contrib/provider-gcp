@@ -5,18 +5,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
-  name: topics.pubsub.gcp.crossplane.io
+  name: policies.dns.gcp.crossplane.io
 spec:
-  group: pubsub.gcp.crossplane.io
+  group: dns.gcp.crossplane.io
   names:
     categories:
     - crossplane
     - managed
     - gcp
-    kind: Topic
-    listKind: TopicList
-    plural: topics
-    singular: topic
+    kind: Policy
+    listKind: PolicyList
+    plural: policies
+    singular: policy
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -26,10 +26,14 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
+    - jsonPath: .status.atProvider.name
+      name: DNS NAME
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Topic is a managed resource that represents a Google PubSub Topic.
+        description: A Policy is a collection of DNS rules applied to one or more
+          Virtual Private Cloud resources.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -44,7 +48,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: TopicSpec defines the desired state of a Topic.
+            description: The PolicySpec defines the desired state of a DNSPolicy.
             properties:
               deletionPolicy:
                 default: Delete
@@ -56,126 +60,81 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: TopicParameters defines parameters for a desired PubSub
-                  Topic.
+                description: The PolicyParameters define the desired state of a Policy
                 properties:
-                  kmsKeyName:
-                    description: "KmsKeyName is the resource name of the Cloud KMS
-                      CryptoKey to be used to protect access to messages published
-                      on this topic. \n The expected format is `projects/*/locations/*/keyRings/*/cryptoKeys/*`."
-                    type: string
-                  kmsKeyNameRef:
-                    description: KmsKeyNameRef allows you to specify custom resource
-                      name of the KMS Key to fill KmsKeyName field.
+                  alternativeNameServerConfig:
+                    description: 'AlternativeNameServerConfig: Sets an alternative
+                      name server for the associated networks. When specified, all
+                      DNS queries are forwarded to a name server that you choose.
+                      Names such as .internal are not available when an alternative
+                      name server is specified.'
                     properties:
-                      name:
-                        description: Name of the referenced object.
-                        type: string
-                      policy:
-                        description: Policies for referencing.
-                        properties:
-                          resolution:
-                            default: Required
-                            description: Resolution specifies whether resolution of
-                              this reference is required. The default is 'Required',
-                              which means the reconcile will fail if the reference
-                              cannot be resolved. 'Optional' means this reference
-                              will be a no-op if it cannot be resolved.
-                            enum:
-                            - Required
-                            - Optional
-                            type: string
-                          resolve:
-                            description: Resolve specifies when this reference should
-                              be resolved. The default is 'IfNotPresent', which will
-                              attempt to resolve the reference only when the corresponding
-                              field is not present. Use 'Always' to resolve the reference
-                              on every reconcile.
-                            enum:
-                            - Always
-                            - IfNotPresent
-                            type: string
-                        type: object
-                    required:
-                    - name
-                    type: object
-                  kmsKeyNameSelector:
-                    description: KmsKeyNameSelector allows you to use selector constraints
-                      to select a KMS Key.
-                    properties:
-                      matchControllerRef:
-                        description: MatchControllerRef ensures an object with the
-                          same controller reference as the selecting object is selected.
-                        type: boolean
-                      matchLabels:
-                        additionalProperties:
-                          type: string
-                        description: MatchLabels ensures an object with matching labels
-                          is selected.
-                        type: object
-                      policy:
-                        description: Policies for selection.
-                        properties:
-                          resolution:
-                            default: Required
-                            description: Resolution specifies whether resolution of
-                              this reference is required. The default is 'Required',
-                              which means the reconcile will fail if the reference
-                              cannot be resolved. 'Optional' means this reference
-                              will be a no-op if it cannot be resolved.
-                            enum:
-                            - Required
-                            - Optional
-                            type: string
-                          resolve:
-                            description: Resolve specifies when this reference should
-                              be resolved. The default is 'IfNotPresent', which will
-                              attempt to resolve the reference only when the corresponding
-                              field is not present. Use 'Always' to resolve the reference
-                              on every reconcile.
-                            enum:
-                            - Always
-                            - IfNotPresent
-                            type: string
-                        type: object
-                    type: object
-                  labels:
-                    additionalProperties:
-                      type: string
-                    description: Labels are used as additional metadata on Topic.
-                    type: object
-                  messageRetentionDuration:
-                    description: "MessageRetentionDuration: Indicates the minimum
-                      duration to retain a message after it is published to the topic.
-                      If this field is set, messages published to the topic in the
-                      last `message_retention_duration` are always available to subscribers.
-                      For instance, it allows any attached subscription to seek to
-                      a timestamp (https://cloud.google.com/pubsub/docs/replay-overview#seek_to_a_time)
-                      that is up to `message_retention_duration` in the past. If this
-                      field is not set, message retention is controlled by settings
-                      on individual subscriptions. Cannot be more than 31 days or
-                      less than 10 minutes. \n The duration must be in seconds, terminated
-                      by 's'. Example: \"1200s\". Avoid using fractional digits."
-                    pattern: '[0-9]+s$'
-                    type: string
-                  messageStoragePolicy:
-                    description: MessageStoragePolicy is the policy constraining the
-                      set of Google Cloud Platform regions where messages published
-                      to the topic may be stored. If not present, then no constraints
-                      are in effect.
-                    properties:
-                      allowedPersistenceRegions:
-                        description: AllowedPersistenceRegions is the list of IDs
-                          of GCP regions where messages that are published to the
-                          topic may be persisted in storage. Messages published by
-                          publishers running in non-allowed GCP regions (or running
-                          outside of GCP altogether) will be routed for storage in
-                          one of the allowed regions. An empty list means that no
-                          regions are allowed, and is not a valid configuration.
+                      targetNameServers:
+                        description: 'TargetNameServers: Sets an alternative name
+                          server for the associated networks. When specified, all
+                          DNS queries are forwarded to a name server that you choose.
+                          Names such as .internal are not available when an alternative
+                          name server is specified.'
                         items:
-                          type: string
+                          description: A PolicyAlternativeNameServerConfigTargetNameServer
+                            has the below fields.
+                          properties:
+                            forwardingPath:
+                              description: 'ForwardingPath: Forwarding path for this
+                                TargetNameServer. If unset or set to DEFAULT, Cloud
+                                DNS makes forwarding decisions based on  address ranges;
+                                that is, RFC1918 addresses go to the VPC network,
+                                non-RFC1918 addresses go to the internet. When set
+                                to PRIVATE, Cloud DNS always sends queries through
+                                the VPC network for this target. Possible values:
+                                "default" - Cloud DNS makes forwarding decision based
+                                on IP address ranges; that is, RFC1918 addresses forward
+                                to the target through the VPC and non-RFC1918 addresses
+                                forward to the target through the internet "private"
+                                - Cloud DNS always forwards to this target through
+                                the VPC.'
+                              type: string
+                            ipv4Address:
+                              description: 'Ipv4Address: IPv4 address to forward to.'
+                              type: string
+                          required:
+                          - ipv4Address
+                          type: object
                         type: array
+                    required:
+                    - targetNameServers
                     type: object
+                  description:
+                    description: 'Description: A mutable string of at most 1024 characters
+                      associated with this resource for the user''s convenience. Has
+                      no effect on the policy''s function.'
+                    type: string
+                  enableInboundForwarding:
+                    description: 'EnableInboundForwarding: Allows networks bound to
+                      this policy to receive DNS queries sent by VMs or applications
+                      over VPN connections. When enabled, a virtual IP address is
+                      allocated from each of the subnetworks that are bound to this
+                      policy.'
+                    type: boolean
+                  enableLogging:
+                    description: 'EnableLogging: Controls whether logging is enabled
+                      for the networks bound to this policy. Defaults to no logging
+                      if not set.'
+                    type: boolean
+                  networks:
+                    description: 'Networks: List of network names specifying networks
+                      to which this policy is applied.'
+                    items:
+                      description: A PolicyNetwork struct has the field NetworkURL
+                      properties:
+                        networkUrl:
+                          description: 'NetworkUrl: The fully qualified URL of the
+                            VPC network to bind to.'
+                          type: string
+                      required:
+                      - networkUrl
+                      type: object
+                    type: array
                 type: object
               providerConfigRef:
                 default:
@@ -349,8 +308,18 @@ spec:
             - forProvider
             type: object
           status:
-            description: TopicStatus represents the observed state of a Topic.
+            description: The PolicyStatus represents the observed state of a DNSPolicy.
             properties:
+              atProvider:
+                description: The PolicyObservation is used to show the observed state
+                  of the Policy
+                properties:
+                  id:
+                    description: 'Id: Unique identifier for the resource; defined
+                      by the server (output only).'
+                    format: int64
+                    type: integer
+                type: object
               conditions:
                 description: Conditions of the resource.
                 items:

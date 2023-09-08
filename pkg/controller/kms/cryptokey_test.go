@@ -178,7 +178,9 @@ func TestCryptoKeyObserve(t *testing.T) {
 					Name:    keyRingRRN,
 					Purpose: "ENCRYPT_DECRYPT",
 				}
-				_ = json.NewEncoder(w).Encode(ck)
+				if err := json.NewEncoder(w).Encode(ck); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -209,7 +211,9 @@ func TestCryptoKeyObserve(t *testing.T) {
 				sa := &kmsv1.CryptoKey{
 					Name: fqName,
 				}
-				_ = json.NewEncoder(w).Encode(sa)
+				if err := json.NewEncoder(w).Encode(sa); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -318,7 +322,9 @@ func TestCryptoKeyCreate(t *testing.T) {
 					Name: keyRingRRN,
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(kr)
+				if err := json.NewEncoder(w).Encode(kr); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -347,7 +353,9 @@ func TestCryptoKeyCreate(t *testing.T) {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				defer r.Body.Close()
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(&iamv1.Empty{})
+				if err := json.NewEncoder(w).Encode(&iamv1.Empty{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -422,7 +430,9 @@ func TestCryptoKeyUpdate(t *testing.T) {
 						Purpose: "ENCRYPT_DECRYPT",
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(kr)
+					if err := json.NewEncoder(w).Encode(kr); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPatch:
 					// https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys/patch
 					if !strings.HasSuffix(r.URL.Path, keyRingRRN) {
@@ -439,10 +449,14 @@ func TestCryptoKeyUpdate(t *testing.T) {
 						RotationPeriod: rotationPeriod,
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(kr)
+					if err := json.NewEncoder(w).Encode(kr); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&kmsv1.CryptoKey{})
+					if err := json.NewEncoder(w).Encode(&kmsv1.CryptoKey{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			args: args{
@@ -469,12 +483,16 @@ func TestCryptoKeyUpdate(t *testing.T) {
 						Purpose: "ENCRYPT_DECRYPT",
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(kr)
+					if err := json.NewEncoder(w).Encode(kr); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPatch:
 					t.Errorf("should not call patch when already up to date")
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&kmsv1.CryptoKey{})
+					if err := json.NewEncoder(w).Encode(&kmsv1.CryptoKey{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			args: args{
@@ -495,10 +513,14 @@ func TestCryptoKeyUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&kmsv1.CryptoKey{})
+					if err := json.NewEncoder(w).Encode(&kmsv1.CryptoKey{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&kmsv1.CryptoKey{})
+					if err := json.NewEncoder(w).Encode(&kmsv1.CryptoKey{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			args: args{
@@ -524,13 +546,19 @@ func TestCryptoKeyUpdate(t *testing.T) {
 						Purpose: "ENCRYPT_DECRYPT",
 					}
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(kr)
+					if err := json.NewEncoder(w).Encode(kr); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPatch:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&kmsv1.CryptoKey{})
+					if err := json.NewEncoder(w).Encode(&kmsv1.CryptoKey{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&kmsv1.CryptoKey{})
+					if err := json.NewEncoder(w).Encode(&kmsv1.CryptoKey{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			args: args{

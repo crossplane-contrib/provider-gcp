@@ -170,7 +170,9 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&sqladmin.DatabaseInstance{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.DatabaseInstance{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -187,7 +189,9 @@ func TestObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&sqladmin.DatabaseInstance{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.DatabaseInstance{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -207,7 +211,9 @@ func TestObserve(t *testing.T) {
 				instance := instance(withBackupConfigurationStartTime("22:00"))
 				db := &sqladmin.DatabaseInstance{}
 				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance), instance.Spec.ForProvider, db)
-				_ = json.NewEncoder(w).Encode(db)
+				if err := json.NewEncoder(w).Encode(db); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(errBoom),
@@ -231,7 +237,9 @@ func TestObserve(t *testing.T) {
 				db := &sqladmin.DatabaseInstance{}
 				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
 				db.State = v1beta1.StateCreating
-				_ = json.NewEncoder(w).Encode(db)
+				if err := json.NewEncoder(w).Encode(db); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -255,7 +263,9 @@ func TestObserve(t *testing.T) {
 				db := &sqladmin.DatabaseInstance{}
 				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
 				db.State = v1beta1.StateMaintenance
-				_ = json.NewEncoder(w).Encode(db)
+				if err := json.NewEncoder(w).Encode(db); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -280,7 +290,9 @@ func TestObserve(t *testing.T) {
 				cloudsql.GenerateDatabaseInstance(meta.GetExternalName(instance()), instance().Spec.ForProvider, db)
 				db.ConnectionName = connectionName
 				db.State = v1beta1.StateRunnable
-				_ = json.NewEncoder(w).Encode(db)
+				if err := json.NewEncoder(w).Encode(db); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -371,7 +383,9 @@ func TestCreate(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -391,7 +405,9 @@ func TestCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusConflict)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -408,7 +424,9 @@ func TestCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -492,7 +510,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -509,7 +529,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -526,7 +548,9 @@ func TestDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: instance(),
@@ -589,7 +613,9 @@ func TestUpdate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -618,7 +644,9 @@ func TestUpdate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&sqladmin.Operation{})
+				if err := json.NewEncoder(w).Encode(&sqladmin.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),

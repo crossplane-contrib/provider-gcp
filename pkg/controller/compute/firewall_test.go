@@ -113,7 +113,9 @@ func TestFirewallObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Address{})
+				if err := json.NewEncoder(w).Encode(&compute.Address{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: firewallObj(),
@@ -130,7 +132,9 @@ func TestFirewallObserve(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Address{})
+				if err := json.NewEncoder(w).Encode(&compute.Address{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: firewallObj(),
@@ -149,7 +153,9 @@ func TestFirewallObserve(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				c := &compute.Firewall{}
 				firewall.GenerateFirewall(testFirewallName, firewallObj().Spec.ForProvider, c)
-				_ = json.NewEncoder(w).Encode(c)
+				if err := json.NewEncoder(w).Encode(c); err != nil {
+					t.Error(err)
+				}
 			}),
 			kube: &test.MockClient{
 				MockGet: test.NewMockGetFn(nil),
@@ -234,7 +240,9 @@ func TestFirewallCreate(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusOK)
 				_ = r.Body.Close()
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: firewallObj(),
@@ -252,7 +260,9 @@ func TestFirewallCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusConflict)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: firewallObj(),
@@ -269,7 +279,9 @@ func TestFirewallCreate(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: firewallObj(),
@@ -334,7 +346,9 @@ func TestFirewallDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: firewallObj(),
@@ -351,7 +365,9 @@ func TestFirewallDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: firewallObj(),
@@ -368,7 +384,9 @@ func TestFirewallDelete(t *testing.T) {
 					t.Errorf("r: -want, +got:\n%s", diff)
 				}
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(&compute.Operation{})
+				if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+					t.Error(err)
+				}
 			}),
 			args: args{
 				mg: firewallObj(),
@@ -433,13 +451,19 @@ func TestFirewallUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Network{})
+					if err := json.NewEncoder(w).Encode(&compute.Network{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPatch:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{
@@ -459,13 +483,19 @@ func TestFirewallUpdate(t *testing.T) {
 				switch r.Method {
 				case http.MethodGet:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Firewall{})
+					if err := json.NewEncoder(w).Encode(&compute.Firewall{}); err != nil {
+						t.Error(err)
+					}
 				case http.MethodPatch:
 					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				default:
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&compute.Operation{})
+					if err := json.NewEncoder(w).Encode(&compute.Operation{}); err != nil {
+						t.Error(err)
+					}
 				}
 			}),
 			kube: &test.MockClient{

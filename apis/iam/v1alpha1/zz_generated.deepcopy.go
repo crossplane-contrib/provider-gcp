@@ -88,7 +88,9 @@ func (in *Binding) DeepCopyInto(out *Binding) {
 	if in.ServiceAccountMemberRefs != nil {
 		in, out := &in.ServiceAccountMemberRefs, &out.ServiceAccountMemberRefs
 		*out = make([]v1.Reference, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.ServiceAccountMemberSelector != nil {
 		in, out := &in.ServiceAccountMemberSelector, &out.ServiceAccountMemberSelector
@@ -532,7 +534,7 @@ func (in *ServiceAccountReferer) DeepCopyInto(out *ServiceAccountReferer) {
 	if in.ServiceAccountRef != nil {
 		in, out := &in.ServiceAccountRef, &out.ServiceAccountRef
 		*out = new(v1.Reference)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ServiceAccountSelector != nil {
 		in, out := &in.ServiceAccountSelector, &out.ServiceAccountSelector

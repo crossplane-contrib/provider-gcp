@@ -72,6 +72,8 @@ type CloudMemorystoreInstanceParameters struct {
 	//
 	//  *   `REDIS_4_0` for Redis 4.0 compatibility (default)
 	//  *   `REDIS_3_2` for Redis 3.2 compatibility
+	//  *   `REDIS_5_0` for Redis 5.0 compatibility
+	//  *   `REDIS_6_X` for Redis 6.x compatibility
 	// +optional
 	// +immutable
 	RedisVersion *string `json:"redisVersion,omitempty"`
