@@ -38,6 +38,14 @@ type CloudMemorystoreInstanceParameters struct {
 	// +immutable
 	Tier string `json:"tier"`
 
+	// TransitEncryptionMode specifies TLS encryption mode for Redis service.
+	// For TRANSIT_ENCRYPTION_MODE_UNSPECIFIED the TLS in transit encryption is not set.
+	// If set to SERVER_AUTHENTICATION the client-to-server traffic encryption is enabled.
+	// Encryption is disabled if the value is DISABLED
+	// https://cloud.google.com/memorystore/docs/redis/about-in-transit-encryption
+	// +optional
+	TransitEncryptionMode *string `json:"transitEncryptionMode,omitempty"`
+
 	// Redis memory size in GiB.
 	MemorySizeGB int64 `json:"memorySizeGb"`
 
@@ -135,6 +143,29 @@ type CloudMemorystoreInstanceParameters struct {
 	AuthEnabled *bool `json:"authEnabled,omitempty"`
 }
 
+// ServerCACertsObservation Observability Resource which is fetched from the hyperscaler
+type ServerCACertsObservation struct {
+
+	// Cert is the certificate in the PEM format.
+	Cert string `json:"cert,omitempty"`
+
+	// CreateTime: Output only. The time when the certificate was created in
+	// RFC 3339 (https://tools.ietf.org/html/rfc3339) format, for example
+	// `2020-05-18T00:00:00.094Z`.
+	CreateTime string `json:"createTime,omitempty"`
+
+	// ExpireTime: Output only. The time when the certificate expires in RFC
+	// 3339 (https://tools.ietf.org/html/rfc3339) format, for example
+	// `2020-05-18T00:00:00.094Z`.
+	ExpireTime string `json:"expireTime,omitempty"`
+
+	// SerialNumber: Serial number, as extracted from the certificate.
+	SerialNumber string `json:"serialNumber,omitempty"`
+
+	// Sha1Fingerprint: Sha1 Fingerprint of the certificate.
+	Sha1Fingerprint string `json:"sha1Fingerprint,omitempty"`
+}
+
 // CloudMemorystoreInstanceObservation is used to show the observed state of the
 // CloudMemorystore resource on GCP.
 type CloudMemorystoreInstanceObservation struct {
@@ -195,6 +226,13 @@ type CloudMemorystoreInstanceObservation struct {
 	// for a given instance so should be checked before each import/export
 	// operation.
 	PersistenceIAMIdentity string `json:"persistenceIamIdentity,omitempty"`
+
+	// Status of in tranit encyption mode the redis service is configured with
+	TransitEncryptionMode string `json:"transitEncryptionMode,omitempty"`
+
+	// ServerCaCerts: Output only. List of server CA certificates for the
+	// instance.
+	ServerCaCerts []ServerCACertsObservation `json:"serverCaCerts,omitempty"`
 }
 
 // A CloudMemorystoreInstanceSpec defines the desired state of a

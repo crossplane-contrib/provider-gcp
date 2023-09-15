@@ -31,8 +31,9 @@ const (
 
 var (
 	authorizedNetwork = "default"
-
-	redisConfigs = map[string]string{"cool": "socool"}
+	redisVersion      = "REDIS_6_X"
+	redisConfigs      = map[string]string{"cool": "socool"}
+	tlsMode           = "SERVER_AUTHENTICATION"
 )
 
 func TestIsUpToDate(t *testing.T) {
@@ -136,6 +137,27 @@ func TestIsUpToDate(t *testing.T) {
 				Name:              fullName,
 				MemorySizeGb:      memorySizeGB,
 				AuthorizedNetwork: authorizedNetwork,
+			},
+			want: want{upToDate: true, isErr: false},
+		},
+		{
+			name: "TlsEnabled",
+			id:   fullName,
+			kube: &v1beta1.CloudMemorystoreInstance{
+				Spec: v1beta1.CloudMemorystoreInstanceSpec{
+					ForProvider: v1beta1.CloudMemorystoreInstanceParameters{
+						RedisVersion:          &redisVersion,
+						MemorySizeGB:          memorySizeGB,
+						TransitEncryptionMode: &tlsMode,
+					},
+				},
+			},
+			gcp: &redis.Instance{
+				Name:                  fullName,
+				RedisVersion:          redisVersion,
+				MemorySizeGb:          memorySizeGB,
+				AuthorizedNetwork:     authorizedNetwork,
+				TransitEncryptionMode: tlsMode,
 			},
 			want: want{upToDate: true, isErr: false},
 		},
