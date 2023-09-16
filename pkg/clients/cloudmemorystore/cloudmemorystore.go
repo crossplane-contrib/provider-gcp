@@ -78,6 +78,7 @@ func GenerateRedisInstance(name string, s v1beta1.CloudMemorystoreInstanceParame
 	r.AuthorizedNetwork = gcp.StringValue(s.AuthorizedNetwork)
 	r.ConnectMode = gcp.StringValue(s.ConnectMode)
 	r.AuthEnabled = gcp.BoolValue(s.AuthEnabled)
+	r.TransitEncryptionMode = gcp.StringValue(s.TransitEncryptionMode)
 }
 
 // GenerateObservation is used to produce an observation object from GCP's Redis
@@ -91,6 +92,16 @@ func GenerateObservation(r redis.Instance) v1beta1.CloudMemorystoreInstanceObser
 		State:                  r.State,
 		StatusMessage:          r.StatusMessage,
 		PersistenceIAMIdentity: r.PersistenceIamIdentity,
+		TransitEncryptionMode:  r.TransitEncryptionMode,
+	}
+	for _, val := range r.ServerCaCerts {
+		o.ServerCaCerts = append(o.ServerCaCerts, v1beta1.ServerCACertsObservation{
+			Cert:            val.Cert,
+			CreateTime:      val.CreateTime,
+			ExpireTime:      val.ExpireTime,
+			SerialNumber:    val.SerialNumber,
+			Sha1Fingerprint: val.Sha1Fingerprint,
+		})
 	}
 	t, err := time.Parse(time.RFC3339, r.CreateTime)
 	if err != nil {

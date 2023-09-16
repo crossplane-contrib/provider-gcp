@@ -157,6 +157,13 @@ spec:
                     - BASIC
                     - STANDARD_HA
                     type: string
+                  transitEncryptionMode:
+                    description: TransitEncryptionMode specifies TLS encryption mode
+                      for Redis service. For TRANSIT_ENCRYPTION_MODE_UNSPECIFIED the
+                      TLS in transit encryption is not set. If set to SERVER_AUTHENTICATION
+                      the client-to-server traffic encryption is enabled. Encryption
+                      is disabled if the value is DISABLED https://cloud.google.com/memorystore/docs/redis/about-in-transit-encryption
+                    type: string
                 required:
                 - memorySizeGb
                 - region
@@ -375,6 +382,35 @@ spec:
                     description: The port number of the exposed Redis endpoint.
                     format: int64
                     type: integer
+                  serverCaCerts:
+                    description: 'ServerCaCerts: Output only. List of server CA certificates
+                      for the instance.'
+                    items:
+                      description: ServerCACertsObservation Observability Resource
+                        which is fetched from the hyperscaler
+                      properties:
+                        cert:
+                          description: Cert is the certificate in the PEM format.
+                          type: string
+                        createTime:
+                          description: 'CreateTime: Output only. The time when the
+                            certificate was created in RFC 3339 (https://tools.ietf.org/html/rfc3339)
+                            format, for example `2020-05-18T00:00:00.094Z`.'
+                          type: string
+                        expireTime:
+                          description: 'ExpireTime: Output only. The time when the
+                            certificate expires in RFC 3339 (https://tools.ietf.org/html/rfc3339)
+                            format, for example `2020-05-18T00:00:00.094Z`.'
+                          type: string
+                        serialNumber:
+                          description: 'SerialNumber: Serial number, as extracted
+                            from the certificate.'
+                          type: string
+                        sha1Fingerprint:
+                          description: 'Sha1Fingerprint: Sha1 Fingerprint of the certificate.'
+                          type: string
+                      type: object
+                    type: array
                   state:
                     description: "State: Output only. The current state of this instance.
                       \n Possible values: \"STATE_UNSPECIFIED\" - Not set. \"CREATING\"
@@ -392,6 +428,10 @@ spec:
                   statusMessage:
                     description: Additional information about the current status of
                       this instance, if available.
+                    type: string
+                  transitEncryptionMode:
+                    description: Status of in tranit encyption mode the redis service
+                      is configured with
                     type: string
                 type: object
               conditions:
