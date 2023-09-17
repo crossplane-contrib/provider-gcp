@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	cloud.google.com/go/storage v1.27.0
-	github.com/crossplane/crossplane-runtime v0.20.0-rc.0.0.20230322150148-00a8da972aca
-	github.com/crossplane/crossplane-tools v0.0.0-20220310165030-1f43fc12793e
+	github.com/crossplane/crossplane-runtime v0.20.0-rc.0.0.20230413174155-c8cff1a7fb74
+	github.com/crossplane/crossplane-tools v0.0.0-20230327091744-4236bf732aa5
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-containerregistry v0.9.0
 	github.com/imdario/mergo v0.3.12

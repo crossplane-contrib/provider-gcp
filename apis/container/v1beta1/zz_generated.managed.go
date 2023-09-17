@@ -30,6 +30,11 @@ func (mg *NodePool) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this NodePool.
+func (mg *NodePool) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this NodePool.
 func (mg *NodePool) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -61,6 +66,11 @@ func (mg *NodePool) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this NodePool.
 func (mg *NodePool) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this NodePool.
+func (mg *NodePool) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this NodePool.

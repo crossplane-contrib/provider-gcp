@@ -30,6 +30,11 @@ func (mg *CloudMemorystoreInstance) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this CloudMemorystoreInstance.
+func (mg *CloudMemorystoreInstance) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this CloudMemorystoreInstance.
 func (mg *CloudMemorystoreInstance) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -61,6 +66,11 @@ func (mg *CloudMemorystoreInstance) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this CloudMemorystoreInstance.
 func (mg *CloudMemorystoreInstance) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this CloudMemorystoreInstance.
+func (mg *CloudMemorystoreInstance) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this CloudMemorystoreInstance.

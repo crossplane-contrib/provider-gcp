@@ -30,6 +30,11 @@ func (mg *CloudSQLInstance) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this CloudSQLInstance.
+func (mg *CloudSQLInstance) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this CloudSQLInstance.
 func (mg *CloudSQLInstance) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -61,6 +66,11 @@ func (mg *CloudSQLInstance) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this CloudSQLInstance.
 func (mg *CloudSQLInstance) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this CloudSQLInstance.
+func (mg *CloudSQLInstance) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this CloudSQLInstance.

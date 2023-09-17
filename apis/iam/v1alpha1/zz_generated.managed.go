@@ -30,6 +30,11 @@ func (mg *ServiceAccount) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this ServiceAccount.
+func (mg *ServiceAccount) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this ServiceAccount.
 func (mg *ServiceAccount) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -61,6 +66,11 @@ func (mg *ServiceAccount) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this ServiceAccount.
 func (mg *ServiceAccount) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this ServiceAccount.
+func (mg *ServiceAccount) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this ServiceAccount.
@@ -96,6 +106,11 @@ func (mg *ServiceAccountKey) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this ServiceAccountKey.
+func (mg *ServiceAccountKey) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this ServiceAccountKey.
 func (mg *ServiceAccountKey) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -127,6 +142,11 @@ func (mg *ServiceAccountKey) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this ServiceAccountKey.
 func (mg *ServiceAccountKey) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this ServiceAccountKey.
+func (mg *ServiceAccountKey) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this ServiceAccountKey.
@@ -162,6 +182,11 @@ func (mg *ServiceAccountPolicy) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this ServiceAccountPolicy.
+func (mg *ServiceAccountPolicy) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this ServiceAccountPolicy.
 func (mg *ServiceAccountPolicy) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -193,6 +218,11 @@ func (mg *ServiceAccountPolicy) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this ServiceAccountPolicy.
 func (mg *ServiceAccountPolicy) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this ServiceAccountPolicy.
+func (mg *ServiceAccountPolicy) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this ServiceAccountPolicy.
