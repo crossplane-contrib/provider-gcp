@@ -23,6 +23,7 @@ import (
 	pubsub "google.golang.org/api/pubsub/v1"
 
 	"github.com/crossplane-contrib/provider-gcp/apis/pubsub/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 )
 
 const (
@@ -52,6 +53,12 @@ func params() *v1alpha1.SubscriptionParameters {
 				ServiceAccountEmail: "example@gmail.coom",
 			},
 			PushEndpoint: "example.com",
+		},
+		BigqueryConfig: &v1alpha1.BigqueryConfig{
+			Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+			UseTopicSchema:    gcp.BoolPtr(true),
+			WriteMetadata:     gcp.BoolPtr(true),
+			DropUnknownFields: gcp.BoolPtr(true),
 		},
 		RetryPolicy: &v1alpha1.RetryPolicy{
 			MaximumBackoff: "100s",
@@ -85,6 +92,12 @@ func subscription() *pubsub.Subscription {
 				ServiceAccountEmail: "example@gmail.coom",
 			},
 			PushEndpoint: "example.com",
+		},
+		BigqueryConfig: &pubsub.BigQueryConfig{
+			Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+			UseTopicSchema:    true,
+			WriteMetadata:     true,
+			DropUnknownFields: true,
 		},
 		RetryPolicy: &pubsub.RetryPolicy{
 			MaximumBackoff: "100s",
@@ -167,6 +180,98 @@ func TestLateInitialize(t *testing.T) {
 			},
 			out: params(),
 		},
+		"Minimal": {
+			args: args{
+				obs: pubsub.Subscription{
+					Name:  name,
+					Topic: topicNameExternal,
+				},
+				param: &v1alpha1.SubscriptionParameters{
+					AckDeadlineSeconds: 15,
+					DeadLetterPolicy: &v1alpha1.DeadLetterPolicy{
+						DeadLetterTopic:     topicName,
+						MaxDeliveryAttempts: 5,
+					},
+					Detached:              true,
+					EnableMessageOrdering: true,
+					ExpirationPolicy:      &v1alpha1.ExpirationPolicy{TTL: "1296000s"},
+					Topic:                 topicName,
+				},
+			},
+			out: &v1alpha1.SubscriptionParameters{
+				AckDeadlineSeconds: 15,
+				DeadLetterPolicy: &v1alpha1.DeadLetterPolicy{
+					DeadLetterTopic:     topicName,
+					MaxDeliveryAttempts: 5,
+				},
+				Detached:              true,
+				EnableMessageOrdering: true,
+				ExpirationPolicy:      &v1alpha1.ExpirationPolicy{TTL: "1296000s"},
+				Topic:                 topicName,
+				BigqueryConfig:        nil,
+				PushConfig:            nil,
+			},
+		},
+		"PushConfig": {
+			args: args{
+				obs: pubsub.Subscription{
+					Name:  name,
+					Topic: topicNameExternal,
+					PushConfig: &pubsub.PushConfig{
+						PushEndpoint: "example.com",
+					},
+				},
+				param: &v1alpha1.SubscriptionParameters{
+					PushConfig: &v1alpha1.PushConfig{
+						Attributes: map[string]string{"attribute": "my-attribute"},
+						OidcToken: &v1alpha1.OidcToken{
+							Audience: "my-audience",
+						},
+						PushEndpoint: "example.com",
+					},
+				},
+			},
+			out: &v1alpha1.SubscriptionParameters{
+				PushConfig: &v1alpha1.PushConfig{
+					Attributes: map[string]string{"attribute": "my-attribute"},
+					OidcToken: &v1alpha1.OidcToken{
+						Audience:            "my-audience",
+						ServiceAccountEmail: "",
+					},
+					PushEndpoint: "example.com",
+				},
+				Topic:          topicNameExternal,
+				BigqueryConfig: nil,
+			},
+		},
+		"BigqueryConfig": {
+			args: args{
+				obs: pubsub.Subscription{
+					Name:  name,
+					Topic: topicNameExternal,
+					BigqueryConfig: &pubsub.BigQueryConfig{
+						Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+						DropUnknownFields: true,
+					},
+				},
+				param: &v1alpha1.SubscriptionParameters{
+					BigqueryConfig: &v1alpha1.BigqueryConfig{
+						Table:          "projects/my-project/subscriptions/my-bigquery-subscription",
+						UseTopicSchema: gcp.BoolPtr(true),
+					},
+				},
+			},
+			out: &v1alpha1.SubscriptionParameters{
+				BigqueryConfig: &v1alpha1.BigqueryConfig{
+					Table:             "projects/my-project/subscriptions/my-bigquery-subscription",
+					UseTopicSchema:    gcp.BoolPtr(true),
+					WriteMetadata:     nil,
+					DropUnknownFields: nil,
+				},
+				Topic:      topicNameExternal,
+				PushConfig: nil,
+			},
+		},
 	}
 
 	for name, tc := range cases {
@@ -243,7 +348,7 @@ func TestGenerateUpdateRequest(t *testing.T) {
 			},
 			result: &pubsub.UpdateSubscriptionRequest{
 				Subscription: mutableSubscription,
-				UpdateMask:   "ackDeadlineSeconds,detached,filter,labels,messageRetentionDuration,retainAckedMessages,expirationPolicy,pushConfig,retryPolicy",
+				UpdateMask:   "ackDeadlineSeconds,detached,filter,labels,messageRetentionDuration,retainAckedMessages,expirationPolicy,pushConfig,bigqueryConfig,retryPolicy",
 			},
 		},
 	}

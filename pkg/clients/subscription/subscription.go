@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/crossplane-contrib/provider-gcp/apis/pubsub/v1alpha1"
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
 	"github.com/crossplane-contrib/provider-gcp/pkg/clients/topic"
 
 	"github.com/google/go-cmp/cmp"
@@ -53,6 +54,7 @@ func GenerateSubscription(projectID, name string, p v1alpha1.SubscriptionParamet
 	setDeadLetterPolicy(projectID, p, s)
 	setExpirationPolicy(p, s)
 	setPushConfig(p, s)
+	setBigqueryConfig(p, s)
 	setRetryPolicy(p, s)
 
 	return s
@@ -81,6 +83,18 @@ func setPushConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
 				Audience:            p.PushConfig.OidcToken.Audience,
 				ServiceAccountEmail: p.PushConfig.OidcToken.ServiceAccountEmail,
 			}
+		}
+	}
+}
+
+// setBigqueryConfig sets BigqueryConfig of subscription based on SubscriptionParameters.
+func setBigqueryConfig(p v1alpha1.SubscriptionParameters, s *pubsub.Subscription) {
+	if p.BigqueryConfig != nil {
+		s.BigqueryConfig = &pubsub.BigQueryConfig{
+			Table:             p.BigqueryConfig.Table,
+			UseTopicSchema:    gcp.BoolValue(p.BigqueryConfig.UseTopicSchema),
+			WriteMetadata:     gcp.BoolValue(p.BigqueryConfig.WriteMetadata),
+			DropUnknownFields: gcp.BoolValue(p.BigqueryConfig.DropUnknownFields),
 		}
 	}
 }
@@ -169,6 +183,15 @@ func LateInitialize(p *v1alpha1.SubscriptionParameters, s pubsub.Subscription) {
 		}
 	}
 
+	if p.BigqueryConfig == nil && s.BigqueryConfig != nil {
+		p.BigqueryConfig = &v1alpha1.BigqueryConfig{
+			Table:             s.BigqueryConfig.Table,
+			DropUnknownFields: gcp.BoolPtr(s.BigqueryConfig.DropUnknownFields),
+			UseTopicSchema:    gcp.BoolPtr(s.BigqueryConfig.UseTopicSchema),
+			WriteMetadata:     gcp.BoolPtr(s.BigqueryConfig.WriteMetadata),
+		}
+	}
+
 	if p.RetryPolicy == nil && s.RetryPolicy != nil {
 		p.RetryPolicy = &v1alpha1.RetryPolicy{
 			MaximumBackoff: s.RetryPolicy.MaximumBackoff,
@@ -195,7 +218,7 @@ func IsUpToDate(projectID string, p v1alpha1.SubscriptionParameters, s pubsub.Su
 // GenerateUpdateRequest produces an UpdateSubscriptionRequest with the difference
 // between SubscriptionParameters and Subscription.
 // enableMessageOrdering, deadLetterPolicy, topic are not mutable
-func GenerateUpdateRequest(name string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) *pubsub.UpdateSubscriptionRequest {
+func GenerateUpdateRequest(name string, p v1alpha1.SubscriptionParameters, s pubsub.Subscription) *pubsub.UpdateSubscriptionRequest { // nolint:gocyclo
 	observed := &v1alpha1.SubscriptionParameters{}
 	LateInitialize(observed, s)
 
@@ -243,6 +266,11 @@ func GenerateUpdateRequest(name string, p v1alpha1.SubscriptionParameters, s pub
 	if !cmp.Equal(p.PushConfig, observed.PushConfig) {
 		mask = append(mask, "pushConfig")
 		setPushConfig(p, us.Subscription)
+	}
+
+	if !cmp.Equal(p.BigqueryConfig, observed.BigqueryConfig) {
+		mask = append(mask, "bigqueryConfig")
+		setBigqueryConfig(p, us.Subscription)
 	}
 
 	if !cmp.Equal(p.RetryPolicy, observed.RetryPolicy) {
