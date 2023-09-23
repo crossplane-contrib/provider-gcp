@@ -49,6 +49,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		container.SetupCluster,
 		container.SetupNodePool,
 		database.SetupCloudSQLInstance,
+		dns.SetupManagedZone,
 		dns.SetupPolicy,
 		dns.SetupResourceRecordSet,
 		iam.SetupServiceAccount,
