@@ -292,6 +292,11 @@ func (in *BucketUpdatableAttrs) DeepCopyInto(out *BucketUpdatableAttrs) {
 		*out = new(BucketLogging)
 		**out = **in
 	}
+	if in.PublicAccessPrevention != nil {
+		in, out := &in.PublicAccessPrevention, &out.PublicAccessPrevention
+		*out = new(string)
+		**out = **in
+	}
 	if in.RetentionPolicy != nil {
 		in, out := &in.RetentionPolicy, &out.RetentionPolicy
 		*out = new(RetentionPolicy)

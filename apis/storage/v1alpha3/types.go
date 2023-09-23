@@ -22,6 +22,8 @@ import (
 	"cloud.google.com/go/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	gcp "github.com/crossplane-contrib/provider-gcp/pkg/clients"
+
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
@@ -597,6 +599,16 @@ type BucketUpdatableAttrs struct {
 	// for valid values.
 	PredefinedDefaultObjectACL string `json:"predefinedDefaultObjectAcl,omitempty"`
 
+	// PublicAccessPrevention is the setting for the bucket's
+	// PublicAccessPrevention policy, which can be used to prevent public access
+	// of data in the bucket. See
+	// https://cloud.google.com/storage/docs/public-access-prevention for more
+	// information.
+	//
+	// +optional
+	// +kubebuilder:validation:Enum="";unspecified;inherited;enforced
+	PublicAccessPrevention *string `json:"publicAccessPrevention,omitempty"`
+
 	// RequesterPays reports whether the bucket is a Requester Pays bucket.
 	// Clients performing operations on Requester Pays buckets must provide
 	// a user project (see BucketHandle.UserProject), which will be billed
@@ -635,11 +647,40 @@ func NewBucketUpdatableAttrs(ba *storage.BucketAttrs) *BucketUpdatableAttrs {
 		Logging:                    NewBucketLogging(ba.Logging),
 		PredefinedACL:              ba.PredefinedACL,
 		PredefinedDefaultObjectACL: ba.PredefinedDefaultObjectACL,
+		PublicAccessPrevention:     convertPublicAccessPreventionEnumToStringPtr(ba.PublicAccessPrevention),
 		RequesterPays:              ba.RequesterPays,
 		RetentionPolicy:            NewRetentionPolicy(ba.RetentionPolicy),
 		VersioningEnabled:          ba.VersioningEnabled,
 		Website:                    NewBucketWebsite(ba.Website),
 	}
+}
+
+// convertPublicAccessPreventionStringToEnum converts a string representation of storage.PublicAccessPrevention to its
+// enum value.
+func convertPublicAccessPreventionStringToEnum(pap *string) storage.PublicAccessPrevention {
+	// if the field is not set, treat it as unknown
+	if pap == nil {
+		return storage.PublicAccessPreventionUnknown
+	}
+
+	switch *pap {
+	case "unspecified", "inherited":
+		return storage.PublicAccessPreventionInherited
+	case "enforced":
+		return storage.PublicAccessPreventionEnforced
+	default:
+		return storage.PublicAccessPreventionUnknown
+	}
+}
+
+// convertPublicAccessPreventionEnumToStringPtr converts an enum value of storage.PublicAccessPrevention to its
+// string pointer value used in BucketUpdatableAttrs.
+func convertPublicAccessPreventionEnumToStringPtr(pap storage.PublicAccessPrevention) *string {
+	if pap == storage.PublicAccessPreventionUnknown {
+		return nil
+	}
+
+	return gcp.StringPtr(pap.String())
 }
 
 // CopyToBucketAttrs create a copy in storage format
@@ -658,6 +699,7 @@ func CopyToBucketAttrs(ba *BucketUpdatableAttrs) *storage.BucketAttrs {
 		Logging:                    CopyToBucketLogging(ba.Logging),
 		PredefinedACL:              ba.PredefinedACL,
 		PredefinedDefaultObjectACL: ba.PredefinedDefaultObjectACL,
+		PublicAccessPrevention:     convertPublicAccessPreventionStringToEnum(ba.PublicAccessPrevention),
 		RequesterPays:              ba.RequesterPays,
 		RetentionPolicy:            CopyToRetentionPolicy(ba.RetentionPolicy),
 		VersioningEnabled:          ba.VersioningEnabled,
@@ -679,6 +721,7 @@ func CopyToBucketUpdateAttrs(ba BucketUpdatableAttrs, labels map[string]string) 
 		Logging:                    CopyToBucketLogging(ba.Logging),
 		PredefinedACL:              ba.PredefinedACL,
 		PredefinedDefaultObjectACL: ba.PredefinedDefaultObjectACL,
+		PublicAccessPrevention:     convertPublicAccessPreventionStringToEnum(ba.PublicAccessPrevention),
 		RequesterPays:              ba.RequesterPays,
 		RetentionPolicy:            CopyToRetentionPolicy(ba.RetentionPolicy),
 		VersioningEnabled:          ba.VersioningEnabled,
@@ -723,7 +766,7 @@ type BucketSpecAttrs struct {
 	StorageClass string `json:"storageClass,omitempty"`
 }
 
-// NewBucketSpecAttrs create new instance from storage BuckateAttrs
+// NewBucketSpecAttrs create new instance from storage.BucketAttrs
 func NewBucketSpecAttrs(ba *storage.BucketAttrs) BucketSpecAttrs {
 	if ba == nil {
 		return BucketSpecAttrs{}
