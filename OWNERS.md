@@ -10,6 +10,5 @@ guidelines and responsibilities for the steering committee and maintainers.
 
 ## Maintainers
 
-* Daniel Mangum <georgedanielmangum@gmail.com> ([hasheddan](https://github.com/hasheddan))
-* Gabriel Ferreira <gabidferreira9@gmail.com> ([Feggah](https://github.com/Feggah))
 * Dan Small <d.small@sap.com> ([dee0sap](https://github.com/dee0sap))
+* Daniel Mangum <georgedanielmangum@gmail.com> ([hasheddan](https://github.com/hasheddan))
