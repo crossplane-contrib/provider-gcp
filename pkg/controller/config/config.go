@@ -46,6 +46,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o.ForControllerRuntime()).
+		WithEventFilter(resource.DesiredStateChanged()).
 		For(&v1beta1.ProviderConfig{}).
 		Watches(&source.Kind{Type: &v1beta1.ProviderConfigUsage{}}, &resource.EnqueueRequestForProviderConfig{}).
 		Complete(ratelimiter.NewReconciler(name, r, o.GlobalRateLimiter))
