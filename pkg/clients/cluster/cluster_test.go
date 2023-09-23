@@ -1430,6 +1430,49 @@ func TestGenerateWorkloadIdentityConfig(t *testing.T) {
 	}
 }
 
+func TestGenerateIdentityServiceConfig(t *testing.T) {
+	type args struct {
+		cluster *container.Cluster
+		params  *v1beta2.ClusterParameters
+	}
+
+	tests := map[string]struct {
+		args args
+		want *container.Cluster
+	}{
+		"Successful": {
+			args: args{
+				cluster: cluster(),
+				params: params(func(p *v1beta2.ClusterParameters) {
+					p.IdentityServiceConfig = &v1beta2.IdentityServiceConfig{
+						Enabled: true,
+					}
+				}),
+			},
+			want: cluster(func(c *container.Cluster) {
+				c.IdentityServiceConfig = &container.IdentityServiceConfig{
+					Enabled: true,
+				}
+			}),
+		},
+		"SuccessfulNil": {
+			args: args{
+				cluster: cluster(),
+				params:  params(),
+			},
+			want: cluster(),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			GenerateIdentityServiceConfig(tc.args.params.IdentityServiceConfig, tc.args.cluster)
+			if diff := cmp.Diff(tc.want.IdentityServiceConfig, tc.args.cluster.IdentityServiceConfig); diff != "" {
+				t.Errorf("GenerateIdentityServiceConfig(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestLateInitializeSpec(t *testing.T) {
 	var adminUser = "admin"
 
