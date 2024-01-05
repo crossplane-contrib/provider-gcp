@@ -1,0 +1,374 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: applications.appengine.gcp.crossplane.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: READY
+    type: string
+  - JSONPath: .status.conditions[?(@.type=='Synced')].status
+    name: SYNCED
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: AGE
+    type: date
+  group: appengine.gcp.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - gcp
+    kind: Application
+    listKind: ApplicationList
+    plural: applications
+    singular: application
+  scope: Cluster
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: A Application is a managed resource that represents a Google Kubernetes
+        Engine cluster.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: A ApplicationSpec defines the desired state of a Application.
+          properties:
+            claimRef:
+              description: ClaimReference specifies the resource claim to which this
+                managed resource will be bound. ClaimReference is set automatically
+                during dynamic provisioning. Crossplane does not currently support
+                setting this field manually, per https://github.com/crossplane/crossplane-runtime/issues/19
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an
+                    entire object, this string should contain a valid JSON/Go field
+                    access statement, such as desiredState.manifest.containers[2].
+                    For example, if the object reference is to a container within
+                    a pod, this would take on a value like: "spec.containers{name}"
+                    (where "name" refers to the name of the container that triggered
+                    the event) or if no container name is specified "spec.containers[2]"
+                    (container with index 2 in this pod). This syntax is chosen only
+                    to have some well-defined way of referencing a part of an object.
+                    TODO: this design is not final and this field is subject to change
+                    in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is
+                    made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+            classRef:
+              description: ClassReference specifies the resource class that was used
+                to dynamically provision this managed resource, if any. Crossplane
+                does not currently support setting this field manually, per https://github.com/crossplane/crossplane-runtime/issues/20
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an
+                    entire object, this string should contain a valid JSON/Go field
+                    access statement, such as desiredState.manifest.containers[2].
+                    For example, if the object reference is to a container within
+                    a pod, this would take on a value like: "spec.containers{name}"
+                    (where "name" refers to the name of the container that triggered
+                    the event) or if no container name is specified "spec.containers[2]"
+                    (container with index 2 in this pod). This syntax is chosen only
+                    to have some well-defined way of referencing a part of an object.
+                    TODO: this design is not final and this field is subject to change
+                    in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is
+                    made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+            forProvider:
+              description: ApplicationParameters is the desired state of an AppEngine
+                Application.
+              properties:
+                authDomain:
+                  description: 'AuthDomain: Google Apps authentication domain that
+                    controls which users can access this application.Defaults to open
+                    access for any Google Account.'
+                  type: string
+                databaseType:
+                  description: "DatabaseType: The type of the Cloud Firestore or Cloud
+                    Datastore database associated with this application. \n Possible
+                    values:   \"DATABASE_TYPE_UNSPECIFIED\" - Database type is unspecified.
+                    \  \"CLOUD_DATASTORE\" - Cloud Datastore   \"CLOUD_FIRESTORE\"
+                    - Cloud Firestore Native   \"CLOUD_DATASTORE_COMPATIBILITY\" -
+                    Cloud Firestore in Datastore Mode"
+                  type: string
+                defaultCookieExpiration:
+                  description: 'DefaultCookieExpiration: Cookie expiration policy
+                    for this application.'
+                  type: string
+                dispatchRules:
+                  description: 'DispatchRules: HTTP path dispatch rules for requests
+                    to the application that do not explicitly target a service or
+                    version. Rules are order-dependent. Up to 20 dispatch rules can
+                    be supported.'
+                  items:
+                    description: URLDispatchRule is a rules to match an HTTP request
+                      and dispatch that request to a service.
+                    properties:
+                      domain:
+                        description: 'Domain: Domain name to match against. The wildcard
+                          "*" is supported if specified before a period: "*.".Defaults
+                          to matching all domains: "*".'
+                        type: string
+                      path:
+                        description: 'Path: Pathname within the host. Must start with
+                          a "/". A single "*" can be included at the end of the path.The
+                          sum of the lengths of the domain and path may not exceed
+                          100 characters.'
+                        type: string
+                      service:
+                        description: 'Service: Resource ID of a service in this application
+                          that should serve the matched request. The service must
+                          already exist. Example: default.'
+                        type: string
+                    type: object
+                  type: array
+                featureSettings:
+                  description: 'FeatureSettings: The feature specific settings to
+                    be used in the application.'
+                  properties:
+                    splitHealthChecks:
+                      description: 'SplitHealthChecks: Boolean value indicating if
+                        split health checks should be used instead of the legacy health
+                        checks. At an app.yaml level, this means defaulting to ''readiness_check''
+                        and ''liveness_check'' values instead of ''health_check''
+                        ones. Once the legacy ''health_check'' behavior is deprecated,
+                        and this value is always true, this setting can be removed.'
+                      type: boolean
+                    useContainerOptimizedOs:
+                      description: 'UseContainerOptimizedOs: If true, use Container-Optimized
+                        OS (https://cloud.google.com/container-optimized-os/) base
+                        image for VMs, rather than a base Debian image.'
+                      type: boolean
+                  type: object
+                gcrDomain:
+                  description: 'GcrDomain: The Google Container Registry domain used
+                    for storing managed build docker images for this application.'
+                  type: string
+                locationId:
+                  description: 'LocationID: Location from which this application runs.
+                    Application instances run out of the data centers in the specified
+                    location, which is also where all of the application''s end user
+                    content is stored.Defaults to us-central.View the list of supported
+                    locations (https://cloud.google.com/appengine/docs/locations).'
+                  type: string
+              type: object
+            providerRef:
+              description: ProviderReference specifies the provider that will be used
+                to create, observe, update, and delete this managed resource.
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an
+                    entire object, this string should contain a valid JSON/Go field
+                    access statement, such as desiredState.manifest.containers[2].
+                    For example, if the object reference is to a container within
+                    a pod, this would take on a value like: "spec.containers{name}"
+                    (where "name" refers to the name of the container that triggered
+                    the event) or if no container name is specified "spec.containers[2]"
+                    (container with index 2 in this pod). This syntax is chosen only
+                    to have some well-defined way of referencing a part of an object.
+                    TODO: this design is not final and this field is subject to change
+                    in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is
+                    made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+            reclaimPolicy:
+              description: ReclaimPolicy specifies what will happen to this managed
+                resource when its resource claim is deleted, and what will happen
+                to the underlying external resource when the managed resource is deleted.
+                The "Delete" policy causes the managed resource to be deleted when
+                its bound resource claim is deleted, and in turn causes the external
+                resource to be deleted when its managed resource is deleted. The "Retain"
+                policy causes the managed resource to be retained, in binding phase
+                "Released", when its resource claim is deleted, and in turn causes
+                the external resource to be retained when its managed resource is
+                deleted. The "Retain" policy is used when no policy is specified.
+              enum:
+              - Retain
+              - Delete
+              type: string
+            writeConnectionSecretToRef:
+              description: WriteConnectionSecretToReference specifies the namespace
+                and name of a Secret to which any connection details for this managed
+                resource should be written. Connection details frequently include
+                the endpoint, username, and password required to connect to the managed
+                resource.
+              properties:
+                name:
+                  description: Name of the secret.
+                  type: string
+                namespace:
+                  description: Namespace of the secret.
+                  type: string
+              required:
+              - name
+              - namespace
+              type: object
+          required:
+          - forProvider
+          - providerRef
+          type: object
+        status:
+          description: A ApplicationStatus represents the observed state of a Application.
+          properties:
+            atProvider:
+              description: ApplicationObservation is the current state of an AppEngine
+                Application.
+              properties:
+                codeBucket:
+                  description: 'CodeBucket: Google Cloud Storage bucket that can be
+                    used for storing files associated with this application. This
+                    bucket is associated with the application and can be used by the
+                    gcloud deployment commands.'
+                  type: string
+                defaultBucket:
+                  description: 'DefaultBucket: Google Cloud Storage bucket that can
+                    be used by this application to store content.'
+                  type: string
+                defaultHostname:
+                  description: 'DefaultHostname: Hostname used to reach this application,
+                    as resolved by App Engine.'
+                  type: string
+                name:
+                  description: 'Name: Full path to the Application resource in the
+                    API. Example: apps/myapp.'
+                  type: string
+                servingStatus:
+                  description: "ServingStatus: Serving status of this application.
+                    \n Possible values:   \"UNSPECIFIED\" - Serving status is unspecified.
+                    \  \"SERVING\" - Application is serving.   \"USER_DISABLED\" -
+                    Application has been disabled by the user.   \"SYSTEM_DISABLED\"
+                    - Application has been disabled by the system."
+                  type: string
+              type: object
+            bindingPhase:
+              description: Phase represents the binding phase of a managed resource
+                or claim. Unbindable resources cannot be bound, typically because
+                they are currently unavailable, or still being created. Unbound resource
+                are available for binding, and Bound resources have successfully bound
+                to another resource.
+              enum:
+              - Unbindable
+              - Unbound
+              - Bound
+              - Released
+              type: string
+            conditions:
+              description: Conditions of the resource.
+              items:
+                description: A Condition that may apply to a resource.
+                properties:
+                  lastTransitionTime:
+                    description: LastTransitionTime is the last time this condition
+                      transitioned from one status to another.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A Message containing details about this condition's
+                      last transition from one status to another, if any.
+                    type: string
+                  reason:
+                    description: A Reason for this condition's last transition from
+                      one status to another.
+                    type: string
+                  status:
+                    description: Status of this condition; is it currently True, False,
+                      or Unknown?
+                    type: string
+                  type:
+                    description: Type of this condition. At most one of each condition
+                      type may apply to a resource at any point in time.
+                    type: string
+                required:
+                - lastTransitionTime
+                - reason
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+      required:
+      - spec
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
