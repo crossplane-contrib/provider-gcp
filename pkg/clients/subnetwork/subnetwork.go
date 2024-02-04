@@ -124,6 +124,9 @@ func IsUpToDate(name string, in *v1beta1.SubnetworkParameters, observed *compute
 	if !ok {
 		return true, false, errors.New(errCheckUpToDate)
 	}
+	// empty the SecondaryIpRanges to ensure that SecondaryRanges will be deleted
+	// when the user removes them from the CR.
+	desired.SecondaryIpRanges = make([]*compute.SubnetworkSecondaryRange, 0)
 	GenerateSubnetwork(name, *in, desired)
 	if !cmp.Equal(desired.PrivateIpGoogleAccess, observed.PrivateIpGoogleAccess) {
 		return false, true, nil
