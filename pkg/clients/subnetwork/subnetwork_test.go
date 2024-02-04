@@ -72,6 +72,10 @@ func params(m ...func(*v1beta1.SubnetworkParameters)) *v1beta1.SubnetworkParamet
 	return o
 }
 
+func removeSecondaryRanges(s *v1beta1.SubnetworkParameters) {
+	s.SecondaryIPRanges = nil
+}
+
 func subnetwork(m ...func(*compute.Subnetwork)) *compute.Subnetwork {
 	o := &compute.Subnetwork{
 		Description:           testDescription,
@@ -291,6 +295,17 @@ func TestIsUpToDate(t *testing.T) {
 				}),
 			},
 			want: want{upToDate: false, privAcc: true},
+		},
+		"NotUpToDateSecondaryRanges": {
+			args: args{
+				name:    testName,
+				in:      params(removeSecondaryRanges),
+				current: subnetwork(),
+			},
+			want: want{
+				upToDate: false,
+				privAcc:  false,
+			},
 		},
 	}
 
