@@ -1,4 +1,13 @@
-# provider-gcp
+# provider-gcp (archived)
+
+> [!WARNING]
+> This project has been archived as per [Crossplane's project
+> governance](https://github.com/crossplane/crossplane/blob/main/GOVERNANCE.md#archival-policy)
+> for community extension projects and is no longer actively maintained.
+>
+> It is recommended to use the
+> [provider-upjet-gcp](https://github.com/crossplane-contrib/provider-upjet-gcp)
+> project instead.
 
 ## Overview
 
