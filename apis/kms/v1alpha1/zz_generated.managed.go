@@ -30,6 +30,11 @@ func (mg *CryptoKey) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this CryptoKey.
+func (mg *CryptoKey) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this CryptoKey.
 func (mg *CryptoKey) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -61,6 +66,11 @@ func (mg *CryptoKey) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this CryptoKey.
 func (mg *CryptoKey) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this CryptoKey.
+func (mg *CryptoKey) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this CryptoKey.
@@ -96,6 +106,11 @@ func (mg *CryptoKeyPolicy) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this CryptoKeyPolicy.
+func (mg *CryptoKeyPolicy) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this CryptoKeyPolicy.
 func (mg *CryptoKeyPolicy) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -127,6 +142,11 @@ func (mg *CryptoKeyPolicy) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this CryptoKeyPolicy.
 func (mg *CryptoKeyPolicy) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this CryptoKeyPolicy.
+func (mg *CryptoKeyPolicy) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this CryptoKeyPolicy.
@@ -162,6 +182,11 @@ func (mg *KeyRing) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this KeyRing.
+func (mg *KeyRing) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this KeyRing.
 func (mg *KeyRing) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -193,6 +218,11 @@ func (mg *KeyRing) SetConditions(c ...xpv1.Condition) {
 // SetDeletionPolicy of this KeyRing.
 func (mg *KeyRing) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
+}
+
+// SetManagementPolicy of this KeyRing.
+func (mg *KeyRing) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
 }
 
 // SetProviderConfigReference of this KeyRing.
